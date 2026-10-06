@@ -1,0 +1,30 @@
+---
+import { normalisePasscode } from "../lib/passcode.ts";
+import { joinRoom } from "../lib/rooms.ts";
+import Layout from "../layouts/Layout.astro";
+
+const user = Astro.locals.user;
+if (!user) return Astro.redirect("/signin", 303);
+
+let error = "";
+let passcode = "";
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  passcode = normalisePasscode(String(form.get("passcode") ?? ""));
+  const roomId = joinRoom(user.id, passcode);
+  if (roomId !== null) return Astro.redirect(`/rooms/${roomId}`, 303);
+  // ROOM-2: one generic message, whatever was wrong with the code
+  error = "No open room has that passcode. Check it with whoever shared it.";
+  Astro.response.status = 404;
+}
+---
+
+<Layout title="Join a room">
+  <h1>Join a room</h1>
+  <form method="post">
+    <label for="passcode">Passcode</label>
+    <input id="passcode" name="passcode" value={passcode} autocomplete="off" autocapitalize="characters" maxlength="8" required />
+    {error && <p class="error">{error}</p>}
+    <p><button type="submit">Join</button></p>
+  </form>
+</Layout>
