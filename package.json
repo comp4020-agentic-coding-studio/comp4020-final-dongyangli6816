@@ -27,6 +27,8 @@
   },
   "dependencies": {
     "@astrojs/node": "^11.1.6",
+    "@fontsource/press-start-2p": "^5.3.0",
+    "@fontsource/vt323": "^5.3.0",
     "astro": "^7.3.5",
     "better-sqlite3": "^13.0.3",
     "drizzle-orm": "^0.45.3",

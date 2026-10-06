@@ -20,11 +20,13 @@ if (Astro.request.method === "POST") {
 ---
 
 <Layout title="Join a room">
-  <h1>Join a room</h1>
-  <form method="post">
-    <label for="passcode">Passcode</label>
-    <input id="passcode" name="passcode" value={passcode} autocomplete="off" autocapitalize="characters" maxlength="8" required />
-    {error && <p class="error">{error}</p>}
-    <p><button type="submit">Join</button></p>
-  </form>
+  <div class="card">
+    <h1>Join a room</h1>
+    <form method="post">
+      <label for="passcode">Passcode</label>
+      <input id="passcode" name="passcode" value={passcode} autocomplete="off" autocapitalize="characters" maxlength="8" required />
+      {error && <p class="error">{error}</p>}
+      <div class="actions"><button type="submit" class="wide">Join</button></div>
+    </form>
+  </div>
 </Layout>

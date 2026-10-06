@@ -1,4 +1,10 @@
 ---
+// Self-hosted pixel fonts: Press Start 2P for display text, VT323 for
+// everything you read. VT323 keeps 5/S, B/8 and 0/O distinct, which matters
+// when the text is a weight you're about to lift. No third-party requests.
+import "@fontsource/press-start-2p/400.css";
+import "@fontsource/vt323/400.css";
+
 interface Props {
   title: string;
 }
@@ -11,18 +17,28 @@ const user = Astro.locals.user;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f3d22" />
     <title>{title} · Spotter</title>
   </head>
   <body>
-    <header>
-      <a href="/" class="brand">Spotter</a>
+    <header class="topbar">
+      <a href="/" class="brand" aria-label="Spotter home">
+        <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges">
+          <rect x="0" y="2" width="2" height="4" fill="#c8e66b" />
+          <rect x="2" y="0" width="2" height="8" fill="#c8e66b" />
+          <rect x="4" y="3" width="8" height="2" fill="#e8f0d8" />
+          <rect x="12" y="0" width="2" height="8" fill="#c8e66b" />
+          <rect x="14" y="2" width="2" height="4" fill="#c8e66b" />
+        </svg>
+        <span>Spotter</span>
+      </a>
       <nav>
         {
           user ? (
             <>
               <a href="/history">History</a>
               <form method="post" action="/signout">
-                <button type="submit">Sign out</button>
+                <button type="submit" class="linklike">Sign out</button>
               </form>
             </>
           ) : (
@@ -37,115 +53,386 @@ const user = Astro.locals.user;
     <main>
       <slot />
     </main>
+    <footer>
+      <a href="/readme/">What Spotter is for</a>
+    </footer>
   </body>
 </html>
 
 <style is:global>
+  /* Deep green, after the Game Boy's four-shade screen. One "pixel" of
+     decoration is --px, so borders and shadows stay on the same grid. */
   :root {
-    --bg: #f7f5ef;
-    --fg: #1d1d1b;
-    --muted: #5d5b55;
-    --accent: #2f6b3f;
+    --ink: #0b2416;
+    --deep: #0f3d22;
+    --green: #1f6b3a;
+    --leaf: #c8e66b;
+    --paper: #e8f0d8;
+    --card: #f7fbef;
+    --muted: #3d5a45;
     --error: #a3241b;
-    --line: #d9d5c8;
+    --focus: #f2c94c;
+    --px: 4px;
+    --display: "Press Start 2P", ui-monospace, monospace;
+    --body: "VT323", ui-monospace, monospace;
     color-scheme: light;
   }
   * {
     box-sizing: border-box;
   }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
   body {
     margin: 0;
-    background: var(--bg);
-    color: var(--fg);
-    font: 16px/1.5 system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    color: var(--ink);
+    font: 22px/1.35 var(--body);
+    /* pixel fonts have one weight; a faked bold smears them */
+    font-synthesis: none;
+    /* a faint 16 px checker, like gym floor tiles */
+    background-color: var(--paper);
+    background-image: conic-gradient(#dbe7c6 25%, transparent 0 50%, #dbe7c6 0 75%, transparent 0);
+    background-size: 32px 32px;
   }
-  header {
+
+  /* ---------- top bar ---------- */
+  .topbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    padding: 0.5rem 1rem;
-    border-bottom: 1px solid var(--line);
-  }
-  header nav {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-  header form {
-    margin: 0;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--deep);
+    border-bottom: var(--px) solid var(--ink);
   }
   .brand {
-    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--paper);
     text-decoration: none;
-    color: var(--fg);
+    font: 16px/1 var(--display);
+    text-transform: uppercase;
   }
+  .logo {
+    image-rendering: pixelated;
+  }
+  .topbar nav {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+  }
+  .topbar nav a,
+  .topbar .linklike {
+    color: var(--paper);
+    font: 24px/1 var(--body);
+    text-decoration: none;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .topbar nav a:hover,
+  .topbar .linklike:hover {
+    color: var(--leaf);
+  }
+  .topbar form {
+    margin: 0;
+  }
+
+  /* ---------- page ---------- */
   main {
-    max-width: 40rem;
+    flex: 1;
+    width: 100%;
+    max-width: 44rem;
     margin: 0 auto;
+    padding: 1.5rem 1rem 2rem;
+  }
+  footer {
     padding: 1rem;
+    text-align: center;
+    border-top: var(--px) solid var(--ink);
+    background: var(--deep);
+  }
+  footer a {
+    color: var(--leaf);
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--display);
+    font-weight: 400;
+    line-height: 1.4;
+    margin: 0 0 1rem;
+  }
+  h1 {
+    font-size: clamp(18px, 5vw, 26px);
+  }
+  h2 {
+    font-size: 14px;
+    color: var(--green);
+  }
+  h3 {
+    font-size: 12px;
+  }
+  p {
+    margin: 0 0 1rem;
   }
   a {
-    color: var(--accent);
+    color: var(--green);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
   }
+
+  /* ---------- pixel panels ---------- */
+  .card {
+    position: relative;
+    margin: 0 0 1.5rem;
+    padding: 1.25rem;
+    background: var(--card);
+    border: var(--px) solid var(--ink);
+    box-shadow: var(--px) var(--px) 0 var(--green), calc(var(--px) * 2) calc(var(--px) * 2) 0 var(--ink);
+  }
+  .card > :last-child {
+    margin-bottom: 0;
+  }
+
+  /* ---------- forms ---------- */
   label {
     display: block;
-    margin: 0.75rem 0 0.25rem;
-  }
-  input,
-  select,
-  button {
-    font: inherit;
-    min-height: 44px;
+    margin: 1rem 0 0.35rem;
+    color: var(--deep);
   }
   input,
   select {
     width: 100%;
-    padding: 0.5rem;
-    border: 1px solid var(--muted);
-    border-radius: 6px;
+    min-height: 48px;
+    padding: 0.5rem 0.75rem;
+    font: 26px/1.1 var(--body);
+    color: var(--ink);
     background: #fff;
+    border: var(--px) solid var(--ink);
+    border-radius: 0;
+    box-shadow: inset var(--px) var(--px) 0 #dbe7c6;
   }
-  button {
-    padding: 0.5rem 1rem;
+  select {
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%),
+      linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+    background-position: calc(100% - 22px) 50%, calc(100% - 14px) 50%;
+    background-size: 8px 8px;
+    background-repeat: no-repeat;
+    padding-right: 2.5rem;
+  }
+  button,
+  .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding: 0.75rem 1.25rem;
+    font: 12px/1.4 var(--display);
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--paper);
+    background: var(--green);
     border: 0;
-    border-radius: 6px;
-    background: var(--accent);
-    color: #fff;
     cursor: pointer;
+    /* a notched pixel outline plus a drop shadow; pressing moves it down */
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--ink),
+      0 var(--px) 0 var(--ink),
+      calc(var(--px) * -1) 0 0 var(--ink),
+      var(--px) 0 0 var(--ink),
+      0 calc(var(--px) * 2) 0 var(--ink),
+      inset 0 calc(var(--px) * -1) 0 var(--deep);
+    margin: var(--px) var(--px) calc(var(--px) * 2);
+    transition: transform 60ms steps(1);
   }
-  header button {
+  button:hover,
+  .button:hover {
+    background: #26804a;
+  }
+  button:active,
+  .button:active {
+    transform: translateY(var(--px));
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--ink),
+      0 var(--px) 0 var(--ink),
+      calc(var(--px) * -1) 0 0 var(--ink),
+      var(--px) 0 0 var(--ink);
+  }
+  .button.secondary {
+    color: var(--ink);
+    background: var(--leaf);
+  }
+  .button.secondary:hover {
+    background: #d6ef86;
+  }
+  .wide {
+    width: calc(100% - var(--px) * 2);
+  }
+  .topbar .linklike {
     background: none;
-    color: var(--accent);
-    text-decoration: underline;
+    box-shadow: none;
+    margin: 0;
     padding: 0;
+    text-transform: none;
   }
   :focus-visible {
-    outline: 3px solid #e0a100;
-    outline-offset: 2px;
+    outline: var(--px) solid var(--focus);
+    outline-offset: var(--px);
   }
   .error {
-    color: var(--error);
+    margin: 0.5rem 0 0;
+    padding: 0.4rem 0.6rem;
+    color: #fff;
+    background: var(--error);
+    border-left: calc(var(--px) * 2) solid var(--ink);
   }
-  .card {
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 1rem;
-    margin: 1rem 0;
-    background: #fff;
+  .hint {
+    color: var(--muted);
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    align-items: center;
+    margin-top: 1.25rem;
+  }
+
+  /* ---------- bits ---------- */
+  .passcode-box {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
   }
   .passcode {
-    font: 700 1.75rem/1 ui-monospace, monospace;
-    letter-spacing: 0.15em;
+    display: inline-block;
+    padding: 0.5rem 0.75rem;
+    font: 24px/1 var(--display);
+    letter-spacing: 0.12em;
+    color: var(--leaf);
+    background: var(--ink);
+    border: var(--px) solid var(--green);
+  }
+  .bubble {
+    position: relative;
+    margin: 0 0 1.25rem;
+    padding: 0.75rem 1rem;
+    background: var(--leaf);
+    border: var(--px) solid var(--ink);
+  }
+  .bubble::after {
+    content: "";
+    position: absolute;
+    left: 1.5rem;
+    bottom: calc(var(--px) * -3);
+    width: calc(var(--px) * 3);
+    height: calc(var(--px) * 3);
+    background: var(--leaf);
+    border-right: var(--px) solid var(--ink);
+    border-bottom: var(--px) solid var(--ink);
+    transform: skewY(45deg);
+  }
+  .roster {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .roster li {
+    padding: 0.25rem 0.6rem;
+    background: var(--paper);
+    border: var(--px) solid var(--ink);
+  }
+  .roster li::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 0.5rem;
+    background: var(--green);
+    vertical-align: middle;
   }
   table {
     width: 100%;
     border-collapse: collapse;
+    font-size: 24px;
+  }
+  th {
+    font: 10px/1.4 var(--display);
+    text-transform: uppercase;
+    color: var(--paper);
+    background: var(--deep);
   }
   th,
   td {
     text-align: left;
-    padding: 0.25rem 0.5rem 0.25rem 0;
-    border-bottom: 1px solid var(--line);
+    padding: 0.5rem 0.6rem;
+    border: 2px solid var(--ink);
+  }
+  td.num,
+  th.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  tbody tr:nth-child(even) td {
+    background: #eef5e1;
+  }
+  .stat {
+    font-family: var(--display);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.15rem 0.4rem;
+    font: 9px/1.4 var(--display);
+    vertical-align: middle;
+    color: var(--ink);
+    background: var(--leaf);
+    border: 2px solid var(--ink);
+  }
+
+  /* ---------- /readme/ ---------- */
+  .prose h1 {
+    font-size: clamp(18px, 5vw, 24px);
+  }
+  .prose h2 {
+    margin-top: 2rem;
+  }
+  .prose li {
+    margin-bottom: 0.4rem;
+  }
+
+  @media (max-width: 420px) {
+    body {
+      font-size: 21px;
+    }
+    .brand {
+      font-size: 13px;
+    }
+    .card {
+      padding: 1rem;
+    }
+    .passcode {
+      font-size: 20px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    button,
+    .button {
+      transition: none;
+    }
   }
 </style>

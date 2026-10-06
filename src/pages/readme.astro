@@ -11,7 +11,7 @@ const html = await marked.parse(readFileSync("README.md", "utf8"));
 ---
 
 <Layout title="About">
-  <article set:html={html} />
+  <article class="card prose" set:html={html} />
 </Layout>
 
 <style>

@@ -38,21 +38,23 @@ if (Astro.request.method === "POST") {
 ---
 
 <Layout title="Sign up">
-  <h1>Sign up</h1>
-  <form method="post" novalidate>
-    <label for="email">Email</label>
-    <input id="email" name="email" type="email" autocomplete="email" value={email} required />
-    {errors.email && <p class="error">{errors.email}</p>}
+  <div class="card">
+    <h1>Sign up</h1>
+    <form method="post" novalidate>
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" autocomplete="email" value={email} required />
+      {errors.email && <p class="error">{errors.email}</p>}
 
-    <label for="display_name">Display name (shown above your avatar)</label>
-    <input id="display_name" name="display_name" autocomplete="nickname" value={displayName} minlength="2" maxlength="20" required />
-    {errors.display_name && <p class="error">{errors.display_name}</p>}
+      <label for="display_name">Display name (shown above your avatar)</label>
+      <input id="display_name" name="display_name" autocomplete="nickname" value={displayName} minlength="2" maxlength="20" required />
+      {errors.display_name && <p class="error">{errors.display_name}</p>}
 
-    <label for="password">Password (at least 8 characters)</label>
-    <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required />
-    {errors.password && <p class="error">{errors.password}</p>}
+      <label for="password">Password (at least 8 characters)</label>
+      <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required />
+      {errors.password && <p class="error">{errors.password}</p>}
 
-    <p><button type="submit">Create account</button></p>
-  </form>
+      <div class="actions"><button type="submit" class="wide">Create account</button></div>
+    </form>
+  </div>
   <p>Already have one? <a href={`/signin?next=${encodeURIComponent(next)}`}>Sign in</a></p>
 </Layout>

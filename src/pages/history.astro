@@ -10,15 +10,15 @@ const when = (ms: number) => new Date(ms).toLocaleString("en-AU", { dateStyle: "
 
 <Layout title="History">
   <h1>History</h1>
-  {workouts.length === 0 && <p>No workouts yet. <a href="/">Start one</a>.</p>}
+  {workouts.length === 0 && <div class="card"><p>No workouts yet.</p><a href="/" class="button">Start one</a></div>}
   {
     workouts.map((w) => (
       <section class="card">
-        <h2>{when(w.startedAt)}{w.endedAt ? "" : " (in progress)"}</h2>
+        <h2>{when(w.startedAt)}{!w.endedAt && <span class="badge">Live</span>}</h2>
         <table>
-          <thead><tr><th>Exercise</th><th>kg</th><th>Reps</th></tr></thead>
+          <thead><tr><th>Exercise</th><th class="num">kg</th><th class="num">Reps</th></tr></thead>
           <tbody>
-            {w.sets.map((s) => <tr><td>{s.name}</td><td>{s.weightKg}</td><td>{s.reps}</td></tr>)}
+            {w.sets.map((s) => <tr><td>{s.name}</td><td class="num">{s.weightKg}</td><td class="num">{s.reps}</td></tr>)}
           </tbody>
         </table>
       </section>

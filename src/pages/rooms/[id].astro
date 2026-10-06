@@ -51,21 +51,23 @@ const inviteUrl = new URL(`/join`, Astro.url).href;
 ---
 
 <Layout title={`Room ${room.passcode}`}>
-  <h1>Room</h1>
   <div class="card">
-    <p>Passcode: <span class="passcode">{room.passcode}</span></p>
-    <p>Share it with your squad; they join at <a href="/">the home page</a> ({inviteUrl}).</p>
+    <div class="passcode-box">
+      <h1>Room</h1>
+      <span class="passcode">{room.passcode}</span>
+    </div>
+    <p class="hint">Send the passcode to your squad. They join from the home page ({inviteUrl}).</p>
   </div>
 
   <div class="card">
     <h2>In the room ({members.length})</h2>
-    <ul>{members.map((m) => <li>{m.name}</li>)}</ul>
+    <ul class="roster">{members.map((m) => <li>{m.name}</li>)}</ul>
   </div>
 
   <div class="card">
     {
       Astro.url.searchParams.get("rested") && (
-        <p role="status">Set logged. Rest {DEFAULT_REST_S} s, then go again.</p>
+        <p class="bubble" role="status">Set logged! Rest {DEFAULT_REST_S} s, then go again.</p>
       )
     }
     <h2>Log a set</h2>
@@ -74,19 +76,25 @@ const inviteUrl = new URL(`/join`, Astro.url).href;
       <select id="exercise" name="exercise">
         {EXERCISES.map((e) => <option value={e.id} selected={e.id === exercise?.id}>{e.name}</option>)}
       </select>
-      <p><button type="submit">Choose</button></p>
+      <div class="actions"><button type="submit" class="secondary button">Choose</button></div>
     </form>
     {
       exercise && (
-        <form method="post">
+        <form method="post" class="set-form">
           <input type="hidden" name="exercise_id" value={exercise.id} />
           <h3>{exercise.name}</h3>
-          <label for="weight_kg">Weight (kg)</label>
-          <input id="weight_kg" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value={prefill?.weightKg ?? 0} required />
-          <label for="reps">Reps</label>
-          <input id="reps" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value={prefill?.reps ?? 8} required />
+          <div class="pair">
+            <div>
+              <label for="weight_kg">Weight (kg)</label>
+              <input id="weight_kg" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value={prefill?.weightKg ?? 0} required />
+            </div>
+            <div>
+              <label for="reps">Reps</label>
+              <input id="reps" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value={prefill?.reps ?? 8} required />
+            </div>
+          </div>
           {error && <p class="error">{error}</p>}
-          <p><button type="submit">Done</button></p>
+          <div class="actions"><button type="submit" class="wide">Done</button></div>
         </form>
       )
     }
@@ -97,16 +105,32 @@ const inviteUrl = new URL(`/join`, Astro.url).href;
       <div class="card">
         <h2>This workout</h2>
         <table>
-          <thead><tr><th>Exercise</th><th>kg</th><th>Reps</th></tr></thead>
+          <thead><tr><th>Exercise</th><th class="num">kg</th><th class="num">Reps</th></tr></thead>
           <tbody>
-            {mySets.map((s) => <tr><td>{s.name}</td><td>{s.weightKg}</td><td>{s.reps}</td></tr>)}
+            {mySets.map((s) => <tr><td>{s.name}</td><td class="num">{s.weightKg}</td><td class="num">{s.reps}</td></tr>)}
           </tbody>
         </table>
         <form method="post">
           <input type="hidden" name="action" value="finish" />
-          <p><button type="submit">Finish workout</button></p>
+          <div class="actions"><button type="submit" class="secondary button">Finish workout</button></div>
         </form>
       </div>
     )
   }
 </Layout>
+
+<style>
+  .set-form {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: var(--px) dashed var(--ink);
+  }
+  .pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 1rem;
+  }
+  .passcode-box h1 {
+    margin: 0;
+  }
+</style>

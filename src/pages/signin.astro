@@ -26,14 +26,16 @@ if (Astro.request.method === "POST") {
 ---
 
 <Layout title="Sign in">
-  <h1>Sign in</h1>
-  <form method="post">
-    <label for="email">Email</label>
-    <input id="email" name="email" type="email" autocomplete="email" value={email} required />
-    <label for="password">Password</label>
-    <input id="password" name="password" type="password" autocomplete="current-password" required />
-    {error && <p class="error">{error}</p>}
-    <p><button type="submit">Sign in</button></p>
-  </form>
+  <div class="card">
+    <h1>Sign in</h1>
+    <form method="post">
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" autocomplete="email" value={email} required />
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required />
+      {error && <p class="error">{error}</p>}
+      <div class="actions"><button type="submit" class="wide">Sign in</button></div>
+    </form>
+  </div>
   <p>New here? <a href={`/signup?next=${encodeURIComponent(next)}`}>Sign up</a></p>
 </Layout>

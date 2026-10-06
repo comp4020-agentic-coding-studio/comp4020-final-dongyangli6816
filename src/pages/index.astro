@@ -26,6 +26,7 @@ const myRooms = user
         <h1>Hi, {user.displayName}</h1>
         <div class="card">
           <h2>Start a group workout</h2>
+          <p class="hint">You get a passcode to send to your squad.</p>
           <form method="post" action="/rooms">
             <button type="submit">Create a room</button>
           </form>
@@ -35,13 +36,13 @@ const myRooms = user
           <form method="post" action="/join">
             <label for="passcode">Passcode</label>
             <input id="passcode" name="passcode" autocomplete="off" autocapitalize="characters" maxlength="8" required />
-            <p><button type="submit">Join</button></p>
+            <div class="actions"><button type="submit">Join</button></div>
           </form>
         </div>
         {myRooms.length > 0 && (
           <div class="card">
             <h2>Your rooms</h2>
-            <ul>
+            <ul class="roster">
               {myRooms.map((r) => (
                 <li><a href={`/rooms/${r.id}`}>{r.passcode}</a></li>
               ))}
@@ -51,20 +52,49 @@ const myRooms = user
         {last && (
           <div class="card">
             <h2>Last workout</h2>
-            <p>{new Date(last.startedAt).toLocaleString("en-AU")} · {last.sets.length} sets</p>
-            <p><a href="/history">All history</a></p>
+            <p>{new Date(last.startedAt).toLocaleString("en-AU", { dateStyle: "medium", timeStyle: "short" })} · {last.sets.length} sets</p>
+            <a href="/history" class="button secondary">All history</a>
           </div>
         )}
       </>
     ) : (
       <>
-        <h1>Spotter</h1>
-        <p>
-          Spotter is a shared cartoon gym for friends who used to train together and now train apart. Your squad can
-          see when you're lifting, resting, or resting a bit too long.
-        </p>
-        <p><a href="/signup">Sign up</a> or <a href="/signin">sign in</a>, or <a href="/readme/">read what it's for</a>.</p>
+        <section class="card hero">
+          <h1>Train together, apart.</h1>
+          <p>
+            Spotter is a shared pixel gym for friends who used to train together and now train apart. Your squad can
+            see when you're lifting, resting, or resting a bit too long.
+          </p>
+          <div class="actions">
+            <a href="/signup" class="button">Sign up</a>
+            <a href="/signin" class="button secondary">Sign in</a>
+          </div>
+        </section>
+        <ol class="steps">
+          <li class="card"><h3>1. Open a room</h3><p>Get a passcode and send it to your squad.</p></li>
+          <li class="card"><h3>2. Log your sets</h3><p>Weight and reps, pre-filled from last time.</p></li>
+          <li class="card"><h3>3. Get spotted</h3><p>Rest too long and your friends will know.</p></li>
+        </ol>
+        <p><a href="/readme/">Read what Spotter is for</a></p>
       </>
     )
   }
 </Layout>
+
+<style>
+  .hero h1 {
+    font-size: clamp(20px, 6vw, 30px);
+    color: var(--deep);
+  }
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: 0 1.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .steps h3 {
+    color: var(--green);
+  }
+</style>
