@@ -1,0 +1,22 @@
+---
+import { marked } from "marked";
+import { readFileSync } from "node:fs";
+import Layout from "../layouts/Layout.astro";
+
+// README.md rendered in full on the server, so its headings are in the HTML
+// the server sends (spec/invariants.test.ts). It is read per request, so the
+// page never drifts from the file in the image. Relative links to docs/ are
+// served by src/pages/docs/[...path].ts.
+const html = await marked.parse(readFileSync("README.md", "utf8"));
+---
+
+<Layout title="About">
+  <article set:html={html} />
+</Layout>
+
+<style>
+  article :global(img) {
+    max-width: 100%;
+    height: auto;
+  }
+</style>
