@@ -1,0 +1,58 @@
+---
+import { eq } from "drizzle-orm";
+import { hashPassword, isHttps, startSession } from "../lib/auth.ts";
+import { db } from "../lib/db.ts";
+import { users } from "../lib/schema.ts";
+import Layout from "../layouts/Layout.astro";
+
+const next = Astro.url.searchParams.get("next") ?? "/";
+const errors: Record<string, string> = {};
+let email = "";
+let displayName = "";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  email = String(form.get("email") ?? "").trim().toLowerCase();
+  displayName = String(form.get("display_name") ?? "").trim();
+  const password = String(form.get("password") ?? "");
+
+  // ACC-1, ACC-4
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = "Enter an email address.";
+  if (password.length < 8) errors.password = "Use at least 8 characters.";
+  if (displayName.length < 2 || displayName.length > 20) errors.display_name = "Use 2 to 20 characters.";
+  if (!errors.email && db.select({ id: users.id }).from(users).where(eq(users.email, email)).get()) {
+    errors.email = "That email already has an account. Sign in instead.";
+  }
+
+  if (Object.keys(errors).length === 0) {
+    const user = db
+      .insert(users)
+      .values({ email, passwordHash: await hashPassword(password), displayName, createdAt: Date.now() })
+      .returning({ id: users.id })
+      .get();
+    startSession(Astro.cookies, user.id, isHttps(Astro.request));
+    return Astro.redirect(next.startsWith("/") ? next : "/", 303);
+  }
+  Astro.response.status = 400;
+}
+---
+
+<Layout title="Sign up">
+  <h1>Sign up</h1>
+  <form method="post" novalidate>
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" autocomplete="email" value={email} required />
+    {errors.email && <p class="error">{errors.email}</p>}
+
+    <label for="display_name">Display name (shown above your avatar)</label>
+    <input id="display_name" name="display_name" autocomplete="nickname" value={displayName} minlength="2" maxlength="20" required />
+    {errors.display_name && <p class="error">{errors.display_name}</p>}
+
+    <label for="password">Password (at least 8 characters)</label>
+    <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required />
+    {errors.password && <p class="error">{errors.password}</p>}
+
+    <p><button type="submit">Create account</button></p>
+  </form>
+  <p>Already have one? <a href={`/signin?next=${encodeURIComponent(next)}`}>Sign in</a></p>
+</Layout>

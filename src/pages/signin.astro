@@ -1,0 +1,39 @@
+---
+import { eq } from "drizzle-orm";
+import { isHttps, startSession, verifyPassword } from "../lib/auth.ts";
+import { db } from "../lib/db.ts";
+import { users } from "../lib/schema.ts";
+import Layout from "../layouts/Layout.astro";
+
+const next = Astro.url.searchParams.get("next") ?? "/";
+let error = "";
+let email = "";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  email = String(form.get("email") ?? "").trim().toLowerCase();
+  const password = String(form.get("password") ?? "");
+  const user = db.select().from(users).where(eq(users.email, email)).get();
+
+  if (user && (await verifyPassword(password, user.passwordHash))) {
+    startSession(Astro.cookies, user.id, isHttps(Astro.request));
+    return Astro.redirect(next.startsWith("/") ? next : "/", 303);
+  }
+  // one message for both cases, so the form doesn't reveal who has an account
+  error = "That email and password don't match an account.";
+  Astro.response.status = 400;
+}
+---
+
+<Layout title="Sign in">
+  <h1>Sign in</h1>
+  <form method="post">
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" autocomplete="email" value={email} required />
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" required />
+    {error && <p class="error">{error}</p>}
+    <p><button type="submit">Sign in</button></p>
+  </form>
+  <p>New here? <a href={`/signup?next=${encodeURIComponent(next)}`}>Sign up</a></p>
+</Layout>
