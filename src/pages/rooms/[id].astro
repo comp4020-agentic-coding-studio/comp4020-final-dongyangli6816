@@ -1,0 +1,112 @@
+---
+import { and, eq, isNull } from "drizzle-orm";
+import { db } from "../../lib/db.ts";
+import { EXERCISES } from "../../lib/exercises.ts";
+import { isMember } from "../../lib/rooms.ts";
+import { roomMembers, rooms, users } from "../../lib/schema.ts";
+import { DEFAULT_REST_S, finishWorkout, lastSet, logSet, setsInOpenWorkout } from "../../lib/workouts.ts";
+import Layout from "../../layouts/Layout.astro";
+
+const user = Astro.locals.user;
+if (!user) return Astro.redirect(`/signin?next=${encodeURIComponent(Astro.url.pathname)}`, 303);
+
+const roomId = Number(Astro.params.id);
+// someone without the passcode can't see that the room exists
+if (!Number.isInteger(roomId) || !isMember(roomId, user.id)) {
+  return new Response("Not found", { status: 404 });
+}
+const room = db.select().from(rooms).where(eq(rooms.id, roomId)).get()!;
+
+let error = "";
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  if (form.get("action") === "finish") {
+    finishWorkout(user.id, roomId);
+    return Astro.redirect("/history", 303);
+  }
+  const exerciseId = Number(form.get("exercise_id"));
+  const weightKg = Number(form.get("weight_kg"));
+  const reps = Number(form.get("reps"));
+  if (!EXERCISES.some((e) => e.id === exerciseId)) error = "Pick an exercise.";
+  else if (!Number.isFinite(weightKg) || weightKg < 0 || weightKg > 1000) error = "Weight is 0 to 1000 kg.";
+  else if (!Number.isInteger(reps) || reps < 1 || reps > 1000) error = "Reps is a whole number from 1.";
+  else {
+    logSet(user.id, roomId, exerciseId, weightKg, reps);
+    return Astro.redirect(`/rooms/${roomId}?exercise=${exerciseId}&rested=1`, 303);
+  }
+  Astro.response.status = 400;
+}
+
+const exerciseId = Number(Astro.url.searchParams.get("exercise"));
+const exercise = EXERCISES.find((e) => e.id === exerciseId);
+const prefill = exercise ? lastSet(user.id, exercise.id) : undefined;
+const mySets = setsInOpenWorkout(user.id, roomId);
+const members = db
+  .select({ name: users.displayName })
+  .from(roomMembers)
+  .innerJoin(users, eq(users.id, roomMembers.userId))
+  .where(and(eq(roomMembers.roomId, roomId), isNull(roomMembers.leftAt)))
+  .all();
+const inviteUrl = new URL(`/join`, Astro.url).href;
+---
+
+<Layout title={`Room ${room.passcode}`}>
+  <h1>Room</h1>
+  <div class="card">
+    <p>Passcode: <span class="passcode">{room.passcode}</span></p>
+    <p>Share it with your squad; they join at <a href="/">the home page</a> ({inviteUrl}).</p>
+  </div>
+
+  <div class="card">
+    <h2>In the room ({members.length})</h2>
+    <ul>{members.map((m) => <li>{m.name}</li>)}</ul>
+  </div>
+
+  <div class="card">
+    {
+      Astro.url.searchParams.get("rested") && (
+        <p role="status">Set logged. Rest {DEFAULT_REST_S} s, then go again.</p>
+      )
+    }
+    <h2>Log a set</h2>
+    <form method="get">
+      <label for="exercise">Exercise</label>
+      <select id="exercise" name="exercise">
+        {EXERCISES.map((e) => <option value={e.id} selected={e.id === exercise?.id}>{e.name}</option>)}
+      </select>
+      <p><button type="submit">Choose</button></p>
+    </form>
+    {
+      exercise && (
+        <form method="post">
+          <input type="hidden" name="exercise_id" value={exercise.id} />
+          <h3>{exercise.name}</h3>
+          <label for="weight_kg">Weight (kg)</label>
+          <input id="weight_kg" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value={prefill?.weightKg ?? 0} required />
+          <label for="reps">Reps</label>
+          <input id="reps" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value={prefill?.reps ?? 8} required />
+          {error && <p class="error">{error}</p>}
+          <p><button type="submit">Done</button></p>
+        </form>
+      )
+    }
+  </div>
+
+  {
+    mySets.length > 0 && (
+      <div class="card">
+        <h2>This workout</h2>
+        <table>
+          <thead><tr><th>Exercise</th><th>kg</th><th>Reps</th></tr></thead>
+          <tbody>
+            {mySets.map((s) => <tr><td>{s.name}</td><td>{s.weightKg}</td><td>{s.reps}</td></tr>)}
+          </tbody>
+        </table>
+        <form method="post">
+          <input type="hidden" name="action" value="finish" />
+          <p><button type="submit">Finish workout</button></p>
+        </form>
+      </div>
+    )
+  }
+</Layout>

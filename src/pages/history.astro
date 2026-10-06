@@ -1,0 +1,27 @@
+---
+import { history } from "../lib/workouts.ts";
+import Layout from "../layouts/Layout.astro";
+
+const user = Astro.locals.user;
+if (!user) return Astro.redirect("/signin?next=/history", 303);
+const workouts = history(user.id);
+const when = (ms: number) => new Date(ms).toLocaleString("en-AU", { dateStyle: "medium", timeStyle: "short" });
+---
+
+<Layout title="History">
+  <h1>History</h1>
+  {workouts.length === 0 && <p>No workouts yet. <a href="/">Start one</a>.</p>}
+  {
+    workouts.map((w) => (
+      <section class="card">
+        <h2>{when(w.startedAt)}{w.endedAt ? "" : " (in progress)"}</h2>
+        <table>
+          <thead><tr><th>Exercise</th><th>kg</th><th>Reps</th></tr></thead>
+          <tbody>
+            {w.sets.map((s) => <tr><td>{s.name}</td><td>{s.weightKg}</td><td>{s.reps}</td></tr>)}
+          </tbody>
+        </table>
+      </section>
+    ))
+  }
+</Layout>

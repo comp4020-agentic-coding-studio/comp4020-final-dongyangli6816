@@ -1,0 +1,70 @@
+---
+import { desc, eq } from "drizzle-orm";
+import { db } from "../lib/db.ts";
+import { roomMembers, rooms } from "../lib/schema.ts";
+import { history } from "../lib/workouts.ts";
+import Layout from "../layouts/Layout.astro";
+
+const user = Astro.locals.user;
+const last = user ? history(user.id)[0] : undefined;
+const myRooms = user
+  ? db
+      .select({ id: rooms.id, passcode: rooms.passcode })
+      .from(roomMembers)
+      .innerJoin(rooms, eq(rooms.id, roomMembers.roomId))
+      .where(eq(roomMembers.userId, user.id))
+      .orderBy(desc(rooms.lastActiveAt))
+      .limit(5)
+      .all()
+  : [];
+---
+
+<Layout title="Train together, apart">
+  {
+    user ? (
+      <>
+        <h1>Hi, {user.displayName}</h1>
+        <div class="card">
+          <h2>Start a group workout</h2>
+          <form method="post" action="/rooms">
+            <button type="submit">Create a room</button>
+          </form>
+        </div>
+        <div class="card">
+          <h2>Join your squad</h2>
+          <form method="post" action="/join">
+            <label for="passcode">Passcode</label>
+            <input id="passcode" name="passcode" autocomplete="off" autocapitalize="characters" maxlength="8" required />
+            <p><button type="submit">Join</button></p>
+          </form>
+        </div>
+        {myRooms.length > 0 && (
+          <div class="card">
+            <h2>Your rooms</h2>
+            <ul>
+              {myRooms.map((r) => (
+                <li><a href={`/rooms/${r.id}`}>{r.passcode}</a></li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {last && (
+          <div class="card">
+            <h2>Last workout</h2>
+            <p>{new Date(last.startedAt).toLocaleString("en-AU")} · {last.sets.length} sets</p>
+            <p><a href="/history">All history</a></p>
+          </div>
+        )}
+      </>
+    ) : (
+      <>
+        <h1>Spotter</h1>
+        <p>
+          Spotter is a shared cartoon gym for friends who used to train together and now train apart. Your squad can
+          see when you're lifting, resting, or resting a bit too long.
+        </p>
+        <p><a href="/signup">Sign up</a> or <a href="/signin">sign in</a>, or <a href="/readme/">read what it's for</a>.</p>
+      </>
+    )
+  }
+</Layout>
