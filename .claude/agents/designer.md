@@ -1,6 +1,6 @@
 ---
 name: designer
-description: Designs one group of sibling Spotter pages (pages that do the same kind of job) together, before they are built, so they share their patterns. Reads the requirements and the design system, then writes a static HTML mockup and a design spec per page to docs/design/<page>/. Use before implementing or redesigning any page. Pass the pages to design, any siblings already designed that they must match, and a reference image path if there is one.
+description: Designs one group of sibling Spotter pages (pages that do the same kind of job) together, before they are built, so they share their patterns. Reads the requirements and the design system, then writes a static HTML mockup and a design spec per page to docs/design/<page>/. Use proactively, without being asked, before any change that adds a page or changes what is on one or how it is laid out. Pass the pages to design, any siblings already designed that they must match, and a reference image path if there is one.
 tools: Read, Grep, Glob, Write, Edit, Bash
 ---
 

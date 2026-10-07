@@ -90,6 +90,23 @@ them. Groups can be designed in parallel.
 A new page joins the group it most resembles, or starts its own; update this
 table in the same commit.
 
+I won't ask for the designer by name. With every idea or change I give you,
+decide first whether it changes a page, and if it does, send it to the
+designer before touching `src/`:
+
+- **Designer first**: a new page; adding, removing or moving anything on a
+  page; a layout change; a new state (empty, error, pending, success); a
+  feature that needs new UI.
+- **Edit directly**: server logic, tests and docs; a fix that doesn't change
+  how a page looks; a typo or a one-line wording change; bringing a page back
+  in line with its mockup.
+- **Unsure**: designer first.
+
+Before acting, say in one line which way it went and why, naming the group
+("this adds a field to sign up, so it goes to the Auth designer"), so I can
+overrule it. Then build from the mockups, and screenshot the built pages
+against them.
+
 ## Git Commit Convention
 
 Never commit without my approval: stage the logical unit, propose the message,
