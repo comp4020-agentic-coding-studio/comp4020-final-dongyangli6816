@@ -1,5 +1,5 @@
 // The 16 seeded exercises, two per piece of equipment (LOG-2), from the
-// equipment table in docs/spotter-spec-4-weeks.md. Ids are fixed so
+// equipment table in docs/product/spec-4-weeks.md. Ids are fixed so
 // sets logged against them stay valid across deploys.
 export const EXERCISES = [
   { id: 1, name: "Run", equipment: "treadmill" },

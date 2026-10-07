@@ -4,6 +4,7 @@ import { db } from "../../lib/db.ts";
 import { EXERCISES } from "../../lib/exercises.ts";
 import { isMember } from "../../lib/rooms.ts";
 import { roomMembers, rooms, users } from "../../lib/schema.ts";
+import { kg, volume } from "../../lib/logbook.ts";
 import { DEFAULT_REST_S, finishWorkout, lastSet, logSet, setsInOpenWorkout } from "../../lib/workouts.ts";
 import Layout from "../../layouts/Layout.astro";
 
@@ -22,7 +23,7 @@ if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
   if (form.get("action") === "finish") {
     finishWorkout(user.id, roomId);
-    return Astro.redirect("/history", 303);
+    return Astro.redirect("/history?finished=1", 303);
   }
   const exerciseId = Number(form.get("exercise_id"));
   const weightKg = Number(form.get("weight_kg"));
@@ -42,95 +43,561 @@ const exercise = EXERCISES.find((e) => e.id === exerciseId);
 const prefill = exercise ? lastSet(user.id, exercise.id) : undefined;
 const mySets = setsInOpenWorkout(user.id, roomId);
 const members = db
-  .select({ name: users.displayName })
+  .select({ id: users.id, name: users.displayName })
   .from(roomMembers)
   .innerJoin(users, eq(users.id, roomMembers.userId))
   .where(and(eq(roomMembers.roomId, roomId), isNull(roomMembers.leftAt)))
   .all();
-const inviteUrl = new URL(`/join`, Astro.url).href;
+const inviteUrl = new URL(`/join`, Astro.url).href.replace(/^https?:\/\//, "");
+
+const ROOM_SIZE = 12; // ROOM-4: twelve people, twelve stations
+const EQUIPMENT: Record<string, string> = {
+  treadmill: "Treadmill",
+  "flat-bench": "Flat bench",
+  "squat-rack": "Squat rack",
+  "dumbbell-rack": "Dumbbell rack",
+  "lifting-platform": "Lifting platform",
+  "pull-up-bar": "Pull-up bar",
+  "cable-machine": "Cable machine",
+  "exercise-mat": "Exercise mat",
+};
+const groups = Object.entries(EQUIPMENT).map(([key, label]) => ({
+  label,
+  exercises: EXERCISES.filter((e) => e.equipment === key),
+}));
+// lifts already done this session, in first-done order, as one-tap chips
+const recent = [...new Set(mySets.map((s) => s.name))].flatMap((name) => EXERCISES.filter((e) => e.name === name));
+const setNo = exercise ? mySets.filter((s) => s.name === exercise.name).length + 1 : 0;
+const errorField = error.startsWith("Weight") ? "weight_kg" : error.startsWith("Reps") ? "reps" : "";
 ---
 
-<Layout title={`Room ${room.passcode}`}>
-  <div class="card">
-    <div class="passcode-box">
-      <h1>Room</h1>
-      <span class="passcode">{room.passcode}</span>
-    </div>
-    <p class="hint">Send the passcode to your squad. They join from the home page ({inviteUrl}).</p>
-  </div>
-
-  <div class="card">
-    <h2>In the room ({members.length})</h2>
-    <ul class="roster">{members.map((m) => <li>{m.name}</li>)}</ul>
-  </div>
-
-  <div class="card">
-    {
-      Astro.url.searchParams.get("rested") && (
-        <p class="bubble" role="status">Set logged! Rest {DEFAULT_REST_S} s, then go again.</p>
-      )
-    }
-    <h2>Log a set</h2>
-    <form method="get">
-      <label for="exercise">Exercise</label>
-      <select id="exercise" name="exercise">
-        {EXERCISES.map((e) => <option value={e.id} selected={e.id === exercise?.id}>{e.name}</option>)}
-      </select>
-      <div class="actions"><button type="submit" class="secondary button">Choose</button></div>
-    </form>
-    {
-      exercise && (
-        <form method="post" class="set-form">
-          <input type="hidden" name="exercise_id" value={exercise.id} />
-          <h3>{exercise.name}</h3>
-          <div class="pair">
-            <div>
-              <label for="weight_kg">Weight (kg)</label>
-              <input id="weight_kg" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value={prefill?.weightKg ?? 0} required />
-            </div>
-            <div>
-              <label for="reps">Reps</label>
-              <input id="reps" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value={prefill?.reps ?? 8} required />
-            </div>
-          </div>
-          {error && <p class="error">{error}</p>}
-          <div class="actions"><button type="submit" class="wide">Done</button></div>
-        </form>
-      )
-    }
-  </div>
-
-  {
-    mySets.length > 0 && (
-      <div class="card">
-        <h2>This workout</h2>
-        <table>
-          <thead><tr><th>Exercise</th><th class="num">kg</th><th class="num">Reps</th></tr></thead>
-          <tbody>
-            {mySets.map((s) => <tr><td>{s.name}</td><td class="num">{s.weightKg}</td><td class="num">{s.reps}</td></tr>)}
-          </tbody>
-        </table>
-        <form method="post">
-          <input type="hidden" name="action" value="finish" />
-          <div class="actions"><button type="submit" class="secondary button">Finish workout</button></div>
-        </form>
+<Layout title={`Room ${room.passcode}`} surface="night">
+  <div class="gym">
+    <section class="panel sign" aria-labelledby="room-title">
+      <h1 class="panel-title" id="room-title">Room</h1>
+      <div class="passcode-box">
+        <span class="passcode">{room.passcode}</span>
+        <p class="spots">
+          <span class="pips" aria-hidden="true">
+            {Array.from({ length: ROOM_SIZE }, (_, i) => <i class:list={{ in: i < members.length }} />)}
+          </span>
+          <span>{members.length} of {ROOM_SIZE} in</span>
+        </p>
       </div>
-    )
-  }
+      <p class="hint">Send the code to the squad. They join at {inviteUrl}.</p>
+    </section>
+
+    <section class="panel" aria-labelledby="people-title">
+      <h2 class="panel-title" id="people-title">Squad</h2>
+      <ul class="people">
+        {
+          members.map((m) =>
+            m.id === user.id ? (
+              <li class="me">
+                {m.name} <span class="badge">You</span>
+              </li>
+            ) : (
+              <li>{m.name}</li>
+            ),
+          )
+        }
+      </ul>
+      {members.length === 1 && <p class="alone">Just you so far. Send the passcode to the squad 📲</p>}
+    </section>
+
+    {
+      mySets.length > 0 && (
+        <section class="panel" aria-labelledby="log-title">
+          <h2 class="panel-title" id="log-title">This workout</h2>
+          <p class="tally">
+            <b>{mySets.length}</b> set{mySets.length === 1 ? "" : "s"} · <b>{kg(volume(mySets))} kg</b> moved so far
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Exercise</th>
+                <th class="num">kg</th>
+                <th class="num">Reps</th>
+              </tr>
+            </thead>
+            <tbody>
+              {mySets.map((s, i) => (
+                <tr>
+                  {i > 0 && mySets[i - 1].name === s.name ? (
+                    <td class="ditto">
+                      <span aria-hidden="true">"</span>
+                      <span class="vh">{s.name}</span>
+                    </td>
+                  ) : (
+                    <td>{s.name}</td>
+                  )}
+                  <td class="num">{s.weightKg}</td>
+                  <td class="num">{s.reps}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <form method="post">
+            <input type="hidden" name="action" value="finish" />
+            <div class="actions">
+              <button type="submit" class="secondary button">Finish workout</button>
+            </div>
+          </form>
+        </section>
+      )
+    }
+
+    <section class="panel sheet" aria-labelledby="sheet-title">
+      <h2 class="panel-title" id="sheet-title">{exercise ? "Log a set" : "Pick a lift"}</h2>
+      {
+        Astro.url.searchParams.get("rested") && (
+          <p class="bubble" role="status">
+            Set logged! Rest {DEFAULT_REST_S} s, then go again.
+          </p>
+        )
+      }
+      {
+        exercise ? (
+          <>
+            <details class="switch">
+              <summary>
+                <span class="lift">{exercise.name}</span>
+                <span class="set-no">Set {setNo}</span>
+                <span class="change">Change</span>
+              </summary>
+              <form method="get" class="picker">
+                {recent.length > 0 && (
+                  <>
+                    <p class="recent-label">From this workout</p>
+                    <ul class="recent">
+                      {recent.map((e) => (
+                        <li>
+                          <a href={`?exercise=${e.id}`} aria-current={e.id === exercise.id ? "true" : undefined}>
+                            {e.name}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+                <label for="exercise">Exercise</label>
+                <select id="exercise" name="exercise">
+                  {groups.map((g) => (
+                    <optgroup label={g.label}>
+                      {g.exercises.map((e) => (
+                        <option value={e.id} selected={e.id === exercise.id}>
+                          {e.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+                <div class="actions">
+                  <button type="submit" class="secondary button">Choose</button>
+                </div>
+              </form>
+            </details>
+            <form method="post" class="set-form">
+              <input type="hidden" name="exercise_id" value={exercise.id} />
+              {prefill ? (
+                <p class="last">
+                  Last time <b>{prefill.weightKg} kg × {prefill.reps}</b>
+                </p>
+              ) : (
+                <p class="last">First time on this one. Start light.</p>
+              )}
+              <div class="big-pair">
+                <div class="big">
+                  <label for="weight_kg">Weight</label>
+                  <span class="field">
+                    <input
+                      id="weight_kg"
+                      name="weight_kg"
+                      type="number"
+                      inputmode="decimal"
+                      min="0"
+                      max="1000"
+                      step="0.5"
+                      value={prefill?.weightKg ?? 0}
+                      required
+                      aria-invalid={errorField === "weight_kg" ? "true" : undefined}
+                      aria-describedby={errorField === "weight_kg" ? "set-error" : undefined}
+                    />
+                    <span class="unit" aria-hidden="true">
+                      kg
+                    </span>
+                  </span>
+                </div>
+                <span class="times" aria-hidden="true">
+                  ×
+                </span>
+                <div class="big">
+                  <label for="reps">Reps</label>
+                  <span class="field">
+                    <input
+                      id="reps"
+                      name="reps"
+                      type="number"
+                      inputmode="numeric"
+                      min="1"
+                      max="1000"
+                      step="1"
+                      value={prefill?.reps ?? 8}
+                      required
+                      aria-invalid={errorField === "reps" ? "true" : undefined}
+                      aria-describedby={errorField === "reps" ? "set-error" : undefined}
+                    />
+                  </span>
+                </div>
+              </div>
+              {error && (
+                <p class="error" id="set-error" role="alert">
+                  {error}
+                </p>
+              )}
+              <button type="submit" class="wide">Done</button>
+            </form>
+          </>
+        ) : (
+          <form method="get">
+            {recent.length > 0 && (
+              <>
+                <p class="recent-label">From this workout</p>
+                <ul class="recent">
+                  {recent.map((e) => (
+                    <li>
+                      <a href={`?exercise=${e.id}`}>{e.name}</a>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            <label for="exercise">Exercise</label>
+            <select id="exercise" name="exercise">
+              {groups.map((g) => (
+                <optgroup label={g.label}>
+                  {g.exercises.map((e) => (
+                    <option value={e.id}>{e.name}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+            <button type="submit" class="wide">Choose</button>
+          </form>
+        )
+      }
+    </section>
+  </div>
 </Layout>
 
+<script>
+  // pending: Done keeps its label and the numbers stay put while the post is out
+  const form = document.querySelector<HTMLFormElement>(".set-form");
+  form?.addEventListener("submit", () => {
+    form.querySelector("button")!.disabled = true;
+    for (const input of form.querySelectorAll("input")) input.readOnly = true;
+    form.closest(".sheet")!.setAttribute("aria-busy", "true");
+  });
+  // Back restores the page from cache, button and all
+  addEventListener("pageshow", () => {
+    if (!form) return;
+    form.querySelector("button")!.disabled = false;
+    for (const input of form.querySelectorAll("input")) input.readOnly = false;
+    form.closest(".sheet")!.removeAttribute("aria-busy");
+  });
+</script>
+
 <style>
-  .set-form {
-    margin-top: 1.25rem;
-    padding-top: 1.25rem;
-    border-top: var(--px) dashed var(--ink);
+  /* .panel: the Night card (system 9). Lives here until the summary
+     page needs it too, then moves to the layout. */
+  .panel {
+    position: relative;
+    margin: 0 0 2rem;
+    padding: 1.5rem 1.25rem 1.25rem;
+    background: var(--panel);
+    border: var(--px) solid var(--edge);
+    box-shadow: var(--px) var(--px) 0 #000;
   }
-  .pair {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0 1rem;
+  .panel > :last-child {
+    margin-bottom: 0;
   }
-  .passcode-box h1 {
+  /* the panel's name sits on its top border, like an RPG menu box */
+  .panel-title {
+    position: absolute;
+    top: calc(var(--px) * -0.5);
+    left: 0.75rem;
+    transform: translateY(-50%);
     margin: 0;
+    padding: 0 0.5rem;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--leaf);
+    background: var(--panel);
+  }
+
+  /* two columns on a laptop: the logbook left, the set panel right */
+  .gym {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  @media (min-width: 900px) {
+    .gym {
+      grid-template-columns: minmax(0, 1fr) 24rem;
+      column-gap: 2rem;
+      align-items: start;
+    }
+    .gym > .sheet {
+      grid-column: 2;
+      grid-row: 1 / span 3;
+      position: sticky;
+      top: 2rem;
+    }
+  }
+
+  /* ---------- the gym sign: passcode and how full the room is ---------- */
+  .sign .passcode-box {
+    margin-bottom: 0.75rem;
+  }
+  .spots {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .pips {
+    display: flex;
+    gap: var(--px);
+  }
+  .pips i {
+    width: calc(var(--px) * 2);
+    height: calc(var(--px) * 3);
+    background: var(--night);
+    box-shadow: inset 0 0 0 2px var(--edge);
+  }
+  .pips i.in {
+    background: var(--leaf);
+    box-shadow: none;
+  }
+
+  /* ---------- people list (GYM-15 later adds state and equipment) ---------- */
+  .people {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .people li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 44px;
+    border-bottom: var(--px) solid var(--night);
+  }
+  .people li:last-child {
+    border-bottom: 0;
+  }
+  .people li::before {
+    content: "";
+    width: calc(var(--px) * 2);
+    height: calc(var(--px) * 2);
+    background: var(--paper);
+  }
+  .people li.me::before {
+    background: var(--leaf);
+  }
+  .people .badge {
+    margin-left: 0;
+  }
+  .alone {
+    margin: 0.75rem 0 0;
+  }
+
+  /* ---------- this workout: a logbook page ---------- */
+  .tally {
+    margin: 0 0 1rem;
+    color: var(--dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .tally b {
+    font-weight: 400;
+    color: var(--paper);
+  }
+  /* repeat lift names become ditto marks, like a paper logbook */
+  .ditto {
+    padding-left: 1.5rem;
+    color: var(--dim);
+  }
+  .vh {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* ---------- the set panel (.sheet) ---------- */
+  .sheet {
+    border-color: var(--leaf);
+  }
+  .sheet .panel-title {
+    font-size: 8px;
+    color: var(--dim);
+  }
+  @media (max-width: 899px) {
+    /* pinned to the bottom of the phone, edge to edge, in the thumb zone */
+    .sheet {
+      position: sticky;
+      bottom: 0;
+      z-index: 1;
+      margin: 2rem -1rem -2rem;
+      padding-bottom: 1rem;
+      border-width: var(--px) 0 0;
+      box-shadow: 0 calc(var(--px) * -1) 0 #000;
+    }
+  }
+  .sheet .bubble {
+    margin-bottom: 1.5rem;
+  }
+  /* the lift name is the button that opens the exercise picker */
+  .switch {
+    margin: 0 0 0.75rem;
+  }
+  .switch summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    min-height: 48px;
+    cursor: pointer;
+    list-style: none;
+  }
+  .switch summary::-webkit-details-marker {
+    display: none;
+  }
+  .lift {
+    font: 16px/1.5 var(--display);
+    text-transform: uppercase;
+    color: var(--paper);
+  }
+  .set-no {
+    padding: 0 0.5rem;
+    font-size: 24px;
+    line-height: 1.25;
+    color: var(--ink);
+    background: var(--leaf);
+    font-variant-numeric: tabular-nums;
+  }
+  .change {
+    margin-left: auto;
+    padding: 0.25rem 2.25rem 0.25rem 0.75rem;
+    color: var(--paper);
+    border: var(--px) solid var(--edge);
+    background: linear-gradient(45deg, transparent 50%, var(--paper) 50%) calc(100% - 20px) 50% / 8px 8px no-repeat,
+      linear-gradient(135deg, var(--paper) 50%, transparent 50%) calc(100% - 12px) 50% / 8px 8px no-repeat;
+  }
+  .switch[open] .change {
+    background-color: var(--night);
+  }
+  .picker {
+    margin-top: 0.75rem;
+    padding: 1rem;
+    background: var(--night);
+    border: var(--px) solid var(--edge);
+  }
+  .picker label:first-child,
+  .sheet > form > label:first-child {
+    margin-top: 0;
+  }
+  .recent-label {
+    margin: 0 0 0.5rem;
+    color: var(--dim);
+  }
+  .recent {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0 0 1rem;
+    padding: 0;
+    list-style: none;
+  }
+  .night .recent a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 0.75rem;
+    color: var(--paper);
+    text-decoration: none;
+    background: var(--panel);
+    border: var(--px) solid var(--edge);
+  }
+  .night .recent a[aria-current] {
+    color: var(--ink);
+    background: var(--leaf);
+    border-color: var(--leaf);
+  }
+  .last {
+    margin: 0 0 0.75rem;
+    color: var(--dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .last b {
+    font-weight: 400;
+    color: var(--paper);
+  }
+  /* the two numbers you are about to lift, at arm's length */
+  .big-pair {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) auto minmax(0, 2fr);
+    align-items: end;
+    gap: 0 0.5rem;
+  }
+  .big label {
+    margin: 0 0 0.25rem;
+    color: var(--dim);
+  }
+  .big .field {
+    position: relative;
+    display: block;
+  }
+  .big input {
+    min-height: 72px;
+    padding: 0.25rem 0.75rem;
+    font-size: 48px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+  .big input::-webkit-inner-spin-button,
+  .big input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .big .unit {
+    position: absolute;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    font-size: 24px;
+    line-height: 1;
+    color: var(--dim);
+    pointer-events: none;
+  }
+  .big .field:has(.unit) input {
+    padding-right: 2.75rem;
+  }
+  .times {
+    padding-bottom: 1rem;
+    font-size: 32px;
+    line-height: 1;
+    color: var(--dim);
+  }
+  .sheet .error {
+    margin-top: 0.75rem;
+  }
+  .sheet .wide {
+    min-height: 64px;
+    margin-top: 1.25rem;
+    font-size: 16px;
   }
 </style>

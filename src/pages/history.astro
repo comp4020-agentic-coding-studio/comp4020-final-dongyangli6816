@@ -1,27 +1,379 @@
 ---
-import { history } from "../lib/workouts.ts";
+import Sprite from "../components/Sprite.astro";
 import Layout from "../layouts/Layout.astro";
+import { kg, minutes, runs, topLabel, volume } from "../lib/logbook.ts";
+import { history } from "../lib/workouts.ts";
+import { bigDumbbell } from "../sprites/props.ts";
 
 const user = Astro.locals.user;
 if (!user) return Astro.redirect("/signin?next=/history", 303);
 const workouts = history(user.id);
-const when = (ms: number) => new Date(ms).toLocaleString("en-AU", { dateStyle: "medium", timeStyle: "short" });
+const now = Date.now();
+
+// Dates are calendar dates in the server's time zone, Monday-first weeks.
+const DAY = 86_400_000;
+const midnight = (ms: number) => new Date(ms).setHours(0, 0, 0, 0);
+const monday = (ms: number) => {
+  const d = new Date(midnight(ms));
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d.getTime();
+};
+const dayIndex = (ms: number) => (new Date(ms).getDay() + 6) % 7;
+const fmt = (ms: number, o: Intl.DateTimeFormatOptions) => new Date(ms).toLocaleString("en-AU", o);
+
+const thisYear = new Date(now).getFullYear();
+function dayLabel(ms: number): string {
+  const ago = Math.round((midnight(now) - midnight(ms)) / DAY);
+  if (ago === 0) return "Today";
+  if (ago === 1) return "Yesterday";
+  const year = new Date(ms).getFullYear() === thisYear ? undefined : "numeric";
+  return fmt(ms, { weekday: "short", day: "numeric", month: "short", year }).replace(",", "");
+}
+const clock = (ms: number) => fmt(ms, { hour: "numeric", minute: "2-digit" });
+// "6:42 – 7:38 pm": the first am/pm goes when both match
+function timeRange(from: number, to: number): [string, string] {
+  const a = clock(from);
+  const b = clock(to);
+  const suffix = (t: string) => t.slice(-2);
+  return [suffix(a) === suffix(b) ? a.slice(0, -3) : a, b];
+}
+
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+function weekLabel(start: number): string {
+  const weeksAgo = Math.round((monday(now) - start) / (7 * DAY));
+  if (weeksAgo === 0) return "This week";
+  if (weeksAgo === 1) return "Last week";
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  const sameMonth = new Date(start).getMonth() === end.getMonth();
+  return `${fmt(start, sameMonth ? { day: "numeric" } : { day: "numeric", month: "short" })} – ${fmt(end.getTime(), { day: "numeric", month: "short" })}`;
+}
+
+// newest week first; history() is already newest first
+const weeks: { start: number; workouts: typeof workouts }[] = [];
+for (const w of workouts) {
+  const start = monday(w.startedAt);
+  const last = weeks.at(-1);
+  if (last?.start === start) last.workouts.push(w);
+  else weeks.push({ start, workouts: [w] });
+}
+const weekHeads = weeks.map((wk) => {
+  const on = new Set(wk.workouts.map((w) => dayIndex(w.startedAt)));
+  return {
+    ...wk,
+    label: weekLabel(wk.start),
+    on,
+    trained: `Trained ${[...on].sort().map((i) => DAYS[i]).join(" and ").replace(/ and (?=.* and )/g, ", ")}`,
+    count: `${wk.workouts.length} workout${wk.workouts.length === 1 ? "" : "s"}`,
+  };
+});
+
+const total = volume(workouts.flatMap((w) => w.sets));
+const live = workouts.find((w) => w.endedAt === null && w.roomId !== null);
+const finished = Astro.url.searchParams.has("finished") && workouts[0]?.endedAt;
 ---
 
 <Layout title="History">
   <h1>History</h1>
-  {workouts.length === 0 && <div class="card"><p>No workouts yet.</p><a href="/" class="button">Start one</a></div>}
   {
-    workouts.map((w) => (
-      <section class="card">
-        <h2>{when(w.startedAt)}{!w.endedAt && <span class="badge">Live</span>}</h2>
-        <table>
-          <thead><tr><th>Exercise</th><th class="num">kg</th><th class="num">Reps</th></tr></thead>
-          <tbody>
-            {w.sets.map((s) => <tr><td>{s.name}</td><td class="num">{s.weightKg}</td><td class="num">{s.reps}</td></tr>)}
-          </tbody>
-        </table>
-      </section>
-    ))
+    workouts.length === 0 ? (
+      <div class="card empty">
+        <Sprite sprite={bigDumbbell} scale={4} />
+        <p>No workouts yet. Your future self is waiting 🏋️</p>
+        <a href="/" class="button">Start one</a>
+      </div>
+    ) : (
+      <>
+        <p class="lede">
+          {workouts.length} workout{workouts.length === 1 ? "" : "s"} · {kg(total)} kg in the book
+        </p>
+        {finished && <p class="bubble" role="status">Workout's in the book. Nice one 🏆</p>}
+        {weekHeads.map((wk, i) => {
+          const head = (
+            <>
+              <h2 id={`wk-${wk.start}`}>{wk.label}</h2>
+              <span class="week-row">
+                <span class="days" role="img" aria-label={wk.trained}>
+                  {"MTWTFSS".split("").map((d, j) => (
+                    <span class:list={{ on: wk.on.has(j) }}>{d}</span>
+                  ))}
+                </span>
+                <span class="count">{wk.count}</span>
+                {i >= 2 && <span class="toggle" />}
+              </span>
+            </>
+          );
+          const cards = wk.workouts.map((w) => {
+            const [from, to] = w.endedAt ? timeRange(w.startedAt, w.endedAt) : ["", ""];
+            return (
+              <article class="card entry">
+                <header class="entry-head">
+                  <h3>
+                    {dayLabel(w.startedAt)}
+                    {!w.endedAt && <span class="badge">Live</span>}
+                  </h3>
+                  <p class="when">
+                    {w.endedAt ? (
+                      <>
+                        <time datetime={new Date(w.startedAt).toISOString()}>{from}</time> –{" "}
+                        <time datetime={new Date(w.endedAt).toISOString()}>{to}</time>
+                      </>
+                    ) : (
+                      <>
+                        Started <time datetime={new Date(w.startedAt).toISOString()}>{clock(w.startedAt)}</time>
+                      </>
+                    )}
+                  </p>
+                </header>
+                <dl class="tally">
+                  <div>
+                    <dt>{w.endedAt ? "Time" : "So far"}</dt>
+                    <dd>{minutes(w.startedAt, w.endedAt ?? now)} min</dd>
+                  </div>
+                  <div>
+                    <dt>Sets</dt>
+                    <dd>{w.sets.length}</dd>
+                  </div>
+                  <div>
+                    <dt>Volume</dt>
+                    <dd>{kg(volume(w.sets))} kg</dd>
+                  </div>
+                </dl>
+                <table class="log">
+                  <thead>
+                    <tr>
+                      <th scope="col">Exercise</th>
+                      <th scope="col" class="num">kg</th>
+                      <th scope="col" class="num">Reps</th>
+                    </tr>
+                  </thead>
+                  {runs(w.sets).map((run) => (
+                    <tbody>
+                      {run.sets.map((s, j) => (
+                        <tr>
+                          {j === 0 && (
+                            <th scope="rowgroup" rowspan={run.sets.length} class="lift">
+                              {run.name}
+                              {run.sets.length > 1 && <span class="top">{topLabel(run.sets)}</span>}
+                            </th>
+                          )}
+                          <td class="num">{s.weightKg}</td>
+                          <td class="num">{s.reps}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  ))}
+                </table>
+              </article>
+            );
+          });
+          return i < 2 ? (
+            <section class="week" aria-labelledby={`wk-${wk.start}`}>
+              <div class="week-head">{head}</div>
+              {cards}
+            </section>
+          ) : (
+            <details class="week">
+              <summary class="week-head">{head}</summary>
+              {cards}
+            </details>
+          );
+        })}
+        {live && (
+          <div class="resume">
+            <p>
+              Still on the floor{" "}
+              <small>
+                {live.sets.length} set{live.sets.length === 1 ? "" : "s"} in, {minutes(live.startedAt, now)} min
+              </small>
+            </p>
+            <a href={`/rooms/${live.roomId}`} class="button">Resume</a>
+          </div>
+        )}
+      </>
+    )
   }
 </Layout>
+
+<style>
+  .lede {
+    margin: -0.5rem 0 1.5rem;
+    color: var(--muted);
+  }
+
+  /* a week of the logbook: a ruled divider, the label, the day strip */
+  .week {
+    margin: 0 0 1.5rem;
+    padding-top: 1rem;
+    border-top: var(--px) solid var(--ink);
+  }
+  .week-head {
+    margin: 0 0 1rem;
+  }
+  .week-head h2 {
+    margin: 0 0 0.5rem;
+  }
+  .week-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+  }
+  .days {
+    display: inline-flex;
+    gap: var(--px);
+  }
+  .days span {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    font: 8px/1 var(--display);
+    color: var(--muted);
+    background: var(--card);
+    border: 2px solid var(--ink);
+  }
+  .days .on {
+    color: var(--leaf);
+    background: var(--ink);
+  }
+  .count {
+    color: var(--muted);
+  }
+
+  /* older weeks fold away; the whole head is the tap target */
+  details.week > summary {
+    display: block;
+    margin: 0;
+    cursor: pointer;
+    list-style: none;
+  }
+  details.week > summary::-webkit-details-marker {
+    display: none;
+  }
+  .toggle {
+    margin-left: auto;
+    color: var(--green);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+  }
+  .toggle::before {
+    content: "Show";
+  }
+  details[open] .toggle::before {
+    content: "Hide";
+  }
+  details.week[open] > summary {
+    margin-bottom: 1rem;
+  }
+
+  /* one workout: a logbook page */
+  .entry-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.25rem 1rem;
+    margin: 0 0 0.75rem;
+  }
+  .entry-head h3 {
+    margin: 0;
+  }
+  .entry-head .badge {
+    vertical-align: 2px;
+  }
+  .when {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  /* time, sets, volume: three boxed figures */
+  .tally {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    margin: 0 0 1rem;
+    background: var(--paper);
+    border: 2px solid var(--ink);
+  }
+  .tally div {
+    padding: 0.25rem 0.5rem;
+  }
+  .tally div + div {
+    border-left: 2px solid var(--ink);
+  }
+  .tally dt {
+    font: 8px/1.4 var(--display);
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .tally dd {
+    margin: 0;
+    font-size: 28px;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* the set table, one tbody per run of the same lift */
+  .log .num {
+    width: 4.5rem;
+  }
+  .log th.lift {
+    font: 24px/1.15 var(--body);
+    text-transform: none;
+    color: var(--ink);
+    vertical-align: top;
+  }
+  .log .top {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 21px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .log tbody tr > * {
+    background: var(--card);
+  }
+  .log tbody:nth-of-type(even) tr > * {
+    background: var(--paper);
+  }
+  .log tbody + tbody tr:first-child > * {
+    border-top-width: var(--px);
+  }
+
+  /* a workout still open: the way back to the gym, pinned in thumb reach */
+  .resume {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 2rem 0 0;
+    padding: 0.5rem 0.75rem 0.25rem;
+    background: var(--card);
+    border: var(--px) solid var(--ink);
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--green),
+      0 calc(var(--px) * -2) 0 var(--ink);
+  }
+  .resume p {
+    margin: 0;
+    line-height: 1.15;
+  }
+  .resume small {
+    display: block;
+    font-size: inherit;
+    color: var(--muted);
+  }
+
+  .empty {
+    text-align: center;
+  }
+  .empty :global(svg) {
+    display: block;
+    margin: 0.5rem auto 1rem;
+  }
+</style>

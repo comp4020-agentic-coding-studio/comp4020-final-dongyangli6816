@@ -7,9 +7,13 @@ import "@fontsource/vt323/400.css";
 
 interface Props {
   title: string;
+  // Paper for forms and lists; Night for the gym (docs/design/system.md, section 4)
+  surface?: "paper" | "night";
 }
-const { title } = Astro.props;
+const { title, surface = "paper" } = Astro.props;
 const user = Astro.locals.user;
+// the top bar and footer mark the page you're on, in leaf with an underline
+const here = (href: string) => (Astro.url.pathname.replace(/\/$/, "") === href ? "page" : undefined);
 ---
 
 <!doctype html>
@@ -20,7 +24,7 @@ const user = Astro.locals.user;
     <meta name="theme-color" content="#0f3d22" />
     <title>{title} · Spotter</title>
   </head>
-  <body>
+  <body class:list={{ night: surface === "night" }}>
     <header class="topbar">
       <a href="/" class="brand" aria-label="Spotter home">
         <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges">
@@ -36,15 +40,15 @@ const user = Astro.locals.user;
         {
           user ? (
             <>
-              <a href="/history">History</a>
+              <a href="/history" aria-current={here("/history")}>History</a>
               <form method="post" action="/signout">
                 <button type="submit" class="linklike">Sign out</button>
               </form>
             </>
           ) : (
             <>
-              <a href="/signin">Sign in</a>
-              <a href="/signup">Sign up</a>
+              <a href="/signin" aria-current={here("/signin")}>Sign in</a>
+              <a href="/signup" aria-current={here("/signup")}>Sign up</a>
             </>
           )
         }
@@ -54,7 +58,7 @@ const user = Astro.locals.user;
       <slot />
     </main>
     <footer>
-      <a href="/readme/">What Spotter is for</a>
+      <a href="/readme/" aria-current={here("/readme")}>What Spotter is for</a>
     </footer>
   </body>
 </html>
@@ -72,6 +76,22 @@ const user = Astro.locals.user;
     --muted: #3d5a45;
     --error: #a3241b;
     --focus: #f2c94c;
+    --green-hover: #1a5c32;
+    --leaf-hover: #d6ef86;
+    --tile: #dbe7c6;
+    --row: #eef5e1;
+    /* person states (GYM-9): always a fill under ink text, with an icon and a word */
+    --idle: #e8f0d8;
+    --lifting: #c8e66b;
+    --resting: #7cc6e8;
+    --slacking: #ff6b5e;
+    --finished: #f2c94c;
+    /* Night: the gym after hours */
+    --night: #081a10;
+    --floor: #0f2a1a;
+    --panel: #143822;
+    --edge: #3f8f5a;
+    --dim: #8fa896;
     --px: 4px;
     --display: "Press Start 2P", ui-monospace, monospace;
     --body: "VT323", ui-monospace, monospace;
@@ -94,7 +114,7 @@ const user = Astro.locals.user;
     font-synthesis: none;
     /* a faint 16 px checker, like gym floor tiles */
     background-color: var(--paper);
-    background-image: conic-gradient(#dbe7c6 25%, transparent 0 50%, #dbe7c6 0 75%, transparent 0);
+    background-image: conic-gradient(var(--tile) 25%, transparent 0 50%, var(--tile) 0 75%, transparent 0);
     background-size: 32px 32px;
   }
 
@@ -139,6 +159,12 @@ const user = Astro.locals.user;
   .topbar .linklike:hover {
     color: var(--leaf);
   }
+  .topbar nav a[aria-current="page"] {
+    color: var(--leaf);
+    text-decoration: underline;
+    text-decoration-thickness: var(--px);
+    text-underline-offset: 6px;
+  }
   .topbar form {
     margin: 0;
   }
@@ -160,6 +186,18 @@ const user = Astro.locals.user;
   footer a {
     color: var(--leaf);
   }
+  footer a[aria-current="page"] {
+    text-decoration: none;
+  }
+  footer a[aria-current="page"]::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 0.5rem;
+    background: var(--leaf);
+    vertical-align: middle;
+  }
   h1,
   h2,
   h3 {
@@ -168,15 +206,16 @@ const user = Astro.locals.user;
     line-height: 1.4;
     margin: 0 0 1rem;
   }
+  /* Press Start 2P is drawn on an 8 px grid: crisp only at 8, 16, 24, 32 */
   h1 {
-    font-size: clamp(18px, 5vw, 26px);
+    font-size: 24px;
   }
   h2 {
-    font-size: 14px;
+    font-size: 16px;
     color: var(--green);
   }
   h3 {
-    font-size: 12px;
+    font-size: 16px;
   }
   p {
     margin: 0 0 1rem;
@@ -216,7 +255,7 @@ const user = Astro.locals.user;
     background: #fff;
     border: var(--px) solid var(--ink);
     border-radius: 0;
-    box-shadow: inset var(--px) var(--px) 0 #dbe7c6;
+    box-shadow: inset var(--px) var(--px) 0 var(--tile);
   }
   select {
     appearance: none;
@@ -235,7 +274,7 @@ const user = Astro.locals.user;
     gap: 0.5rem;
     min-height: 48px;
     padding: 0.75rem 1.25rem;
-    font: 12px/1.4 var(--display);
+    font: 16px/1.4 var(--display);
     text-transform: uppercase;
     text-decoration: none;
     color: var(--paper);
@@ -255,7 +294,7 @@ const user = Astro.locals.user;
   }
   button:hover,
   .button:hover {
-    background: #26804a;
+    background: var(--green-hover);
   }
   button:active,
   .button:active {
@@ -271,7 +310,20 @@ const user = Astro.locals.user;
     background: var(--leaf);
   }
   .button.secondary:hover {
-    background: #d6ef86;
+    background: var(--leaf-hover);
+  }
+  /* pending: held down, label kept, never a spinner */
+  button:disabled,
+  button:disabled:hover {
+    cursor: progress;
+    color: var(--paper);
+    background: var(--muted);
+    transform: translateY(var(--px));
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--ink),
+      0 var(--px) 0 var(--ink),
+      calc(var(--px) * -1) 0 0 var(--ink),
+      var(--px) 0 0 var(--ink);
   }
   .wide {
     width: calc(100% - var(--px) * 2);
@@ -283,16 +335,30 @@ const user = Astro.locals.user;
     padding: 0;
     text-transform: none;
   }
+  /* ink ring on Paper; the yellow one fails contrast there (1.4:1) and is
+     kept for the dark bars and Night */
   :focus-visible {
-    outline: var(--px) solid var(--focus);
+    outline: var(--px) solid var(--ink);
     outline-offset: var(--px);
   }
+  .topbar :focus-visible,
+  footer :focus-visible,
+  body.night :focus-visible {
+    outline-color: var(--focus);
+  }
+  input[aria-invalid="true"] {
+    box-shadow: inset var(--px) var(--px) 0 var(--error);
+  }
+  /* the ring reaches 8 px past a field, so the error sits 12 px below it */
   .error {
-    margin: 0.5rem 0 0;
+    margin: 0.75rem 0 0;
     padding: 0.4rem 0.6rem;
     color: #fff;
     background: var(--error);
     border-left: calc(var(--px) * 2) solid var(--ink);
+  }
+  .error a {
+    color: #fff;
   }
   .hint {
     color: var(--muted);
@@ -303,6 +369,87 @@ const user = Astro.locals.user;
     gap: 0.75rem 1rem;
     align-items: center;
     margin-top: 1.25rem;
+  }
+
+  /* ---------- Night: same components, surface colours swapped ---------- */
+  body.night {
+    color: var(--paper);
+    color-scheme: dark;
+    background-color: var(--night);
+    background-image: conic-gradient(var(--floor) 25%, transparent 0 50%, var(--floor) 0 75%, transparent 0);
+  }
+  /* the gym needs room for two columns at 900 px and up */
+  body.night main {
+    max-width: 64rem;
+  }
+  .night h2 {
+    color: var(--leaf);
+  }
+  .night label {
+    color: var(--paper);
+  }
+  .night .bubble {
+    color: var(--ink);
+  }
+  .night .hint {
+    color: var(--dim);
+  }
+  .night main a {
+    color: var(--leaf);
+  }
+  /* --green disappears on the dark floor, so primary is leaf with ink */
+  .night button,
+  .night .button {
+    color: var(--ink);
+    background: var(--leaf);
+  }
+  .night button:hover,
+  .night .button:hover {
+    background: var(--leaf-hover);
+  }
+  /* secondary on Night: night fill, paper label, the notch in --edge */
+  .night .button.secondary {
+    color: var(--paper);
+    background: var(--night);
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--edge),
+      0 var(--px) 0 var(--edge),
+      calc(var(--px) * -1) 0 0 var(--edge),
+      var(--px) 0 0 var(--edge),
+      0 calc(var(--px) * 2) 0 #000;
+  }
+  .night .button.secondary:hover {
+    background: var(--floor);
+  }
+  .night .button.secondary:active {
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--edge),
+      0 var(--px) 0 var(--edge),
+      calc(var(--px) * -1) 0 0 var(--edge),
+      var(--px) 0 0 var(--edge);
+  }
+  .night button:disabled {
+    color: var(--ink);
+    background: var(--dim);
+  }
+  .night input,
+  .night select {
+    color: var(--paper);
+    background-color: var(--night);
+    border-color: var(--edge);
+    box-shadow: inset var(--px) var(--px) 0 #000;
+  }
+  .night select {
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--paper) 50%),
+      linear-gradient(135deg, var(--paper) 50%, transparent 50%);
+  }
+  .night th,
+  .night td {
+    border-color: var(--edge);
+  }
+  .night tbody tr:nth-child(even) td {
+    background: var(--floor);
   }
 
   /* ---------- bits ---------- */
@@ -369,7 +516,7 @@ const user = Astro.locals.user;
     font-size: 24px;
   }
   th {
-    font: 10px/1.4 var(--display);
+    font: 8px/2 var(--display);
     text-transform: uppercase;
     color: var(--paper);
     background: var(--deep);
@@ -386,41 +533,59 @@ const user = Astro.locals.user;
     font-variant-numeric: tabular-nums;
   }
   tbody tr:nth-child(even) td {
-    background: #eef5e1;
+    background: var(--row);
   }
   .stat {
     font-family: var(--display);
-    font-size: 12px;
+    font-size: 8px;
     color: var(--muted);
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    font: 8px/1 var(--display);
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--ink);
+    border: 2px solid var(--ink);
+  }
+  .chip svg {
+    flex: none;
+  }
+  .state-idle {
+    background: var(--idle);
+  }
+  .state-lifting {
+    background: var(--lifting);
+  }
+  .state-resting {
+    background: var(--resting);
+  }
+  .state-slacking {
+    background: var(--slacking);
+  }
+  .state-finished {
+    background: var(--finished);
   }
   .badge {
     display: inline-block;
     margin-left: 0.5rem;
     padding: 0.15rem 0.4rem;
-    font: 9px/1.4 var(--display);
+    font: 8px/1.4 var(--display);
     vertical-align: middle;
     color: var(--ink);
     background: var(--leaf);
     border: 2px solid var(--ink);
   }
 
-  /* ---------- /readme/ ---------- */
-  .prose h1 {
-    font-size: clamp(18px, 5vw, 24px);
-  }
-  .prose h2 {
-    margin-top: 2rem;
-  }
-  .prose li {
-    margin-bottom: 0.4rem;
-  }
-
   @media (max-width: 420px) {
     body {
       font-size: 21px;
     }
-    .brand {
-      font-size: 13px;
+    h1 {
+      font-size: 16px;
     }
     .card {
       padding: 1rem;

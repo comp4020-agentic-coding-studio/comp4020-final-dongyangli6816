@@ -1,0 +1,955 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f3d22" />
+    <title>Home mockup · Spotter</title>
+    <link rel="stylesheet" href="../../../node_modules/@fontsource/press-start-2p/400.css" />
+    <link rel="stylesheet" href="../../../node_modules/@fontsource/vt323/400.css" />
+    <style id="global">
+  /* Deep green, after the Game Boy's four-shade screen. One "pixel" of
+     decoration is --px, so borders and shadows stay on the same grid. */
+  :root {
+    --ink: #0b2416;
+    --deep: #0f3d22;
+    --green: #1f6b3a;
+    --leaf: #c8e66b;
+    --paper: #e8f0d8;
+    --card: #f7fbef;
+    --muted: #3d5a45;
+    --error: #a3241b;
+    --focus: #f2c94c;
+    --px: 4px;
+    --display: "Press Start 2P", ui-monospace, monospace;
+    --body: "VT323", ui-monospace, monospace;
+    color-scheme: light;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    color: var(--ink);
+    font: 22px/1.35 var(--body);
+    /* pixel fonts have one weight; a faked bold smears them */
+    font-synthesis: none;
+    /* a faint 16 px checker, like gym floor tiles */
+    background-color: var(--paper);
+    background-image: conic-gradient(#dbe7c6 25%, transparent 0 50%, #dbe7c6 0 75%, transparent 0);
+    background-size: 32px 32px;
+  }
+
+  /* ---------- top bar ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--deep);
+    border-bottom: var(--px) solid var(--ink);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--paper);
+    text-decoration: none;
+    font: 16px/1 var(--display);
+    text-transform: uppercase;
+  }
+  .logo {
+    image-rendering: pixelated;
+  }
+  .topbar nav {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+  }
+  .topbar nav a,
+  .topbar .linklike {
+    color: var(--paper);
+    font: 24px/1 var(--body);
+    text-decoration: none;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .topbar nav a:hover,
+  .topbar .linklike:hover {
+    color: var(--leaf);
+  }
+  .topbar form {
+    margin: 0;
+  }
+
+  /* ---------- page ---------- */
+  main {
+    flex: 1;
+    width: 100%;
+    max-width: 44rem;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 2rem;
+  }
+  footer {
+    padding: 1rem;
+    text-align: center;
+    border-top: var(--px) solid var(--ink);
+    background: var(--deep);
+  }
+  footer a {
+    color: var(--leaf);
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--display);
+    font-weight: 400;
+    line-height: 1.4;
+    margin: 0 0 1rem;
+  }
+  h1 {
+    font-size: clamp(18px, 5vw, 26px);
+  }
+  h2 {
+    font-size: 14px;
+    color: var(--green);
+  }
+  h3 {
+    font-size: 12px;
+  }
+  p {
+    margin: 0 0 1rem;
+  }
+  a {
+    color: var(--green);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+  }
+
+  /* ---------- pixel panels ---------- */
+  .card {
+    position: relative;
+    margin: 0 0 1.5rem;
+    padding: 1.25rem;
+    background: var(--card);
+    border: var(--px) solid var(--ink);
+    box-shadow: var(--px) var(--px) 0 var(--green), calc(var(--px) * 2) calc(var(--px) * 2) 0 var(--ink);
+  }
+  .card > :last-child {
+    margin-bottom: 0;
+  }
+
+  /* ---------- forms ---------- */
+  label {
+    display: block;
+    margin: 1rem 0 0.35rem;
+    color: var(--deep);
+  }
+  input,
+  select {
+    width: 100%;
+    min-height: 48px;
+    padding: 0.5rem 0.75rem;
+    font: 26px/1.1 var(--body);
+    color: var(--ink);
+    background: #fff;
+    border: var(--px) solid var(--ink);
+    border-radius: 0;
+    box-shadow: inset var(--px) var(--px) 0 #dbe7c6;
+  }
+  select {
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%),
+      linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+    background-position: calc(100% - 22px) 50%, calc(100% - 14px) 50%;
+    background-size: 8px 8px;
+    background-repeat: no-repeat;
+    padding-right: 2.5rem;
+  }
+  button,
+  .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding: 0.75rem 1.25rem;
+    font: 12px/1.4 var(--display);
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--paper);
+    background: var(--green);
+    border: 0;
+    cursor: pointer;
+    /* a notched pixel outline plus a drop shadow; pressing moves it down */
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--ink),
+      0 var(--px) 0 var(--ink),
+      calc(var(--px) * -1) 0 0 var(--ink),
+      var(--px) 0 0 var(--ink),
+      0 calc(var(--px) * 2) 0 var(--ink),
+      inset 0 calc(var(--px) * -1) 0 var(--deep);
+    margin: var(--px) var(--px) calc(var(--px) * 2);
+    transition: transform 60ms steps(1);
+  }
+  button:hover,
+  .button:hover {
+    background: #26804a;
+  }
+  button:active,
+  .button:active {
+    transform: translateY(var(--px));
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--ink),
+      0 var(--px) 0 var(--ink),
+      calc(var(--px) * -1) 0 0 var(--ink),
+      var(--px) 0 0 var(--ink);
+  }
+  .button.secondary {
+    color: var(--ink);
+    background: var(--leaf);
+  }
+  .button.secondary:hover {
+    background: #d6ef86;
+  }
+  .wide {
+    width: calc(100% - var(--px) * 2);
+  }
+  .topbar .linklike {
+    background: none;
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+    text-transform: none;
+  }
+  :focus-visible {
+    outline: var(--px) solid var(--focus);
+    outline-offset: var(--px);
+  }
+  .error {
+    margin: 0.5rem 0 0;
+    padding: 0.4rem 0.6rem;
+    color: #fff;
+    background: var(--error);
+    border-left: calc(var(--px) * 2) solid var(--ink);
+  }
+  .hint {
+    color: var(--muted);
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    align-items: center;
+    margin-top: 1.25rem;
+  }
+
+  /* ---------- bits ---------- */
+  .passcode-box {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+  .passcode {
+    display: inline-block;
+    padding: 0.5rem 0.75rem;
+    font: 24px/1 var(--display);
+    letter-spacing: 0.12em;
+    color: var(--leaf);
+    background: var(--ink);
+    border: var(--px) solid var(--green);
+  }
+  .bubble {
+    position: relative;
+    margin: 0 0 1.25rem;
+    padding: 0.75rem 1rem;
+    background: var(--leaf);
+    border: var(--px) solid var(--ink);
+  }
+  .bubble::after {
+    content: "";
+    position: absolute;
+    left: 1.5rem;
+    bottom: calc(var(--px) * -3);
+    width: calc(var(--px) * 3);
+    height: calc(var(--px) * 3);
+    background: var(--leaf);
+    border-right: var(--px) solid var(--ink);
+    border-bottom: var(--px) solid var(--ink);
+    transform: skewY(45deg);
+  }
+  .roster {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .roster li {
+    padding: 0.25rem 0.6rem;
+    background: var(--paper);
+    border: var(--px) solid var(--ink);
+  }
+  .roster li::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 0.5rem;
+    background: var(--green);
+    vertical-align: middle;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 24px;
+  }
+  th {
+    font: 10px/1.4 var(--display);
+    text-transform: uppercase;
+    color: var(--paper);
+    background: var(--deep);
+  }
+  th,
+  td {
+    text-align: left;
+    padding: 0.5rem 0.6rem;
+    border: 2px solid var(--ink);
+  }
+  td.num,
+  th.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  tbody tr:nth-child(even) td {
+    background: #eef5e1;
+  }
+  .stat {
+    font-family: var(--display);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.15rem 0.4rem;
+    font: 9px/1.4 var(--display);
+    vertical-align: middle;
+    color: var(--ink);
+    background: var(--leaf);
+    border: 2px solid var(--ink);
+  }
+
+  /* ---------- /readme/ ---------- */
+  .prose h1 {
+    font-size: clamp(18px, 5vw, 24px);
+  }
+  .prose h2 {
+    margin-top: 2rem;
+  }
+  .prose li {
+    margin-bottom: 0.4rem;
+  }
+
+  @media (max-width: 420px) {
+    body {
+      font-size: 21px;
+    }
+    .brand {
+      font-size: 13px;
+    }
+    .card {
+      padding: 1rem;
+    }
+    .passcode {
+      font-size: 20px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    button,
+    .button {
+      transition: none;
+    }
+  }
+    </style>
+    <style id="page">
+      /* ==================================================================
+         LAYOUT CHANGES. Not part of the home page block: these belong in
+         Layout.astro and are listed under "Layout changes" in spec.md so the
+         main agent can reconcile them with the other six pages once.
+         ================================================================== */
+
+      /* layout change: state tokens (system 5, known gap 4) and names for the
+         hard-coded hexes in the layout (known gaps 2 and 5) */
+      :root {
+        --idle: #e8f0d8;
+        --lifting: #c8e66b;
+        --resting: #7cc6e8;
+        --slacking: #ff6b5e;
+        --finished: #f2c94c;
+        --hover: #1a5c32;
+        --leaf-hover: #d6ef86;
+        --tile: #dbe7c6;
+        --stripe: #eef5e1;
+      }
+      /* layout change: ink focus ring on Paper (known gap 1) */
+      :focus-visible {
+        outline-color: var(--ink);
+      }
+      /* layout change: darker hover that passes contrast (known gap 2) */
+      button:hover,
+      .button:hover {
+        background: var(--hover);
+      }
+      .button.secondary:hover {
+        background: var(--leaf-hover);
+      }
+      /* layout change: display sizes on the 8 px grid (known gap 3) */
+      h1 {
+        font-size: 16px;
+      }
+      h2,
+      h3,
+      button,
+      .button {
+        font-size: 16px;
+      }
+      th,
+      .badge {
+        font-size: 8px;
+      }
+      @media (min-width: 421px) {
+        h1 {
+          font-size: 24px;
+        }
+      }
+      /* layout change: pending state for every form button (system 13) */
+      button:disabled,
+      button:disabled:hover {
+        color: var(--paper);
+        background: var(--muted);
+        cursor: progress;
+        transform: translateY(var(--px));
+        box-shadow:
+          0 calc(var(--px) * -1) 0 var(--ink),
+          0 var(--px) 0 var(--ink),
+          calc(var(--px) * -1) 0 0 var(--ink),
+          var(--px) 0 0 var(--ink);
+      }
+      /* layout change: the state chip from system 9, shared with the gym */
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        font: 8px/1 var(--display);
+        text-transform: uppercase;
+        white-space: nowrap;
+        color: var(--ink);
+        border: 2px solid var(--ink);
+      }
+      .chip svg,
+      .px {
+        flex: none;
+        shape-rendering: crispEdges;
+      }
+      .state-idle { background: var(--idle); }
+      .state-lifting { background: var(--lifting); }
+      .state-resting { background: var(--resting); }
+      .state-slacking { background: var(--slacking); }
+      .state-finished { background: var(--finished); }
+
+      /* ==================================================================
+         HOME PAGE BLOCK. This is what goes in index.astro's <style>.
+         ================================================================== */
+
+      /* signed out: the pitch */
+      .pitch h1 {
+        font-size: 24px;
+        color: var(--deep);
+        margin-bottom: 0.75rem;
+      }
+      .pitch {
+        margin-bottom: 2rem;
+      }
+      .pitch .actions {
+        margin-top: 0;
+      }
+
+      /* signed out: a peek at a squad mid-session */
+      .peek .bubble {
+        margin-bottom: 1.5rem;
+      }
+      .squad {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .squad li {
+        display: grid;
+        grid-template-columns: 32px 1fr auto;
+        align-items: center;
+        gap: 0 0.75rem;
+        padding: 0.5rem 0;
+        border-top: 2px solid var(--ink);
+      }
+      .squad li:first-child {
+        border-top: 0;
+      }
+      .squad .sprite {
+        image-rendering: pixelated;
+      }
+      .squad .what {
+        display: block;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .squad .n,
+      .logbook td.num {
+        white-space: nowrap;
+      }
+
+      /* signed out: how a session goes, as a page of the logbook */
+      .howto {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .howto li {
+        display: grid;
+        grid-template-columns: 3rem 1fr;
+        gap: 0 1rem;
+        padding: 0.75rem 0;
+        border-top: 2px solid var(--ink);
+      }
+      .howto li:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+      .howto .set-no {
+        align-self: start;
+        padding: 0.25rem 0;
+        font: 8px/1 var(--display);
+        text-transform: uppercase;
+        text-align: center;
+        background: var(--leaf);
+        border: 2px solid var(--ink);
+      }
+      .howto .set-no span {
+        display: block;
+        font: 32px/1 var(--body);
+      }
+      .howto h3 {
+        margin: 0 0 0.25rem;
+        color: var(--green);
+      }
+      .howto p {
+        margin: 0;
+      }
+
+      /* signed in: the door into the gym */
+      .door-create {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem 1rem;
+      }
+      .door-create .hint {
+        margin: 0;
+      }
+      .or {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 1rem 0 0;
+        color: var(--muted);
+      }
+      .or::before,
+      .or::after {
+        content: "";
+        flex: 1;
+        border-top: var(--px) dashed var(--ink);
+      }
+      .passcode-input {
+        font: 24px/1 var(--display);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .door .hint {
+        margin: 0.5rem 0 0;
+      }
+
+      /* signed in: your rooms, as key tags */
+      .room-keys {
+        display: grid;
+        gap: 0.75rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .room-keys a {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 0.5rem 0.75rem;
+        min-height: 56px;
+        padding: 0.5rem 0.75rem;
+        color: var(--ink);
+        text-decoration: none;
+        background: var(--paper);
+        border: var(--px) solid var(--ink);
+      }
+      .room-keys a:hover {
+        background: var(--leaf);
+      }
+      .room-keys .passcode {
+        padding: 0.25rem 0.5rem;
+        font-size: 16px;
+      }
+      .room-keys .when {
+        color: var(--muted);
+      }
+
+      /* signed in: last workout, as a logbook page */
+      .logbook table {
+        margin-bottom: 1rem;
+      }
+      .totals {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 2rem;
+        margin: 0 0 1rem;
+      }
+      .totals dt {
+        font: 8px/1.4 var(--display);
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .totals dd {
+        margin: 0;
+        font: 32px/1 var(--body);
+        font-variant-numeric: tabular-nums;
+      }
+      .totals .unit {
+        font-size: 22px;
+      }
+      .logbook .empty {
+        padding: 1rem 0.6rem;
+        color: var(--muted);
+      }
+
+      @media (max-width: 420px) {
+        .pitch h1 {
+          font-size: 24px;
+        }
+        .logbook table {
+          font-size: 22px;
+        }
+      }
+
+      /* ==================================================================
+         MOCKUP ONLY. State labels and frames; do not build these.
+         ================================================================== */
+      .mock-state {
+        margin: 0;
+        padding: 0.75rem 1rem;
+        font: 8px/1.4 var(--display);
+        text-transform: uppercase;
+        color: var(--leaf);
+        background: var(--ink);
+        border-top: calc(var(--px) * 4) solid var(--leaf);
+      }
+      .mock-frame {
+        display: flex;
+        flex-direction: column;
+      }
+      .mock-note {
+        max-width: 44rem;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Pixel icons, drawn on an 8 x 8 grid in currentColor and shown at 2x.
+         In the build this sheet would be a small Icon.astro component. -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <symbol id="i-dumbbell" viewBox="0 0 8 8"><rect x="1" y="1" width="1" height="1" fill="currentColor"/><rect x="6" y="1" width="1" height="1" fill="currentColor"/><rect x="0" y="2" width="2" height="1" fill="currentColor"/><rect x="6" y="2" width="2" height="1" fill="currentColor"/><rect x="0" y="3" width="8" height="1" fill="currentColor"/><rect x="0" y="4" width="2" height="1" fill="currentColor"/><rect x="6" y="4" width="2" height="1" fill="currentColor"/><rect x="1" y="5" width="1" height="1" fill="currentColor"/><rect x="6" y="5" width="1" height="1" fill="currentColor"/></symbol>
+      <symbol id="i-drop" viewBox="0 0 8 8"><rect x="3" y="0" width="2" height="2" fill="currentColor"/><rect x="2" y="2" width="4" height="1" fill="currentColor"/><rect x="1" y="3" width="2" height="1" fill="currentColor"/><rect x="4" y="3" width="3" height="1" fill="currentColor"/><rect x="1" y="4" width="1" height="1" fill="currentColor"/><rect x="3" y="4" width="4" height="1" fill="currentColor"/><rect x="1" y="5" width="6" height="1" fill="currentColor"/><rect x="2" y="6" width="4" height="1" fill="currentColor"/></symbol>
+      <symbol id="i-phone" viewBox="0 0 8 8"><rect x="1" y="0" width="5" height="1" fill="currentColor"/><rect x="1" y="1" width="1" height="4" fill="currentColor"/><rect x="5" y="1" width="1" height="4" fill="currentColor"/><rect x="1" y="5" width="5" height="1" fill="currentColor"/><rect x="1" y="6" width="2" height="1" fill="currentColor"/><rect x="4" y="6" width="2" height="1" fill="currentColor"/><rect x="1" y="7" width="5" height="1" fill="currentColor"/></symbol>
+      <symbol id="i-trophy" viewBox="0 0 8 8"><rect x="0" y="0" width="8" height="1" fill="currentColor"/><rect x="0" y="1" width="1" height="2" fill="currentColor"/><rect x="2" y="1" width="4" height="2" fill="currentColor"/><rect x="7" y="1" width="1" height="2" fill="currentColor"/><rect x="1" y="3" width="6" height="1" fill="currentColor"/><rect x="2" y="4" width="4" height="1" fill="currentColor"/><rect x="3" y="5" width="2" height="1" fill="currentColor"/><rect x="2" y="6" width="4" height="1" fill="currentColor"/><rect x="1" y="7" width="6" height="1" fill="currentColor"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 8 8"><rect x="3" y="1" width="1" height="1" fill="currentColor"/><rect x="3" y="2" width="2" height="1" fill="currentColor"/><rect x="0" y="3" width="6" height="1" fill="currentColor"/><rect x="0" y="4" width="7" height="1" fill="currentColor"/><rect x="0" y="5" width="6" height="1" fill="currentColor"/><rect x="3" y="6" width="2" height="1" fill="currentColor"/><rect x="3" y="7" width="1" height="1" fill="currentColor"/></symbol>
+    </svg>
+
+    <!-- ============================================================ -->
+    <!-- state: signed-out -->
+    <p class="mock-state">State: signed out (landing) · no session cookie</p>
+    <div class="mock-frame">
+      <header class="topbar">
+        <a href="/" class="brand" aria-label="Spotter home">
+          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges">
+            <rect x="0" y="2" width="2" height="4" fill="#c8e66b" />
+            <rect x="2" y="0" width="2" height="8" fill="#c8e66b" />
+            <rect x="4" y="3" width="8" height="2" fill="#e8f0d8" />
+            <rect x="12" y="0" width="2" height="8" fill="#c8e66b" />
+            <rect x="14" y="2" width="2" height="4" fill="#c8e66b" />
+          </svg>
+          <span>Spotter</span>
+        </a>
+        <nav>
+          <a href="/signin">Sign in</a>
+          <a href="/signup">Sign up</a>
+        </nav>
+      </header>
+      <main>
+        <section class="pitch">
+          <h1>Train together, apart.</h1>
+          <p>A pixel gym for friends who used to train together. Log your sets, and your squad sees you lift, rest, or rest a bit too long.</p>
+          <div class="actions">
+            <a href="/signup" class="button">Sign up</a>
+            <a href="/signin" class="button secondary">Sign in</a>
+          </div>
+        </section>
+
+        <section class="card peek" aria-labelledby="peek-h">
+          <h2 id="peek-h">What your squad sees</h2>
+          <p class="bubble">Priya to Ji-woo: Put the phone down 📵</p>
+          <ul class="squad">
+            <li>
+              <svg class="sprite" viewBox="0 0 8 8" width="32" height="32" aria-hidden="true" shape-rendering="crispEdges"><rect x="2" y="0" width="4" height="1" fill="#0b2416"/><rect x="1" y="1" width="1" height="1" fill="#0b2416"/><rect x="2" y="1" width="4" height="1" fill="#2b1a12"/><rect x="6" y="1" width="1" height="1" fill="#0b2416"/><rect x="0" y="2" width="1" height="1" fill="#0b2416"/><rect x="1" y="2" width="6" height="1" fill="#2b1a12"/><rect x="7" y="2" width="1" height="1" fill="#0b2416"/><rect x="0" y="3" width="1" height="1" fill="#0b2416"/><rect x="1" y="3" width="1" height="1" fill="#2b1a12"/><rect x="2" y="3" width="4" height="1" fill="#d9a77c"/><rect x="6" y="3" width="1" height="1" fill="#2b1a12"/><rect x="7" y="3" width="1" height="1" fill="#0b2416"/><rect x="0" y="4" width="1" height="1" fill="#0b2416"/><rect x="1" y="4" width="1" height="1" fill="#d9a77c"/><rect x="2" y="4" width="1" height="1" fill="#0b2416"/><rect x="3" y="4" width="2" height="1" fill="#d9a77c"/><rect x="5" y="4" width="1" height="1" fill="#0b2416"/><rect x="6" y="4" width="1" height="1" fill="#d9a77c"/><rect x="7" y="4" width="1" height="1" fill="#0b2416"/><rect x="0" y="5" width="1" height="1" fill="#0b2416"/><rect x="1" y="5" width="6" height="1" fill="#d9a77c"/><rect x="7" y="5" width="1" height="1" fill="#0b2416"/><rect x="1" y="6" width="1" height="1" fill="#0b2416"/><rect x="2" y="6" width="4" height="1" fill="#d9a77c"/><rect x="6" y="6" width="1" height="1" fill="#0b2416"/><rect x="2" y="7" width="4" height="1" fill="#0b2416"/></svg>
+              <span>Mia <span class="what">Back squat · <span class="n">100 kg × 5</span></span></span>
+              <span class="chip state-lifting"><svg width="16" height="16" aria-hidden="true"><use href="#i-dumbbell" /></svg>Lifting</span>
+            </li>
+            <li>
+              <svg class="sprite" viewBox="0 0 8 8" width="32" height="32" aria-hidden="true" shape-rendering="crispEdges"><rect x="2" y="0" width="4" height="1" fill="#0b2416"/><rect x="1" y="1" width="1" height="1" fill="#0b2416"/><rect x="2" y="1" width="4" height="1" fill="#c9a24a"/><rect x="6" y="1" width="1" height="1" fill="#0b2416"/><rect x="0" y="2" width="1" height="1" fill="#0b2416"/><rect x="1" y="2" width="6" height="1" fill="#c9a24a"/><rect x="7" y="2" width="1" height="1" fill="#0b2416"/><rect x="0" y="3" width="1" height="1" fill="#0b2416"/><rect x="1" y="3" width="1" height="1" fill="#c9a24a"/><rect x="2" y="3" width="4" height="1" fill="#f1c9a5"/><rect x="6" y="3" width="1" height="1" fill="#c9a24a"/><rect x="7" y="3" width="1" height="1" fill="#0b2416"/><rect x="0" y="4" width="1" height="1" fill="#0b2416"/><rect x="1" y="4" width="1" height="1" fill="#f1c9a5"/><rect x="2" y="4" width="1" height="1" fill="#0b2416"/><rect x="3" y="4" width="2" height="1" fill="#f1c9a5"/><rect x="5" y="4" width="1" height="1" fill="#0b2416"/><rect x="6" y="4" width="1" height="1" fill="#f1c9a5"/><rect x="7" y="4" width="1" height="1" fill="#0b2416"/><rect x="0" y="5" width="1" height="1" fill="#0b2416"/><rect x="1" y="5" width="6" height="1" fill="#f1c9a5"/><rect x="7" y="5" width="1" height="1" fill="#0b2416"/><rect x="1" y="6" width="1" height="1" fill="#0b2416"/><rect x="2" y="6" width="4" height="1" fill="#f1c9a5"/><rect x="6" y="6" width="1" height="1" fill="#0b2416"/><rect x="2" y="7" width="4" height="1" fill="#0b2416"/></svg>
+              <span>Tom <span class="what">Rest · <span class="n">1:12</span> to go</span></span>
+              <span class="chip state-resting"><svg width="16" height="16" aria-hidden="true"><use href="#i-drop" /></svg>Resting</span>
+            </li>
+            <li>
+              <svg class="sprite" viewBox="0 0 8 8" width="32" height="32" aria-hidden="true" shape-rendering="crispEdges"><rect x="2" y="0" width="4" height="1" fill="#0b2416"/><rect x="1" y="1" width="1" height="1" fill="#0b2416"/><rect x="2" y="1" width="4" height="1" fill="#3a2a5e"/><rect x="6" y="1" width="1" height="1" fill="#0b2416"/><rect x="0" y="2" width="1" height="1" fill="#0b2416"/><rect x="1" y="2" width="6" height="1" fill="#3a2a5e"/><rect x="7" y="2" width="1" height="1" fill="#0b2416"/><rect x="0" y="3" width="1" height="1" fill="#0b2416"/><rect x="1" y="3" width="1" height="1" fill="#3a2a5e"/><rect x="2" y="3" width="4" height="1" fill="#e8bf96"/><rect x="6" y="3" width="1" height="1" fill="#3a2a5e"/><rect x="7" y="3" width="1" height="1" fill="#0b2416"/><rect x="0" y="4" width="1" height="1" fill="#0b2416"/><rect x="1" y="4" width="1" height="1" fill="#e8bf96"/><rect x="2" y="4" width="1" height="1" fill="#0b2416"/><rect x="3" y="4" width="2" height="1" fill="#e8bf96"/><rect x="5" y="4" width="1" height="1" fill="#0b2416"/><rect x="6" y="4" width="1" height="1" fill="#e8bf96"/><rect x="7" y="4" width="1" height="1" fill="#0b2416"/><rect x="0" y="5" width="1" height="1" fill="#0b2416"/><rect x="1" y="5" width="6" height="1" fill="#e8bf96"/><rect x="7" y="5" width="1" height="1" fill="#0b2416"/><rect x="1" y="6" width="1" height="1" fill="#0b2416"/><rect x="2" y="6" width="4" height="1" fill="#e8bf96"/><rect x="6" y="6" width="1" height="1" fill="#0b2416"/><rect x="2" y="7" width="4" height="1" fill="#0b2416"/></svg>
+              <span>Ji-woo <span class="what">Rest · <span class="n">2:40</span> over</span></span>
+              <span class="chip state-slacking"><svg width="16" height="16" aria-hidden="true"><use href="#i-phone" /></svg>Slacking</span>
+            </li>
+            <li>
+              <svg class="sprite" viewBox="0 0 8 8" width="32" height="32" aria-hidden="true" shape-rendering="crispEdges"><rect x="2" y="0" width="4" height="1" fill="#0b2416"/><rect x="1" y="1" width="1" height="1" fill="#0b2416"/><rect x="2" y="1" width="4" height="1" fill="#1a1010"/><rect x="6" y="1" width="1" height="1" fill="#0b2416"/><rect x="0" y="2" width="1" height="1" fill="#0b2416"/><rect x="1" y="2" width="6" height="1" fill="#1a1010"/><rect x="7" y="2" width="1" height="1" fill="#0b2416"/><rect x="0" y="3" width="1" height="1" fill="#0b2416"/><rect x="1" y="3" width="1" height="1" fill="#1a1010"/><rect x="2" y="3" width="4" height="1" fill="#a86a43"/><rect x="6" y="3" width="1" height="1" fill="#1a1010"/><rect x="7" y="3" width="1" height="1" fill="#0b2416"/><rect x="0" y="4" width="1" height="1" fill="#0b2416"/><rect x="1" y="4" width="1" height="1" fill="#a86a43"/><rect x="2" y="4" width="1" height="1" fill="#0b2416"/><rect x="3" y="4" width="2" height="1" fill="#a86a43"/><rect x="5" y="4" width="1" height="1" fill="#0b2416"/><rect x="6" y="4" width="1" height="1" fill="#a86a43"/><rect x="7" y="4" width="1" height="1" fill="#0b2416"/><rect x="0" y="5" width="1" height="1" fill="#0b2416"/><rect x="1" y="5" width="6" height="1" fill="#a86a43"/><rect x="7" y="5" width="1" height="1" fill="#0b2416"/><rect x="1" y="6" width="1" height="1" fill="#0b2416"/><rect x="2" y="6" width="4" height="1" fill="#a86a43"/><rect x="6" y="6" width="1" height="1" fill="#0b2416"/><rect x="2" y="7" width="4" height="1" fill="#0b2416"/></svg>
+              <span>Priya <span class="what">16 sets · 52 min</span></span>
+              <span class="chip state-finished"><svg width="16" height="16" aria-hidden="true"><use href="#i-trophy" /></svg>Finished</span>
+            </li>
+          </ul>
+        </section>
+
+
+        <section class="card" aria-labelledby="howto-h">
+          <h2 id="howto-h">How a session goes</h2>
+          <ol class="howto">
+            <li>
+              <span class="set-no" aria-hidden="true">Set<span>1</span></span>
+              <div><h3>Open a room</h3><p>Get a passcode. Drop it in the group chat.</p></div>
+            </li>
+            <li>
+              <span class="set-no" aria-hidden="true">Set<span>2</span></span>
+              <div><h3>Log your sets</h3><p>Weight and reps, filled in from last time.</p></div>
+            </li>
+            <li>
+              <span class="set-no" aria-hidden="true">Set<span>3</span></span>
+              <div><h3>Get spotted</h3><p>Rest too long and the squad will know 👀</p></div>
+            </li>
+          </ol>
+        </section>
+        <p><a href="/readme/">Read what Spotter is for</a></p>
+      </main>
+      <footer>
+        <a href="/readme/">What Spotter is for</a>
+      </footer>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- state: signed-in-default -->
+    <p class="mock-state">State: signed in · Mia, 3 rooms, last workout yesterday</p>
+    <div class="mock-frame">
+      <header class="topbar">
+        <a href="/" class="brand" aria-label="Spotter home">
+          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges">
+            <rect x="0" y="2" width="2" height="4" fill="#c8e66b" />
+            <rect x="2" y="0" width="2" height="8" fill="#c8e66b" />
+            <rect x="4" y="3" width="8" height="2" fill="#e8f0d8" />
+            <rect x="12" y="0" width="2" height="8" fill="#c8e66b" />
+            <rect x="14" y="2" width="2" height="4" fill="#c8e66b" />
+          </svg>
+          <span>Spotter</span>
+        </a>
+        <nav>
+          <a href="/history">History</a>
+          <form method="post" action="/signout"><button type="submit" class="linklike">Sign out</button></form>
+        </nav>
+      </header>
+      <main>
+        <h1>Hi, Mia</h1>
+
+        <section class="card door" aria-labelledby="door-h">
+          <h2 id="door-h">Train with the squad</h2>
+          <form method="post" action="/rooms" class="door-create">
+            <button type="submit" class="button secondary">Create room</button>
+            <p class="hint">You get a passcode to send them.</p>
+          </form>
+          <p class="or">or join one</p>
+          <form method="post" action="/join">
+            <label for="passcode">Passcode</label>
+            <input id="passcode" name="passcode" class="passcode-input" autocomplete="off" autocapitalize="characters" maxlength="8" required aria-describedby="passcode-hint" />
+            <p id="passcode-hint" class="hint">Six letters and numbers, from your squad.</p>
+            <div class="actions"><button type="submit" class="wide">Join</button></div>
+          </form>
+        </section>
+
+        <section class="card" aria-labelledby="rooms-h">
+          <h2 id="rooms-h">Your rooms</h2>
+          <p class="hint">Last active, newest first.</p>
+          <ul class="room-keys">
+            <li><a href="/rooms/42"><span class="passcode">K7M2QX</span><span class="when">12 min ago</span><svg class="px" width="16" height="16" aria-hidden="true"><use href="#i-arrow" /></svg></a></li>
+            <li><a href="/rooms/37"><span class="passcode">HR4TWP</span><span class="when">Yesterday</span><svg class="px" width="16" height="16" aria-hidden="true"><use href="#i-arrow" /></svg></a></li>
+            <li><a href="/rooms/31"><span class="passcode">9BDMXE</span><span class="when">3 Oct</span><svg class="px" width="16" height="16" aria-hidden="true"><use href="#i-arrow" /></svg></a></li>
+          </ul>
+        </section>
+
+        <section class="card logbook" aria-labelledby="last-h">
+          <h2 id="last-h">Last workout</h2>
+          <p class="hint">Tue 6 Oct, 6:12 pm · 52 min</p>
+          <dl class="totals">
+            <div><dt>Sets</dt><dd>14</dd></div>
+            <div><dt>Volume</dt><dd>7,487.5 <span class="unit">kg</span></dd></div>
+          </dl>
+          <table>
+            <thead>
+              <tr><th scope="col">Lift</th><th scope="col" class="num">Sets</th><th scope="col" class="num">Best</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Back squat</td><td class="num">4</td><td class="num">100 kg × 5</td></tr>
+              <tr><td>Romanian deadlift</td><td class="num">3</td><td class="num">80 kg × 8</td></tr>
+              <tr><td>Bench press</td><td class="num">4</td><td class="num">62.5 kg × 8</td></tr>
+              <tr><td>Lat pulldown</td><td class="num">3</td><td class="num">55 kg × 10</td></tr>
+            </tbody>
+          </table>
+          <a href="/history" class="button secondary">All history</a>
+        </section>
+      </main>
+      <footer>
+        <a href="/readme/">What Spotter is for</a>
+      </footer>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- state: signed-in-first-use (empty) -->
+    <p class="mock-state">State: first use (empty) · Priya just signed up, no rooms, no workouts</p>
+    <div class="mock-frame">
+      <header class="topbar">
+        <a href="/" class="brand" aria-label="Spotter home">
+          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges">
+            <rect x="0" y="2" width="2" height="4" fill="#c8e66b" />
+            <rect x="2" y="0" width="2" height="8" fill="#c8e66b" />
+            <rect x="4" y="3" width="8" height="2" fill="#e8f0d8" />
+            <rect x="12" y="0" width="2" height="8" fill="#c8e66b" />
+            <rect x="14" y="2" width="2" height="4" fill="#c8e66b" />
+          </svg>
+          <span>Spotter</span>
+        </a>
+        <nav>
+          <a href="/history">History</a>
+          <form method="post" action="/signout"><button type="submit" class="linklike">Sign out</button></form>
+        </nav>
+      </header>
+      <main>
+        <h1>Hi, Priya</h1>
+        <p class="bubble">New here? Join your squad's room, or start one and send the code 📲</p>
+
+        <section class="card door" aria-labelledby="door-h2">
+          <h2 id="door-h2">Train with the squad</h2>
+          <form method="post" action="/rooms" class="door-create">
+            <button type="submit" class="button secondary">Create room</button>
+            <p class="hint">You get a passcode to send them.</p>
+          </form>
+          <p class="or">or join one</p>
+          <form method="post" action="/join">
+            <label for="passcode2">Passcode</label>
+            <input id="passcode2" name="passcode" class="passcode-input" autocomplete="off" autocapitalize="characters" maxlength="8" required aria-describedby="passcode-hint2" />
+            <p id="passcode-hint2" class="hint">Six letters and numbers, from your squad.</p>
+            <div class="actions"><button type="submit" class="wide">Join</button></div>
+          </form>
+        </section>
+
+        <section class="card logbook" aria-labelledby="last-h2">
+          <h2 id="last-h2">Last workout</h2>
+          <table>
+            <thead>
+              <tr><th scope="col">Lift</th><th scope="col" class="num">Sets</th><th scope="col" class="num">Best</th></tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="3" class="empty">No workouts yet. Your future self is waiting 🏋️</td></tr>
+            </tbody>
+          </table>
+          <p class="hint">Your first set lands here once you log it in a room.</p>
+        </section>
+      </main>
+      <footer>
+        <a href="/readme/">What Spotter is for</a>
+      </footer>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- state: pending -->
+    <p class="mock-state">State: pending · Mia tapped Join on a slow connection (rest of the page unchanged)</p>
+    <div class="mock-frame">
+      <header class="topbar">
+        <a href="/" class="brand" aria-label="Spotter home">
+          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges">
+            <rect x="0" y="2" width="2" height="4" fill="#c8e66b" />
+            <rect x="2" y="0" width="2" height="8" fill="#c8e66b" />
+            <rect x="4" y="3" width="8" height="2" fill="#e8f0d8" />
+            <rect x="12" y="0" width="2" height="8" fill="#c8e66b" />
+            <rect x="14" y="2" width="2" height="4" fill="#c8e66b" />
+          </svg>
+          <span>Spotter</span>
+        </a>
+        <nav>
+          <a href="/history">History</a>
+          <form method="post" action="/signout"><button type="submit" class="linklike">Sign out</button></form>
+        </nav>
+      </header>
+      <main>
+        <h1>Hi, Mia</h1>
+        <section class="card door" aria-labelledby="door-h3">
+          <h2 id="door-h3">Train with the squad</h2>
+          <form method="post" action="/rooms" class="door-create">
+            <button type="submit" class="button secondary">Create room</button>
+            <p class="hint">You get a passcode to send them.</p>
+          </form>
+          <p class="or">or join one</p>
+          <form method="post" action="/join" aria-busy="true">
+            <label for="passcode3">Passcode</label>
+            <input id="passcode3" name="passcode" class="passcode-input" value="K7M2QX" autocomplete="off" autocapitalize="characters" maxlength="8" required readonly aria-describedby="passcode-hint3" />
+            <p id="passcode-hint3" class="hint">Six letters and numbers, from your squad.</p>
+            <div class="actions"><button type="submit" class="wide" disabled>Join</button></div>
+          </form>
+        </section>
+      </main>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- state: error -->
+    <p class="mock-state">State: error · not rendered on home</p>
+    <div class="mock-note">
+      <p>Home renders no errors of its own. An empty passcode is stopped by the field's "required". A wrong passcode posts to /join, which shows "No open room has that passcode. Check it with whoever shared it." under its own field (the join page's design). Create room has no user error.</p>
+    </div>
+  </body>
+</html>

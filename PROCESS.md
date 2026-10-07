@@ -7,9 +7,9 @@ it always describes the project as it stands.
 
 I started with my own problem, not a feature list: since moving to Australia I
 haven't trained, because the friend who kept me honest isn't here.
-[`docs/idea.md`](docs/idea.md) is that idea in my own words. A full product
+[`docs/product/idea.md`](docs/product/idea.md) is that idea in my own words. A full product
 spec came next, but it was written for a public launch over twenty weeks. So I
-cut it down to [a four-week spec](docs/spotter-spec-4-weeks.md) that fits the
+cut it down to [a four-week spec](docs/product/spec-4-weeks.md) that fits the
 course setup: one 256 MB machine, one volume, and a machine that stops when idle.
 That cut, with the reason for each item dropped, is in
 [`88b3e0d`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/commit/88b3e0d).

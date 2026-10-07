@@ -1,0 +1,988 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f3d22" />
+    <title>History · Spotter (mockup)</title>
+    <link rel="stylesheet" href="../../../node_modules/@fontsource/press-start-2p/400.css" />
+    <link rel="stylesheet" href="../../../node_modules/@fontsource/vt323/400.css" />
+    <style id="global">
+  /* Deep green, after the Game Boy's four-shade screen. One "pixel" of
+     decoration is --px, so borders and shadows stay on the same grid. */
+  :root {
+    --ink: #0b2416;
+    --deep: #0f3d22;
+    --green: #1f6b3a;
+    --leaf: #c8e66b;
+    --paper: #e8f0d8;
+    --card: #f7fbef;
+    --muted: #3d5a45;
+    --error: #a3241b;
+    --focus: #f2c94c;
+    --px: 4px;
+    --display: "Press Start 2P", ui-monospace, monospace;
+    --body: "VT323", ui-monospace, monospace;
+    color-scheme: light;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    color: var(--ink);
+    font: 22px/1.35 var(--body);
+    /* pixel fonts have one weight; a faked bold smears them */
+    font-synthesis: none;
+    /* a faint 16 px checker, like gym floor tiles */
+    background-color: var(--paper);
+    background-image: conic-gradient(#dbe7c6 25%, transparent 0 50%, #dbe7c6 0 75%, transparent 0);
+    background-size: 32px 32px;
+  }
+
+  /* ---------- top bar ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--deep);
+    border-bottom: var(--px) solid var(--ink);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--paper);
+    text-decoration: none;
+    font: 16px/1 var(--display);
+    text-transform: uppercase;
+  }
+  .logo {
+    image-rendering: pixelated;
+  }
+  .topbar nav {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+  }
+  .topbar nav a,
+  .topbar .linklike {
+    color: var(--paper);
+    font: 24px/1 var(--body);
+    text-decoration: none;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .topbar nav a:hover,
+  .topbar .linklike:hover {
+    color: var(--leaf);
+  }
+  .topbar form {
+    margin: 0;
+  }
+
+  /* ---------- page ---------- */
+  main {
+    flex: 1;
+    width: 100%;
+    max-width: 44rem;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 2rem;
+  }
+  footer {
+    padding: 1rem;
+    text-align: center;
+    border-top: var(--px) solid var(--ink);
+    background: var(--deep);
+  }
+  footer a {
+    color: var(--leaf);
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--display);
+    font-weight: 400;
+    line-height: 1.4;
+    margin: 0 0 1rem;
+  }
+  h1 {
+    font-size: clamp(18px, 5vw, 26px);
+  }
+  h2 {
+    font-size: 14px;
+    color: var(--green);
+  }
+  h3 {
+    font-size: 12px;
+  }
+  p {
+    margin: 0 0 1rem;
+  }
+  a {
+    color: var(--green);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+  }
+
+  /* ---------- pixel panels ---------- */
+  .card {
+    position: relative;
+    margin: 0 0 1.5rem;
+    padding: 1.25rem;
+    background: var(--card);
+    border: var(--px) solid var(--ink);
+    box-shadow: var(--px) var(--px) 0 var(--green), calc(var(--px) * 2) calc(var(--px) * 2) 0 var(--ink);
+  }
+  .card > :last-child {
+    margin-bottom: 0;
+  }
+
+  /* ---------- forms ---------- */
+  label {
+    display: block;
+    margin: 1rem 0 0.35rem;
+    color: var(--deep);
+  }
+  input,
+  select {
+    width: 100%;
+    min-height: 48px;
+    padding: 0.5rem 0.75rem;
+    font: 26px/1.1 var(--body);
+    color: var(--ink);
+    background: #fff;
+    border: var(--px) solid var(--ink);
+    border-radius: 0;
+    box-shadow: inset var(--px) var(--px) 0 #dbe7c6;
+  }
+  select {
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%),
+      linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+    background-position: calc(100% - 22px) 50%, calc(100% - 14px) 50%;
+    background-size: 8px 8px;
+    background-repeat: no-repeat;
+    padding-right: 2.5rem;
+  }
+  button,
+  .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding: 0.75rem 1.25rem;
+    font: 12px/1.4 var(--display);
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--paper);
+    background: var(--green);
+    border: 0;
+    cursor: pointer;
+    /* a notched pixel outline plus a drop shadow; pressing moves it down */
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--ink),
+      0 var(--px) 0 var(--ink),
+      calc(var(--px) * -1) 0 0 var(--ink),
+      var(--px) 0 0 var(--ink),
+      0 calc(var(--px) * 2) 0 var(--ink),
+      inset 0 calc(var(--px) * -1) 0 var(--deep);
+    margin: var(--px) var(--px) calc(var(--px) * 2);
+    transition: transform 60ms steps(1);
+  }
+  button:hover,
+  .button:hover {
+    background: #26804a;
+  }
+  button:active,
+  .button:active {
+    transform: translateY(var(--px));
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--ink),
+      0 var(--px) 0 var(--ink),
+      calc(var(--px) * -1) 0 0 var(--ink),
+      var(--px) 0 0 var(--ink);
+  }
+  .button.secondary {
+    color: var(--ink);
+    background: var(--leaf);
+  }
+  .button.secondary:hover {
+    background: #d6ef86;
+  }
+  .wide {
+    width: calc(100% - var(--px) * 2);
+  }
+  .topbar .linklike {
+    background: none;
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+    text-transform: none;
+  }
+  :focus-visible {
+    outline: var(--px) solid var(--focus);
+    outline-offset: var(--px);
+  }
+  .error {
+    margin: 0.5rem 0 0;
+    padding: 0.4rem 0.6rem;
+    color: #fff;
+    background: var(--error);
+    border-left: calc(var(--px) * 2) solid var(--ink);
+  }
+  .hint {
+    color: var(--muted);
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    align-items: center;
+    margin-top: 1.25rem;
+  }
+
+  /* ---------- bits ---------- */
+  .passcode-box {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+  .passcode {
+    display: inline-block;
+    padding: 0.5rem 0.75rem;
+    font: 24px/1 var(--display);
+    letter-spacing: 0.12em;
+    color: var(--leaf);
+    background: var(--ink);
+    border: var(--px) solid var(--green);
+  }
+  .bubble {
+    position: relative;
+    margin: 0 0 1.25rem;
+    padding: 0.75rem 1rem;
+    background: var(--leaf);
+    border: var(--px) solid var(--ink);
+  }
+  .bubble::after {
+    content: "";
+    position: absolute;
+    left: 1.5rem;
+    bottom: calc(var(--px) * -3);
+    width: calc(var(--px) * 3);
+    height: calc(var(--px) * 3);
+    background: var(--leaf);
+    border-right: var(--px) solid var(--ink);
+    border-bottom: var(--px) solid var(--ink);
+    transform: skewY(45deg);
+  }
+  .roster {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .roster li {
+    padding: 0.25rem 0.6rem;
+    background: var(--paper);
+    border: var(--px) solid var(--ink);
+  }
+  .roster li::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 0.5rem;
+    background: var(--green);
+    vertical-align: middle;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 24px;
+  }
+  th {
+    font: 10px/1.4 var(--display);
+    text-transform: uppercase;
+    color: var(--paper);
+    background: var(--deep);
+  }
+  th,
+  td {
+    text-align: left;
+    padding: 0.5rem 0.6rem;
+    border: 2px solid var(--ink);
+  }
+  td.num,
+  th.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  tbody tr:nth-child(even) td {
+    background: #eef5e1;
+  }
+  .stat {
+    font-family: var(--display);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.15rem 0.4rem;
+    font: 9px/1.4 var(--display);
+    vertical-align: middle;
+    color: var(--ink);
+    background: var(--leaf);
+    border: 2px solid var(--ink);
+  }
+
+  /* ---------- /readme/ ---------- */
+  .prose h1 {
+    font-size: clamp(18px, 5vw, 24px);
+  }
+  .prose h2 {
+    margin-top: 2rem;
+  }
+  .prose li {
+    margin-bottom: 0.4rem;
+  }
+
+  @media (max-width: 420px) {
+    body {
+      font-size: 21px;
+    }
+    .brand {
+      font-size: 13px;
+    }
+    .card {
+      padding: 1rem;
+    }
+    .passcode {
+      font-size: 20px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    button,
+    .button {
+      transition: none;
+    }
+  }
+    </style>
+    <style id="page">
+      /* ===== layout changes (proposed, see "Layout changes" in spec.md) ===== */
+      /* layout change: known gap 3, display sizes on the 8 px grid */
+      h2 {
+        font-size: 16px;
+      }
+      th {
+        font-size: 8px;
+      }
+      .badge {
+        font-size: 8px;
+      }
+      /* layout change: known gap 1, ink focus ring on Paper */
+      :focus-visible {
+        outline-color: var(--ink);
+      }
+      /* layout change: known gaps 2 and 5, hover and row tokens */
+      :root {
+        --hover: #1a5c32;
+        --row: #eef5e1;
+      }
+      button:hover,
+      .button:hover {
+        background: var(--hover);
+      }
+
+      /* ===== history page ===== */
+      .lede {
+        margin: -0.5rem 0 1.5rem;
+        color: var(--muted);
+      }
+
+      /* a week of the logbook: a ruled divider, the label, the day strip */
+      .week {
+        margin: 0 0 1.5rem;
+        padding-top: 1rem;
+        border-top: var(--px) solid var(--ink);
+      }
+      .week-head {
+        margin: 0 0 1rem;
+      }
+      .week-head h2 {
+        margin: 0 0 0.5rem;
+      }
+      .week-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem 1rem;
+      }
+      .days {
+        display: inline-flex;
+        gap: var(--px);
+      }
+      .days span {
+        display: grid;
+        place-items: center;
+        width: 24px;
+        height: 24px;
+        font: 8px/1 var(--display);
+        color: var(--muted);
+        background: var(--card);
+        border: 2px solid var(--ink);
+      }
+      .days .on {
+        color: var(--leaf);
+        background: var(--ink);
+      }
+      .count {
+        color: var(--muted);
+      }
+
+      /* older weeks fold away; the whole head is the tap target */
+      details.week > summary {
+        display: block;
+        margin: 0;
+        cursor: pointer;
+        list-style: none;
+      }
+      details.week > summary::-webkit-details-marker {
+        display: none;
+      }
+      .toggle {
+        margin-left: auto;
+        color: var(--green);
+        text-decoration: underline;
+        text-decoration-thickness: 2px;
+        text-underline-offset: 3px;
+      }
+      .toggle::before {
+        content: "Show";
+      }
+      details[open] .toggle::before {
+        content: "Hide";
+      }
+      details.week[open] > summary {
+        margin-bottom: 1rem;
+      }
+
+      /* one workout: a logbook page */
+      .entry-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.25rem 1rem;
+        margin: 0 0 0.75rem;
+      }
+      .entry-head h3 {
+        margin: 0;
+        font-size: 16px;
+      }
+      .entry-head .badge {
+        vertical-align: 2px;
+      }
+      .when {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      /* time, sets, volume: three boxed figures */
+      .tally {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        margin: 0 0 1rem;
+        background: var(--paper);
+        border: 2px solid var(--ink);
+      }
+      .tally div {
+        padding: 0.25rem 0.5rem;
+      }
+      .tally div + div {
+        border-left: 2px solid var(--ink);
+      }
+      .tally dt {
+        font: 8px/1.4 var(--display);
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .tally dd {
+        margin: 0;
+        font-size: 28px;
+        line-height: 1.1;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+
+      /* the set table, one tbody per run of the same lift */
+      .log .num {
+        width: 4.5rem;
+      }
+      .log th.lift {
+        font: 24px/1.15 var(--body);
+        text-transform: none;
+        color: var(--ink);
+        vertical-align: top;
+      }
+      .log .top {
+        display: block;
+        margin-top: 0.25rem;
+        font-size: 21px;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .log tbody tr > * {
+        background: var(--card);
+      }
+      .log tbody:nth-of-type(even) tr > * {
+        background: var(--paper);
+      }
+      .log tbody + tbody tr:first-child > * {
+        border-top-width: var(--px);
+      }
+
+      /* a workout still open: the way back to the gym, pinned in thumb reach */
+      .resume {
+        position: sticky;
+        bottom: 0;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin: 2rem 0 0;
+        padding: 0.5rem 0.75rem 0.25rem;
+        background: var(--card);
+        border: var(--px) solid var(--ink);
+        box-shadow: 0 calc(var(--px) * -1) 0 var(--green), 0 calc(var(--px) * -2) 0 var(--ink);
+      }
+      .resume p {
+        margin: 0;
+        line-height: 1.15;
+      }
+      .resume small {
+        display: block;
+        font-size: inherit;
+        color: var(--muted);
+      }
+
+      .empty {
+        text-align: center;
+      }
+      .empty svg {
+        display: block;
+        margin: 0.5rem auto 1rem;
+        image-rendering: pixelated;
+      }
+    </style>
+    <style id="mockup">
+      /* mockup scaffolding only: state labels. Not part of the page. */
+      .state {
+        margin: 0 0 3rem;
+      }
+      .state-label {
+        display: inline-block;
+        margin: 0 0 1rem;
+        padding: 0.25rem 0.5rem;
+        font: 8px/1.4 var(--display);
+        text-transform: uppercase;
+        color: var(--paper);
+        background: var(--ink);
+      }
+      .state-note {
+        margin: 0 0 1rem;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <a href="/" class="brand" aria-label="Spotter home">
+        <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges">
+          <rect x="0" y="2" width="2" height="4" fill="#c8e66b" />
+          <rect x="2" y="0" width="2" height="8" fill="#c8e66b" />
+          <rect x="4" y="3" width="8" height="2" fill="#e8f0d8" />
+          <rect x="12" y="0" width="2" height="8" fill="#c8e66b" />
+          <rect x="14" y="2" width="2" height="4" fill="#c8e66b" />
+        </svg>
+        <span>Spotter</span>
+      </a>
+      <nav>
+        <a href="/history">History</a>
+        <form method="post" action="/signout">
+          <button type="submit" class="linklike">Sign out</button>
+        </form>
+      </nav>
+    </header>
+    <main>
+      <!-- state: default -->
+      <section class="state">
+        <p class="state-label">State: default (finished workouts)</p>
+
+        <h1>History</h1>
+        <p class="lede">8 workouts · 26,821 kg in the book</p>
+
+        <section class="week" aria-labelledby="wk-this">
+          <div class="week-head">
+            <h2 id="wk-this">This week</h2>
+            <div class="week-row">
+              <span class="days" role="img" aria-label="Trained Monday and Wednesday">
+                <span class="on">M</span><span>T</span><span class="on">W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+              </span>
+              <span class="count">2 workouts</span>
+            </div>
+          </div>
+
+          <article class="card entry">
+            <header class="entry-head">
+              <h3>Today</h3>
+              <p class="when"><time datetime="2026-10-07T18:42">6:42</time> – <time datetime="2026-10-07T19:38">7:38 pm</time></p>
+            </header>
+            <dl class="tally">
+              <div><dt>Time</dt><dd>56 min</dd></div>
+              <div><dt>Sets</dt><dd>11</dd></div>
+              <div><dt>Volume</dt><dd>4,190 kg</dd></div>
+            </dl>
+            <table class="log">
+              <thead><tr><th scope="col">Exercise</th><th scope="col" class="num">kg</th><th scope="col" class="num">Reps</th></tr></thead>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="3" class="lift">Bench press<span class="top">Top 82.5 kg × 8</span></th><td class="num">80</td><td class="num">8</td></tr>
+                <tr><td class="num">82.5</td><td class="num">8</td></tr>
+                <tr><td class="num">82.5</td><td class="num">6</td></tr>
+              </tbody>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="2" class="lift">Incline bench press<span class="top">Top 60 kg × 10</span></th><td class="num">60</td><td class="num">10</td></tr>
+                <tr><td class="num">60</td><td class="num">9</td></tr>
+              </tbody>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="3" class="lift">Overhead press<span class="top">Top 45 kg × 8</span></th><td class="num">45</td><td class="num">8</td></tr>
+                <tr><td class="num">45</td><td class="num">7</td></tr>
+                <tr><td class="num">42.5</td><td class="num">8</td></tr>
+              </tbody>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="2" class="lift">Lateral raise<span class="top">Top 10 kg × 12</span></th><td class="num">10</td><td class="num">12</td></tr>
+                <tr><td class="num">10</td><td class="num">12</td></tr>
+              </tbody>
+              <tbody>
+                <tr><th scope="rowgroup" class="lift">Push-ups</th><td class="num">0</td><td class="num">20</td></tr>
+              </tbody>
+            </table>
+          </article>
+
+          <article class="card entry">
+            <header class="entry-head">
+              <h3>Mon 5 Oct</h3>
+              <p class="when"><time datetime="2026-10-05T07:05">7:05</time> – <time datetime="2026-10-05T08:10">8:10 am</time></p>
+            </header>
+            <dl class="tally">
+              <div><dt>Time</dt><dd>65 min</dd></div>
+              <div><dt>Sets</dt><dd>8</dd></div>
+              <div><dt>Volume</dt><dd>3,480 kg</dd></div>
+            </dl>
+            <table class="log">
+              <thead><tr><th scope="col">Exercise</th><th scope="col" class="num">kg</th><th scope="col" class="num">Reps</th></tr></thead>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="4" class="lift">Back squat<span class="top">Top 110 kg × 5</span></th><td class="num">100</td><td class="num">5</td></tr>
+                <tr><td class="num">110</td><td class="num">5</td></tr>
+                <tr><td class="num">110</td><td class="num">5</td></tr>
+                <tr><td class="num">110</td><td class="num">4</td></tr>
+              </tbody>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="2" class="lift">Romanian deadlift<span class="top">Top 90 kg × 8</span></th><td class="num">90</td><td class="num">8</td></tr>
+                <tr><td class="num">90</td><td class="num">8</td></tr>
+              </tbody>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="2" class="lift">Hanging leg raise<span class="top">Best 12 reps</span></th><td class="num">0</td><td class="num">12</td></tr>
+                <tr><td class="num">0</td><td class="num">10</td></tr>
+              </tbody>
+            </table>
+          </article>
+        </section>
+
+        <section class="week" aria-labelledby="wk-last">
+          <div class="week-head">
+            <h2 id="wk-last">Last week</h2>
+            <div class="week-row">
+              <span class="days" role="img" aria-label="Trained Wednesday and Saturday">
+                <span>M</span><span>T</span><span class="on">W</span><span>T</span><span>F</span><span class="on">S</span><span>S</span>
+              </span>
+              <span class="count">2 workouts</span>
+            </div>
+          </div>
+
+          <article class="card entry">
+            <header class="entry-head">
+              <h3>Sat 3 Oct</h3>
+              <p class="when"><time datetime="2026-10-03T09:30">9:30</time> – <time datetime="2026-10-03T10:22">10:22 am</time></p>
+            </header>
+            <dl class="tally">
+              <div><dt>Time</dt><dd>52 min</dd></div>
+              <div><dt>Sets</dt><dd>10</dd></div>
+              <div><dt>Volume</dt><dd>2,966 kg</dd></div>
+            </dl>
+            <table class="log">
+              <thead><tr><th scope="col">Exercise</th><th scope="col" class="num">kg</th><th scope="col" class="num">Reps</th></tr></thead>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="3" class="lift">Deadlift<span class="top">Top 150 kg × 3</span></th><td class="num">140</td><td class="num">5</td></tr>
+                <tr><td class="num">150</td><td class="num">3</td></tr>
+                <tr><td class="num">150</td><td class="num">3</td></tr>
+              </tbody>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="3" class="lift">Pull-up<span class="top">Best 8 reps</span></th><td class="num">0</td><td class="num">8</td></tr>
+                <tr><td class="num">0</td><td class="num">7</td></tr>
+                <tr><td class="num">0</td><td class="num">6</td></tr>
+              </tbody>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="2" class="lift">Seated cable row<span class="top">Top 55 kg × 10</span></th><td class="num">55</td><td class="num">10</td></tr>
+                <tr><td class="num">55</td><td class="num">10</td></tr>
+              </tbody>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="2" class="lift">Dumbbell curl<span class="top">Top 14 kg × 10</span></th><td class="num">14</td><td class="num">10</td></tr>
+                <tr><td class="num">14</td><td class="num">9</td></tr>
+              </tbody>
+            </table>
+          </article>
+
+          <article class="card entry">
+            <header class="entry-head">
+              <h3>Wed 30 Sep</h3>
+              <p class="when"><time datetime="2026-09-30T18:15">6:15</time> – <time datetime="2026-09-30T19:04">7:04 pm</time></p>
+            </header>
+            <dl class="tally">
+              <div><dt>Time</dt><dd>49 min</dd></div>
+              <div><dt>Sets</dt><dd>7</dd></div>
+              <div><dt>Volume</dt><dd>3,485 kg</dd></div>
+            </dl>
+            <table class="log">
+              <thead><tr><th scope="col">Exercise</th><th scope="col" class="num">kg</th><th scope="col" class="num">Reps</th></tr></thead>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="3" class="lift">Bench press<span class="top">Top 82.5 kg × 6</span></th><td class="num">80</td><td class="num">8</td></tr>
+                <tr><td class="num">80</td><td class="num">8</td></tr>
+                <tr><td class="num">82.5</td><td class="num">6</td></tr>
+              </tbody>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="2" class="lift">Overhead press<span class="top">Top 42.5 kg × 8</span></th><td class="num">42.5</td><td class="num">8</td></tr>
+                <tr><td class="num">42.5</td><td class="num">8</td></tr>
+              </tbody>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="2" class="lift">Lat pulldown<span class="top">Top 60 kg × 8</span></th><td class="num">55</td><td class="num">10</td></tr>
+                <tr><td class="num">60</td><td class="num">8</td></tr>
+              </tbody>
+            </table>
+          </article>
+        </section>
+
+        <details class="week">
+          <summary class="week-head">
+            <h2>21 – 27 Sep</h2>
+            <span class="week-row">
+              <span class="days" role="img" aria-label="Trained Monday, Thursday and Saturday">
+                <span class="on">M</span><span>T</span><span>W</span><span class="on">T</span><span>F</span><span class="on">S</span><span>S</span>
+              </span>
+              <span class="count">3 workouts</span>
+              <span class="toggle"></span>
+            </span>
+          </summary>
+          <p class="hint">(Cards for this week render here, same as above, when opened.)</p>
+        </details>
+
+        <details class="week">
+          <summary class="week-head">
+            <h2>14 – 20 Sep</h2>
+            <span class="week-row">
+              <span class="days" role="img" aria-label="Trained Tuesday">
+                <span>M</span><span class="on">T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+              </span>
+              <span class="count">1 workout</span>
+              <span class="toggle"></span>
+            </span>
+          </summary>
+          <p class="hint">(Cards for this week render here when opened.)</p>
+        </details>
+      </section>
+
+      <!-- state: live -->
+      <section class="state">
+        <p class="state-label">State: live (a workout still open)</p>
+        <p class="state-note">Opened from the nav between sets to check last week's bench. The strip at the bottom stays pinned while scrolling.</p>
+
+        <h1>History</h1>
+        <p class="lede">5 workouts · 15,121 kg in the book</p>
+
+        <section class="week" aria-labelledby="wk-this-live">
+          <div class="week-head">
+            <h2 id="wk-this-live">This week</h2>
+            <div class="week-row">
+              <span class="days" role="img" aria-label="Trained Monday and Wednesday">
+                <span class="on">M</span><span>T</span><span class="on">W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+              </span>
+              <span class="count">2 workouts</span>
+            </div>
+          </div>
+
+          <article class="card entry">
+            <header class="entry-head">
+              <h3>Today <span class="badge">Live</span></h3>
+              <p class="when">Started <time datetime="2026-10-07T18:42">6:42 pm</time></p>
+            </header>
+            <dl class="tally">
+              <div><dt>So far</dt><dd>21 min</dd></div>
+              <div><dt>Sets</dt><dd>3</dd></div>
+              <div><dt>Volume</dt><dd>1,900 kg</dd></div>
+            </dl>
+            <table class="log">
+              <thead><tr><th scope="col">Exercise</th><th scope="col" class="num">kg</th><th scope="col" class="num">Reps</th></tr></thead>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="2" class="lift">Bench press<span class="top">Top 82.5 kg × 8</span></th><td class="num">80</td><td class="num">8</td></tr>
+                <tr><td class="num">82.5</td><td class="num">8</td></tr>
+              </tbody>
+              <tbody>
+                <tr><th scope="rowgroup" class="lift">Incline bench press</th><td class="num">60</td><td class="num">10</td></tr>
+              </tbody>
+            </table>
+          </article>
+
+          <article class="card entry">
+            <header class="entry-head">
+              <h3>Mon 5 Oct</h3>
+              <p class="when"><time datetime="2026-10-05T07:05">7:05</time> – <time datetime="2026-10-05T08:10">8:10 am</time></p>
+            </header>
+            <dl class="tally">
+              <div><dt>Time</dt><dd>65 min</dd></div>
+              <div><dt>Sets</dt><dd>8</dd></div>
+              <div><dt>Volume</dt><dd>3,480 kg</dd></div>
+            </dl>
+            <table class="log">
+              <thead><tr><th scope="col">Exercise</th><th scope="col" class="num">kg</th><th scope="col" class="num">Reps</th></tr></thead>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="4" class="lift">Back squat<span class="top">Top 110 kg × 5</span></th><td class="num">100</td><td class="num">5</td></tr>
+                <tr><td class="num">110</td><td class="num">5</td></tr>
+                <tr><td class="num">110</td><td class="num">5</td></tr>
+                <tr><td class="num">110</td><td class="num">4</td></tr>
+              </tbody>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="2" class="lift">Romanian deadlift<span class="top">Top 90 kg × 8</span></th><td class="num">90</td><td class="num">8</td></tr>
+                <tr><td class="num">90</td><td class="num">8</td></tr>
+              </tbody>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="2" class="lift">Hanging leg raise<span class="top">Best 12 reps</span></th><td class="num">0</td><td class="num">12</td></tr>
+                <tr><td class="num">0</td><td class="num">10</td></tr>
+              </tbody>
+            </table>
+          </article>
+        </section>
+
+        <details class="week">
+          <summary class="week-head">
+            <h2>Last week</h2>
+            <span class="week-row">
+              <span class="days" role="img" aria-label="Trained Wednesday and Saturday">
+                <span>M</span><span>T</span><span class="on">W</span><span>T</span><span>F</span><span class="on">S</span><span>S</span>
+              </span>
+              <span class="count">2 workouts</span>
+              <span class="toggle"></span>
+            </span>
+          </summary>
+          <p class="hint">(Cards render here when opened.)</p>
+        </details>
+
+        <div class="resume">
+          <p>Still on the floor <small>3 sets in, 21 min</small></p>
+          <a href="/rooms/12" class="button">Resume</a>
+        </div>
+      </section>
+
+      <!-- state: success -->
+      <section class="state">
+        <p class="state-label">State: success (just tapped Finish)</p>
+        <p class="state-note">Arrived from the room's Finish button via /history?finished=1. The rest of the list follows as in default.</p>
+
+        <h1>History</h1>
+        <p class="lede">8 workouts · 26,821 kg in the book</p>
+        <p class="bubble" role="status">Workout's in the book. Nice one 🏆</p>
+
+        <section class="week" aria-labelledby="wk-this-done">
+          <div class="week-head">
+            <h2 id="wk-this-done">This week</h2>
+            <div class="week-row">
+              <span class="days" role="img" aria-label="Trained Monday and Wednesday">
+                <span class="on">M</span><span>T</span><span class="on">W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+              </span>
+              <span class="count">2 workouts</span>
+            </div>
+          </div>
+          <article class="card entry">
+            <header class="entry-head">
+              <h3>Today</h3>
+              <p class="when"><time datetime="2026-10-07T18:42">6:42</time> – <time datetime="2026-10-07T19:38">7:38 pm</time></p>
+            </header>
+            <dl class="tally">
+              <div><dt>Time</dt><dd>56 min</dd></div>
+              <div><dt>Sets</dt><dd>11</dd></div>
+              <div><dt>Volume</dt><dd>4,190 kg</dd></div>
+            </dl>
+            <table class="log">
+              <thead><tr><th scope="col">Exercise</th><th scope="col" class="num">kg</th><th scope="col" class="num">Reps</th></tr></thead>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="3" class="lift">Bench press<span class="top">Top 82.5 kg × 8</span></th><td class="num">80</td><td class="num">8</td></tr>
+                <tr><td class="num">82.5</td><td class="num">8</td></tr>
+                <tr><td class="num">82.5</td><td class="num">6</td></tr>
+              </tbody>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="2" class="lift">Incline bench press<span class="top">Top 60 kg × 10</span></th><td class="num">60</td><td class="num">10</td></tr>
+                <tr><td class="num">60</td><td class="num">9</td></tr>
+              </tbody>
+              <tbody>
+                <tr><th scope="rowgroup" class="lift">Push-ups</th><td class="num">0</td><td class="num">20</td></tr>
+              </tbody>
+            </table>
+          </article>
+        </section>
+      </section>
+
+      <!-- state: empty -->
+      <section class="state">
+        <p class="state-label">State: empty (first visit)</p>
+
+        <h1>History</h1>
+        <div class="card empty">
+          <svg viewBox="0 0 16 8" width="64" height="32" aria-hidden="true" shape-rendering="crispEdges">
+            <rect x="0" y="2" width="2" height="4" fill="#1f6b3a" />
+            <rect x="2" y="0" width="2" height="8" fill="#1f6b3a" />
+            <rect x="4" y="3" width="8" height="2" fill="#0b2416" />
+            <rect x="12" y="0" width="2" height="8" fill="#1f6b3a" />
+            <rect x="14" y="2" width="2" height="4" fill="#1f6b3a" />
+          </svg>
+          <p>No workouts yet. Your future self is waiting 🏋️</p>
+          <a href="/" class="button">Start one</a>
+        </div>
+      </section>
+
+      <!-- state: signed out, pending, error -->
+      <section class="state">
+        <p class="state-label">States with no screen of their own</p>
+        <p class="state-note">Signed out: 303 to /signin?next=/history, as today. Pending and error: the page has no form; Resume and Start one are plain links.</p>
+      </section>
+    </main>
+    <footer>
+      <a href="/readme/">What Spotter is for</a>
+    </footer>
+  </body>
+</html>

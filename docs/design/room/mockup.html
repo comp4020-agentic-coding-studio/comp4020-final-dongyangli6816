@@ -1,0 +1,1231 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f3d22" />
+    <title>Room SB64FR · Spotter (mockup)</title>
+    <link rel="stylesheet" href="../../../node_modules/@fontsource/press-start-2p/400.css" />
+    <link rel="stylesheet" href="../../../node_modules/@fontsource/vt323/400.css" />
+    <style id="global">
+  /* Deep green, after the Game Boy's four-shade screen. One "pixel" of
+     decoration is --px, so borders and shadows stay on the same grid. */
+  :root {
+    --ink: #0b2416;
+    --deep: #0f3d22;
+    --green: #1f6b3a;
+    --leaf: #c8e66b;
+    --paper: #e8f0d8;
+    --card: #f7fbef;
+    --muted: #3d5a45;
+    --error: #a3241b;
+    --focus: #f2c94c;
+    --px: 4px;
+    --display: "Press Start 2P", ui-monospace, monospace;
+    --body: "VT323", ui-monospace, monospace;
+    color-scheme: light;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    color: var(--ink);
+    font: 22px/1.35 var(--body);
+    /* pixel fonts have one weight; a faked bold smears them */
+    font-synthesis: none;
+    /* a faint 16 px checker, like gym floor tiles */
+    background-color: var(--paper);
+    background-image: conic-gradient(#dbe7c6 25%, transparent 0 50%, #dbe7c6 0 75%, transparent 0);
+    background-size: 32px 32px;
+  }
+
+  /* ---------- top bar ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--deep);
+    border-bottom: var(--px) solid var(--ink);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--paper);
+    text-decoration: none;
+    font: 16px/1 var(--display);
+    text-transform: uppercase;
+  }
+  .logo {
+    image-rendering: pixelated;
+  }
+  .topbar nav {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+  }
+  .topbar nav a,
+  .topbar .linklike {
+    color: var(--paper);
+    font: 24px/1 var(--body);
+    text-decoration: none;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .topbar nav a:hover,
+  .topbar .linklike:hover {
+    color: var(--leaf);
+  }
+  .topbar form {
+    margin: 0;
+  }
+
+  /* ---------- page ---------- */
+  main {
+    flex: 1;
+    width: 100%;
+    max-width: 44rem;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 2rem;
+  }
+  footer {
+    padding: 1rem;
+    text-align: center;
+    border-top: var(--px) solid var(--ink);
+    background: var(--deep);
+  }
+  footer a {
+    color: var(--leaf);
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--display);
+    font-weight: 400;
+    line-height: 1.4;
+    margin: 0 0 1rem;
+  }
+  h1 {
+    font-size: clamp(18px, 5vw, 26px);
+  }
+  h2 {
+    font-size: 14px;
+    color: var(--green);
+  }
+  h3 {
+    font-size: 12px;
+  }
+  p {
+    margin: 0 0 1rem;
+  }
+  a {
+    color: var(--green);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+  }
+
+  /* ---------- pixel panels ---------- */
+  .card {
+    position: relative;
+    margin: 0 0 1.5rem;
+    padding: 1.25rem;
+    background: var(--card);
+    border: var(--px) solid var(--ink);
+    box-shadow: var(--px) var(--px) 0 var(--green), calc(var(--px) * 2) calc(var(--px) * 2) 0 var(--ink);
+  }
+  .card > :last-child {
+    margin-bottom: 0;
+  }
+
+  /* ---------- forms ---------- */
+  label {
+    display: block;
+    margin: 1rem 0 0.35rem;
+    color: var(--deep);
+  }
+  input,
+  select {
+    width: 100%;
+    min-height: 48px;
+    padding: 0.5rem 0.75rem;
+    font: 26px/1.1 var(--body);
+    color: var(--ink);
+    background: #fff;
+    border: var(--px) solid var(--ink);
+    border-radius: 0;
+    box-shadow: inset var(--px) var(--px) 0 #dbe7c6;
+  }
+  select {
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%),
+      linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+    background-position: calc(100% - 22px) 50%, calc(100% - 14px) 50%;
+    background-size: 8px 8px;
+    background-repeat: no-repeat;
+    padding-right: 2.5rem;
+  }
+  button,
+  .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding: 0.75rem 1.25rem;
+    font: 12px/1.4 var(--display);
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--paper);
+    background: var(--green);
+    border: 0;
+    cursor: pointer;
+    /* a notched pixel outline plus a drop shadow; pressing moves it down */
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--ink),
+      0 var(--px) 0 var(--ink),
+      calc(var(--px) * -1) 0 0 var(--ink),
+      var(--px) 0 0 var(--ink),
+      0 calc(var(--px) * 2) 0 var(--ink),
+      inset 0 calc(var(--px) * -1) 0 var(--deep);
+    margin: var(--px) var(--px) calc(var(--px) * 2);
+    transition: transform 60ms steps(1);
+  }
+  button:hover,
+  .button:hover {
+    background: #26804a;
+  }
+  button:active,
+  .button:active {
+    transform: translateY(var(--px));
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--ink),
+      0 var(--px) 0 var(--ink),
+      calc(var(--px) * -1) 0 0 var(--ink),
+      var(--px) 0 0 var(--ink);
+  }
+  .button.secondary {
+    color: var(--ink);
+    background: var(--leaf);
+  }
+  .button.secondary:hover {
+    background: #d6ef86;
+  }
+  .wide {
+    width: calc(100% - var(--px) * 2);
+  }
+  .topbar .linklike {
+    background: none;
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+    text-transform: none;
+  }
+  :focus-visible {
+    outline: var(--px) solid var(--focus);
+    outline-offset: var(--px);
+  }
+  .error {
+    margin: 0.5rem 0 0;
+    padding: 0.4rem 0.6rem;
+    color: #fff;
+    background: var(--error);
+    border-left: calc(var(--px) * 2) solid var(--ink);
+  }
+  .hint {
+    color: var(--muted);
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    align-items: center;
+    margin-top: 1.25rem;
+  }
+
+  /* ---------- bits ---------- */
+  .passcode-box {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+  .passcode {
+    display: inline-block;
+    padding: 0.5rem 0.75rem;
+    font: 24px/1 var(--display);
+    letter-spacing: 0.12em;
+    color: var(--leaf);
+    background: var(--ink);
+    border: var(--px) solid var(--green);
+  }
+  .bubble {
+    position: relative;
+    margin: 0 0 1.25rem;
+    padding: 0.75rem 1rem;
+    background: var(--leaf);
+    border: var(--px) solid var(--ink);
+  }
+  .bubble::after {
+    content: "";
+    position: absolute;
+    left: 1.5rem;
+    bottom: calc(var(--px) * -3);
+    width: calc(var(--px) * 3);
+    height: calc(var(--px) * 3);
+    background: var(--leaf);
+    border-right: var(--px) solid var(--ink);
+    border-bottom: var(--px) solid var(--ink);
+    transform: skewY(45deg);
+  }
+  .roster {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .roster li {
+    padding: 0.25rem 0.6rem;
+    background: var(--paper);
+    border: var(--px) solid var(--ink);
+  }
+  .roster li::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 0.5rem;
+    background: var(--green);
+    vertical-align: middle;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 24px;
+  }
+  th {
+    font: 10px/1.4 var(--display);
+    text-transform: uppercase;
+    color: var(--paper);
+    background: var(--deep);
+  }
+  th,
+  td {
+    text-align: left;
+    padding: 0.5rem 0.6rem;
+    border: 2px solid var(--ink);
+  }
+  td.num,
+  th.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  tbody tr:nth-child(even) td {
+    background: #eef5e1;
+  }
+  .stat {
+    font-family: var(--display);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.15rem 0.4rem;
+    font: 9px/1.4 var(--display);
+    vertical-align: middle;
+    color: var(--ink);
+    background: var(--leaf);
+    border: 2px solid var(--ink);
+  }
+
+  /* ---------- /readme/ ---------- */
+  .prose h1 {
+    font-size: clamp(18px, 5vw, 24px);
+  }
+  .prose h2 {
+    margin-top: 2rem;
+  }
+  .prose li {
+    margin-bottom: 0.4rem;
+  }
+
+  @media (max-width: 420px) {
+    body {
+      font-size: 21px;
+    }
+    .brand {
+      font-size: 13px;
+    }
+    .card {
+      padding: 1rem;
+    }
+    .passcode {
+      font-size: 20px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    button,
+    .button {
+      transition: none;
+    }
+  }
+    </style>
+    <style id="page">
+      /* ======================================================================
+         LAYOUT CHANGES. Shown here so the mockup renders; they belong in
+         Layout.astro, not in the page. See "Layout changes" in spec.md.
+         ====================================================================== */
+
+      /* layout change: Night and state tokens on :root (system 5, gap 4) */
+      :root {
+        --night: #081a10;
+        --floor: #0f2a1a;
+        --panel: #143822;
+        --edge: #3f8f5a;
+        --dim: #8fa896;
+        --idle: #e8f0d8;
+        --lifting: #c8e66b;
+        --resting: #7cc6e8;
+        --slacking: #ff6b5e;
+        --finished: #f2c94c;
+      }
+
+      /* layout change: the Night surface, a `night` class on <body> set by a
+         Layout prop (surface="night"). Swaps surface colours only. */
+      body.night {
+        color: var(--paper);
+        color-scheme: dark;
+        background-color: var(--night);
+        background-image: conic-gradient(var(--floor) 25%, transparent 0 50%, var(--floor) 0 75%, transparent 0);
+      }
+      /* layout change: the gym needs room for two columns at >= 900 px */
+      body.night main {
+        max-width: 64rem;
+      }
+      .night h2 {
+        color: var(--leaf);
+      }
+      .night label {
+        color: var(--paper);
+      }
+      /* layout change: the bubble keeps its ink text on Night */
+      .night .bubble {
+        color: var(--ink);
+      }
+      .night .hint {
+        color: var(--dim);
+      }
+      .night main a {
+        color: var(--leaf);
+      }
+      /* layout change: primary on Night is leaf with an ink label (system 5) */
+      .night button,
+      .night .button {
+        color: var(--ink);
+        background: var(--leaf);
+      }
+      .night button:hover,
+      .night .button:hover {
+        background: #d6ef86; /* existing hex; tokenise per gap 5 */
+      }
+      /* layout change: secondary on Night (not yet in the system): night
+         fill, paper label, the notch drawn in --edge instead of --ink */
+      .night .button.secondary {
+        color: var(--paper);
+        background: var(--night);
+        box-shadow:
+          0 calc(var(--px) * -1) 0 var(--edge),
+          0 var(--px) 0 var(--edge),
+          calc(var(--px) * -1) 0 0 var(--edge),
+          var(--px) 0 0 var(--edge),
+          0 calc(var(--px) * 2) 0 #000;
+      }
+      .night .button.secondary:hover {
+        background: var(--floor);
+      }
+      .night .button.secondary:active {
+        box-shadow:
+          0 calc(var(--px) * -1) 0 var(--edge),
+          0 var(--px) 0 var(--edge),
+          calc(var(--px) * -1) 0 0 var(--edge),
+          var(--px) 0 0 var(--edge);
+      }
+      /* layout change: pending (system 13). Label kept, fill dimmed. */
+      button:disabled,
+      .night button:disabled {
+        color: var(--ink);
+        background: var(--dim);
+        cursor: progress;
+        transform: none;
+      }
+      /* layout change: fields on Night */
+      .night input,
+      .night select {
+        color: var(--paper);
+        background-color: var(--night);
+        border-color: var(--edge);
+        box-shadow: inset var(--px) var(--px) 0 #000;
+      }
+      .night select {
+        background-image: linear-gradient(45deg, transparent 50%, var(--paper) 50%),
+          linear-gradient(135deg, var(--paper) 50%, transparent 50%);
+      }
+      /* layout change: tables on Night */
+      .night th,
+      .night td {
+        border-color: var(--edge);
+      }
+      .night tbody tr:nth-child(even) td {
+        background: var(--floor);
+      }
+      /* layout change: badge onto the 8 px grid (gap 3) */
+      .badge {
+        font-size: 8px;
+      }
+
+      /* ======================================================================
+         PAGE BLOCK. What src/pages/rooms/[id].astro adds.
+         ====================================================================== */
+
+      /* .panel: the Night card (system 9). Lives here until the summary
+         page needs it too, then moves to the layout. */
+      .panel {
+        position: relative;
+        margin: 0 0 2rem;
+        padding: 1.5rem 1.25rem 1.25rem;
+        background: var(--panel);
+        border: var(--px) solid var(--edge);
+        box-shadow: var(--px) var(--px) 0 #000;
+      }
+      .panel > :last-child {
+        margin-bottom: 0;
+      }
+      /* the panel's name sits on its top border, like an RPG menu box */
+      .panel-title {
+        position: absolute;
+        top: calc(var(--px) * -0.5);
+        left: 0.75rem;
+        transform: translateY(-50%);
+        margin: 0;
+        padding: 0 0.5rem;
+        font-size: 16px;
+        line-height: 1.5;
+        color: var(--leaf);
+        background: var(--panel);
+      }
+
+      /* two columns on a laptop: the logbook left, the set panel right */
+      .gym {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+      }
+      @media (min-width: 900px) {
+        .gym {
+          grid-template-columns: minmax(0, 1fr) 24rem;
+          column-gap: 2rem;
+          align-items: start;
+        }
+        .gym > .sheet {
+          grid-column: 2;
+          grid-row: 1 / span 3;
+          position: sticky;
+          top: 2rem;
+        }
+      }
+
+      /* ---------- the gym sign: passcode and how full the room is ---------- */
+      .sign .passcode-box {
+        margin-bottom: 0.75rem;
+      }
+      .spots {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 0;
+        font-variant-numeric: tabular-nums;
+      }
+      .pips {
+        display: flex;
+        gap: var(--px);
+      }
+      .pips i {
+        width: calc(var(--px) * 2);
+        height: calc(var(--px) * 3);
+        background: var(--night);
+        box-shadow: inset 0 0 0 2px var(--edge);
+      }
+      .pips i.in {
+        background: var(--leaf);
+        box-shadow: none;
+      }
+
+      /* ---------- people list (GYM-15 later adds state and equipment) ---------- */
+      .people {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .people li {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        min-height: 44px;
+        border-bottom: var(--px) solid var(--night);
+      }
+      .people li:last-child {
+        border-bottom: 0;
+      }
+      .people li::before {
+        content: "";
+        width: calc(var(--px) * 2);
+        height: calc(var(--px) * 2);
+        background: var(--paper);
+      }
+      .people li.me::before {
+        background: var(--leaf);
+      }
+      .people .badge {
+        margin-left: 0;
+      }
+      .alone {
+        margin: 0.75rem 0 0;
+      }
+
+      /* ---------- this workout: a logbook page ---------- */
+      .tally {
+        margin: 0 0 1rem;
+        color: var(--dim);
+        font-variant-numeric: tabular-nums;
+      }
+      .tally b {
+        font-weight: 400;
+        color: var(--paper);
+      }
+      /* repeat lift names become ditto marks, like a paper logbook */
+      .ditto {
+        padding-left: 1.5rem;
+        color: var(--dim);
+      }
+      .vh {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+
+      /* ---------- the set panel (.sheet) ---------- */
+      .sheet {
+        border-color: var(--leaf);
+      }
+      .sheet .panel-title {
+        font-size: 8px;
+        color: var(--dim);
+      }
+      @media (max-width: 899px) {
+        /* pinned to the bottom of the phone, edge to edge, in the thumb zone */
+        .sheet {
+          position: sticky;
+          bottom: 0;
+          z-index: 1;
+          margin: 2rem -1rem -2rem;
+          padding-bottom: 1rem;
+          border-width: var(--px) 0 0;
+          box-shadow: 0 calc(var(--px) * -1) 0 #000;
+        }
+      }
+      .sheet .bubble {
+        margin-bottom: 1.5rem;
+      }
+      /* the lift name is the button that opens the exercise picker */
+      .switch {
+        margin: 0 0 0.75rem;
+      }
+      .switch summary {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem 0.75rem;
+        min-height: 48px;
+        cursor: pointer;
+        list-style: none;
+      }
+      .switch summary::-webkit-details-marker {
+        display: none;
+      }
+      .lift {
+        font: 16px/1.5 var(--display);
+        text-transform: uppercase;
+        color: var(--paper);
+      }
+      .set-no {
+        padding: 0 0.5rem;
+        font-size: 24px;
+        line-height: 1.25;
+        color: var(--ink);
+        background: var(--leaf);
+        font-variant-numeric: tabular-nums;
+      }
+      .change {
+        margin-left: auto;
+        padding: 0.25rem 2.25rem 0.25rem 0.75rem;
+        color: var(--paper);
+        border: var(--px) solid var(--edge);
+        background: linear-gradient(45deg, transparent 50%, var(--paper) 50%) calc(100% - 20px) 50% / 8px 8px no-repeat,
+          linear-gradient(135deg, var(--paper) 50%, transparent 50%) calc(100% - 12px) 50% / 8px 8px no-repeat;
+      }
+      .switch[open] .change {
+        background-color: var(--night);
+      }
+      .picker {
+        margin-top: 0.75rem;
+        padding: 1rem;
+        background: var(--night);
+        border: var(--px) solid var(--edge);
+      }
+      .picker label:first-child,
+      .sheet > form > label:first-child {
+        margin-top: 0;
+      }
+      .recent-label {
+        margin: 0 0 0.5rem;
+        color: var(--dim);
+      }
+      .recent {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 0 0 1rem;
+        padding: 0;
+        list-style: none;
+      }
+      .night .recent a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 0 0.75rem;
+        color: var(--paper);
+        text-decoration: none;
+        background: var(--panel);
+        border: var(--px) solid var(--edge);
+      }
+      .night .recent a[aria-current] {
+        color: var(--ink);
+        background: var(--leaf);
+        border-color: var(--leaf);
+      }
+      .last {
+        margin: 0 0 0.75rem;
+        color: var(--dim);
+        font-variant-numeric: tabular-nums;
+      }
+      .last b {
+        font-weight: 400;
+        color: var(--paper);
+      }
+      /* the two numbers you are about to lift, at arm's length */
+      .big-pair {
+        display: grid;
+        grid-template-columns: minmax(0, 3fr) auto minmax(0, 2fr);
+        align-items: end;
+        gap: 0 0.5rem;
+      }
+      .big label {
+        margin: 0 0 0.25rem;
+        color: var(--dim);
+      }
+      .big .field {
+        position: relative;
+        display: block;
+      }
+      .big input {
+        min-height: 72px;
+        padding: 0.25rem 0.75rem;
+        font-size: 48px;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+        -moz-appearance: textfield;
+        appearance: textfield;
+      }
+      .big input::-webkit-inner-spin-button,
+      .big input::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      .big .unit {
+        position: absolute;
+        right: 0.75rem;
+        bottom: 0.75rem;
+        font-size: 24px;
+        line-height: 1;
+        color: var(--dim);
+        pointer-events: none;
+      }
+      .big .field:has(.unit) input {
+        padding-right: 2.75rem;
+      }
+      .times {
+        padding-bottom: 1rem;
+        font-size: 32px;
+        line-height: 1;
+        color: var(--dim);
+      }
+      .sheet .error {
+        margin-top: 0.75rem;
+      }
+      .sheet .wide {
+        min-height: 64px;
+        margin-top: 1.25rem;
+        font-size: 16px;
+      }
+    </style>
+    <style id="mockup">
+      /* mockup scaffolding only; not part of the design */
+      .state-label {
+        margin: 3rem 0 2rem;
+        padding: 0.25rem 0.5rem;
+        font: 8px/1.6 var(--display);
+        text-transform: uppercase;
+        color: var(--ink);
+        background: var(--finished);
+        display: inline-block;
+      }
+      .state:first-child .state-label {
+        margin-top: 0;
+      }
+      .state {
+        padding-bottom: 2rem;
+        border-bottom: var(--px) dashed var(--edge);
+        margin-bottom: 1rem;
+      }
+      .state.solo {
+        max-width: 24rem;
+      }
+      .state.solo .sheet {
+        position: relative;
+        top: auto;
+        bottom: auto;
+        margin: 1rem 0 0;
+        border-width: var(--px);
+      }
+    </style>
+  </head>
+  <body class="night">
+    <header class="topbar">
+      <a href="/" class="brand" aria-label="Spotter home">
+        <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges">
+          <rect x="0" y="2" width="2" height="4" fill="#c8e66b" />
+          <rect x="2" y="0" width="2" height="8" fill="#c8e66b" />
+          <rect x="4" y="3" width="8" height="2" fill="#e8f0d8" />
+          <rect x="12" y="0" width="2" height="8" fill="#c8e66b" />
+          <rect x="14" y="2" width="2" height="4" fill="#c8e66b" />
+        </svg>
+        <span>Spotter</span>
+      </a>
+      <nav>
+        <a href="/history">History</a>
+        <form method="post" action="/signout">
+          <button type="submit" class="linklike">Sign out</button>
+        </form>
+      </nav>
+    </header>
+    <main>
+
+      <!-- state: lifting -->
+      <section class="state">
+        <p class="state-label">Lifting: exercise chosen, numbers pre-filled (?exercise=9)</p>
+        <div class="gym">
+          <section class="panel sign" aria-labelledby="room-title-1">
+            <h1 class="panel-title" id="room-title-1">Room</h1>
+            <div class="passcode-box">
+              <span class="passcode">SB64FR</span>
+              <p class="spots">
+                <span class="pips" aria-hidden="true"><i class="in"></i><i class="in"></i><i class="in"></i><i class="in"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                <span>4 of 12 in</span>
+              </p>
+            </div>
+            <p class="hint">Send the code to the squad. They join at spotter.fly.dev/join.</p>
+          </section>
+
+          <section class="panel" aria-labelledby="people-title-1">
+            <h2 class="panel-title" id="people-title-1">Squad</h2>
+            <ul class="people">
+              <li class="me">Priya <span class="badge">You</span></li>
+              <li>Mia</li>
+              <li>Ji-woo</li>
+              <li>Tom</li>
+            </ul>
+          </section>
+
+          <section class="panel" aria-labelledby="log-title-1">
+            <h2 class="panel-title" id="log-title-1">This workout</h2>
+            <p class="tally"><b>4</b> sets · <b>2,212.5 kg</b> moved so far</p>
+            <table>
+              <thead><tr><th>Exercise</th><th class="num">kg</th><th class="num">Reps</th></tr></thead>
+              <tbody>
+                <tr><td>Back squat</td><td class="num">100</td><td class="num">5</td></tr>
+                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Back squat</span></td><td class="num">100</td><td class="num">5</td></tr>
+                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Back squat</span></td><td class="num">102.5</td><td class="num">5</td></tr>
+                <tr><td>Deadlift</td><td class="num">140</td><td class="num">5</td></tr>
+              </tbody>
+            </table>
+            <form method="post">
+              <input type="hidden" name="action" value="finish" />
+              <div class="actions"><button type="submit" class="secondary button">Finish workout</button></div>
+            </form>
+          </section>
+
+          <section class="panel sheet" aria-labelledby="sheet-title-1">
+            <h2 class="panel-title" id="sheet-title-1">Log a set</h2>
+            <details class="switch">
+              <summary><span class="lift">Deadlift</span><span class="set-no">Set 2</span><span class="change">Change</span></summary>
+              <form method="get" class="picker">
+                <p class="recent-label">From this workout</p>
+                <ul class="recent">
+                  <li><a href="?exercise=5">Back squat</a></li>
+                  <li><a href="?exercise=9" aria-current="true">Deadlift</a></li>
+                </ul>
+                <label for="exercise-1">Exercise</label>
+                <select id="exercise-1" name="exercise">
+                  <optgroup label="Lifting platform"><option value="9" selected>Deadlift</option><option value="10">Romanian deadlift</option></optgroup>
+                </select>
+                <div class="actions"><button type="submit" class="secondary button">Choose</button></div>
+              </form>
+            </details>
+            <form method="post" class="set-form">
+              <input type="hidden" name="exercise_id" value="9" />
+              <p class="last">Last time <b>140 kg × 5</b></p>
+              <div class="big-pair">
+                <div class="big">
+                  <label for="weight_kg-1">Weight</label>
+                  <span class="field"><input id="weight_kg-1" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="140" required /><span class="unit" aria-hidden="true">kg</span></span>
+                </div>
+                <span class="times" aria-hidden="true">×</span>
+                <div class="big">
+                  <label for="reps-1">Reps</label>
+                  <span class="field"><input id="reps-1" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="5" required /></span>
+                </div>
+              </div>
+              <button type="submit" class="wide">Done</button>
+            </form>
+          </section>
+        </div>
+      </section>
+
+      <!-- state: rested (success) -->
+      <section class="state">
+        <p class="state-label">Success: set just logged (?exercise=9&amp;rested=1)</p>
+        <div class="gym">
+          <section class="panel sign" aria-labelledby="room-title-2">
+            <h1 class="panel-title" id="room-title-2">Room</h1>
+            <div class="passcode-box">
+              <span class="passcode">SB64FR</span>
+              <p class="spots">
+                <span class="pips" aria-hidden="true"><i class="in"></i><i class="in"></i><i class="in"></i><i class="in"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                <span>4 of 12 in</span>
+              </p>
+            </div>
+            <p class="hint">Send the code to the squad. They join at spotter.fly.dev/join.</p>
+          </section>
+
+          <section class="panel" aria-labelledby="people-title-2">
+            <h2 class="panel-title" id="people-title-2">Squad</h2>
+            <ul class="people">
+              <li class="me">Priya <span class="badge">You</span></li>
+              <li>Mia</li>
+              <li>Ji-woo</li>
+              <li>Tom</li>
+            </ul>
+          </section>
+
+          <section class="panel" aria-labelledby="log-title-2">
+            <h2 class="panel-title" id="log-title-2">This workout</h2>
+            <p class="tally"><b>5</b> sets · <b>2,912.5 kg</b> moved so far</p>
+            <table>
+              <thead><tr><th>Exercise</th><th class="num">kg</th><th class="num">Reps</th></tr></thead>
+              <tbody>
+                <tr><td>Back squat</td><td class="num">100</td><td class="num">5</td></tr>
+                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Back squat</span></td><td class="num">100</td><td class="num">5</td></tr>
+                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Back squat</span></td><td class="num">102.5</td><td class="num">5</td></tr>
+                <tr><td>Deadlift</td><td class="num">140</td><td class="num">5</td></tr>
+                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Deadlift</span></td><td class="num">140</td><td class="num">5</td></tr>
+              </tbody>
+            </table>
+            <form method="post">
+              <input type="hidden" name="action" value="finish" />
+              <div class="actions"><button type="submit" class="secondary button">Finish workout</button></div>
+            </form>
+          </section>
+
+          <section class="panel sheet" aria-labelledby="sheet-title-2">
+            <h2 class="panel-title" id="sheet-title-2">Log a set</h2>
+            <p class="bubble" role="status">Set logged! Rest 90 s, then go again.</p>
+            <details class="switch">
+              <summary><span class="lift">Deadlift</span><span class="set-no">Set 3</span><span class="change">Change</span></summary>
+            </details>
+            <form method="post" class="set-form">
+              <input type="hidden" name="exercise_id" value="9" />
+              <p class="last">Last time <b>140 kg × 5</b></p>
+              <div class="big-pair">
+                <div class="big">
+                  <label for="weight_kg-2">Weight</label>
+                  <span class="field"><input id="weight_kg-2" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="140" required /><span class="unit" aria-hidden="true">kg</span></span>
+                </div>
+                <span class="times" aria-hidden="true">×</span>
+                <div class="big">
+                  <label for="reps-2">Reps</label>
+                  <span class="field"><input id="reps-2" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="5" required /></span>
+                </div>
+              </div>
+              <button type="submit" class="wide">Done</button>
+            </form>
+          </section>
+        </div>
+      </section>
+
+      <!-- state: idle -->
+      <section class="state">
+        <p class="state-label">Idle: no exercise chosen yet, some sets logged (no ?exercise)</p>
+        <div class="gym">
+          <section class="panel sign" aria-labelledby="room-title-3">
+            <h1 class="panel-title" id="room-title-3">Room</h1>
+            <div class="passcode-box">
+              <span class="passcode">SB64FR</span>
+              <p class="spots">
+                <span class="pips" aria-hidden="true"><i class="in"></i><i class="in"></i><i class="in"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                <span>3 of 12 in</span>
+              </p>
+            </div>
+            <p class="hint">Send the code to the squad. They join at spotter.fly.dev/join.</p>
+          </section>
+
+          <section class="panel" aria-labelledby="people-title-3">
+            <h2 class="panel-title" id="people-title-3">Squad</h2>
+            <ul class="people">
+              <li class="me">Priya <span class="badge">You</span></li>
+              <li>Mia</li>
+              <li>Ji-woo</li>
+            </ul>
+          </section>
+
+          <section class="panel" aria-labelledby="log-title-3">
+            <h2 class="panel-title" id="log-title-3">This workout</h2>
+            <p class="tally"><b>3</b> sets · <b>1,512.5 kg</b> moved so far</p>
+            <table>
+              <thead><tr><th>Exercise</th><th class="num">kg</th><th class="num">Reps</th></tr></thead>
+              <tbody>
+                <tr><td>Back squat</td><td class="num">100</td><td class="num">5</td></tr>
+                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Back squat</span></td><td class="num">100</td><td class="num">5</td></tr>
+                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Back squat</span></td><td class="num">102.5</td><td class="num">5</td></tr>
+              </tbody>
+            </table>
+            <form method="post">
+              <input type="hidden" name="action" value="finish" />
+              <div class="actions"><button type="submit" class="secondary button">Finish workout</button></div>
+            </form>
+          </section>
+
+          <section class="panel sheet" aria-labelledby="sheet-title-3">
+            <h2 class="panel-title" id="sheet-title-3">Pick a lift</h2>
+            <form method="get">
+              <p class="recent-label">From this workout</p>
+              <ul class="recent">
+                <li><a href="?exercise=5">Back squat</a></li>
+              </ul>
+              <label for="exercise-3">Exercise</label>
+              <select id="exercise-3" name="exercise">
+                <optgroup label="Treadmill"><option value="1">Run</option><option value="2">Incline walk</option></optgroup>
+                <optgroup label="Flat bench"><option value="3">Bench press</option><option value="4">Incline bench press</option></optgroup>
+                <optgroup label="Squat rack"><option value="5">Back squat</option><option value="6">Overhead press</option></optgroup>
+                <optgroup label="Dumbbell rack"><option value="7">Dumbbell curl</option><option value="8">Lateral raise</option></optgroup>
+                <optgroup label="Lifting platform"><option value="9">Deadlift</option><option value="10">Romanian deadlift</option></optgroup>
+                <optgroup label="Pull-up bar"><option value="11">Pull-up</option><option value="12">Hanging leg raise</option></optgroup>
+                <optgroup label="Cable machine"><option value="13">Lat pulldown</option><option value="14">Seated cable row</option></optgroup>
+                <optgroup label="Exercise mat"><option value="15">Push-ups</option><option value="16">Plank</option></optgroup>
+              </select>
+              <button type="submit" class="wide">Choose</button>
+            </form>
+          </section>
+        </div>
+      </section>
+
+      <!-- state: empty -->
+      <section class="state">
+        <p class="state-label">Empty: alone in a new room, no sets</p>
+        <div class="gym">
+          <section class="panel sign" aria-labelledby="room-title-4">
+            <h1 class="panel-title" id="room-title-4">Room</h1>
+            <div class="passcode-box">
+              <span class="passcode">C8A7CQ</span>
+              <p class="spots">
+                <span class="pips" aria-hidden="true"><i class="in"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                <span>1 of 12 in</span>
+              </p>
+            </div>
+            <p class="hint">Send the code to the squad. They join at spotter.fly.dev/join.</p>
+          </section>
+
+          <section class="panel" aria-labelledby="people-title-4">
+            <h2 class="panel-title" id="people-title-4">Squad</h2>
+            <ul class="people">
+              <li class="me">Priya <span class="badge">You</span></li>
+            </ul>
+            <p class="alone">Just you so far. Send the passcode to the squad 📲</p>
+          </section>
+
+          <section class="panel sheet" aria-labelledby="sheet-title-4">
+            <h2 class="panel-title" id="sheet-title-4">Pick a lift</h2>
+            <form method="get">
+              <label for="exercise-4">Exercise</label>
+              <select id="exercise-4" name="exercise">
+                <optgroup label="Treadmill"><option value="1" selected>Run</option><option value="2">Incline walk</option></optgroup>
+                <optgroup label="Flat bench"><option value="3">Bench press</option><option value="4">Incline bench press</option></optgroup>
+              </select>
+              <button type="submit" class="wide">Choose</button>
+            </form>
+          </section>
+        </div>
+      </section>
+
+      <!-- state: change lift open -->
+      <section class="state solo">
+        <p class="state-label">Lifting, lift name tapped: picker open</p>
+        <section class="panel sheet" aria-labelledby="sheet-title-5">
+          <h2 class="panel-title" id="sheet-title-5">Log a set</h2>
+          <details class="switch" open>
+            <summary><span class="lift">Deadlift</span><span class="set-no">Set 2</span><span class="change">Change</span></summary>
+            <form method="get" class="picker">
+              <p class="recent-label">From this workout</p>
+              <ul class="recent">
+                <li><a href="?exercise=5">Back squat</a></li>
+                <li><a href="?exercise=9" aria-current="true">Deadlift</a></li>
+              </ul>
+              <label for="exercise-5">Exercise</label>
+              <select id="exercise-5" name="exercise">
+                <optgroup label="Lifting platform"><option value="9" selected>Deadlift</option><option value="10">Romanian deadlift</option></optgroup>
+              </select>
+              <div class="actions"><button type="submit" class="secondary button">Choose</button></div>
+            </form>
+          </details>
+          <form method="post" class="set-form">
+            <input type="hidden" name="exercise_id" value="9" />
+            <p class="last">Last time <b>140 kg × 5</b></p>
+            <div class="big-pair">
+              <div class="big">
+                <label for="weight_kg-5">Weight</label>
+                <span class="field"><input id="weight_kg-5" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="140" required /><span class="unit" aria-hidden="true">kg</span></span>
+              </div>
+              <span class="times" aria-hidden="true">×</span>
+              <div class="big">
+                <label for="reps-5">Reps</label>
+                <span class="field"><input id="reps-5" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="5" required /></span>
+              </div>
+            </div>
+            <button type="submit" class="wide">Done</button>
+          </form>
+        </section>
+      </section>
+
+      <!-- state: first time on this lift -->
+      <section class="state solo">
+        <p class="state-label">Lifting, first time on this lift (no last set)</p>
+        <section class="panel sheet" aria-labelledby="sheet-title-6">
+          <h2 class="panel-title" id="sheet-title-6">Log a set</h2>
+          <details class="switch">
+            <summary><span class="lift">Romanian deadlift</span><span class="set-no">Set 1</span><span class="change">Change</span></summary>
+          </details>
+          <form method="post" class="set-form">
+            <input type="hidden" name="exercise_id" value="10" />
+            <p class="last">First time on this one. Start light.</p>
+            <div class="big-pair">
+              <div class="big">
+                <label for="weight_kg-6">Weight</label>
+                <span class="field"><input id="weight_kg-6" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="0" required /><span class="unit" aria-hidden="true">kg</span></span>
+              </div>
+              <span class="times" aria-hidden="true">×</span>
+              <div class="big">
+                <label for="reps-6">Reps</label>
+                <span class="field"><input id="reps-6" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="8" required /></span>
+              </div>
+            </div>
+            <button type="submit" class="wide">Done</button>
+          </form>
+        </section>
+      </section>
+
+      <!-- state: error -->
+      <section class="state solo">
+        <p class="state-label">Error: server rejected the set (400)</p>
+        <section class="panel sheet" aria-labelledby="sheet-title-7">
+          <h2 class="panel-title" id="sheet-title-7">Log a set</h2>
+          <details class="switch">
+            <summary><span class="lift">Deadlift</span><span class="set-no">Set 2</span><span class="change">Change</span></summary>
+          </details>
+          <form method="post" class="set-form">
+            <input type="hidden" name="exercise_id" value="9" />
+            <p class="last">Last time <b>140 kg × 5</b></p>
+            <div class="big-pair">
+              <div class="big">
+                <label for="weight_kg-7">Weight</label>
+                <span class="field"><input id="weight_kg-7" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="140" required aria-describedby="set-error-7" aria-invalid="true" /><span class="unit" aria-hidden="true">kg</span></span>
+              </div>
+              <span class="times" aria-hidden="true">×</span>
+              <div class="big">
+                <label for="reps-7">Reps</label>
+                <span class="field"><input id="reps-7" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="5" required /></span>
+              </div>
+            </div>
+            <p class="error" id="set-error-7" role="alert">Weight is 0 to 1000 kg.</p>
+            <button type="submit" class="wide">Done</button>
+          </form>
+        </section>
+      </section>
+
+      <!-- state: pending -->
+      <section class="state solo">
+        <p class="state-label">Pending: Done tapped, slow connection (later: needs a script)</p>
+        <section class="panel sheet" aria-labelledby="sheet-title-8" aria-busy="true">
+          <h2 class="panel-title" id="sheet-title-8">Log a set</h2>
+          <details class="switch">
+            <summary><span class="lift">Deadlift</span><span class="set-no">Set 2</span><span class="change">Change</span></summary>
+          </details>
+          <form method="post" class="set-form">
+            <input type="hidden" name="exercise_id" value="9" />
+            <p class="last">Last time <b>140 kg × 5</b></p>
+            <div class="big-pair">
+              <div class="big">
+                <label for="weight_kg-8">Weight</label>
+                <span class="field"><input id="weight_kg-8" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="140" readonly /><span class="unit" aria-hidden="true">kg</span></span>
+              </div>
+              <span class="times" aria-hidden="true">×</span>
+              <div class="big">
+                <label for="reps-8">Reps</label>
+                <span class="field"><input id="reps-8" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="5" readonly /></span>
+              </div>
+            </div>
+            <button type="submit" class="wide" disabled>Done</button>
+          </form>
+        </section>
+      </section>
+
+    </main>
+    <footer>
+      <a href="/readme/">What Spotter is for</a>
+    </footer>
+  </body>
+</html>
