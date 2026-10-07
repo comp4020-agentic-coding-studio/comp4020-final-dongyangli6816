@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en-AU">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Redesign before and after</title>
+<!-- Open by double-clicking. Every page and state of Spotter before the
+     designer-agent redesign (Oct 7, 2026) and after it, captured at the same
+     widths with the same demo data. Toggle the width at the top. -->
+<style>
+  body { margin: 0 auto; max-width: 1400px; padding: 16px; font: 16px/1.4 system-ui, sans-serif; background: #f4f4f0; color: #111; }
+  nav { position: sticky; top: 0; padding: 8px 0; background: #f4f4f0; }
+  button { font: inherit; padding: 6px 12px; }
+  button[aria-pressed="true"] { background: #111; color: #fff; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+  figure { margin: 0; }
+  figcaption { font-weight: 600; margin-bottom: 4px; }
+  img { display: block; max-width: 100%; border: 1px solid #ccc; }
+  section { margin: 32px 0; }
+</style>
+<h1>Spotter redesign: before and after</h1>
+<p>Same demo data, same states. Designs and specs: <code>docs/design/&lt;page&gt;/</code>.</p>
+<nav><button data-w="mobile" aria-pressed="true">Phone (390 px)</button> <button data-w="desktop" aria-pressed="false">Laptop (1280 px)</button></nav>
+<main data-tpl>
+  <section id="home-signed-out">
+    <h2>Home, signed out</h2>
+    <div class="pair">
+      <figure><figcaption>Before</figcaption><img src="before/home-signed-out-{w}.png" alt="Home, signed out, before" loading="lazy"></figure>
+      <figure><figcaption>After</figcaption><img src="after/home-signed-out-{w}.png" alt="Home, signed out, after" loading="lazy"></figure>
+    </div>
+  </section>
+  <section id="home">
+    <h2>Home, signed in</h2>
+    <div class="pair">
+      <figure><figcaption>Before</figcaption><img src="before/home-{w}.png" alt="Home, signed in, before" loading="lazy"></figure>
+      <figure><figcaption>After</figcaption><img src="after/home-{w}.png" alt="Home, signed in, after" loading="lazy"></figure>
+    </div>
+  </section>
+  <section id="home-new">
+    <h2>Home, first use</h2>
+    <div class="pair">
+      <figure><figcaption>Before</figcaption><img src="before/home-new-{w}.png" alt="Home, first use, before" loading="lazy"></figure>
+      <figure><figcaption>After</figcaption><img src="after/home-new-{w}.png" alt="Home, first use, after" loading="lazy"></figure>
+    </div>
+  </section>
+  <section id="signup">
+    <h2>Sign up</h2>
+    <div class="pair">
+      <figure><figcaption>Before</figcaption><img src="before/signup-{w}.png" alt="Sign up, before" loading="lazy"></figure>
+      <figure><figcaption>After</figcaption><img src="after/signup-{w}.png" alt="Sign up, after" loading="lazy"></figure>
+    </div>
+  </section>
+  <section id="signup-error">
+    <h2>Sign up, errors</h2>
+    <div class="pair">
+      <figure><figcaption>Before</figcaption><img src="before/signup-error-{w}.png" alt="Sign up, errors, before" loading="lazy"></figure>
+      <figure><figcaption>After</figcaption><img src="after/signup-error-{w}.png" alt="Sign up, errors, after" loading="lazy"></figure>
+    </div>
+  </section>
+  <section id="signin">
+    <h2>Sign in</h2>
+    <div class="pair">
+      <figure><figcaption>Before</figcaption><img src="before/signin-{w}.png" alt="Sign in, before" loading="lazy"></figure>
+      <figure><figcaption>After</figcaption><img src="after/signin-{w}.png" alt="Sign in, after" loading="lazy"></figure>
+    </div>
+  </section>
+  <section id="signin-error">
+    <h2>Sign in, error</h2>
+    <div class="pair">
+      <figure><figcaption>Before</figcaption><img src="before/signin-error-{w}.png" alt="Sign in, error, before" loading="lazy"></figure>
+      <figure><figcaption>After</figcaption><img src="after/signin-error-{w}.png" alt="Sign in, error, after" loading="lazy"></figure>
+    </div>
+  </section>
+  <section id="join">
+    <h2>Join</h2>
+    <div class="pair">
+      <figure><figcaption>Before</figcaption><img src="before/join-{w}.png" alt="Join, before" loading="lazy"></figure>
+      <figure><figcaption>After</figcaption><img src="after/join-{w}.png" alt="Join, after" loading="lazy"></figure>
+    </div>
+  </section>
+  <section id="join-error">
+    <h2>Join, wrong passcode</h2>
+    <div class="pair">
+      <figure><figcaption>Before</figcaption><img src="before/join-error-{w}.png" alt="Join, wrong passcode, before" loading="lazy"></figure>
+      <figure><figcaption>After</figcaption><img src="after/join-error-{w}.png" alt="Join, wrong passcode, after" loading="lazy"></figure>
+    </div>
+  </section>
+  <section id="history">
+    <h2>History</h2>
+    <div class="pair">
+      <figure><figcaption>Before</figcaption><img src="before/history-{w}.png" alt="History, before" loading="lazy"></figure>
+      <figure><figcaption>After</figcaption><img src="after/history-{w}.png" alt="History, after" loading="lazy"></figure>
+    </div>
+  </section>
+  <section id="history-empty">
+    <h2>History, empty</h2>
+    <div class="pair">
+      <figure><figcaption>Before</figcaption><img src="before/history-empty-{w}.png" alt="History, empty, before" loading="lazy"></figure>
+      <figure><figcaption>After</figcaption><img src="after/history-empty-{w}.png" alt="History, empty, after" loading="lazy"></figure>
+    </div>
+  </section>
+  <section id="readme">
+    <h2>About (/readme/)</h2>
+    <div class="pair">
+      <figure><figcaption>Before</figcaption><img src="before/readme-{w}.png" alt="About (/readme/), before" loading="lazy"></figure>
+      <figure><figcaption>After</figcaption><img src="after/readme-{w}.png" alt="About (/readme/), after" loading="lazy"></figure>
+    </div>
+  </section>
+  <section id="room">
+    <h2>Room, no lift chosen</h2>
+    <div class="pair">
+      <figure><figcaption>Before</figcaption><img src="before/room-{w}.png" alt="Room, no lift chosen, before" loading="lazy"></figure>
+      <figure><figcaption>After</figcaption><img src="after/room-{w}.png" alt="Room, no lift chosen, after" loading="lazy"></figure>
+    </div>
+  </section>
+  <section id="room-logging">
+    <h2>Room, logging a set</h2>
+    <div class="pair">
+      <figure><figcaption>Before</figcaption><img src="before/room-logging-{w}.png" alt="Room, logging a set, before" loading="lazy"></figure>
+      <figure><figcaption>After</figcaption><img src="after/room-logging-{w}.png" alt="Room, logging a set, after" loading="lazy"></figure>
+    </div>
+  </section>
+  <section id="room-rested">
+    <h2>Room, set logged</h2>
+    <div class="pair">
+      <figure><figcaption>Before</figcaption><img src="before/room-rested-{w}.png" alt="Room, set logged, before" loading="lazy"></figure>
+      <figure><figcaption>After</figcaption><img src="after/room-rested-{w}.png" alt="Room, set logged, after" loading="lazy"></figure>
+    </div>
+  </section>
+  <section id="room-empty">
+    <h2>Room, alone</h2>
+    <div class="pair">
+      <figure><figcaption>Before</figcaption><img src="before/room-empty-{w}.png" alt="Room, alone, before" loading="lazy"></figure>
+      <figure><figcaption>After</figcaption><img src="after/room-empty-{w}.png" alt="Room, alone, after" loading="lazy"></figure>
+    </div>
+  </section>
+</main>
+<script>
+  const main = document.querySelector("main");
+  const tpl = main.innerHTML;
+  const show = (w) => {
+    main.innerHTML = tpl.replaceAll("{w}", w);
+    for (const b of document.querySelectorAll("nav button")) b.setAttribute("aria-pressed", b.dataset.w === w);
+  };
+  for (const b of document.querySelectorAll("nav button")) b.onclick = () => show(b.dataset.w);
+  show("mobile");
+</script>
+</html>
