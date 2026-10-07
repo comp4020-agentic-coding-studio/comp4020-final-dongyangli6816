@@ -83,11 +83,31 @@ overrule it. Then build from the mockups and screenshot the built pages
 against them. Edit page files only with Edit and Write, never a shell command,
 so the design-gate hook sees them.
 
+## Branches and pull requests
+
+With every request, judge its size before starting, and say in one line which
+it is and why, so I can overrule it:
+
+- **Medium or large** (a feature, a page change that goes through the
+  designer, a refactor, a harness change beyond a line or two, anything that
+  will take more than one commit): branch from an up-to-date `main` as
+  `<type>/<slug>` (`feat/rest-timer`), one branch per request.
+- **Small** (one commit: a typo, a single fix, a doc or config tweak): commit
+  on the current branch.
+- **Unsure**: branch.
+
+When a branch's work is committed, propose the PR title and summary; push and
+open it once I say yes. Merge only after its checks pass and I say so, since
+merging to `main` deploys. Merge with a merge commit, never a squash, so the
+SHAs `PROCESS.md` cites survive; then delete the branch and return to an
+up-to-date `main`.
+
 ## Commits
 
 Never commit without my approval: stage one logical unit, propose the
-message, wait for a yes. Never push unless I ask. Commit each unit as it's
-done, not in one batch at the end.
+message, wait for a yes. Never push unless I ask, apart from the pull
+request flow above. Commit each unit as it's done, not in one batch at the
+end.
 
 Conventional Commits: `<type>(<scope>): <description>`, types feat, fix,
 docs, style, refactor, perf, test, build, ci, chore, revert. Subject in
