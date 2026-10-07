@@ -1,9 +1,9 @@
 # Spotter design system
 
 Oct 7, 2026 · the fixed rules every Spotter page follows. The `designer` agent
-designs from this file and the `design-critic` agent judges against it, so a
-rule that isn't written here isn't a rule. A page that needs to break one says
-so under "Departures" in its own `docs/design/<page>/spec.md`.
+designs from this file, so a rule that isn't written here isn't a rule. A page
+that needs to break one says so under "Departures" in its own
+`docs/design/<page>/spec.md`.
 
 The live implementation is the `<style is:global>` block in
 `src/layouts/Layout.astro`. Where this document and that block disagree, this
@@ -484,7 +484,7 @@ another, in its mockup.
 
 ## 14. Ruled out
 
-Any of these in a design is a blocker for the critic.
+No design may use any of these.
 
 - Rounded corners, soft or blurred shadows, glassmorphism, gradients (the floor
   checker and the select arrow are the only gradients, and they draw pixels).

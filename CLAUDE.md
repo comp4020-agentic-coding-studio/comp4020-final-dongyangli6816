@@ -44,9 +44,9 @@ docs/product/                idea.md, spec-4-weeks.md (directs the build),
                              spec-mvp.md (full spec, reference only)
 docs/adr/                    NNNN-<slug>.md, one decision each
 docs/design/                 system.md (design rules); <page>/ holds that
-                             page's mockup.html, spec.md, review-*.md; no images
+                             page's mockup.html and spec.md; no images
 docs/evidence/               YYYY-MM-DD-<slug>/, one per episode PROCESS.md cites
-.claude/agents/              subagent definitions (designer, design-critic)
+.claude/agents/              subagent definitions (designer)
 .shots/  data/  dist/        gitignored: working screenshots, local db, build
 ```
 
@@ -70,6 +70,25 @@ Keeping the map true:
 - When one folder needs more than a line or two of its own rules, give it its
   own `CLAUDE.md` (Claude Code reads it when working there) and leave one line
   here. Keep this file short.
+
+## Designing pages
+
+A new or redesigned page is designed by the `designer` agent before it is
+built, one designer per group of sibling pages, so pages that do the same kind
+of job share their patterns. Give it every page of the group that's changing,
+plus the siblings already designed that it must match without redesigning
+them. Groups can be designed in parallel.
+
+| Group | Pages |
+| --- | --- |
+| Auth | `signin`, `signup` |
+| Lobby | `home` (`index`), `join` |
+| Logbook | `history` |
+| Gym | `room` |
+| About | `readme` |
+
+A new page joins the group it most resembles, or starts its own; update this
+table in the same commit.
 
 ## Git Commit Convention
 
