@@ -8,15 +8,276 @@ import Layout from "../layouts/Layout.astro";
 // page never drifts from the file in the image. Relative links to docs/ are
 // served by src/pages/docs/[...path].ts.
 const html = await marked.parse(readFileSync("README.md", "utf8"));
+const user = Astro.locals.user;
 ---
 
 <Layout title="About">
   <article class="card prose" set:html={html} />
+  {
+    user ? (
+      <section class="readme-end" aria-label="Back to the app">
+        <p>That's the whole log. Your gym's this way.</p>
+        <div class="actions">
+          <a href="/" class="button">Go lift</a>
+        </div>
+      </section>
+    ) : (
+      <section class="readme-end" aria-label="Get started">
+        <p>That's the whole log. Want a spot in the squad's gym?</p>
+        <div class="actions">
+          <a href="/signup" class="button">Sign up</a>
+          <a href="/signin">Sign in</a>
+        </div>
+      </section>
+    )
+  }
 </Layout>
 
-<style>
-  article :global(img) {
-    max-width: 100%;
+<!-- global, because marked's HTML (set:html) doesn't get Astro's scope
+     attribute; every selector is prefixed with .prose or .readme-end -->
+<style is:global>
+  /* ---------- the cover: h1 in a deep band across the top of the card ---------- */
+  .prose {
+    counter-reset: set;
+  }
+  .prose > h1:first-child {
+    margin: -1.25rem -1.25rem 1.25rem;
+    padding: 1rem 1.25rem;
+    font-size: 24px;
+    line-height: 1.5;
+    color: var(--leaf);
+    background: var(--deep);
+    border-bottom: var(--px) solid var(--ink);
+  }
+  /* the pitch right under the title reads first and a size up */
+  .prose > h1:first-child + p {
+    font-size: 26px;
+    line-height: 1.3;
+    margin-bottom: 1.5rem;
+  }
+
+  /* ---------- sections are sets: a leaf "Set n" tag over each h2 ---------- */
+  .prose h2 {
+    counter-increment: set;
+    margin: 2rem 0 1rem;
+    line-height: 1.5;
+    color: var(--green);
+  }
+  .prose h2::before {
+    content: "Set " counter(set);
+    content: "Set " counter(set) / "";
+    display: block;
+    width: fit-content;
+    margin-bottom: 0.5rem;
+    padding: 4px 8px;
+    font: 8px/1.5 var(--display);
+    color: var(--ink);
+    background: var(--leaf);
+    border: 2px solid var(--ink);
+  }
+  .prose h2:last-of-type::before {
+    content: "Final set";
+    content: "Final set" / "";
+  }
+  .prose > h2:first-child {
+    margin-top: 0;
+  }
+  .prose h3 {
+    position: relative;
+    margin: 1.5rem 0 0.75rem;
+    padding-left: 20px;
+    line-height: 1.5;
+  }
+  .prose h3::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 8px;
+    height: 8px;
+    background: var(--green);
+  }
+
+  /* ---------- emphasis without bold or italic (system section 6) ---------- */
+  .prose strong {
+    padding: 0 var(--px);
+    background: var(--leaf);
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+  .prose em {
+    font-style: normal;
+    padding: 0 2px;
+    background: var(--paper);
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+  .prose a:hover {
+    color: var(--ink);
+    background: var(--leaf);
+  }
+
+  /* ---------- lists ---------- */
+  .prose ul,
+  .prose ol {
+    margin: 0 0 1rem;
+    padding: 0;
+    list-style: none;
+  }
+  .prose li {
+    position: relative;
+    margin-bottom: 0.5rem;
+  }
+  .prose ul > li {
+    padding-left: 1.5rem;
+  }
+  .prose ul > li::before {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 12px;
+    width: 8px;
+    height: 8px;
+    background: var(--green);
+  }
+  .prose li > ul {
+    margin: 0.5rem 0 0;
+  }
+  .prose li > ul > li::before {
+    background: none;
+    border: 2px solid var(--green);
+  }
+  /* numbered lists count like reps: a big VT323 number on an ink block */
+  .prose ol {
+    counter-reset: rep;
+  }
+  .prose ol > li {
+    counter-increment: rep;
+    min-height: 44px;
+    margin-bottom: 1rem;
+    padding-left: 3.5rem;
+  }
+  .prose ol > li::before {
+    content: counter(rep);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 40px;
+    height: 40px;
+    font: 32px/40px var(--body);
+    text-align: center;
+    color: var(--leaf);
+    background: var(--ink);
+    box-shadow: var(--px) var(--px) 0 var(--green);
+  }
+
+  /* ---------- code: leaf on ink, like the passcode ---------- */
+  .prose code {
+    font: inherit;
+    padding: 0 var(--px);
+    color: var(--leaf);
+    background: var(--ink);
+  }
+  .prose pre {
+    margin: 0 0 1rem;
+    padding: 0.75rem 1rem;
+    overflow-x: auto;
+    font: 22px/1.35 var(--body);
+    color: var(--leaf);
+    background: var(--ink);
+    border: var(--px) solid var(--green);
+  }
+  .prose pre code {
+    padding: 0;
+    background: none;
+  }
+
+  /* ---------- quotes are speech bubbles, like the gym's ---------- */
+  .prose blockquote {
+    position: relative;
+    margin: 0 0 2rem;
+    padding: 0.75rem 1rem;
+    background: var(--leaf);
+    border: var(--px) solid var(--ink);
+  }
+  .prose blockquote::after {
+    content: "";
+    position: absolute;
+    left: 1.5rem;
+    bottom: calc(var(--px) * -3);
+    width: calc(var(--px) * 3);
+    height: calc(var(--px) * 3);
+    background: var(--leaf);
+    border-right: var(--px) solid var(--ink);
+    border-bottom: var(--px) solid var(--ink);
+    transform: skewY(45deg);
+  }
+  .prose blockquote > :last-child {
+    margin-bottom: 0;
+  }
+  .prose blockquote strong {
+    background: var(--card);
+  }
+
+  /* ---------- the rest of Markdown ---------- */
+  /* a break between parts: three pixel plates on a bar */
+  .prose hr {
+    width: 8px;
+    height: 8px;
+    margin: 2rem auto;
+    border: 0;
+    background: var(--ink);
+    box-shadow: -24px 0 0 var(--ink), 24px 0 0 var(--ink);
+  }
+  .prose img {
+    display: block;
+    max-width: calc(100% - var(--px));
     height: auto;
+    border: var(--px) solid var(--ink);
+    box-shadow: var(--px) var(--px) 0 var(--green);
+  }
+  /* wide tables scroll inside the card, never the page */
+  .prose table {
+    display: block;
+    width: max-content;
+    max-width: 100%;
+    margin: 0 0 1rem;
+    overflow-x: auto;
+  }
+  .prose [align="right"] {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .prose [align="center"] {
+    text-align: center;
+  }
+
+  /* ---------- after the card: the way back into the app ---------- */
+  .readme-end {
+    margin: 2rem 0 0;
+  }
+  .readme-end p {
+    margin: 0;
+  }
+  .readme-end .actions {
+    margin-top: 0.75rem;
+  }
+
+  @media (max-width: 420px) {
+    .prose > h1:first-child {
+      margin: -1rem -1rem 1rem;
+      padding: 0.75rem 1rem;
+      font-size: 16px;
+    }
+    .prose > h1:first-child + p {
+      font-size: 24px;
+    }
+    .prose ol > li {
+      padding-left: 3rem;
+    }
+    .prose pre {
+      font-size: 21px;
+    }
   }
 </style>

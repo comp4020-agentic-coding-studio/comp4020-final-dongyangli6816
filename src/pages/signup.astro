@@ -3,7 +3,10 @@ import { eq } from "drizzle-orm";
 import { hashPassword, isHttps, startSession } from "../lib/auth.ts";
 import { db } from "../lib/db.ts";
 import { users } from "../lib/schema.ts";
+import Sprite from "../components/Sprite.astro";
 import Layout from "../layouts/Layout.astro";
+import { AVATAR_UPPER_ROWS, avatar } from "../sprites/avatar.ts";
+import { dumbbell, kettlebell } from "../sprites/props.ts";
 
 const next = Astro.url.searchParams.get("next") ?? "/";
 const errors: Record<string, string> = {};
@@ -21,7 +24,7 @@ if (Astro.request.method === "POST") {
   if (password.length < 8) errors.password = "Use at least 8 characters.";
   if (displayName.length < 2 || displayName.length > 20) errors.display_name = "Use 2 to 20 characters.";
   if (!errors.email && db.select({ id: users.id }).from(users).where(eq(users.email, email)).get()) {
-    errors.email = "That email already has an account. Sign in instead.";
+    errors.email = "taken";
   }
 
   if (Object.keys(errors).length === 0) {
@@ -35,26 +38,214 @@ if (Astro.request.method === "POST") {
   }
   Astro.response.status = 400;
 }
+
+const fromRoom = next.startsWith("/rooms/") || next.startsWith("/join/");
+const signinHref = `/signin?next=${encodeURIComponent(next)}`;
+// the first field with an error takes focus, in the order they're shown
+const firstError = ["display_name", "email", "password"].find((f) => errors[f]);
+const describedBy = (field: string, hint: string) => [hint, errors[field] && `${field}-error`].filter(Boolean).join(" ");
 ---
 
 <Layout title="Sign up">
+  {fromRoom && <p class="bubble">Sign up and you go straight into your squad's room 🏋️</p>}
   <div class="card">
     <h1>Sign up</h1>
+    <p class="lead">This is you in the gym.</p>
     <form method="post" novalidate>
+      <div class="tag-field">
+        <div class="floor" aria-hidden="true">
+          <Sprite sprite={kettlebell} class="floor-prop kettlebell" />
+          <span class:list={["nametag", { "is-empty": !displayName }]} data-nametag>{displayName || "Your name"}</span>
+          <Sprite sprite={avatar} class="sprite" split={AVATAR_UPPER_ROWS} />
+          <Sprite sprite={dumbbell} class="floor-prop dumbbell" />
+        </div>
+        <div>
+          <label for="display_name">Display name</label>
+          <p class="hint field-hint" id="name-hint">2 to 20 characters.</p>
+          <input
+            id="display_name"
+            name="display_name"
+            autocomplete="nickname"
+            value={displayName}
+            minlength="2"
+            maxlength="20"
+            required
+            autofocus={firstError === "display_name"}
+            aria-invalid={errors.display_name ? "true" : undefined}
+            aria-describedby={describedBy("display_name", "name-hint")}
+          />
+          {errors.display_name && <p class="error" id="display_name-error">{errors.display_name}</p>}
+        </div>
+      </div>
+
       <label for="email">Email</label>
-      <input id="email" name="email" type="email" autocomplete="email" value={email} required />
-      {errors.email && <p class="error">{errors.email}</p>}
+      <p class="hint field-hint" id="email-hint">Your squad never sees it.</p>
+      <input
+        id="email"
+        name="email"
+        type="email"
+        autocomplete="email"
+        value={email}
+        required
+        autofocus={firstError === "email"}
+        aria-invalid={errors.email ? "true" : undefined}
+        aria-describedby={describedBy("email", "email-hint")}
+      />
+      {
+        errors.email === "taken" ? (
+          <p class="error" id="email-error">
+            That email already has an account. <a href={signinHref}>Sign in instead</a>.
+          </p>
+        ) : (
+          errors.email && <p class="error" id="email-error">{errors.email}</p>
+        )
+      }
 
-      <label for="display_name">Display name (shown above your avatar)</label>
-      <input id="display_name" name="display_name" autocomplete="nickname" value={displayName} minlength="2" maxlength="20" required />
-      {errors.display_name && <p class="error">{errors.display_name}</p>}
-
-      <label for="password">Password (at least 8 characters)</label>
-      <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required />
-      {errors.password && <p class="error">{errors.password}</p>}
+      <label for="password">Password</label>
+      <p class="hint field-hint" id="password-hint">At least 8 characters.</p>
+      <input
+        id="password"
+        name="password"
+        type="password"
+        autocomplete="new-password"
+        minlength="8"
+        required
+        autofocus={firstError === "password"}
+        aria-invalid={errors.password ? "true" : undefined}
+        aria-describedby={describedBy("password", "password-hint")}
+      />
+      {errors.password && <p class="error" id="password-error">{errors.password}</p>}
 
       <div class="actions"><button type="submit" class="wide">Create account</button></div>
     </form>
   </div>
-  <p>Already have one? <a href={`/signin?next=${encodeURIComponent(next)}`}>Sign in</a></p>
+  <p class="switch">Already have one? <a href={signinHref}>Sign in</a></p>
 </Layout>
+
+<script>
+  const form = document.querySelector("main form")!;
+  const input = form.querySelector('[name="display_name"]') as HTMLInputElement;
+  const tag = form.querySelector("[data-nametag]")!;
+  const button = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+  // the tag above the avatar follows the display name as it's typed
+  input.addEventListener("input", () => {
+    const v = input.value.trim();
+    tag.textContent = v || "Your name";
+    tag.classList.toggle("is-empty", !v);
+  });
+  form.addEventListener("submit", () => {
+    button.disabled = true;
+    form.setAttribute("aria-busy", "true");
+  });
+  // Back restores the page from cache with the button still disabled
+  addEventListener("pageshow", () => {
+    button.disabled = false;
+    form.removeAttribute("aria-busy");
+  });
+</script>
+
+<style>
+  .lead {
+    margin: -0.5rem 0 0.5rem;
+  }
+
+  /* The display name and its live preview travel together: a patch of gym
+     floor with you standing on it, your tag floating above. Stacked on
+     phones, side by side from 900 px. */
+  .tag-field {
+    display: grid;
+    gap: 0;
+  }
+  .tag-field label {
+    margin-top: 1rem;
+  }
+  @media (min-width: 900px) {
+    .tag-field {
+      grid-template-columns: 16rem 1fr;
+      gap: 0 1.5rem;
+      align-items: start;
+    }
+    .tag-field label {
+      margin-top: 0;
+    }
+  }
+  /* a wall along the top and the page's checker, like a room on the gym map */
+  .floor {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    height: 152px;
+    padding: 0 0.5rem 0.75rem;
+    border: var(--px) solid var(--ink);
+    border-top: calc(var(--px) * 4) solid var(--deep);
+    box-shadow: inset 0 var(--px) 0 var(--green);
+    background-color: var(--paper);
+    background-image: conic-gradient(var(--tile) 25%, transparent 0 50%, var(--tile) 0 75%, transparent 0);
+    background-size: 32px 32px;
+  }
+  /* name tag: the gym's .avatar tag (system section 9), first used here */
+  .nametag {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 0.5rem;
+    font: 22px/1.3 var(--body);
+    white-space: nowrap;
+    color: var(--paper);
+    background: rgb(0 0 0 / 70%);
+  }
+  .nametag.is-empty {
+    color: var(--leaf);
+  }
+  .floor :global(.sprite) {
+    display: block;
+    width: 64px; /* 16 px sprite at 4x, whole numbers only */
+    height: 64px;
+  }
+  .floor :global(.sprite-top) {
+    animation: idle 800ms steps(1) infinite;
+  }
+  @keyframes idle {
+    50% {
+      transform: translateY(1px); /* one sprite pixel = 4 px on screen */
+    }
+  }
+  .floor :global(.floor-prop) {
+    position: absolute;
+    bottom: 0.75rem;
+  }
+  .floor :global(.kettlebell) {
+    left: calc(50% - 80px);
+    width: 24px;
+    height: 24px;
+  }
+  .floor :global(.dumbbell) {
+    left: calc(50% + 48px);
+    width: 32px;
+    height: 16px;
+  }
+  .field-hint {
+    margin: 0 0 0.5rem;
+    line-height: 1.2;
+  }
+  .switch {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 0.5rem;
+    margin: 0;
+  }
+  .switch a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .floor :global(.sprite-top) {
+      animation: none;
+    }
+  }
+</style>

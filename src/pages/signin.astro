@@ -3,7 +3,9 @@ import { eq } from "drizzle-orm";
 import { isHttps, startSession, verifyPassword } from "../lib/auth.ts";
 import { db } from "../lib/db.ts";
 import { users } from "../lib/schema.ts";
+import Sprite from "../components/Sprite.astro";
 import Layout from "../layouts/Layout.astro";
+import { door } from "../sprites/door.ts";
 
 const next = Astro.url.searchParams.get("next") ?? "/";
 let error = "";
@@ -20,22 +22,123 @@ if (Astro.request.method === "POST") {
     return Astro.redirect(next.startsWith("/") ? next : "/", 303);
   }
   // one message for both cases, so the form doesn't reveal who has an account
-  error = "That email and password don't match an account.";
+  error = "That email and password don't match an account. Check both and try again.";
   Astro.response.status = 400;
 }
+
+// where signing in takes you, read from next; never look up the room itself,
+// since /signin?next=/rooms/N is open to anyone
+const toRoom = next.startsWith("/rooms/");
+const where = toRoom
+  ? "Sign in and you'll walk straight into the gym."
+  : next === "/history"
+    ? "Sign in to open your logbook."
+    : "Welcome back. The weights missed you.";
 ---
 
 <Layout title="Sign in">
   <div class="card">
-    <h1>Sign in</h1>
+    <div class="entry-head">
+      <Sprite sprite={door} class="entry-door" />
+      <div>
+        <h1>Sign in</h1>
+        <p class="entry-where">{where}</p>
+      </div>
+    </div>
     <form method="post">
       <label for="email">Email</label>
-      <input id="email" name="email" type="email" autocomplete="email" value={email} required />
+      <input
+        id="email"
+        name="email"
+        type="email"
+        autocomplete="email"
+        value={email}
+        required
+        aria-invalid={error ? "true" : undefined}
+        aria-describedby={error ? "signin-error" : undefined}
+      />
       <label for="password">Password</label>
-      <input id="password" name="password" type="password" autocomplete="current-password" required />
-      {error && <p class="error">{error}</p>}
+      <input
+        id="password"
+        name="password"
+        type="password"
+        autocomplete="current-password"
+        required
+        autofocus={!!error}
+        aria-invalid={error ? "true" : undefined}
+        aria-describedby={error ? "signin-error" : undefined}
+      />
+      {error && <p class="error" id="signin-error">{error}</p>}
       <div class="actions"><button type="submit" class="wide">Sign in</button></div>
+      <p class="hint entry-status" role="status"></p>
     </form>
   </div>
-  <p>New here? <a href={`/signup?next=${encodeURIComponent(next)}`}>Sign up</a></p>
+  <div class="actions entry-alt">
+    <p>{toRoom ? "New here? You'll still land in the gym." : "New here?"}</p>
+    <a class="button secondary" href={`/signup?next=${encodeURIComponent(next)}`}>Sign up</a>
+  </div>
 </Layout>
+
+<script>
+  // pending: the button keeps its label and stays pressed while the post is out
+  const form = document.querySelector("main form")!;
+  const button = form.querySelector("button[type=submit]") as HTMLButtonElement;
+  const status = form.querySelector(".entry-status")!;
+  form.addEventListener("submit", () => {
+    button.disabled = true;
+    status.textContent = "Checking you in…";
+  });
+  // Back restores the page from cache, button and all
+  addEventListener("pageshow", () => {
+    button.disabled = false;
+    status.textContent = "";
+  });
+</script>
+
+<style>
+  /* The card's head is the gym's front door: the door stands on the band's
+     ink bottom edge like a threshold. */
+  .entry-head {
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+    margin: -1.25rem -1.25rem 0.25rem;
+    padding: 1rem 1.25rem 0;
+    background: var(--deep);
+    border-bottom: var(--px) solid var(--ink);
+  }
+  .entry-head :global(.entry-door) {
+    flex: none;
+    display: block;
+    width: 80px; /* 16 px sprite at a whole 5x */
+    height: 80px;
+  }
+  .entry-head h1 {
+    margin: 0 0 0.5rem;
+    color: var(--paper);
+  }
+  .entry-where {
+    margin: 0 0 1rem;
+    color: var(--leaf);
+  }
+  /* live region for the pending line; takes no room while empty */
+  .entry-status {
+    margin: 0;
+  }
+  .entry-status:not(:empty) {
+    margin-top: 0.5rem;
+  }
+  .entry-alt {
+    margin-top: 0;
+  }
+  .entry-alt p {
+    margin: 0;
+  }
+  @media (max-width: 420px) {
+    .entry-head {
+      margin: -1rem -1rem 0.25rem;
+      padding: 1rem 1rem 0;
+      gap: 0.75rem;
+    }
+  }
+</style>

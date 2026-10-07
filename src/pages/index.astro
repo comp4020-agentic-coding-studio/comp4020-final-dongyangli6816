@@ -1,22 +1,58 @@
 ---
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
+import Sprite from "../components/Sprite.astro";
 import { db } from "../lib/db.ts";
+import { byExercise, kg, minutes, topSet, volume } from "../lib/logbook.ts";
 import { roomMembers, rooms } from "../lib/schema.ts";
 import { history } from "../lib/workouts.ts";
 import Layout from "../layouts/Layout.astro";
+import { head } from "../sprites/avatar.ts";
+import { arrowIcon, dropIcon, dumbbellIcon, phoneIcon, trophyIcon } from "../sprites/icons.ts";
 
 const user = Astro.locals.user;
 const last = user ? history(user.id)[0] : undefined;
+// rooms you're still in; a room you left would 404
 const myRooms = user
   ? db
-      .select({ id: rooms.id, passcode: rooms.passcode })
+      .select({ id: rooms.id, passcode: rooms.passcode, lastActiveAt: rooms.lastActiveAt })
       .from(roomMembers)
       .innerJoin(rooms, eq(rooms.id, roomMembers.roomId))
-      .where(eq(roomMembers.userId, user.id))
+      .where(and(eq(roomMembers.userId, user.id), isNull(roomMembers.leftAt)))
       .orderBy(desc(rooms.lastActiveAt))
       .limit(5)
       .all()
   : [];
+
+const now = Date.now();
+const midnight = (ms: number) => new Date(ms).setHours(0, 0, 0, 0);
+function ago(ms: number): string {
+  if (now - ms < 3_600_000) return `${Math.max(1, Math.floor((now - ms) / 60_000))} min ago`;
+  if (midnight(ms) === midnight(now)) return `${Math.floor((now - ms) / 3_600_000)} h ago`;
+  if (midnight(now) - midnight(ms) <= 86_400_000) return "Yesterday";
+  return new Date(ms).toLocaleString("en-AU", { day: "numeric", month: "short" });
+}
+const lastWhen = last
+  ? new Date(last.startedAt)
+      .toLocaleString("en-AU", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })
+      .replace(/^(\w+),/, "$1")
+  : "";
+const best = (sets: { weightKg: number; reps: number; name: string }[]) => {
+  const top = topSet(sets);
+  return top.weightKg === 0 ? `${top.reps} reps` : `${top.weightKg} kg × ${top.reps}`;
+};
+
+// the landing's peek at a squad: an illustration, not live data
+const squad = [
+  { name: "Mia", what: "Back squat · ", n: "100 kg × 5", after: "", state: "lifting", word: "Lifting", icon: dumbbellIcon, head: head("#2b1a12", "#d9a77c") },
+  { name: "Tom", what: "Rest · ", n: "1:12", after: " to go", state: "resting", word: "Resting", icon: dropIcon, head: head("#c9a24a", "#f1c9a5") },
+  { name: "Ji-woo", what: "Rest · ", n: "2:40", after: " over", state: "slacking", word: "Slacking", icon: phoneIcon, head: head("#3a2a5e", "#e8bf96") },
+  { name: "Priya", what: "", n: "16 sets · 52 min", after: "", state: "finished", word: "Finished", icon: trophyIcon, head: head("#1a1010", "#a86a43") },
+];
+const steps = [
+  ["Open a room", "Get a passcode. Drop it in the group chat."],
+  ["Log your sets", "Weight and reps, filled in from last time."],
+  ["Get spotted", "Rest too long and the squad will know 👀"],
+];
 ---
 
 <Layout title="Train together, apart">
@@ -24,77 +60,360 @@ const myRooms = user
     user ? (
       <>
         <h1>Hi, {user.displayName}</h1>
-        <div class="card">
-          <h2>Start a group workout</h2>
-          <p class="hint">You get a passcode to send to your squad.</p>
-          <form method="post" action="/rooms">
-            <button type="submit">Create a room</button>
+        {myRooms.length === 0 && !last && (
+          <p class="bubble">New here? Join your squad's room, or start one and send the code 📲</p>
+        )}
+        <section class="card door" aria-labelledby="door-h">
+          <h2 id="door-h">Train with the squad</h2>
+          <form method="post" action="/rooms" class="door-create">
+            <button type="submit" class="button secondary">Create room</button>
+            <p class="hint">You get a passcode to send them.</p>
           </form>
-        </div>
-        <div class="card">
-          <h2>Join your squad</h2>
+          <p class="or">or join one</p>
           <form method="post" action="/join">
             <label for="passcode">Passcode</label>
-            <input id="passcode" name="passcode" autocomplete="off" autocapitalize="characters" maxlength="8" required />
-            <div class="actions"><button type="submit">Join</button></div>
+            <input
+              id="passcode"
+              name="passcode"
+              class="passcode-input"
+              autocomplete="off"
+              autocapitalize="characters"
+              maxlength="8"
+              required
+              aria-describedby="passcode-hint"
+            />
+            <p id="passcode-hint" class="hint">Six letters and numbers, from your squad.</p>
+            <div class="actions">
+              <button type="submit" class="wide">Join</button>
+            </div>
           </form>
-        </div>
+        </section>
         {myRooms.length > 0 && (
-          <div class="card">
-            <h2>Your rooms</h2>
-            <ul class="roster">
+          <section class="card" aria-labelledby="rooms-h">
+            <h2 id="rooms-h">Your rooms</h2>
+            <p class="hint">Last active, newest first.</p>
+            <ul class="room-keys">
               {myRooms.map((r) => (
-                <li><a href={`/rooms/${r.id}`}>{r.passcode}</a></li>
+                <li>
+                  <a href={`/rooms/${r.id}`}>
+                    <span class="passcode">{r.passcode}</span>
+                    <span class="when">{ago(r.lastActiveAt)}</span>
+                    <Sprite sprite={arrowIcon} scale={2} class="px" />
+                  </a>
+                </li>
               ))}
             </ul>
-          </div>
+          </section>
         )}
-        {last && (
-          <div class="card">
-            <h2>Last workout</h2>
-            <p>{new Date(last.startedAt).toLocaleString("en-AU", { dateStyle: "medium", timeStyle: "short" })} · {last.sets.length} sets</p>
+        <section class="card logbook" aria-labelledby="last-h">
+          <h2 id="last-h">
+            Last workout{last && !last.endedAt && <span class="badge">Live</span>}
+          </h2>
+          {last && (
+            <>
+              <p class="hint">
+                {lastWhen}
+                {last.endedAt && ` · ${minutes(last.startedAt, last.endedAt)} min`}
+              </p>
+              <dl class="totals">
+                <div>
+                  <dt>Sets</dt>
+                  <dd>{last.sets.length}</dd>
+                </div>
+                <div>
+                  <dt>Volume</dt>
+                  <dd>
+                    {kg(volume(last.sets))} <span class="unit">kg</span>
+                  </dd>
+                </div>
+              </dl>
+            </>
+          )}
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Lift</th>
+                <th scope="col" class="num">Sets</th>
+                <th scope="col" class="num">Best</th>
+              </tr>
+            </thead>
+            <tbody>
+              {last && last.sets.length > 0 ? (
+                byExercise(last.sets).map((g) => (
+                  <tr>
+                    <td>{g.name}</td>
+                    <td class="num">{g.sets.length}</td>
+                    <td class="num">{best(g.sets)}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colspan="3" class="empty">No workouts yet. Your future self is waiting 🏋️</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+          {last ? (
             <a href="/history" class="button secondary">All history</a>
-          </div>
-        )}
+          ) : (
+            <p class="hint">Your first set lands here once you log it in a room.</p>
+          )}
+        </section>
       </>
     ) : (
       <>
-        <section class="card hero">
+        <section class="pitch">
           <h1>Train together, apart.</h1>
           <p>
-            Spotter is a shared pixel gym for friends who used to train together and now train apart. Your squad can
-            see when you're lifting, resting, or resting a bit too long.
+            A pixel gym for friends who used to train together. Log your sets, and your squad sees you lift, rest, or
+            rest a bit too long.
           </p>
           <div class="actions">
             <a href="/signup" class="button">Sign up</a>
             <a href="/signin" class="button secondary">Sign in</a>
           </div>
         </section>
-        <ol class="steps">
-          <li class="card"><h3>1. Open a room</h3><p>Get a passcode and send it to your squad.</p></li>
-          <li class="card"><h3>2. Log your sets</h3><p>Weight and reps, pre-filled from last time.</p></li>
-          <li class="card"><h3>3. Get spotted</h3><p>Rest too long and your friends will know.</p></li>
-        </ol>
-        <p><a href="/readme/">Read what Spotter is for</a></p>
+        <section class="card peek" aria-labelledby="peek-h">
+          <h2 id="peek-h">What your squad sees</h2>
+          <p class="bubble">Priya to Ji-woo: Put the phone down 📵</p>
+          <ul class="squad">
+            {squad.map((m) => (
+              <li>
+                <Sprite sprite={m.head} scale={4} class="sprite" />
+                <span>
+                  {m.name}{" "}
+                  <span class="what">
+                    {m.what}
+                    <span class="n">{m.n}</span>
+                    {m.after}
+                  </span>
+                </span>
+                <span class={`chip state-${m.state}`}>
+                  <Sprite sprite={m.icon} scale={2} />
+                  {m.word}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+        <section class="card" aria-labelledby="howto-h">
+          <h2 id="howto-h">How a session goes</h2>
+          <ol class="howto">
+            {steps.map(([title, body], i) => (
+              <li>
+                <span class="set-no" aria-hidden="true">
+                  Set<span>{i + 1}</span>
+                </span>
+                <div>
+                  <h3>{title}</h3>
+                  <p>{body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+        <p>
+          <a href="/readme/">Read what Spotter is for</a>
+        </p>
       </>
     )
   }
 </Layout>
 
-<style>
-  .hero h1 {
-    font-size: clamp(20px, 6vw, 30px);
-    color: var(--deep);
+<script>
+  // pending: the tapped button keeps its label and stays pressed while the post is out
+  for (const form of document.querySelectorAll("main form")) {
+    form.addEventListener("submit", (e) => {
+      const button = (e as SubmitEvent).submitter as HTMLButtonElement | null;
+      if (button) button.disabled = true;
+      form.setAttribute("aria-busy", "true");
+    });
   }
-  .steps {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-    gap: 0 1.5rem;
+  // Back restores the page from cache, buttons and all
+  addEventListener("pageshow", () => {
+    for (const b of document.querySelectorAll<HTMLButtonElement>("main button:disabled")) b.disabled = false;
+    for (const f of document.querySelectorAll("main form")) f.removeAttribute("aria-busy");
+  });
+</script>
+
+<style>
+  .pitch h1 {
+    font-size: 24px;
+    color: var(--deep);
+    margin-bottom: 0.75rem;
+  }
+  .pitch {
+    margin-bottom: 2rem;
+  }
+  .pitch .actions {
+    margin-top: 0;
+  }
+
+  /* signed out: a peek at a squad mid-session */
+  .peek .bubble {
+    margin-bottom: 1.5rem;
+  }
+  .squad {
     margin: 0;
     padding: 0;
     list-style: none;
   }
-  .steps h3 {
+  .squad li {
+    display: grid;
+    grid-template-columns: 32px 1fr auto;
+    align-items: center;
+    gap: 0 0.75rem;
+    padding: 0.5rem 0;
+    border-top: 2px solid var(--ink);
+  }
+  .squad li:first-child {
+    border-top: 0;
+  }
+  .squad .what {
+    display: block;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .squad .n,
+  .logbook td.num {
+    white-space: nowrap;
+  }
+
+  /* signed out: how a session goes, as a page of the logbook */
+  .howto {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .howto li {
+    display: grid;
+    grid-template-columns: 3rem 1fr;
+    gap: 0 1rem;
+    padding: 0.75rem 0;
+    border-top: 2px solid var(--ink);
+  }
+  .howto li:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+  .howto .set-no {
+    align-self: start;
+    padding: 0.25rem 0;
+    font: 8px/1 var(--display);
+    text-transform: uppercase;
+    text-align: center;
+    background: var(--leaf);
+    border: 2px solid var(--ink);
+  }
+  .howto .set-no span {
+    display: block;
+    font: 32px/1 var(--body);
+  }
+  .howto h3 {
+    margin: 0 0 0.25rem;
     color: var(--green);
+  }
+  .howto p {
+    margin: 0;
+  }
+
+  /* signed in: the door into the gym */
+  .door-create {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+  }
+  .door-create .hint {
+    margin: 0;
+  }
+  .or {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1rem 0 0;
+    color: var(--muted);
+  }
+  .or::before,
+  .or::after {
+    content: "";
+    flex: 1;
+    border-top: var(--px) dashed var(--ink);
+  }
+  .passcode-input {
+    font: 24px/1 var(--display);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .door .hint {
+    margin: 0.5rem 0 0;
+  }
+
+  /* signed in: your rooms, as key tags */
+  .room-keys {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .room-keys a {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    min-height: 56px;
+    padding: 0.5rem 0.75rem;
+    color: var(--ink);
+    text-decoration: none;
+    background: var(--paper);
+    border: var(--px) solid var(--ink);
+  }
+  .room-keys a:hover {
+    background: var(--leaf);
+  }
+  .room-keys .passcode {
+    padding: 0.25rem 0.5rem;
+    font-size: 16px;
+  }
+  .room-keys .when {
+    color: var(--muted);
+  }
+
+  /* signed in: last workout, as a logbook page */
+  .logbook table {
+    margin-bottom: 1rem;
+  }
+  .totals {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 2rem;
+    margin: 0 0 1rem;
+  }
+  .totals dt {
+    font: 8px/1.4 var(--display);
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .totals dd {
+    margin: 0;
+    font: 32px/1 var(--body);
+    font-variant-numeric: tabular-nums;
+  }
+  .totals .unit {
+    font-size: 22px;
+  }
+  .logbook .empty {
+    padding: 1rem 0.6rem;
+    color: var(--muted);
+  }
+
+  @media (max-width: 420px) {
+    .pitch h1 {
+      font-size: 24px;
+    }
+    .logbook table {
+      font-size: 22px;
+    }
   }
 </style>
