@@ -28,3 +28,7 @@ mise.local.toml
 # Astro's generated types
 data/
 .astro/
+
+# working screenshots from scripts/shot.mjs; they can be regenerated, and the
+# ones kept as evidence are copied into docs/evidence/
+.shots/

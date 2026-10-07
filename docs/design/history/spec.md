@@ -1,10 +1,7 @@
 # History: design spec
 
-Mockup: `docs/design/history/mockup.html`. Screenshots: `shot-desktop.png` (1280),
-`shot-mobile.png` (true 390 px, first screen) and `shot-mobile-full.png` (390 px,
-every state). Note: `scripts/shot.sh` cannot render below 500 px, because headless
-Chrome clamps the window to 500 px and then crops the image to 390. So the 390 px
-shots here were taken through a 390 px iframe instead.
+Mockup: `docs/design/history/mockup.html`. Screenshots: `node scripts/shot.mjs docs/design/history/mockup.html .shots/history/mockup`
+(not kept in git).
 
 ## 1. Plan
 
@@ -70,11 +67,11 @@ make it Spotter's logbook:
 
 | Requirement (source) | Element that meets it |
 | --- | --- |
-| "History lists the person's past workouts, newest first, with their sets" (LOG-7, `spotter-spec-4-weeks.md`) | `.week` sections newest first; inside each, `article.card.entry` newest first; the `table.log` lists every set |
-| "Past workouts with their sets" (Screens table, `spotter-spec-4-weeks.md`) | Same as above |
+| "History lists the person's past workouts, newest first, with their sets" (LOG-7, `spec-4-weeks.md`) | `.week` sections newest first; inside each, `article.card.entry` newest first; the `table.log` lists every set |
+| "Past workouts with their sets" (Screens table, `spec-4-weeks.md`) | Same as above |
 | Start time and a Live badge if not finished (task brief; current page) | `.entry-head`: `h3` day label plus `.when` time range; `.badge` "Live" when `endedAt` is null |
 | Table of sets: exercise, kg, reps (task brief; current page) | `table.log`, columns `Exercise` / `kg` / `Reps`, kg as a plain number (so `62.5` stays in the HTML for `spec/core-loop.test.ts`) |
-| "A set logged by a person is in their history after signing out and back in" (`spotter-spec-4-weeks.md`, README) | Unchanged data path (`history(user.id)`); exercise names and kg are plain text |
+| "A set logged by a person is in their history after signing out and back in" (`spec-4-weeks.md`, README) | Unchanged data path (`history(user.id)`); exercise names and kg are plain text |
 | Signed out goes to sign in (`spec/core-loop.test.ts` line 18; design system section 13) | Keep `Astro.redirect("/signin?next=/history", 303)` unchanged |
 | Empty state: copy bank line plus the one action that fixes it (design system sections 3 and 13) | `.card.empty`: `No workouts yet. Your future self is waiting 🏋️` plus `.button` "Start one" → `/` (same link as today) |
 | Success shown in place with `.bubble` (design system section 13) | `.bubble role="status"` after Finish (needs `?finished=1`, see States) |

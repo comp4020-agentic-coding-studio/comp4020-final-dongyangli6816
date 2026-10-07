@@ -24,8 +24,10 @@ read:
 ## Look at it
 
 Screenshot the target with
-`scripts/shot.sh <target> docs/design/<page>/review-<mockup|built>` and read
-both images with the Read tool. For a built page, also screenshot the mockup
+`node scripts/shot.mjs <target> .shots/<page>/review-<mockup|built>` and read
+both images with the Read tool. Pages behind sign-in need a session: sign in
+with `curl -s -c .shots/jar -H "Origin: <app-origin>" --data
+"email=...&password=..." <app-origin>/signin` and add `--cookies .shots/jar`. For a built page, also screenshot the mockup
 and compare the two side by side. Judge what is on the screen, not what the
 markup says it should be. Read the HTML only to explain a problem you saw.
 
@@ -50,7 +52,7 @@ markup says it should be. Read the HTML only to explain a problem you saw.
 ## Output
 
 Write `docs/design/<page>/review-<mockup|built>.md`, replacing any earlier one,
-and write nothing else. List findings most serious first, each with:
+and nothing else outside `.shots/`. List findings most serious first, each with:
 
 - **Severity**: `blocker` (breaks a requirement or the design system),
   `major` (clearly hurts use or looks), or `minor` (polish).

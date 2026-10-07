@@ -23,6 +23,54 @@ I'm enrolled in **COMP8020**, not COMP4020. That means:
   `PROCESS.md`.
 
 
+## Repository map
+
+Where things live, one line per folder. Look here before creating a file, and
+put it where its kind already goes.
+
+```
+CLAUDE.md  PROCESS.md        course-fixed, root: the harness; how I worked
+README.md  research-note.md  course-fixed, root: the app's case; the note
+reflections/crit-N.md        course-fixed names, one per crit (8, 9, 10)
+spec/                        course-fixed: checks run against the live app
+src/pages/                   routes; one .astro (or .ts endpoint) per URL
+src/layouts/Layout.astro     page shell and every global style and token
+src/components/              shared .astro components
+src/lib/                     server logic: db, auth, rooms, workouts, logbook
+src/sprites/                 pixel art as character grids, one subject each
+drizzle/                     generated migrations (pnpm db:generate), no hand edits
+scripts/                     repo tools; shot.mjs takes every screenshot
+docs/product/                idea.md, spec-4-weeks.md (directs the build),
+                             spec-mvp.md (full spec, reference only)
+docs/adr/                    NNNN-<slug>.md, one decision each
+docs/design/                 system.md (design rules); <page>/ holds that
+                             page's mockup.html, spec.md, review-*.md; no images
+docs/evidence/               YYYY-MM-DD-<slug>/, one per episode PROCESS.md cites
+.claude/agents/              subagent definitions (designer, design-critic)
+.shots/  data/  dist/        gitignored: working screenshots, local db, build
+```
+
+Rules for placing things:
+
+- **Evidence** is captured when it happens, before the state is gone. Each
+  folder's `README.md` gives the question, what happened with commit links,
+  what's in it, how it was made, and what to watch for when judging it.
+- **Screenshots** always come from `scripts/shot.mjs`. Working shots go in
+  `.shots/<page>/`; one kept as evidence is copied into its evidence folder as
+  `<state>-mobile.png` / `<state>-desktop.png`.
+- **Temporary** scripts, seed data and servers stay outside the repo (or in
+  `.shots/`) and are cleaned up afterwards.
+
+Keeping the map true:
+
+- A commit that adds, moves or removes a folder, or starts a new kind of file,
+  updates this map in the same commit. A stale map is worse than none.
+- List folders and kinds of file, not single files, except the few every
+  change touches.
+- When one folder needs more than a line or two of its own rules, give it its
+  own `CLAUDE.md` (Claude Code reads it when working there) and leave one line
+  here. Keep this file short.
+
 ## Git Commit Convention
 
 Never commit without my approval: stage the logical unit, propose the message,

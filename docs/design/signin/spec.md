@@ -1,10 +1,8 @@
 # Sign in (`/signin`): design spec
 
 Mockup: `docs/design/signin/mockup.html` (open it by double-clicking).
-Screenshots: `shot-desktop.png` (1280), `shot-mobile.png`, and
-`shot-narrow-390-360.png`. That last one is the mockup in 390 px and 360 px
-iframes. `scripts/shot.sh` can't show a true 390 px layout on this machine;
-see "Tooling note" at the end.
+Screenshots: `node scripts/shot.mjs docs/design/signin/mockup.html .shots/signin/mockup`
+(not kept in git).
 
 ## 1. Plan
 
@@ -69,7 +67,7 @@ stay plain, as section 3 of the design system requires.
 
 | Requirement (source) | Met by |
 | --- | --- |
-| "Sign up and sign in with email and password." (`spotter-spec-4-weeks.md`, Scope) | `email` and `password` fields, unchanged |
+| "Sign up and sign in with email and password." (`spec-4-weeks.md`, Scope) | `email` and `password` fields, unchanged |
 | ACC-3: "Sign in and sign out. A sign-in lasts 30 days on that browser" (4-weeks spec) | Same `<form method="post">` with no `action`, so it posts to the current URL with `?next=` kept. The server logic is untouched. |
 | Spec check: a set "is in their history after signing out and back in" (`spec/core-loop.test.ts` posts `email` and `password` to `/signin` and expects 303) | Field `name`s, `type`s, the POST and the 303 redirect are all unchanged |
 | One generic error, "so the form doesn't reveal who has an account" (comment in `signin.astro`) | One `.error` for both cases, with new copy that still doesn't say which field was wrong |

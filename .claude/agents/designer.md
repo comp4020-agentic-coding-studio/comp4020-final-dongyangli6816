@@ -17,8 +17,8 @@ image. You start with no other context, so read these first:
 1. `docs/design/system.md`: the fixed rules. Everything you design follows it.
 2. `src/layouts/Layout.astro`: the real global styles and the page shell.
 3. The requirements: the "Key screens and mobile UX" section and any section
-   about this page in `docs/Spotter Product & Technical Spec (MVP).md`, plus
-   `docs/spotter-spec-4-weeks.md` and `README.md`.
+   about this page in `docs/product/spec-mvp.md`, plus
+   `docs/product/spec-4-weeks.md` and `README.md`.
 4. The current page, if it exists: `src/pages/<page>.astro` (or under
    `src/pages/rooms/`). Keep every field, link and form action it has unless a
    requirement says otherwise; the spec tests in `spec/` depend on them.
@@ -45,8 +45,8 @@ in the room) and let that shape the page instead.
 
 ## Outputs
 
-Write only inside `docs/design/<page>/`. Never touch `src/`, `spec/` or
-anything else.
+Write only inside `docs/design/<page>/`, plus screenshots under
+`.shots/<page>/`. Never touch `src/`, `spec/` or anything else.
 
 ### `mockup.html`
 
@@ -82,8 +82,9 @@ What the main agent needs to build it, in this order:
 
 ## Check your own work before you finish
 
-Run `scripts/shot.sh docs/design/<page>/mockup.html docs/design/<page>/shot`
-and look at both screenshots with the Read tool. Fix what you see: overflow,
+Run `node scripts/shot.mjs docs/design/<page>/mockup.html .shots/<page>/mockup`
+and look at both screenshots with the Read tool. They are true 390 px and
+1280 px renders of the whole page; don't build your own iframe workaround. Fix what you see: overflow,
 clipped text, cramped spacing, a state that looks broken, anything that misses
 the design system. Then ask again of the screenshots, not the code: does
 this look like a generic template? Repeat until both widths look right. Do not report back

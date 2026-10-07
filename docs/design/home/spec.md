@@ -1,7 +1,8 @@
 # Home (`/`) design spec
 
-Mockup: `docs/design/home/mockup.html` (open it in a browser). Screenshots:
-`shot-mobile.png`, `shot-desktop.png`. One file serves two pages: signed out
+Mockup: `docs/design/home/mockup.html` (open it in a browser). Screenshots: `node scripts/shot.mjs docs/design/home/mockup.html .shots/home/mockup`
+(not kept in git).
+One file serves two pages: signed out
 (the landing page) and signed in (the "lobby" you see before entering a gym).
 
 ## 1. Plan

@@ -18,7 +18,7 @@ Pokémon remakes, so pixel art reads to them as warm and playful rather than
 old. They live in group chats, screenshot things to send to each other, and
 switch off quickly when an app feels corporate, preachy or like a template.
 
-Design for two situations at once (from `docs/spotter-spec-4-weeks.md`):
+Design for two situations at once (from `docs/product/spec-4-weeks.md`):
 
 1. **Between sets at the gym.** A phone in one sweaty hand, 60 to 180 seconds
    of rest, glances rather than reading, often bad reception. This is the hard
@@ -480,7 +480,7 @@ another, in its mockup.
 | **Signed out** | Pages that need an account redirect to sign in; invite links (`/join/:code`) keep the code through sign up. |
 | **Reconnecting** (gym only) | The connection dropped: a small `Reconnecting…` chip in the top bar. Logging keeps working; nothing turns red. |
 | **Each person state** (gym only) | Idle, Lifting, Resting, Slacking, Finished, and Away, for you (bottom panel) and for someone else (map and people list). |
-| **Narrow and wide** | 390 px and 1280 px, checked with `scripts/shot.sh`. |
+| **Narrow and wide** | 390 px and 1280 px, checked with `scripts/shot.mjs`. |
 
 ## 14. Ruled out
 

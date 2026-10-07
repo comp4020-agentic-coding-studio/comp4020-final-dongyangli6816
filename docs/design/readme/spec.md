@@ -1,7 +1,8 @@
 # `/readme/` design spec
 
 Mockup: `docs/design/readme/mockup.html` (open it directly in a browser).
-Screenshots: `shot-mobile.png`, `shot-desktop.png`.
+Screenshots: `node scripts/shot.mjs docs/design/readme/mockup.html .shots/readme/mockup`
+(not kept in git).
 
 ## 1. Plan
 
@@ -63,8 +64,8 @@ or documentation theme. What changed:
 
 | Requirement (source) | Met by |
 | --- | --- |
-| "`/readme/` serves `README.md` in full, headings in the server-sent HTML … rendered from Markdown on the server, never by client script" (`docs/spotter-spec-4-weeks.md`, fixed constraints) | No change to the rendering. `marked.parse` runs on the server into `<article class="card prose" set:html>`, and the design is CSS only. The "Set n" tags are CSS `::before` content, so they aren't part of the HTML or of `textContent`, and `spec/invariants.test.ts` still sees each heading once, in order. |
-| "`/readme/` README.md rendered in full" (`docs/spotter-spec-4-weeks.md`, Screens) | Every Markdown element marked emits has a style: h1–h3, p, strong, em, a, inline code, pre, ul/ol (nested too), blockquote, hr, img, table with column alignment. The third state in the mockup shows the ones today's README doesn't use. |
+| "`/readme/` serves `README.md` in full, headings in the server-sent HTML … rendered from Markdown on the server, never by client script" (`docs/product/spec-4-weeks.md`, fixed constraints) | No change to the rendering. `marked.parse` runs on the server into `<article class="card prose" set:html>`, and the design is CSS only. The "Set n" tags are CSS `::before` content, so they aren't part of the HTML or of `textContent`, and `spec/invariants.test.ts` still sees each heading once, in order. |
+| "`/readme/` README.md rendered in full" (`docs/product/spec-4-weeks.md`, Screens) | Every Markdown element marked emits has a style: h1–h3, p, strong, em, a, inline code, pre, ul/ol (nested too), blockquote, hr, img, table with column alignment. The third state in the mockup shows the ones today's README doesn't use. |
 | "images under `docs/` served as static files" (same, stack table) | `.prose img`: full width at most, ink border, green pixel shadow. See open question 1 about the URL. |
 | `/readme/` is a Paper page (`system.md` §4) | Paper surface, `.card`, checker background. |
 | Display text on the 8 px grid; VT323 never below 20 px (`system.md` §6) | h1 24 → 16 on phones, h2 and h3 16, the set tag 8 (a short label), body 22 → 21, lead 26 → 24, code and pre 22 → 21, table cells 24. |

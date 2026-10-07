@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Browser, createRoom, freshEmail, signUp } from "./helpers.ts";
 
-// The promises of the week-9 slice (docs/spotter-spec-4-weeks.md),
+// The promises of the week-9 slice (docs/product/spec-4-weeks.md),
 // checked against the running app the way a browser would use it.
 
 describe("a stranger's trace is still there when they come back", () => {

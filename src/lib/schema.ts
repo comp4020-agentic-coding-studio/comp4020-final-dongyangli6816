@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
-// The week-9 slice of the data model in docs/spotter-spec-4-weeks.md.
+// The week-9 slice of the data model in docs/product/spec-4-weeks.md.
 // presence, stations, interactions and messages arrive with the gym (weeks 10–11).
 // Times are Unix milliseconds.
 

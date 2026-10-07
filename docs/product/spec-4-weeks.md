@@ -1,7 +1,7 @@
 # Spotter: four-week course spec
 
 Oct 6, 2026 · @Dongyang · supersedes the scope (not the idea) of
-`Spotter Product & Technical Spec (MVP).md`
+`spec-mvp.md`
 
 ## What this document is
 

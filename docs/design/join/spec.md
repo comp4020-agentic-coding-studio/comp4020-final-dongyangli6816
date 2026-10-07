@@ -1,10 +1,7 @@
 # Join (`/join`) design
 
-Mockup: `docs/design/join/mockup.html` (open it in a browser). Screenshots:
-`shot-mobile.png` and `shot-desktop.png` next to it. See the note on
-`scripts/shot.sh` under "Layout changes": its mobile shot is really laid out at
-500 px, so I also checked true 390 px and 360 px by putting the mockup inside an
-iframe. The real 390 px render is `shot-mobile-true390.png`.
+Mockup: `docs/design/join/mockup.html` (open it in a browser). Screenshots: `node scripts/shot.mjs docs/design/join/mockup.html .shots/join/mockup`
+(not kept in git).
 
 ## 1. Plan
 
