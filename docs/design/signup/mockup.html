@@ -1,0 +1,815 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#0f3d22" />
+<title>Sign up · Spotter (mockup)</title>
+<link rel="stylesheet" href="../../../node_modules/@fontsource/press-start-2p/400.css">
+<link rel="stylesheet" href="../../../node_modules/@fontsource/vt323/400.css">
+<style id="global">
+  /* Deep green, after the Game Boy's four-shade screen. One "pixel" of
+     decoration is --px, so borders and shadows stay on the same grid. */
+  :root {
+    --ink: #0b2416;
+    --deep: #0f3d22;
+    --green: #1f6b3a;
+    --leaf: #c8e66b;
+    --paper: #e8f0d8;
+    --card: #f7fbef;
+    --muted: #3d5a45;
+    --error: #a3241b;
+    --focus: #f2c94c;
+    --px: 4px;
+    --display: "Press Start 2P", ui-monospace, monospace;
+    --body: "VT323", ui-monospace, monospace;
+    color-scheme: light;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    color: var(--ink);
+    font: 22px/1.35 var(--body);
+    /* pixel fonts have one weight; a faked bold smears them */
+    font-synthesis: none;
+    /* a faint 16 px checker, like gym floor tiles */
+    background-color: var(--paper);
+    background-image: conic-gradient(#dbe7c6 25%, transparent 0 50%, #dbe7c6 0 75%, transparent 0);
+    background-size: 32px 32px;
+  }
+
+  /* ---------- top bar ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--deep);
+    border-bottom: var(--px) solid var(--ink);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--paper);
+    text-decoration: none;
+    font: 16px/1 var(--display);
+    text-transform: uppercase;
+  }
+  .logo {
+    image-rendering: pixelated;
+  }
+  .topbar nav {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+  }
+  .topbar nav a,
+  .topbar .linklike {
+    color: var(--paper);
+    font: 24px/1 var(--body);
+    text-decoration: none;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .topbar nav a:hover,
+  .topbar .linklike:hover {
+    color: var(--leaf);
+  }
+  .topbar form {
+    margin: 0;
+  }
+
+  /* ---------- page ---------- */
+  main {
+    flex: 1;
+    width: 100%;
+    max-width: 44rem;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 2rem;
+  }
+  footer {
+    padding: 1rem;
+    text-align: center;
+    border-top: var(--px) solid var(--ink);
+    background: var(--deep);
+  }
+  footer a {
+    color: var(--leaf);
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--display);
+    font-weight: 400;
+    line-height: 1.4;
+    margin: 0 0 1rem;
+  }
+  h1 {
+    font-size: clamp(18px, 5vw, 26px);
+  }
+  h2 {
+    font-size: 14px;
+    color: var(--green);
+  }
+  h3 {
+    font-size: 12px;
+  }
+  p {
+    margin: 0 0 1rem;
+  }
+  a {
+    color: var(--green);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+  }
+
+  /* ---------- pixel panels ---------- */
+  .card {
+    position: relative;
+    margin: 0 0 1.5rem;
+    padding: 1.25rem;
+    background: var(--card);
+    border: var(--px) solid var(--ink);
+    box-shadow: var(--px) var(--px) 0 var(--green), calc(var(--px) * 2) calc(var(--px) * 2) 0 var(--ink);
+  }
+  .card > :last-child {
+    margin-bottom: 0;
+  }
+
+  /* ---------- forms ---------- */
+  label {
+    display: block;
+    margin: 1rem 0 0.35rem;
+    color: var(--deep);
+  }
+  input,
+  select {
+    width: 100%;
+    min-height: 48px;
+    padding: 0.5rem 0.75rem;
+    font: 26px/1.1 var(--body);
+    color: var(--ink);
+    background: #fff;
+    border: var(--px) solid var(--ink);
+    border-radius: 0;
+    box-shadow: inset var(--px) var(--px) 0 #dbe7c6;
+  }
+  select {
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%),
+      linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+    background-position: calc(100% - 22px) 50%, calc(100% - 14px) 50%;
+    background-size: 8px 8px;
+    background-repeat: no-repeat;
+    padding-right: 2.5rem;
+  }
+  button,
+  .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding: 0.75rem 1.25rem;
+    font: 12px/1.4 var(--display);
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--paper);
+    background: var(--green);
+    border: 0;
+    cursor: pointer;
+    /* a notched pixel outline plus a drop shadow; pressing moves it down */
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--ink),
+      0 var(--px) 0 var(--ink),
+      calc(var(--px) * -1) 0 0 var(--ink),
+      var(--px) 0 0 var(--ink),
+      0 calc(var(--px) * 2) 0 var(--ink),
+      inset 0 calc(var(--px) * -1) 0 var(--deep);
+    margin: var(--px) var(--px) calc(var(--px) * 2);
+    transition: transform 60ms steps(1);
+  }
+  button:hover,
+  .button:hover {
+    background: #26804a;
+  }
+  button:active,
+  .button:active {
+    transform: translateY(var(--px));
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--ink),
+      0 var(--px) 0 var(--ink),
+      calc(var(--px) * -1) 0 0 var(--ink),
+      var(--px) 0 0 var(--ink);
+  }
+  .button.secondary {
+    color: var(--ink);
+    background: var(--leaf);
+  }
+  .button.secondary:hover {
+    background: #d6ef86;
+  }
+  .wide {
+    width: calc(100% - var(--px) * 2);
+  }
+  .topbar .linklike {
+    background: none;
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+    text-transform: none;
+  }
+  :focus-visible {
+    outline: var(--px) solid var(--focus);
+    outline-offset: var(--px);
+  }
+  .error {
+    margin: 0.5rem 0 0;
+    padding: 0.4rem 0.6rem;
+    color: #fff;
+    background: var(--error);
+    border-left: calc(var(--px) * 2) solid var(--ink);
+  }
+  .hint {
+    color: var(--muted);
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    align-items: center;
+    margin-top: 1.25rem;
+  }
+
+  /* ---------- bits ---------- */
+  .passcode-box {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+  .passcode {
+    display: inline-block;
+    padding: 0.5rem 0.75rem;
+    font: 24px/1 var(--display);
+    letter-spacing: 0.12em;
+    color: var(--leaf);
+    background: var(--ink);
+    border: var(--px) solid var(--green);
+  }
+  .bubble {
+    position: relative;
+    margin: 0 0 1.25rem;
+    padding: 0.75rem 1rem;
+    background: var(--leaf);
+    border: var(--px) solid var(--ink);
+  }
+  .bubble::after {
+    content: "";
+    position: absolute;
+    left: 1.5rem;
+    bottom: calc(var(--px) * -3);
+    width: calc(var(--px) * 3);
+    height: calc(var(--px) * 3);
+    background: var(--leaf);
+    border-right: var(--px) solid var(--ink);
+    border-bottom: var(--px) solid var(--ink);
+    transform: skewY(45deg);
+  }
+  .roster {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .roster li {
+    padding: 0.25rem 0.6rem;
+    background: var(--paper);
+    border: var(--px) solid var(--ink);
+  }
+  .roster li::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 0.5rem;
+    background: var(--green);
+    vertical-align: middle;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 24px;
+  }
+  th {
+    font: 10px/1.4 var(--display);
+    text-transform: uppercase;
+    color: var(--paper);
+    background: var(--deep);
+  }
+  th,
+  td {
+    text-align: left;
+    padding: 0.5rem 0.6rem;
+    border: 2px solid var(--ink);
+  }
+  td.num,
+  th.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  tbody tr:nth-child(even) td {
+    background: #eef5e1;
+  }
+  .stat {
+    font-family: var(--display);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.15rem 0.4rem;
+    font: 9px/1.4 var(--display);
+    vertical-align: middle;
+    color: var(--ink);
+    background: var(--leaf);
+    border: 2px solid var(--ink);
+  }
+
+  /* ---------- /readme/ ---------- */
+  .prose h1 {
+    font-size: clamp(18px, 5vw, 24px);
+  }
+  .prose h2 {
+    margin-top: 2rem;
+  }
+  .prose li {
+    margin-bottom: 0.4rem;
+  }
+
+  @media (max-width: 420px) {
+    body {
+      font-size: 21px;
+    }
+    .brand {
+      font-size: 13px;
+    }
+    .card {
+      padding: 1rem;
+    }
+    .passcode {
+      font-size: 20px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    button,
+    .button {
+      transition: none;
+    }
+  }
+</style>
+<style id="page">
+  /* ===== signup page (src/pages/signup.astro) ===== */
+  .lead {
+    margin: -0.5rem 0 0.5rem;
+  }
+
+  /* The display name and its live preview travel together: a patch of gym
+     floor with you standing on it, your tag floating above. Stacked on
+     phones, side by side from the existing 900 px breakpoint. */
+  .tag-field {
+    display: grid;
+    gap: 0;
+  }
+  .tag-field label {
+    margin-top: 1rem;
+  }
+  @media (min-width: 900px) {
+    .tag-field {
+      grid-template-columns: 16rem 1fr;
+      gap: 0 1.5rem;
+      align-items: start;
+    }
+    .tag-field label {
+      margin-top: 0;
+    }
+  }
+  /* A wall along the top (deep, with a green skirting line) and the same
+     16 px checker as the page, like a room on the gym map. */
+  .floor {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    height: 152px;
+    padding: 0 0.5rem 0.75rem;
+    border: var(--px) solid var(--ink);
+    border-top: calc(var(--px) * 4) solid var(--deep);
+    box-shadow: inset 0 var(--px) 0 var(--green);
+    background-color: var(--paper);
+    background-image: conic-gradient(var(--tile) 25%, transparent 0 50%, var(--tile) 0 75%, transparent 0);
+    background-size: 32px 32px;
+  }
+  /* name tag: the gym's .avatar tag (system section 9), first used here */
+  .nametag {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 0.5rem;
+    font: 22px/1.3 var(--body);
+    white-space: nowrap;
+    color: var(--paper);
+    background: rgb(0 0 0 / 70%);
+  }
+  .nametag.is-empty {
+    color: var(--leaf);
+  }
+  .sprite {
+    display: block;
+    width: 64px; /* 16 px sprite at 4x, whole numbers only */
+    height: 64px;
+  }
+  .sprite-top {
+    animation: idle 800ms steps(1) infinite;
+  }
+  @keyframes idle {
+    50% {
+      transform: translateY(1px); /* one sprite pixel = 4 px on screen */
+    }
+  }
+  .floor-prop {
+    position: absolute;
+    bottom: 0.75rem;
+  }
+  .floor-prop.kettlebell {
+    left: calc(50% - 80px);
+    width: 24px;
+    height: 24px;
+  }
+  .floor-prop.dumbbell {
+    left: calc(50% + 48px);
+    width: 32px;
+    height: 16px;
+  }
+  .field-hint {
+    margin: 0 0 0.5rem;
+    line-height: 1.2;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sprite-top {
+      animation: none;
+    }
+  }
+
+  /* ===== layout changes: proposals for Layout.astro, reconcile once ===== */
+
+  /* layout change: tokenise the floor tile shade (known gap 5) */
+  :root {
+    --tile: #dbe7c6;
+    --green-hover: #1a5c32;
+  }
+  /* layout change: ink focus ring on Paper (known gap 1) */
+  :focus-visible {
+    outline-color: var(--ink);
+  }
+  .topbar :focus-visible,
+  footer :focus-visible {
+    outline-color: var(--focus);
+  }
+  /* layout change: darker hover token, 6.8:1 with the label (known gap 2) */
+  button:hover,
+  .button:hover {
+    background: var(--green-hover);
+  }
+  /* layout change: display sizes on the 8 px grid (known gap 3).
+     h1 16 -> 24; wide form buttons carry a 16 px label */
+  h1 {
+    font-size: 16px;
+  }
+  @media (min-width: 900px) {
+    h1 {
+      font-size: 24px;
+    }
+  }
+  button.wide,
+  .button.wide {
+    font-size: 16px;
+  }
+  /* layout change: the page you're on, in the top bar */
+  .topbar nav a[aria-current="page"] {
+    color: var(--leaf);
+    text-decoration: underline;
+    text-decoration-thickness: var(--px);
+    text-underline-offset: 6px;
+  }
+  /* layout change: pending. Label kept, button stays pressed in, no spinner */
+  button:disabled,
+  button:disabled:hover {
+    cursor: progress;
+    color: var(--paper);
+    background: var(--muted);
+    transform: translateY(var(--px));
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--ink),
+      0 var(--px) 0 var(--ink),
+      calc(var(--px) * -1) 0 0 var(--ink),
+      var(--px) 0 0 var(--ink);
+  }
+  /* layout change: a field with an error gets a red inset, so the field and
+     its message read as one thing (the message still carries the meaning) */
+  input[aria-invalid="true"] {
+    box-shadow: inset var(--px) var(--px) 0 var(--error);
+  }
+  /* layout change: links inside an error stay readable, white on red */
+  .error a {
+    color: #fff;
+  }
+  /* layout change: the "switch to sign in / sign up" line under auth cards,
+     shared with signin. The link gets a 44 px tap target. */
+  .switch {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 0.5rem;
+    margin: 0;
+  }
+  .switch a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+</style>
+<style id="mockup-only">
+  /* mockup only: state labels. Do not build. */
+  .state-label {
+    margin: 2rem 0 1rem;
+    padding: 0.25rem 0.5rem;
+    font: 8px/1.5 var(--display);
+    text-transform: uppercase;
+    color: var(--ink);
+    border: 2px dashed var(--muted);
+    display: inline-block;
+  }
+  .state-label:first-child { margin-top: 0; }
+  .state + .state { border-top: 2px dashed var(--muted); margin-top: 2rem; }
+  .state-note { color: var(--muted); margin: 0 0 1rem; }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <a href="/" class="brand" aria-label="Spotter home">
+      <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges">
+        <rect x="0" y="2" width="2" height="4" fill="#c8e66b" />
+        <rect x="2" y="0" width="2" height="8" fill="#c8e66b" />
+        <rect x="4" y="3" width="8" height="2" fill="#e8f0d8" />
+        <rect x="12" y="0" width="2" height="8" fill="#c8e66b" />
+        <rect x="14" y="2" width="2" height="4" fill="#c8e66b" />
+      </svg>
+      <span>Spotter</span>
+    </a>
+    <nav>
+      <a href="/signin">Sign in</a>
+      <a href="/signup" aria-current="page">Sign up</a>
+    </nav>
+  </header>
+  <main>
+
+  <!-- state: default -->
+  <section class="state">
+  <p class="state-label">State: default / empty</p>
+  <p class="state-note">First visit to /signup. Nothing typed; the tag shows a placeholder.</p>
+  
+  <div class="card">
+    <h1>Sign up</h1>
+    <p class="lead">This is you in the gym.</p>
+    <form method="post" novalidate>
+      <div class="tag-field">
+      <div class="floor" aria-hidden="true">
+        <svg class="floor-prop kettlebell" viewBox="0 0 6 6" aria-hidden="true" shape-rendering="crispEdges"><rect x="2" y="0" width="2" height="1" fill="#0b2416"/><rect x="1" y="1" width="1" height="1" fill="#0b2416"/><rect x="4" y="1" width="1" height="1" fill="#0b2416"/><rect x="0" y="2" width="6" height="1" fill="#0b2416"/><rect x="0" y="3" width="1" height="2" fill="#0b2416"/><rect x="1" y="3" width="4" height="2" fill="#3d5a45"/><rect x="5" y="3" width="1" height="2" fill="#0b2416"/><rect x="1" y="5" width="4" height="1" fill="#0b2416"/></svg>
+        <span class="nametag is-empty" data-nametag>Your name</span>
+        <svg class="sprite" viewBox="0 0 16 16" shape-rendering="crispEdges"><g class="sprite-top"><rect x="5" y="1" width="6" height="1" fill="#0b2416"/><rect x="4" y="2" width="1" height="1" fill="#0b2416"/><rect x="5" y="2" width="6" height="1" fill="#3b2219"/><rect x="11" y="2" width="1" height="1" fill="#0b2416"/><rect x="3" y="3" width="1" height="1" fill="#0b2416"/><rect x="4" y="3" width="8" height="1" fill="#3b2219"/><rect x="12" y="3" width="1" height="1" fill="#0b2416"/><rect x="3" y="4" width="1" height="1" fill="#0b2416"/><rect x="4" y="4" width="1" height="1" fill="#3b2219"/><rect x="5" y="4" width="6" height="1" fill="#c68642"/><rect x="11" y="4" width="1" height="1" fill="#3b2219"/><rect x="12" y="4" width="1" height="1" fill="#0b2416"/><rect x="3" y="5" width="1" height="1" fill="#0b2416"/><rect x="4" y="5" width="1" height="1" fill="#c68642"/><rect x="5" y="5" width="1" height="1" fill="#0b2416"/><rect x="6" y="5" width="4" height="1" fill="#c68642"/><rect x="10" y="5" width="1" height="1" fill="#0b2416"/><rect x="11" y="5" width="1" height="1" fill="#c68642"/><rect x="12" y="5" width="1" height="1" fill="#0b2416"/><rect x="3" y="6" width="1" height="1" fill="#0b2416"/><rect x="4" y="6" width="8" height="1" fill="#c68642"/><rect x="12" y="6" width="1" height="1" fill="#0b2416"/><rect x="4" y="7" width="1" height="1" fill="#0b2416"/><rect x="5" y="7" width="6" height="1" fill="#c68642"/><rect x="11" y="7" width="1" height="1" fill="#0b2416"/><rect x="3" y="8" width="2" height="1" fill="#0b2416"/><rect x="5" y="8" width="6" height="1" fill="#6a4c93"/><rect x="11" y="8" width="2" height="1" fill="#0b2416"/><rect x="2" y="9" width="1" height="1" fill="#0b2416"/><rect x="3" y="9" width="10" height="1" fill="#6a4c93"/><rect x="13" y="9" width="1" height="1" fill="#0b2416"/><rect x="2" y="10" width="1" height="1" fill="#0b2416"/><rect x="3" y="10" width="10" height="1" fill="#6a4c93"/><rect x="13" y="10" width="1" height="1" fill="#0b2416"/><rect x="2" y="11" width="1" height="1" fill="#0b2416"/><rect x="3" y="11" width="1" height="1" fill="#c68642"/><rect x="4" y="11" width="1" height="1" fill="#0b2416"/><rect x="5" y="11" width="6" height="1" fill="#6a4c93"/><rect x="11" y="11" width="1" height="1" fill="#0b2416"/><rect x="12" y="11" width="1" height="1" fill="#c68642"/><rect x="13" y="11" width="1" height="1" fill="#0b2416"/></g>
+<g><rect x="3" y="12" width="10" height="1" fill="#0b2416"/><rect x="3" y="13" width="4" height="1" fill="#0b2416"/><rect x="9" y="13" width="4" height="1" fill="#0b2416"/><rect x="3" y="14" width="1" height="1" fill="#0b2416"/><rect x="4" y="14" width="2" height="1" fill="#c68642"/><rect x="6" y="14" width="1" height="1" fill="#0b2416"/><rect x="9" y="14" width="1" height="1" fill="#0b2416"/><rect x="10" y="14" width="2" height="1" fill="#c68642"/><rect x="12" y="14" width="1" height="1" fill="#0b2416"/><rect x="3" y="15" width="4" height="1" fill="#0b2416"/><rect x="9" y="15" width="4" height="1" fill="#0b2416"/></g>
+</svg>
+        <svg class="floor-prop dumbbell" viewBox="0 0 8 4" aria-hidden="true" shape-rendering="crispEdges"><rect x="0" y="1" width="1" height="2" fill="#0b2416"/><rect x="1" y="0" width="1" height="4" fill="#0b2416"/><rect x="2" y="1" width="4" height="2" fill="#3d5a45"/><rect x="6" y="0" width="1" height="4" fill="#0b2416"/><rect x="7" y="1" width="1" height="2" fill="#0b2416"/></svg>
+      </div>
+      <div>
+      <label for="display_name">Display name</label>
+      <p class="hint field-hint" id="name-hint">2 to 20 characters.</p>
+      <input id="display_name" name="display_name" autocomplete="nickname" value="" minlength="2" maxlength="20" required aria-describedby="name-hint" />
+      </div>
+      </div>
+
+      <label for="email">Email</label>
+      <p class="hint field-hint" id="email-hint">Your squad never sees it.</p>
+      <input id="email" name="email" type="email" autocomplete="email" value="" required aria-describedby="email-hint" />
+
+      <label for="password">Password</label>
+      <p class="hint field-hint" id="password-hint">At least 8 characters.</p>
+      <input id="password" name="password" type="password" autocomplete="new-password" value="" minlength="8" required aria-describedby="password-hint" />
+
+      <div class="actions"><button type="submit" class="wide">Create account</button></div>
+    </form>
+  </div>
+  <p class="switch">Already have one? <a href="/signin?next=%2F">Sign in</a></p>
+  </section>
+
+  <!-- state: invite -->
+  <section class="state">
+  <p class="state-label">State: from a shared room link, typing</p>
+  <p class="state-note">Arrived with ?next=/rooms/12 (a mate's room link, via sign in). The tag follows the display name as it is typed.</p>
+  
+  <p class="bubble">Sign up and you go straight into your squad's room 🏋️</p>
+  <div class="card">
+    <h1>Sign up</h1>
+    <p class="lead">This is you in the gym.</p>
+    <form method="post" novalidate>
+      <div class="tag-field">
+      <div class="floor" aria-hidden="true">
+        <svg class="floor-prop kettlebell" viewBox="0 0 6 6" aria-hidden="true" shape-rendering="crispEdges"><rect x="2" y="0" width="2" height="1" fill="#0b2416"/><rect x="1" y="1" width="1" height="1" fill="#0b2416"/><rect x="4" y="1" width="1" height="1" fill="#0b2416"/><rect x="0" y="2" width="6" height="1" fill="#0b2416"/><rect x="0" y="3" width="1" height="2" fill="#0b2416"/><rect x="1" y="3" width="4" height="2" fill="#3d5a45"/><rect x="5" y="3" width="1" height="2" fill="#0b2416"/><rect x="1" y="5" width="4" height="1" fill="#0b2416"/></svg>
+        <span class="nametag" data-nametag>Priya</span>
+        <svg class="sprite" viewBox="0 0 16 16" shape-rendering="crispEdges"><g class="sprite-top"><rect x="5" y="1" width="6" height="1" fill="#0b2416"/><rect x="4" y="2" width="1" height="1" fill="#0b2416"/><rect x="5" y="2" width="6" height="1" fill="#3b2219"/><rect x="11" y="2" width="1" height="1" fill="#0b2416"/><rect x="3" y="3" width="1" height="1" fill="#0b2416"/><rect x="4" y="3" width="8" height="1" fill="#3b2219"/><rect x="12" y="3" width="1" height="1" fill="#0b2416"/><rect x="3" y="4" width="1" height="1" fill="#0b2416"/><rect x="4" y="4" width="1" height="1" fill="#3b2219"/><rect x="5" y="4" width="6" height="1" fill="#c68642"/><rect x="11" y="4" width="1" height="1" fill="#3b2219"/><rect x="12" y="4" width="1" height="1" fill="#0b2416"/><rect x="3" y="5" width="1" height="1" fill="#0b2416"/><rect x="4" y="5" width="1" height="1" fill="#c68642"/><rect x="5" y="5" width="1" height="1" fill="#0b2416"/><rect x="6" y="5" width="4" height="1" fill="#c68642"/><rect x="10" y="5" width="1" height="1" fill="#0b2416"/><rect x="11" y="5" width="1" height="1" fill="#c68642"/><rect x="12" y="5" width="1" height="1" fill="#0b2416"/><rect x="3" y="6" width="1" height="1" fill="#0b2416"/><rect x="4" y="6" width="8" height="1" fill="#c68642"/><rect x="12" y="6" width="1" height="1" fill="#0b2416"/><rect x="4" y="7" width="1" height="1" fill="#0b2416"/><rect x="5" y="7" width="6" height="1" fill="#c68642"/><rect x="11" y="7" width="1" height="1" fill="#0b2416"/><rect x="3" y="8" width="2" height="1" fill="#0b2416"/><rect x="5" y="8" width="6" height="1" fill="#6a4c93"/><rect x="11" y="8" width="2" height="1" fill="#0b2416"/><rect x="2" y="9" width="1" height="1" fill="#0b2416"/><rect x="3" y="9" width="10" height="1" fill="#6a4c93"/><rect x="13" y="9" width="1" height="1" fill="#0b2416"/><rect x="2" y="10" width="1" height="1" fill="#0b2416"/><rect x="3" y="10" width="10" height="1" fill="#6a4c93"/><rect x="13" y="10" width="1" height="1" fill="#0b2416"/><rect x="2" y="11" width="1" height="1" fill="#0b2416"/><rect x="3" y="11" width="1" height="1" fill="#c68642"/><rect x="4" y="11" width="1" height="1" fill="#0b2416"/><rect x="5" y="11" width="6" height="1" fill="#6a4c93"/><rect x="11" y="11" width="1" height="1" fill="#0b2416"/><rect x="12" y="11" width="1" height="1" fill="#c68642"/><rect x="13" y="11" width="1" height="1" fill="#0b2416"/></g>
+<g><rect x="3" y="12" width="10" height="1" fill="#0b2416"/><rect x="3" y="13" width="4" height="1" fill="#0b2416"/><rect x="9" y="13" width="4" height="1" fill="#0b2416"/><rect x="3" y="14" width="1" height="1" fill="#0b2416"/><rect x="4" y="14" width="2" height="1" fill="#c68642"/><rect x="6" y="14" width="1" height="1" fill="#0b2416"/><rect x="9" y="14" width="1" height="1" fill="#0b2416"/><rect x="10" y="14" width="2" height="1" fill="#c68642"/><rect x="12" y="14" width="1" height="1" fill="#0b2416"/><rect x="3" y="15" width="4" height="1" fill="#0b2416"/><rect x="9" y="15" width="4" height="1" fill="#0b2416"/></g>
+</svg>
+        <svg class="floor-prop dumbbell" viewBox="0 0 8 4" aria-hidden="true" shape-rendering="crispEdges"><rect x="0" y="1" width="1" height="2" fill="#0b2416"/><rect x="1" y="0" width="1" height="4" fill="#0b2416"/><rect x="2" y="1" width="4" height="2" fill="#3d5a45"/><rect x="6" y="0" width="1" height="4" fill="#0b2416"/><rect x="7" y="1" width="1" height="2" fill="#0b2416"/></svg>
+      </div>
+      <div>
+      <label for="display_name-2">Display name</label>
+      <p class="hint field-hint" id="name-hint-2">2 to 20 characters.</p>
+      <input id="display_name-2" name="display_name" autocomplete="nickname" value="Priya" minlength="2" maxlength="20" required aria-describedby="name-hint-2" />
+      </div>
+      </div>
+
+      <label for="email-2">Email</label>
+      <p class="hint field-hint" id="email-hint-2">Your squad never sees it.</p>
+      <input id="email-2" name="email" type="email" autocomplete="email" value="priya.n@gmail.com" required aria-describedby="email-hint-2" />
+
+      <label for="password-2">Password</label>
+      <p class="hint field-hint" id="password-hint-2">At least 8 characters.</p>
+      <input id="password-2" name="password" type="password" autocomplete="new-password" value="squatqueen" minlength="8" required aria-describedby="password-hint-2" />
+
+      <div class="actions"><button type="submit" class="wide">Create account</button></div>
+    </form>
+  </div>
+  <p class="switch">Already have one? <a href="/signin?next=%2Frooms%2F12">Sign in</a></p>
+  </section>
+
+  <!-- state: error-fields -->
+  <section class="state">
+  <p class="state-label">State: error: every field</p>
+  <p class="state-note">Posted with display name "M", email "priya@" and a 5-character password. Status 400. Password is never sent back, so it comes back empty.</p>
+  
+  <div class="card">
+    <h1>Sign up</h1>
+    <p class="lead">This is you in the gym.</p>
+    <form method="post" novalidate>
+      <div class="tag-field">
+      <div class="floor" aria-hidden="true">
+        <svg class="floor-prop kettlebell" viewBox="0 0 6 6" aria-hidden="true" shape-rendering="crispEdges"><rect x="2" y="0" width="2" height="1" fill="#0b2416"/><rect x="1" y="1" width="1" height="1" fill="#0b2416"/><rect x="4" y="1" width="1" height="1" fill="#0b2416"/><rect x="0" y="2" width="6" height="1" fill="#0b2416"/><rect x="0" y="3" width="1" height="2" fill="#0b2416"/><rect x="1" y="3" width="4" height="2" fill="#3d5a45"/><rect x="5" y="3" width="1" height="2" fill="#0b2416"/><rect x="1" y="5" width="4" height="1" fill="#0b2416"/></svg>
+        <span class="nametag" data-nametag>M</span>
+        <svg class="sprite" viewBox="0 0 16 16" shape-rendering="crispEdges"><g class="sprite-top"><rect x="5" y="1" width="6" height="1" fill="#0b2416"/><rect x="4" y="2" width="1" height="1" fill="#0b2416"/><rect x="5" y="2" width="6" height="1" fill="#3b2219"/><rect x="11" y="2" width="1" height="1" fill="#0b2416"/><rect x="3" y="3" width="1" height="1" fill="#0b2416"/><rect x="4" y="3" width="8" height="1" fill="#3b2219"/><rect x="12" y="3" width="1" height="1" fill="#0b2416"/><rect x="3" y="4" width="1" height="1" fill="#0b2416"/><rect x="4" y="4" width="1" height="1" fill="#3b2219"/><rect x="5" y="4" width="6" height="1" fill="#c68642"/><rect x="11" y="4" width="1" height="1" fill="#3b2219"/><rect x="12" y="4" width="1" height="1" fill="#0b2416"/><rect x="3" y="5" width="1" height="1" fill="#0b2416"/><rect x="4" y="5" width="1" height="1" fill="#c68642"/><rect x="5" y="5" width="1" height="1" fill="#0b2416"/><rect x="6" y="5" width="4" height="1" fill="#c68642"/><rect x="10" y="5" width="1" height="1" fill="#0b2416"/><rect x="11" y="5" width="1" height="1" fill="#c68642"/><rect x="12" y="5" width="1" height="1" fill="#0b2416"/><rect x="3" y="6" width="1" height="1" fill="#0b2416"/><rect x="4" y="6" width="8" height="1" fill="#c68642"/><rect x="12" y="6" width="1" height="1" fill="#0b2416"/><rect x="4" y="7" width="1" height="1" fill="#0b2416"/><rect x="5" y="7" width="6" height="1" fill="#c68642"/><rect x="11" y="7" width="1" height="1" fill="#0b2416"/><rect x="3" y="8" width="2" height="1" fill="#0b2416"/><rect x="5" y="8" width="6" height="1" fill="#6a4c93"/><rect x="11" y="8" width="2" height="1" fill="#0b2416"/><rect x="2" y="9" width="1" height="1" fill="#0b2416"/><rect x="3" y="9" width="10" height="1" fill="#6a4c93"/><rect x="13" y="9" width="1" height="1" fill="#0b2416"/><rect x="2" y="10" width="1" height="1" fill="#0b2416"/><rect x="3" y="10" width="10" height="1" fill="#6a4c93"/><rect x="13" y="10" width="1" height="1" fill="#0b2416"/><rect x="2" y="11" width="1" height="1" fill="#0b2416"/><rect x="3" y="11" width="1" height="1" fill="#c68642"/><rect x="4" y="11" width="1" height="1" fill="#0b2416"/><rect x="5" y="11" width="6" height="1" fill="#6a4c93"/><rect x="11" y="11" width="1" height="1" fill="#0b2416"/><rect x="12" y="11" width="1" height="1" fill="#c68642"/><rect x="13" y="11" width="1" height="1" fill="#0b2416"/></g>
+<g><rect x="3" y="12" width="10" height="1" fill="#0b2416"/><rect x="3" y="13" width="4" height="1" fill="#0b2416"/><rect x="9" y="13" width="4" height="1" fill="#0b2416"/><rect x="3" y="14" width="1" height="1" fill="#0b2416"/><rect x="4" y="14" width="2" height="1" fill="#c68642"/><rect x="6" y="14" width="1" height="1" fill="#0b2416"/><rect x="9" y="14" width="1" height="1" fill="#0b2416"/><rect x="10" y="14" width="2" height="1" fill="#c68642"/><rect x="12" y="14" width="1" height="1" fill="#0b2416"/><rect x="3" y="15" width="4" height="1" fill="#0b2416"/><rect x="9" y="15" width="4" height="1" fill="#0b2416"/></g>
+</svg>
+        <svg class="floor-prop dumbbell" viewBox="0 0 8 4" aria-hidden="true" shape-rendering="crispEdges"><rect x="0" y="1" width="1" height="2" fill="#0b2416"/><rect x="1" y="0" width="1" height="4" fill="#0b2416"/><rect x="2" y="1" width="4" height="2" fill="#3d5a45"/><rect x="6" y="0" width="1" height="4" fill="#0b2416"/><rect x="7" y="1" width="1" height="2" fill="#0b2416"/></svg>
+      </div>
+      <div>
+      <label for="display_name-3">Display name</label>
+      <p class="hint field-hint" id="name-hint-3">2 to 20 characters.</p>
+      <input id="display_name-3" name="display_name" autocomplete="nickname" value="M" minlength="2" maxlength="20" required aria-describedby="name-hint-3 display_name-error-3" aria-invalid="true" />
+      <p class="error" id="display_name-error-3">Use 2 to 20 characters.</p>
+      </div>
+      </div>
+
+      <label for="email-3">Email</label>
+      <p class="hint field-hint" id="email-hint-3">Your squad never sees it.</p>
+      <input id="email-3" name="email" type="email" autocomplete="email" value="priya@" required aria-describedby="email-hint-3 email-error-3" aria-invalid="true" />
+      <p class="error" id="email-error-3">Enter an email address.</p>
+
+      <label for="password-3">Password</label>
+      <p class="hint field-hint" id="password-hint-3">At least 8 characters.</p>
+      <input id="password-3" name="password" type="password" autocomplete="new-password" value="" minlength="8" required aria-describedby="password-hint-3 password-error-3" aria-invalid="true" />
+      <p class="error" id="password-error-3">Use at least 8 characters.</p>
+
+      <div class="actions"><button type="submit" class="wide">Create account</button></div>
+    </form>
+  </div>
+  <p class="switch">Already have one? <a href="/signin?next=%2F">Sign in</a></p>
+  </section>
+
+  <!-- state: error-taken -->
+  <section class="state">
+  <p class="state-label">State: error: email already used</p>
+  <p class="state-note">Posted a valid form with an email that has an account. The error links to sign in, keeping ?next=.</p>
+  
+  <div class="card">
+    <h1>Sign up</h1>
+    <p class="lead">This is you in the gym.</p>
+    <form method="post" novalidate>
+      <div class="tag-field">
+      <div class="floor" aria-hidden="true">
+        <svg class="floor-prop kettlebell" viewBox="0 0 6 6" aria-hidden="true" shape-rendering="crispEdges"><rect x="2" y="0" width="2" height="1" fill="#0b2416"/><rect x="1" y="1" width="1" height="1" fill="#0b2416"/><rect x="4" y="1" width="1" height="1" fill="#0b2416"/><rect x="0" y="2" width="6" height="1" fill="#0b2416"/><rect x="0" y="3" width="1" height="2" fill="#0b2416"/><rect x="1" y="3" width="4" height="2" fill="#3d5a45"/><rect x="5" y="3" width="1" height="2" fill="#0b2416"/><rect x="1" y="5" width="4" height="1" fill="#0b2416"/></svg>
+        <span class="nametag" data-nametag>Ji-woo</span>
+        <svg class="sprite" viewBox="0 0 16 16" shape-rendering="crispEdges"><g class="sprite-top"><rect x="5" y="1" width="6" height="1" fill="#0b2416"/><rect x="4" y="2" width="1" height="1" fill="#0b2416"/><rect x="5" y="2" width="6" height="1" fill="#3b2219"/><rect x="11" y="2" width="1" height="1" fill="#0b2416"/><rect x="3" y="3" width="1" height="1" fill="#0b2416"/><rect x="4" y="3" width="8" height="1" fill="#3b2219"/><rect x="12" y="3" width="1" height="1" fill="#0b2416"/><rect x="3" y="4" width="1" height="1" fill="#0b2416"/><rect x="4" y="4" width="1" height="1" fill="#3b2219"/><rect x="5" y="4" width="6" height="1" fill="#c68642"/><rect x="11" y="4" width="1" height="1" fill="#3b2219"/><rect x="12" y="4" width="1" height="1" fill="#0b2416"/><rect x="3" y="5" width="1" height="1" fill="#0b2416"/><rect x="4" y="5" width="1" height="1" fill="#c68642"/><rect x="5" y="5" width="1" height="1" fill="#0b2416"/><rect x="6" y="5" width="4" height="1" fill="#c68642"/><rect x="10" y="5" width="1" height="1" fill="#0b2416"/><rect x="11" y="5" width="1" height="1" fill="#c68642"/><rect x="12" y="5" width="1" height="1" fill="#0b2416"/><rect x="3" y="6" width="1" height="1" fill="#0b2416"/><rect x="4" y="6" width="8" height="1" fill="#c68642"/><rect x="12" y="6" width="1" height="1" fill="#0b2416"/><rect x="4" y="7" width="1" height="1" fill="#0b2416"/><rect x="5" y="7" width="6" height="1" fill="#c68642"/><rect x="11" y="7" width="1" height="1" fill="#0b2416"/><rect x="3" y="8" width="2" height="1" fill="#0b2416"/><rect x="5" y="8" width="6" height="1" fill="#6a4c93"/><rect x="11" y="8" width="2" height="1" fill="#0b2416"/><rect x="2" y="9" width="1" height="1" fill="#0b2416"/><rect x="3" y="9" width="10" height="1" fill="#6a4c93"/><rect x="13" y="9" width="1" height="1" fill="#0b2416"/><rect x="2" y="10" width="1" height="1" fill="#0b2416"/><rect x="3" y="10" width="10" height="1" fill="#6a4c93"/><rect x="13" y="10" width="1" height="1" fill="#0b2416"/><rect x="2" y="11" width="1" height="1" fill="#0b2416"/><rect x="3" y="11" width="1" height="1" fill="#c68642"/><rect x="4" y="11" width="1" height="1" fill="#0b2416"/><rect x="5" y="11" width="6" height="1" fill="#6a4c93"/><rect x="11" y="11" width="1" height="1" fill="#0b2416"/><rect x="12" y="11" width="1" height="1" fill="#c68642"/><rect x="13" y="11" width="1" height="1" fill="#0b2416"/></g>
+<g><rect x="3" y="12" width="10" height="1" fill="#0b2416"/><rect x="3" y="13" width="4" height="1" fill="#0b2416"/><rect x="9" y="13" width="4" height="1" fill="#0b2416"/><rect x="3" y="14" width="1" height="1" fill="#0b2416"/><rect x="4" y="14" width="2" height="1" fill="#c68642"/><rect x="6" y="14" width="1" height="1" fill="#0b2416"/><rect x="9" y="14" width="1" height="1" fill="#0b2416"/><rect x="10" y="14" width="2" height="1" fill="#c68642"/><rect x="12" y="14" width="1" height="1" fill="#0b2416"/><rect x="3" y="15" width="4" height="1" fill="#0b2416"/><rect x="9" y="15" width="4" height="1" fill="#0b2416"/></g>
+</svg>
+        <svg class="floor-prop dumbbell" viewBox="0 0 8 4" aria-hidden="true" shape-rendering="crispEdges"><rect x="0" y="1" width="1" height="2" fill="#0b2416"/><rect x="1" y="0" width="1" height="4" fill="#0b2416"/><rect x="2" y="1" width="4" height="2" fill="#3d5a45"/><rect x="6" y="0" width="1" height="4" fill="#0b2416"/><rect x="7" y="1" width="1" height="2" fill="#0b2416"/></svg>
+      </div>
+      <div>
+      <label for="display_name-4">Display name</label>
+      <p class="hint field-hint" id="name-hint-4">2 to 20 characters.</p>
+      <input id="display_name-4" name="display_name" autocomplete="nickname" value="Ji-woo" minlength="2" maxlength="20" required aria-describedby="name-hint-4" />
+      </div>
+      </div>
+
+      <label for="email-4">Email</label>
+      <p class="hint field-hint" id="email-hint-4">Your squad never sees it.</p>
+      <input id="email-4" name="email" type="email" autocomplete="email" value="jiwoo.park@outlook.com" required aria-describedby="email-hint-4 email-error-4" aria-invalid="true" />
+      <p class="error" id="email-error-4">That email already has an account. <a href="/signin?next=%2F">Sign in instead</a>.</p>
+
+      <label for="password-4">Password</label>
+      <p class="hint field-hint" id="password-hint-4">At least 8 characters.</p>
+      <input id="password-4" name="password" type="password" autocomplete="new-password" value="" minlength="8" required aria-describedby="password-hint-4" />
+
+      <div class="actions"><button type="submit" class="wide">Create account</button></div>
+    </form>
+  </div>
+  <p class="switch">Already have one? <a href="/signin?next=%2F">Sign in</a></p>
+  </section>
+
+  <!-- state: pending -->
+  <section class="state">
+  <p class="state-label">State: pending</p>
+  <p class="state-note">Create account tapped on a slow connection. Button pressed in, greyed to muted green and disabled, label kept; fields keep what was typed.</p>
+  
+  <div class="card">
+    <h1>Sign up</h1>
+    <p class="lead">This is you in the gym.</p>
+    <form method="post" novalidate aria-busy="true">
+      <div class="tag-field">
+      <div class="floor" aria-hidden="true">
+        <svg class="floor-prop kettlebell" viewBox="0 0 6 6" aria-hidden="true" shape-rendering="crispEdges"><rect x="2" y="0" width="2" height="1" fill="#0b2416"/><rect x="1" y="1" width="1" height="1" fill="#0b2416"/><rect x="4" y="1" width="1" height="1" fill="#0b2416"/><rect x="0" y="2" width="6" height="1" fill="#0b2416"/><rect x="0" y="3" width="1" height="2" fill="#0b2416"/><rect x="1" y="3" width="4" height="2" fill="#3d5a45"/><rect x="5" y="3" width="1" height="2" fill="#0b2416"/><rect x="1" y="5" width="4" height="1" fill="#0b2416"/></svg>
+        <span class="nametag" data-nametag>Tom</span>
+        <svg class="sprite" viewBox="0 0 16 16" shape-rendering="crispEdges"><g class="sprite-top"><rect x="5" y="1" width="6" height="1" fill="#0b2416"/><rect x="4" y="2" width="1" height="1" fill="#0b2416"/><rect x="5" y="2" width="6" height="1" fill="#3b2219"/><rect x="11" y="2" width="1" height="1" fill="#0b2416"/><rect x="3" y="3" width="1" height="1" fill="#0b2416"/><rect x="4" y="3" width="8" height="1" fill="#3b2219"/><rect x="12" y="3" width="1" height="1" fill="#0b2416"/><rect x="3" y="4" width="1" height="1" fill="#0b2416"/><rect x="4" y="4" width="1" height="1" fill="#3b2219"/><rect x="5" y="4" width="6" height="1" fill="#c68642"/><rect x="11" y="4" width="1" height="1" fill="#3b2219"/><rect x="12" y="4" width="1" height="1" fill="#0b2416"/><rect x="3" y="5" width="1" height="1" fill="#0b2416"/><rect x="4" y="5" width="1" height="1" fill="#c68642"/><rect x="5" y="5" width="1" height="1" fill="#0b2416"/><rect x="6" y="5" width="4" height="1" fill="#c68642"/><rect x="10" y="5" width="1" height="1" fill="#0b2416"/><rect x="11" y="5" width="1" height="1" fill="#c68642"/><rect x="12" y="5" width="1" height="1" fill="#0b2416"/><rect x="3" y="6" width="1" height="1" fill="#0b2416"/><rect x="4" y="6" width="8" height="1" fill="#c68642"/><rect x="12" y="6" width="1" height="1" fill="#0b2416"/><rect x="4" y="7" width="1" height="1" fill="#0b2416"/><rect x="5" y="7" width="6" height="1" fill="#c68642"/><rect x="11" y="7" width="1" height="1" fill="#0b2416"/><rect x="3" y="8" width="2" height="1" fill="#0b2416"/><rect x="5" y="8" width="6" height="1" fill="#6a4c93"/><rect x="11" y="8" width="2" height="1" fill="#0b2416"/><rect x="2" y="9" width="1" height="1" fill="#0b2416"/><rect x="3" y="9" width="10" height="1" fill="#6a4c93"/><rect x="13" y="9" width="1" height="1" fill="#0b2416"/><rect x="2" y="10" width="1" height="1" fill="#0b2416"/><rect x="3" y="10" width="10" height="1" fill="#6a4c93"/><rect x="13" y="10" width="1" height="1" fill="#0b2416"/><rect x="2" y="11" width="1" height="1" fill="#0b2416"/><rect x="3" y="11" width="1" height="1" fill="#c68642"/><rect x="4" y="11" width="1" height="1" fill="#0b2416"/><rect x="5" y="11" width="6" height="1" fill="#6a4c93"/><rect x="11" y="11" width="1" height="1" fill="#0b2416"/><rect x="12" y="11" width="1" height="1" fill="#c68642"/><rect x="13" y="11" width="1" height="1" fill="#0b2416"/></g>
+<g><rect x="3" y="12" width="10" height="1" fill="#0b2416"/><rect x="3" y="13" width="4" height="1" fill="#0b2416"/><rect x="9" y="13" width="4" height="1" fill="#0b2416"/><rect x="3" y="14" width="1" height="1" fill="#0b2416"/><rect x="4" y="14" width="2" height="1" fill="#c68642"/><rect x="6" y="14" width="1" height="1" fill="#0b2416"/><rect x="9" y="14" width="1" height="1" fill="#0b2416"/><rect x="10" y="14" width="2" height="1" fill="#c68642"/><rect x="12" y="14" width="1" height="1" fill="#0b2416"/><rect x="3" y="15" width="4" height="1" fill="#0b2416"/><rect x="9" y="15" width="4" height="1" fill="#0b2416"/></g>
+</svg>
+        <svg class="floor-prop dumbbell" viewBox="0 0 8 4" aria-hidden="true" shape-rendering="crispEdges"><rect x="0" y="1" width="1" height="2" fill="#0b2416"/><rect x="1" y="0" width="1" height="4" fill="#0b2416"/><rect x="2" y="1" width="4" height="2" fill="#3d5a45"/><rect x="6" y="0" width="1" height="4" fill="#0b2416"/><rect x="7" y="1" width="1" height="2" fill="#0b2416"/></svg>
+      </div>
+      <div>
+      <label for="display_name-5">Display name</label>
+      <p class="hint field-hint" id="name-hint-5">2 to 20 characters.</p>
+      <input id="display_name-5" name="display_name" autocomplete="nickname" value="Tom" minlength="2" maxlength="20" required aria-describedby="name-hint-5" />
+      </div>
+      </div>
+
+      <label for="email-5">Email</label>
+      <p class="hint field-hint" id="email-hint-5">Your squad never sees it.</p>
+      <input id="email-5" name="email" type="email" autocomplete="email" value="tom.w@icloud.com" required aria-describedby="email-hint-5" />
+
+      <label for="password-5">Password</label>
+      <p class="hint field-hint" id="password-hint-5">At least 8 characters.</p>
+      <input id="password-5" name="password" type="password" autocomplete="new-password" value="legdayallday" minlength="8" required aria-describedby="password-hint-5" />
+
+      <div class="actions"><button type="submit" class="wide" disabled>Create account</button></div>
+    </form>
+  </div>
+  <p class="switch">Already have one? <a href="/signin?next=%2F">Sign in</a></p>
+  </section>
+
+  </main>
+  <footer>
+    <a href="/readme/">What Spotter is for</a>
+  </footer>
+
+<script>
+  // Live name tag: mirrors the display name into the floor preview.
+  // Without JS the tag shows the server value (or "Your name"); nothing breaks.
+  document.querySelectorAll("form").forEach((form) => {
+    const input = form.querySelector('[name="display_name"]');
+    const tag = form.querySelector("[data-nametag]");
+    const sync = () => {
+      const v = input.value.trim();
+      tag.textContent = v || "Your name";
+      tag.classList.toggle("is-empty", !v);
+    };
+    input.addEventListener("input", sync);
+  });
+</script>
+</body>
+</html>
