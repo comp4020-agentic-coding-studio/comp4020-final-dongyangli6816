@@ -1,13 +1,4 @@
-# Your harness
-
-This file is yours, and it arrives empty on purpose. The rules you hold the
-agent to are part of what gets marked, so they should be rules you decided on.
-
-Nothing about the template is recorded here. What the repo ships is explained
-where it lives --- `fly.toml`, the `Dockerfile`, the CI workflow and
-`spec/README.md` each say what they fix --- and the course website publishes the
-[final project brief](https://comp.anu.edu.au/courses/comp4020-agentic-coding-studio/assessments/final-project/).
-What the agent needs to carry from any of it is your call.
+# Spotter
 
 ## Enrolment
 
@@ -21,7 +12,6 @@ I'm enrolled in **COMP8020**, not COMP4020. That means:
 - the research note argues about the field, from the literature; arguments about
   this app belong in `README.md`, and arguments about how I worked belong in
   `PROCESS.md`.
-
 
 ## Repository map
 
@@ -51,34 +41,23 @@ docs/evidence/               YYYY-MM-DD-<slug>/, one per episode PROCESS.md cite
 .shots/  data/  dist/        gitignored: working screenshots, local db, build
 ```
 
-Rules for placing things:
-
-- **Evidence** is captured when it happens, before the state is gone. Each
-  folder's `README.md` gives the question, what happened with commit links,
-  what's in it, how it was made, and what to watch for when judging it.
-- **Screenshots** always come from `scripts/shot.mjs`. Working shots go in
-  `.shots/<page>/`; one kept as evidence is copied into its evidence folder as
-  `<state>-mobile.png` / `<state>-desktop.png`.
+- **Evidence**: read `docs/evidence/README.md` before starting a folder there.
+- **Screenshots** always come from `scripts/shot.mjs`; working shots go in
+  `.shots/<page>/`.
 - **Temporary** scripts, seed data and servers stay outside the repo (or in
   `.shots/`) and are cleaned up afterwards.
-
-Keeping the map true:
-
-- A commit that adds, moves or removes a folder, or starts a new kind of file,
-  updates this map in the same commit. A stale map is worse than none.
-- List folders and kinds of file, not single files, except the few every
-  change touches.
-- When one folder needs more than a line or two of its own rules, give it its
-  own `CLAUDE.md` (Claude Code reads it when working there) and leave one line
-  here. Keep this file short.
+- A commit that adds, moves or removes a folder updates this map in the same
+  commit; the map lists folders and kinds of file, not single files. A folder
+  that needs more than a line of rules gets its own `CLAUDE.md`, with one line
+  left here.
 
 ## Designing pages
 
 A new or redesigned page is designed by the `designer` agent before it is
-built, one designer per group of sibling pages, so pages that do the same kind
-of job share their patterns. Give it every page of the group that's changing,
-plus the siblings already designed that it must match without redesigning
-them. Groups can be designed in parallel.
+built: one designer per group of sibling pages, given every page in the group
+that's changing plus the designed siblings it must match. Groups can run in
+parallel. A new page joins the group it most resembles, or starts its own,
+and the table changes in the same commit.
 
 | Group | Pages |
 | --- | --- |
@@ -88,12 +67,8 @@ them. Groups can be designed in parallel.
 | Gym | `room` |
 | About | `readme` |
 
-A new page joins the group it most resembles, or starts its own; update this
-table in the same commit.
-
-I won't ask for the designer by name. With every idea or change I give you,
-decide first whether it changes a page, and if it does, send it to the
-designer before touching `src/`:
+I won't ask for the designer by name. With every idea or change, decide first
+whether it changes a page:
 
 - **Designer first**: a new page; adding, removing or moving anything on a
   page; a layout change; a new state (empty, error, pending, success); a
@@ -103,40 +78,18 @@ designer before touching `src/`:
   in line with its mockup.
 - **Unsure**: designer first.
 
-Before acting, say in one line which way it went and why, naming the group
-("this adds a field to sign up, so it goes to the Auth designer"), so I can
-overrule it. Then build from the mockups, and screenshot the built pages
-against them.
+Say in one line which way it went and why, naming the group, so I can
+overrule it. Then build from the mockups and screenshot the built pages
+against them. Edit page files only with Edit and Write, never a shell command,
+so the design-gate hook sees them.
 
-A hook backs this up: editing a page file (`src/pages/`, `Layout.astro`,
-`src/components/`) when no design for it is newer than its last commit
-brings a reminder (`scripts/hooks/design-gate.mjs`). It never blocks; answer
-it by saying which kind of change this is. The hook only sees the Edit and
-Write tools, so edit page files with those, never with a shell command.
+## Commits
 
-## Git Commit Convention
+Never commit without my approval: stage one logical unit, propose the
+message, wait for a yes. Never push unless I ask. Commit each unit as it's
+done, not in one batch at the end.
 
-Never commit without my approval: stage the logical unit, propose the message,
-and wait for a yes. Never push unless I ask.
-
-Commit after each logical unit of work; don't batch everything into one commit
-at the end. Follow [Conventional Commits](https://www.conventionalcommits.org/):
-
-- Format: `<type>(<scope>): <description>`
-- Allowed types: feat, fix, docs, style, refactor, perf, test, build, ci,
-  chore, revert
-- Description: imperative mood, lowercase, no trailing period, subject line
-  under 50 characters
-- Scope is optional; use it when the change is confined to one module
-- Breaking changes: append `!` after the type and add a
-  `BREAKING CHANGE: <what broke>` line in the body
-- Add a body only when the "why" isn't obvious from the subject line
-
-Examples:
-
-```
-feat(auth): add password reset flow
-fix(cart): prevent duplicate items on rapid clicks
-perf(query): cache user lookup to avoid n+1
-refactor(api): extract validation into middleware
-```
+Conventional Commits: `<type>(<scope>): <description>`, types feat, fix,
+docs, style, refactor, perf, test, build, ci, chore, revert. Subject in
+lowercase imperative, under 50 characters, no period; scope only when the
+change stays in one module; a body only when the why isn't obvious.
