@@ -39,14 +39,15 @@ src/components/              shared .astro components
 src/lib/                     server logic: db, auth, rooms, workouts, logbook
 src/sprites/                 pixel art as character grids, one subject each
 drizzle/                     generated migrations (pnpm db:generate), no hand edits
-scripts/                     repo tools; shot.mjs takes every screenshot
+scripts/                     repo tools; shot.mjs takes every screenshot;
+                             hooks/ holds the scripts .claude/settings.json runs
 docs/product/                idea.md, spec-4-weeks.md (directs the build),
                              spec-mvp.md (full spec, reference only)
 docs/adr/                    NNNN-<slug>.md, one decision each
 docs/design/                 system.md (design rules); <page>/ holds that
                              page's mockup.html and spec.md; no images
 docs/evidence/               YYYY-MM-DD-<slug>/, one per episode PROCESS.md cites
-.claude/agents/              subagent definitions (designer)
+.claude/                     agents/ (subagent definitions), settings.json (hooks)
 .shots/  data/  dist/        gitignored: working screenshots, local db, build
 ```
 
@@ -106,6 +107,12 @@ Before acting, say in one line which way it went and why, naming the group
 ("this adds a field to sign up, so it goes to the Auth designer"), so I can
 overrule it. Then build from the mockups, and screenshot the built pages
 against them.
+
+A hook backs this up: editing a page file (`src/pages/`, `Layout.astro`,
+`src/components/`) when no design for it is newer than its last commit
+brings a reminder (`scripts/hooks/design-gate.mjs`). It never blocks; answer
+it by saying which kind of change this is. The hook only sees the Edit and
+Write tools, so edit page files with those, never with a shell command.
 
 ## Git Commit Convention
 
