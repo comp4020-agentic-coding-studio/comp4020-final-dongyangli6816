@@ -16,6 +16,30 @@ after the user's answer, same day). Everything the
 page already did stays: the sheet, the rest timer, the log, the pencil, the
 four set kinds, Leave, End room, and every field name and `action` value.
 
+**Revision, 8 Oct 2026 (workout clock).** The workout now starts the moment
+you enter the room (creating it, joining it or coming back), and the
+summary's duration counts from then. The clock used to ride the This workout
+panel, which only exists once a set is logged, so nobody could see it before
+their first set. **The clock moves to the sheet's top border, on the right,
+opposite your state tab**, and is there from the first second. It is still
+one clock: the This workout panel loses it. This workout still appears only
+with a set, so **Finish workout** does too; before that, Leave is the way
+out, and its note says nothing will be saved. New states: "No sets yet",
+"Phone, first screen, no sets yet" and "First set logged".
+
+**Revision, 8 Oct 2026 (after Done).** The user: "after clicking Done, the
+sheet on the right doesn't change at all; only This workout gets more rows."
+Every Done now gets the same acknowledgement, for every kind: **a stamp on
+the dock's top border** ("Set 2 logged: 140 kg × 5"), where the thumb that
+tapped Done already is, for 4 s, announced once to screen readers. **Cardio,
+which has no rest, gets a logged block where the rest block would be**
+(replacing the small bubble nobody saw), and keeps Done. **Timed sets (Plank,
+Run, Incline walk) come back empty**, with the stopwatch at a dim 0:00, and
+open empty too; `.last` is the reference. On a phone scrolled past the
+sheet's top, Done scrolls it back into view. New states: "Just logged ·
+weight", "Just logged · cardio", "Just logged · plank", and two phone frames.
+No field name or `action` value changes.
+
 The mockup suffixes ids (`weight_kg-1`, `set-log-5`, `pick-2`) only because
 it shows many states on one page. The real ids are `weight_kg`, `reps`,
 `minutes`, `seconds`, `distance_km`, `exercise`, `set-error`, `set-edit`,
@@ -47,7 +71,7 @@ The Gym group is this page alone. It sits beside Lobby (`home`, `join`,
   sheet's dock. Everything else is `.button.secondary` (room and log actions
   `.quiet`).
 - **Voice**: plain on forms, errors and confirms; banter in the slacking
-  line, the empty room and the cardio bubble.
+  line, the empty room and the cardio block.
 
 ### Who and when
 
@@ -80,9 +104,17 @@ the person and Done (system principle 1).
 Numbers that must read at a glance: the timer, weight and reps, the times in
 the squad list (`1:24 left`, `2:40 over`), and the bay numbers on the map.
 
+**The workout clock** (24 px, leaf, on the sheet's top border) is a quiet
+number, below all of these: you check it when you arrive, now and then, and
+when you decide to finish. It sits in the frame, not in the sheet's body, so
+it never competes with the 80 px rest timer or the 48 px weight and reps, and
+the pixel clock icon in front of it tells it apart from the rest timer and
+the cardio stopwatch.
+
 ### Reuse
 
-Unchanged from the last design: `.panel`, `.panel-title`, `.panel-clock`,
+Unchanged from the last design: `.panel`, `.panel-title`, `.panel-clock`
+(moved from This workout to the sheet, and now a flex row for its icon),
 `.sheet` and its tab, `.rest`, `.timer`, `.rest-what`, `.rest-say`,
 `.rest-adjust`, `.tool`, `.switch`, `.picker`, `.pick`, `.recent`, `.last`,
 `.big-pair`, `.big`, `.big-time`, `.mmss`, `.stopwatch`, `.log` and its
@@ -107,9 +139,14 @@ New, all in `<style id="page">`:
 | `.rest.slacking` | Red only once the server says Slacking (was `.rest.over`) |
 | `.recent button` | The recent-lift chips, now submit buttons |
 | `.room-link` | The invite link in the Room panel |
+| `.stamp` (8 Oct, after Done) | Done's acknowledgement: the set just logged, on the dock's top border for 4 s |
+| `.set-done`, `.set-done-n`, `.set-done-say` (8 Oct) | Cardio's logged block, in the rest block's place and frame, leaf instead of blue; replaces the `.bubble` |
+| `.mmss input::placeholder` (8 Oct) | The empty time fields read as a dim `0:00` |
+| `p#sheet-news` (8 Oct) | A visually hidden `role="status"` outside `.gym`, so the stamp is really announced after a swap |
 
-Three 8 × 8 icons are new (`phone-off`, `signal`, `claim`); the gym's tiles,
-scenery and equipment are new sprites (appendix).
+Four 8 × 8 icons are new (`phone-off`, `signal`, `claim`, `clock`); the gym's tiles,
+scenery and equipment are new sprites (appendix). The stamp and the cardio
+block reuse the avatar editor's existing `tickIcon`.
 
 ### Template check, and what it changed
 
@@ -135,6 +172,136 @@ page. Swap the colours and that's any "who's online" widget. What changed:
 - **On a phone, Done is a bar the timer can ride on**, not a generic
   floating button: when the big timer is out of sight, its copy sits beside
   Done.
+- **The workout clock hangs on your sheet like the clock on the gym's back
+  wall** (the map's `K` tile): a small leaf clock face and the time, set into
+  the sheet's border across from your state, so the frame reads "Resting ·
+  31:42 in". A header bar with a session timer would fit any fitness app;
+  this is the same panel-border language as every other box in the gym.
+
+#### Where the workout clock goes, and why (8 Oct)
+
+Three places were weighed:
+
+1. **Keep it on This workout, and show that panel always**, with an empty
+   line ("No sets yet…"). Rejected: on a phone that panel is below the map,
+   the sheet and the squad list, about three screens down, so the clock
+   would exist but nobody would see it, which is the problem we're fixing.
+   An empty panel also lengthens the scroll on every visit, and it would
+   carry a Finish that has nothing to finish.
+2. **The map panel's border**, beside `Live`. Rejected: the map is the room,
+   shared by everyone, and a time on its sign reads as the room's time (how
+   long the gym has been open), not yours. That corner also turns into the
+   wider `Reconnecting…` chip, which crowds a 360 px border next to the
+   passcode, and on a laptop the map scrolls away while the sheet stays.
+3. **The sheet's top border, right**: chosen. The sheet is *you*: your
+   state, your next set, your button. On a phone its top border is on the
+   first screen under the map (both 390 × 660 frames show it), and on a
+   laptop the sheet is sticky, so the clock never leaves the screen. It
+   reuses `.panel-clock` exactly as it was drawn, so nothing new is learned.
+
+**Not in the dock.** The dock already carries the rest timer's copy; two
+times in the thumb bar would make the one that matters between sets
+ambiguous. When a phone scrolls past the sheet's top, the workout clock goes
+with it, and that's fine: it's a number for arriving and finishing, not for
+the middle of a rest.
+
+**One clock, not two.** The This workout panel keeps its title and tally
+("5 sets · 2,913 kg moved so far") and drops `.panel-clock`.
+
+**Finish waits for a set.** A workout with no sets is deleted when finished,
+so Finish before the first set would turn you Finished (trophy tag, on
+everyone's screen) for nothing and save nothing. The This workout panel, and
+the Finish inside it, still render only when `mySets.length > 0`. Before
+that, **Leave room** is the way out (it also deletes the empty workout), and
+its note says so plainly.
+
+#### After Done, and why (8 Oct)
+
+**What was wrong.** A weight set's Done does change the sheet, but only at
+its top (the rest block), which on a phone is often scrolled away while the
+thumb is on the dock; nothing anywhere says "logged". A cardio set's Done
+changed nothing you'd notice: same lift, same filled-in numbers, same Done,
+and a small bubble at the top. Run is the select's first option, so that's
+very likely what the user hit.
+
+**1. One acknowledgement for every kind: the stamp.** Done lands, and the
+dock's top border carries `✓ Set 2 logged: 140 kg × 5` (setLabel's wording:
+`Set 1 logged: 1:30`, `Set 2 logged: BW + 10 kg × 6`, `Set 1 logged: 1 km ·
+4:52 · 4:52 /km`).
+- *Where*: on the dock, because that is where the eye and thumb are at the
+  moment of Done on both widths: pinned to the bottom of a phone, the foot of
+  the sticky sheet on a laptop. It sits on the border the way every name in
+  the gym does (the passcode, `Live`, your state tab, the clock), so it reads
+  as the logbook writing a line, not as an app toast.
+- *How long*: 4 s, the system's banner time. It rises out of the border in 4
+  steps (160 ms) and sinks back the same way; reduced motion just shows it
+  and hides it. Pure CSS, so it works without JS too. By the time it goes,
+  the sheet's top block (the rest, or cardio's logged block) carries the
+  same news for as long as it matters.
+- *Never in the way*: absolutely positioned, so the dock doesn't grow and
+  the button doesn't move; `pointer-events: none`, so a tap on it reaches
+  the button; never a dialog, never a second tap. Done is still one tap
+  (README principle 3, system 2.1).
+- *Screen readers*: the visible stamp has no role, because a live region
+  that arrives inside freshly swapped HTML is not reliably announced. The
+  page keeps one empty `p#sheet-news[role=status]` outside `.gym`, which the
+  swap never replaces, and the script copies the stamp's text into it after
+  a Done. Focus still goes to the dock's button (Start set or Done), so a
+  screen reader hears the button, then "Set 2 logged: 140 kg × 5".
+- *Colour*: leaf text and a 2 px leaf outline on `--night`, like the
+  passcode sign. Not a leaf fill, which is the Lifting chip's.
+
+**2. Cardio: stays Lifting, with a logged block where the rest would be.**
+Three options were weighed:
+- *An optional rest after cardio*. Rejected: LOG-4 says "none after cardio",
+  and a runner between intervals is still on the treadmill.
+- *A "done, what's next" state with Start set in the dock*, like a rest
+  without a timer. Rejected: the server keeps you Lifting after a cardio set,
+  so the dock would say Start set beside a Lifting chip, and anyone who types
+  their time off the treadmill's display would pay an extra tap for every
+  rep.
+- *Stay Lifting, with a block you can't miss*: chosen. The sheet's top shows
+  `div.set-done`: the rest block's frame, in leaf instead of blue, with a
+  32 px tick, **Set 1 logged** in 32 px, and "No rest timer after cardio. Go
+  again, or change lift 🏃". So after every Done the same place changes: the
+  top of the sheet holds what comes after the set you just did (a rest, or
+  "logged, go again"). Done stays the button, so the next rep is still
+  Start (stopwatch), Done, as now. The block stays until the next swap (the
+  next Done, Change, the pencil); without JS, until the next page. The old
+  `.bubble` goes.
+
+**3. Timed sets come back empty (user's request, 8 Oct).** After Done, a
+Run, Incline walk or Plank comes back with distance and time empty and the
+stopwatch at `0:00`, ready: every run differs, and the stopwatch counts on
+from whatever time is in the fields, so a pre-filled 10:00 would start at
+10:00. The empty time fields show `0` and `00` as dim placeholders, so the
+stopwatch reads `0:00` without anything that would be submitted. `p.last`
+("Last time 1 km · 4:52 · 4:52 /km") stays as the reference, under the same
+rule as now: it hides only while a rest on the same lift is running, when the
+rest block's "after 1:30" is the same line one block up, and it comes back on
+Start set. Weight and bodyweight lifts keep pre-filling.
+
+**Opening a timed lift fresh starts empty too** (recommended, and drawn).
+The stopwatch problem is the same on the first run of a session or of a new
+day, and one rule ("timed sets start empty, Last time shows what you did")
+is easier to learn and to build than two. The edit form still shows the set
+being edited, and an error or Start set still echoes what was typed.
+
+**4. Bring the news into view on a phone.** The swap keeps the scroll, so a
+phone user scrolled down to the fields can't see the new rest block. After a
+successful Done on a phone (< 900 px), if the sheet's top border is above the
+top of the screen, the page jumps (no smooth scroll) so that border sits 24 px
+below the top: the new timer or the logged block, the lift and Set N+1, and
+the fields all fit above the pinned dock on a 390 × 660 screen (both phone
+frames). If the sheet's top is already in view, nothing moves, so someone
+watching the map keeps it. Laptops never scroll: the sheet is sticky.
+
+**Template check.** A snackbar that says "Saved" fits any app. What makes
+this one Spotter's: it is written on the dock's border in the gym's
+border-label language, in a lifter's shorthand (`Set 2 logged: 140 kg × 5`),
+and the larger change is the gym's own: you walk to the cooler and the rest
+starts, or, after a run, the box where the rest would be tells you there
+isn't one and to go again.
 
 ## 2. Requirements covered
 
@@ -156,8 +323,14 @@ page. Swap the colours and that's any "who's online" widget. What changed:
 | AV-1, AV-2 (avatars vary by palette) | `svg.av` with `--av-*` per person; six different looks in the mockup. |
 | System 12 "every sprite button has an accessible name like 'Mia, resting, flat bench'" | `aria-label` on every `.avatar` (3.2). Focus ring is the Night `--focus` ring on the whole button. |
 | System 9 ".avatar … hit area is at least 44 × 44 px" | The button is tag plus sprite: at least 44 px wide and 56 px tall at 2× (68 px on a station). |
+| LOG-6 "a summary: duration …" (4-week), with the 8 Oct fix: the workout starts on entering the room | `.panel-clock` on the sheet's top border counts from the workout's `startedAt` from the first render, so the time you watch is the duration the summary will show. State "No sets yet". |
 | Unchanged: LOG-3 to LOG-8, ROOM-5, ROOM-6, the copy bank lines | As in the last revision: the sheet's fields by kind, rest timer and ±15 s, beep and flash at 0, edit and delete, Finish, Leave, End. |
 | "Tap targets at least 48 px, with primary buttons in the bottom third" (MVP) | The dock: Done 64 px tall, fixed to the bottom of a phone. |
+| README principle 3 "Logging never slows you down"; system 2.1 "Nothing … may sit between the person and those two buttons" (8 Oct, after Done) | `p.stamp` on the dock's border: absolutely positioned, `pointer-events: none`, gone in 4 s; no dialog, no extra tap. Done is still one tap. |
+| System 13 "Success: confirmation in place … never a separate page"; user: "the sheet … doesn't change at all" | The stamp after every Done; cardio's `div.set-done`; on a phone, the sheet's top scrolled into view (3.3 item 11). |
+| System 12 "banners and state changes for *you* are `role="status"`" | `p#sheet-news[role=status]` outside `.gym`, filled with the stamp's text after a Done swap. |
+| LOG-4 "starts a rest timer … none after cardio" | Cardio gets no rest: it stays Lifting with Done, and `div.set-done` says "No rest timer after cardio". |
+| LOG-3 "Each pre-fills from the person's last set of that exercise", **changed for timed kinds** (user, 8 Oct) | Weight and bodyweight pre-fill as before. Duration and cardio open and come back empty (placeholders `0` / `00`), with `p.last` as the reference. See Departure 15: the build updates LOG-3 in `docs/product/spec-4-weeks.md`. |
 
 ## 3. Structure
 
@@ -168,7 +341,7 @@ div.gym
   section.panel.map-panel     (GYM-1, the h1)
   section.panel.sheet         (your state, your next set; .dock inside)
   section.panel               Squad (people list)
-  section.panel               This workout (only with sets)
+  section.panel               This workout (only with sets; no clock now)
   section.panel.sign          Room
 ```
 
@@ -334,6 +507,38 @@ Slacking or Away) adds `.mine` and a second SVG, the leaf corners.
 
 Unchanged, apart from these:
 
+0. **The workout clock** (8 Oct). The sheet's second child, straight after
+   the `.tab` chip, in every sheet state (Idle, Lifting, Resting, Rest up,
+   Slacking, Editing, pending):
+
+   ```html
+   <p class="panel-clock">
+     <Sprite sprite={clockIcon} scale={2} />
+     <span class="vh">Workout time </span>
+     <time datetime={`PT${elapsedS}S`} data-start={startedAt}>{clock(elapsedS)}</time>
+   </p>
+   ```
+
+   Render it when `startedAt` is set (always, now that entering opens the
+   workout). This is the same `<p>` that was in This workout, moved, with
+   the icon added; the script's `time[data-start]` tick needs no change.
+   Formatting is the existing `clock()`: `0:41`, `31:42`, `1:04:37`. No live
+   region: it is read when reached, never announced each second. Without JS
+   it shows the time at render, like every other server time on the page.
+
+   `clockIcon` is new in `src/sprites/icons.ts`, a small face showing three
+   o'clock:
+
+   ```ts
+   export const clockIcon = icon("..cccc..", ".c.c..c.", "c..c...c", "c..ccc.c", "c......c", ".c....c.", "..cccc..", "........");
+   ```
+
+   CSS: `.panel-clock` gains `display: flex; align-items: center; gap:
+   var(--px);` (everything else in the rule is unchanged; the icon takes
+   `currentColor`, so it is leaf). The tab chip and the clock fit side by
+   side on a 360 px phone: the widest pair, `Slacking` and `1:04:37`, leaves
+   more than 60 px between them.
+
 1. **The dock.** The primary button moves out of its form into
    `div.dock`, the sheet's last child, and points back with the `form`
    attribute, as Save already did:
@@ -401,6 +606,96 @@ Unchanged, apart from these:
      Start set starts it.
    - **While editing** a set during a rest, the dock stays Save; Start set
      comes back after Save or Cancel.
+8. **Done's stamp** (8 Oct). When the page is the GET after a log
+   (`?rested=1`, which the log redirect already adds) on the lift just
+   logged, the dock's first child is:
+
+   ```astro
+   {justLogged && (
+     <p class="stamp">
+       <Sprite sprite={tickIcon} scale={2} />
+       <span>Set {loggedNo} logged: <b>{setLabel(latest!)}</b></span>
+     </p>
+   )}
+   ```
+
+   with, in the frontmatter after `latest`:
+
+   ```ts
+   // Done just landed: the GET after a log's redirect, on the lift logged.
+   // Not after Start set, which posts to the same URL.
+   const justLogged =
+     Astro.request.method === "GET" && Astro.url.searchParams.has("rested") &&
+     !editing && !!latest && latest.exerciseId === exercise?.id;
+   const loggedNo = justLogged ? mySets.filter((s) => s.exerciseId === latest!.exerciseId).length : 0;
+   ```
+
+   It shows for every kind, in both docks it can meet (Start set after a
+   rest kind, Done after cardio). It never shows on a 400 (that's a POST), so
+   an error and a stamp are never on screen together. Add `tickIcon` to the
+   icons import. The text is one line; a long run is cut with an ellipsis at
+   the end (the pace), and the whole set is still announced and in This
+   workout.
+9. **Cardio's logged block** (8 Oct) replaces the bubble ("Logged! No rest
+   timer after cardio 🏃"), in the same place (after the `h2.vh`, where the
+   rest block would be):
+
+   ```astro
+   {justLogged && latest!.kind === "cardio" && (
+     <div class="set-done">
+       <Sprite sprite={tickIcon} scale={4} />
+       <p class="set-done-n">Set {loggedNo} logged</p>
+       <p class="set-done-say">No rest timer after cardio. Go again, or change lift 🏃</p>
+     </div>
+   )}
+   ```
+
+   No role (the announcement is item 11's). It is not a `.rest`, so the rest
+   script never touches it. Delete the `.sheet .bubble` rule.
+10. **Timed fields start empty** (8 Oct). In the `values` fallback, only
+    weight and bodyweight pre-fill:
+
+    ```ts
+    : fieldsFrom(editing ?? (exercise.kind === "weight" || exercise.kind === "bodyweight" ? prefill : undefined), exercise));
+    ```
+
+    (`fieldsFrom(undefined, …)` already gives empty minutes, seconds and
+    distance.) In `SetFields.astro`, `minutes` gets `placeholder="0"` and
+    `seconds` gets `placeholder="00"`. `p.last` is unchanged and keeps its
+    `showLast` rule. The stopwatch needs no change: Done already stops it and
+    clears its stored start, and with empty fields Start (or Start set, for a
+    hold) counts from zero.
+11. **After a Done swap** (8 Oct, script): announce, and on a phone bring
+    the sheet's top into view. Render `<p class="vh" id="sheet-news"
+    role="status"></p>` as a sibling after `div.gym` (outside it, so the swap
+    keeps it; `.vh` is scoped to `.gym` today, so give it the same rule).
+    Then in the submit handler's `after()`:
+
+    ```ts
+    if (action === "log") afterDone();
+
+    // Done landed (a 400 has no stamp): say what was logged, and on a phone,
+    // if the sheet's top was scrolled away, jump it back to just under the top
+    function afterDone() {
+      const stamp = document.querySelector<HTMLElement>(".dock .stamp");
+      if (!stamp) return;
+      const news = document.querySelector<HTMLElement>("#sheet-news");
+      if (news) {
+        news.textContent = "";
+        setTimeout(() => (news.textContent = stamp.textContent!.replace(/\s+/g, " ").trim()), 50);
+      }
+      const top = document.querySelector<HTMLElement>(".sheet")!.getBoundingClientRect().top;
+      if (matchMedia("(max-width: 899px)").matches && top < 24) scrollBy({ top: top - 24, behavior: "instant" });
+      // a reload shouldn't stamp the same set again
+      const url = new URL(location.href);
+      url.searchParams.delete("rested");
+      history.replaceState(history.state, "", url);
+    }
+    ```
+
+    The focus that follows uses `preventScroll`, so it keeps this scroll;
+    the dock timer's observer re-checks by itself. Without JS, the page
+    loads at the top, so the sheet's top is in view anyway.
 
 ### 3.4 The squad list (`section.panel` "Squad", `ul.people`)
 
@@ -436,7 +731,9 @@ them).
 
 ### 3.5 This workout
 
-Unchanged.
+Unchanged, except that **`p.panel-clock` is removed** from it (it moved to
+the sheet, 3.3 item 0). It still renders only when `mySets.length > 0`, with
+Finish workout at its foot; its top border now carries only the title.
 
 ### 3.6 The Room panel (`section.panel.sign`)
 
@@ -445,7 +742,13 @@ Unchanged.
 - `p.hint`: "Send the code to the squad, or this link:
   `<span class="room-link">spotter.fly.dev/join/SB64FR</span>`" (ROOM-3's
   invite link; the host is `Astro.url.host`).
-- Leave, the leave note and End room (host, with others in) are unchanged.
+- Leave and End room (host, with others in) are unchanged.
+- **The leave note** gains a third case, for when you have logged nothing
+  (checked in this order):
+  - last one in: "You're the last one in, so leaving closes the room."
+  - no sets yet: "Nothing logged yet, so there's no workout to save."
+  - otherwise: "Leaving finishes your workout. Your sets stay in the book."
+
 
 ### 3.7 What the page needs from the server
 
@@ -476,6 +779,7 @@ stations, avatars and rows from it.
   waiting for the server.
 - **Dock timer**: the `IntersectionObserver` in 3.3.
 - **Your avatar**: `click` moves focus to `.dock button`.
+- **After Done** (8 Oct): `afterDone()` in 3.3 item 11.
 
 ## 4. States
 
@@ -491,8 +795,15 @@ stations, avatars and rows from it.
 | **Equipment arrives** | Someone claims an empty bay (GYM-4) | The bay's sprite becomes the equipment, in place, on every screen. No animation this week. |
 | **Phone, first screen** | A 390 × 660 phone (browser bars showing) | The whole map, then the sheet; the fixed dock covers the lower half of the big timer, so the dock shows its copy beside Start set. With the bars collapsed (about 750 tall) the big timer is clear and the copy hides. |
 | **Phone, scrolled** | Scrolled to the squad list | The dock stays with its timer copy and Start set. |
+| **No sets yet** (8 Oct) | You've just entered a room (joined, created or come back) and logged nothing | The sheet's border carries the clock from `0:00`, counting up (drawn at `0:41`, Idle, Pick a lift). No This workout panel and so no Finish. The Room panel's leave note reads "Nothing logged yet, so there's no workout to save." Drawn as Priya joining Mia's busy room (Mia is host, so no End room). "Room alone" is the same moment for the room's creator, at `0:08`. |
+| **Phone, first screen, no sets yet** | The same, on a 390 × 660 phone | The map, then the sheet's top: Idle on the left of its border, the clock on the right, Choose pinned below. The clock is on the first screen. |
+| **First set logged** | The first Done of the workout | The clock stays on the sheet, unchanged (`6:30`). This workout appears between Squad and Room with "1 set · 700 kg moved so far", one row (Deadlift 140 kg × 5, pencil) and Finish workout. The leave note returns to "Leaving finishes your workout…". |
+| **Just logged · weight** (8 Oct) | Done on Deadlift set 2, 140 kg × 5 (bodyweight is the same) | The rest block appears at the top (`2:59` of `3:00`, "after 140 kg × 5"), tab Resting, Set 3, the fields keep 140 × 5, Start set replaces Done. The stamp "Set 2 logged: 140 kg × 5" on the dock's border for 4 s; the screen reader hears "Start set", then the stamp. On the map you walk to the cooler. |
+| **Just logged · cardio** (8 Oct) | Done on a 1 km rep of Run (Incline walk the same) | No rest. `div.set-done` at the top: tick, "Set 1 logged", "No rest timer after cardio. Go again, or change lift 🏃". Tab stays Lifting, Set 2, "Last time 1 km · 4:52 · 4:52 /km", distance and time empty (dim `0:00`), stopwatch Start ready, Done stays. The stamp "Set 1 logged: 1 km · 4:52 · 4:52 /km". On the map you stay on the treadmill. |
+| **Just logged · plank** (8 Oct) | Done on a 1:30 hold | Like weight: the 1:00 rest starts ("after 1:30"), tab Resting, Set 2, Start set. The Hold field is empty (dim `0:00`) and the stopwatch row stays hidden until Start set starts it from zero. The stamp "Set 1 logged: 1:30". |
+| **Phone, just logged** (8 Oct; weight and cardio frames) | Done tapped on a 390 × 660 phone while scrolled down to the fields | The page jumps so the sheet's top border is 24 px under the top of the screen: the new timer (or the logged block), Set N+1 and the fields above the pinned dock, the stamp on the dock. If the sheet's top was already in view, nothing scrolls. |
 | **Finished** (others; not drawn) | Someone finished their workout here | They stand at an idle spot with a trophy-yellow tag; their row reads "12 sets · 48 min" with the Finished chip. |
-| Idle, edit set, delete confirm, end-room confirm, pending, without JS, first time, bodyweight, duration, cardio, stopwatch running, error | As in the last revision | Unchanged, except that the primary button is in the dock, a chosen lift shows `p.spot`, and every sheet with a rest running has Start set instead of Done and no Skip (pending, without JS, duration, which also hides its stopwatch until Start set; edit and delete keep Save). Pending disables the dock's button. Without JS the map is the server's render at the CSS scale, the list shows server times, and `.conn` stays `Live`. |
+| Idle, edit set, delete confirm, end-room confirm, pending, without JS, first time, bodyweight, duration, stopwatch running, error | As in the last revision (the old "cardio, stopwatch idle" state with the bubble is now "Just logged · cardio"; the duration state's Hold field is now empty) | Unchanged, except that the primary button is in the dock, a chosen lift shows `p.spot`, and every sheet with a rest running has Start set instead of Done and no Skip (pending, without JS, duration, which also hides its stopwatch until Start set; edit and delete keep Save). Pending disables the dock's button. Without JS the map is the server's render at the CSS scale, the list shows server times, and `.conn` stays `Live`. |
 
 ## 5. Departures
 
@@ -533,6 +844,35 @@ stations, avatars and rows from it.
     let Done log straight from a rest (one tap). Now a set is Start set,
     then Done, as system 2.1 describes, so the squad sees you lifting rather
     than slacking. Done never appears while a rest runs.
+13. **The workout clock lives on the sheet, not on This workout** (8 Oct).
+    Not a break from the system: the sheet is still state, lift, numbers,
+    one button; the clock sits in its border, as the passcode and `Live`
+    sit in the map's. One new 8 × 8 icon, `clock`.
+
+14. **Done's acknowledgement is a stamp on the dock, not a `.banner`**
+    (8 Oct). System 13 puts success in the gym in a `.banner`, which slides
+    in from the top of the map. On a phone scrolled to the fields the map is
+    off screen, and the banner is for what other people do to you. The stamp
+    keeps the banner's 4 s, its stepped motion and its `role="status"`
+    announcement (through `#sheet-news`), and moves to where Done was
+    tapped. It never covers the button (system 14's rule against "a banner
+    over the bottom panel"): it sits on the dock's border and lets taps
+    through.
+15. **Timed sets no longer pre-fill** (8 Oct, the user's call). LOG-3 says
+    "Each pre-fills from the person's last set of that exercise". Now only
+    weight and bodyweight lifts do; duration and cardio sets open and come
+    back empty, with `p.last` as the reference, because the stopwatch counts
+    on from the fields. **The build should update LOG-3 in
+    `docs/product/spec-4-weeks.md`** to: "…Weight and bodyweight sets
+    pre-fill from the person's last set of that exercise; duration and
+    cardio sets start empty, with the last set shown for reference."
+16. **On a phone, Done can scroll the page** (8 Oct). The swap otherwise
+    keeps the scroll. Only after a successful Done, only on a phone, only
+    when the sheet's top is above the screen, and as a jump (system 11: no
+    smooth motion).
+17. **The cardio bubble becomes a block** (8 Oct). The `.bubble` was a Paper
+    pattern borrowed for the gym, and nobody saw it. `div.set-done` reuses
+    the rest block's frame in leaf.
 
 ## 6. Open questions
 
@@ -541,6 +881,10 @@ stations, avatars and rows from it.
   mockup draws one lift pose (bar overhead) and the treadmill's standing
   frame. If time is short this week, one shared two-frame lift loop for
   every piece of equipment is a reasonable first cut.
+- **Opening a timed lift empty** (8 Oct). Recommended and drawn (3.3 item
+  10): one rule for every timed set. If the user would rather a fresh Run
+  pre-filled its distance (an interval runner repeats 1 km), the cheapest
+  variant is to pre-fill distance only and never time; that's their call.
 - **Crowds.** With four or more people resting (or Idle) at once, tags
   start to overlap. The showcase will test this; staggering tag heights is
   the next step if it reads badly.
