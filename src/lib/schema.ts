@@ -1,8 +1,8 @@
 import { sql } from "drizzle-orm";
 import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
-// The week-9 slice of the data model in docs/product/spec-4-weeks.md.
-// presence, stations, interactions and messages arrive with the gym (weeks 10–11).
+// The data model in docs/product/spec-4-weeks.md, as far as it is built.
+// stations, interactions and messages arrive with the gym (weeks 10–11).
 // Times are Unix milliseconds.
 
 export const users = sqliteTable("users", {
@@ -90,3 +90,16 @@ export const sets = sqliteTable(
   },
   (t) => [index("sets_workout").on(t.workoutId)],
 );
+
+// What each person is doing in the gym right now (GYM-9, GYM-12): one row per
+// person, written when they choose a lift or finish, removed when they leave.
+// No row means Idle. Resting and Slacking are not stored here: they follow
+// from the newest set's completed_at and rest_target_s, which the rest
+// buttons already change, so there is one place a rest is kept (presence.ts).
+export const presence = sqliteTable("presence", {
+  userId: integer("user_id").primaryKey().references(() => users.id),
+  roomId: integer("room_id").notNull().references(() => rooms.id),
+  state: text("state", { enum: ["lifting", "finished"] }).notNull(),
+  exerciseId: integer("exercise_id").references(() => exercises.id),
+  stateStartedAt: integer("state_started_at").notNull(),
+});

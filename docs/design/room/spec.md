@@ -2,415 +2,1038 @@
 
 Page: `src/pages/rooms/[id].astro`. Mockup: `docs/design/room/mockup.html`.
 `<style id="page">` is the block to build from. `<style id="mockup">` only
-holds the state labels and the grid of solo states, and is not part of the
-design. Screenshots: `.shots/room/mockup-mobile.png` and
+holds the state labels, the two phone frames and the art sheet, and is not
+part of the design. Screenshots: `.shots/room/mockup-mobile.png` and
 `.shots/room/mockup-desktop.png`.
 
-The mockup adds a suffix to ids (`weight_kg-1`, `exercise-2`, `minutes-10`)
-only because it shows many states on one page. The real ids are
-`weight_kg`, `reps`, `minutes`, `seconds`, `distance_km` and `exercise`.
+**Revision, 8 Oct 2026 (Crit 9).** The room becomes the gym: a fixed pixel
+map at the top (GYM-1, GYM-2), every member's avatar on it by state (GYM-9,
+GYM-10, GYM-14, ACC-4), the people list rewritten to mirror it (GYM-15), the
+station you claimed (GYM-4), a quiet connection indicator for the live
+stream (GYM-13), the 30 s grace before Slacking (GYM-11), and a **Start set**
+button that ends the rest and puts you on your equipment (GYM-10; added
+after the user's answer, same day). Everything the
+page already did stays: the sheet, the rest timer, the log, the pencil, the
+four set kinds, Leave, End room, and every field name and `action` value.
+
+The mockup suffixes ids (`weight_kg-1`, `set-log-5`, `pick-2`) only because
+it shows many states on one page. The real ids are `weight_kg`, `reps`,
+`minutes`, `seconds`, `distance_km`, `exercise`, `set-error`, `set-edit`,
+`set-log` and `pick`.
 
 ## 1. Plan
 
 ### Shared
 
-The Gym group is this page alone, so nothing has to be repeated across a
-group. It still has to sit beside Lobby (`home`) and Logbook (`history`), so
-it keeps the rules those pages use:
+The Gym group is this page alone. It sits beside Lobby (`home`, `join`,
+`avatar`) and Logbook (`history`, `summary`) and keeps their rules:
 
-- **Night surface** (system section 4) and the RPG-style `.panel` boxes,
-  each with its name on the top border.
-- **A set is written the way a lifter writes it**, using the same
-  `setLabel()` strings as history and home: `140 kg × 5`, `BW + 10 kg × 6`,
-  `BW × 10`, `1:30`, `5 km · 25:00 · 5:00 /km`.
-- **State chips** (`.chip.state-*`, 16 px pixel icon plus a word) look the
-  same as on home's "What your squad sees".
-- **One primary button per screen.** In the sheet it is Done, or Save while
-  editing, or Choose while idle. Everything else is `.button.secondary`.
-  The room and log actions also use the new `.quiet` size (8 px label).
-- **Voice.** Plain words on forms, errors and the destructive confirms. The
-  banter goes in the slacking line, the empty room and the cardio bubble.
+- **Night surface** (system 4) and `.panel` boxes with their name on the top
+  border.
+- **A set is written the way a lifter writes it**, with `setLabel()`:
+  `140 kg × 5`, `BW + 10 kg × 6`, `1:30`, `5 km · 25:00`.
+- **A person is drawn one way everywhere**: the Lobby group's avatar sprite
+  (`svg.av`, slot classes `k s t h`, colours from `--av-skin`, `--av-hair`,
+  `--av-shirt`; `docs/design/avatar/spec.md`). The map uses the whole 16 × 16
+  sprite at the map's scale; the people list uses the same head crop as
+  home's squad rows (`viewBox="1 0 14 11"`, 42 × 33 px). Mia, Tom, Ji-woo and
+  Priya wear the looks the avatar spec gives them.
+- **A squad row is home's "What your squad sees" row**: head, name over a
+  dim "what they're doing" line, state chip on the right.
+- **State chips** (`.chip.state-*`, 16 px icon plus a word) as on home.
+- **The passcode is drawn one way**: `.passcode`, leaf on ink.
+- **One primary button per screen**: Start set while a rest runs, Done
+  while lifting, Save while editing, Choose while Idle, always in the
+  sheet's dock. Everything else is `.button.secondary` (room and log actions
+  `.quiet`).
+- **Voice**: plain on forms, errors and confirms; banter in the slacking
+  line, the empty room and the cardio bubble.
 
 ### Who and when
 
-The main user is between sets, with a phone in one sweaty hand and 60 to
-180 seconds of rest, glancing at the screen rather than reading it. Usually
-two to five of the squad are in the same room. There are three other
-moments:
-
-- Arriving alone with a passcode to send.
-- Fixing a typo during rest.
-- Leaving, or, for the host, closing up for everyone.
+- **Between sets** (the case that wins every tie): phone in one sweaty hand,
+  60 to 180 s of rest, glancing. They want the timer and Done, and a look at
+  who else is in.
+- **The showcase**: a room of laptops and phones, nobody lifting, everyone
+  watching and poking the map. The map has to be fun to look at with a dozen
+  Idle people in it.
+- **Arriving alone** with a passcode to send. **Fixing a typo** during
+  rest. **Leaving**, or for the host, closing up.
 
 ### The one job
 
-**Log the next set.** That means reading the rest timer, checking the
-pre-filled numbers, then pressing **Done**. Everything else on the page
-either supports that or sits away from it.
+**Log the next set**, as before: read the timer, check the numbers, press
+**Done**. The map is the second job, **being seen**: it never sits between
+the person and Done (system principle 1).
 
 ### Hierarchy
 
-1. **The rest timer** (80 px VT323) while resting. Its border and colour
-   say the state: water-blue while resting, slacking-red once it's over.
-2. **The numbers you are about to log** (48 px VT323, pre-filled) and the
-   full-width **Done**, pinned to the bottom of the phone. These must read
-   correctly at arm's length.
-3. **The log** ("This workout"): what you did, with the workout clock on its
-   border and a pencil on every row.
-4. **The room**: the passcode, the 12 pips, Leave and End. You need these
-   once at the start and once at the end.
+1. **The rest timer** (80 px) while resting; on a phone whose bar covers it,
+   its 48 px copy in the dock.
+2. The primary button (**Start set** while resting, **Done** while
+   lifting) and the numbers about to be logged (48 px).
+3. **The map**: who is lifting, resting, slacking, at a glance, from the tag
+   colours and the poses. Your own tag and station are marked in leaf.
+4. **The squad list**: the same thing in words, with times.
+5. **The log**, then **the room** (headcount, invite link, Leave, End).
+
+Numbers that must read at a glance: the timer, weight and reps, the times in
+the squad list (`1:24 left`, `2:40 over`), and the bay numbers on the map.
 
 ### Reuse
 
-These carry over unchanged:
+Unchanged from the last design: `.panel`, `.panel-title`, `.panel-clock`,
+`.sheet` and its tab, `.rest`, `.timer`, `.rest-what`, `.rest-say`,
+`.rest-adjust`, `.tool`, `.switch`, `.picker`, `.pick`, `.recent`, `.last`,
+`.big-pair`, `.big`, `.big-time`, `.mmss`, `.stopwatch`, `.log` and its
+cells, `.confirm`, `.quiet`, `.spots`, `.pips`, `.badge.host`, `.alone`,
+`.vh`, plus the layout's `.passcode`, `.chip`, `.state-*`, `.badge`,
+`.bubble`, `.hint`, `.error`, `.wide`, buttons and fields.
 
-- From the layout: `.passcode-box`/`.passcode`, `.chip` and
-  `.state-idle/lifting/resting/slacking`, `.badge`, `.bubble`, `table` and
-  `.num`, `.hint`, `.error`, `.actions`, `button`, `.button.secondary` (the
-  Night version), `button:disabled`, `.wide`, `label`, `input`, `select`.
-- From the old room page: `.panel`, `.panel-title`, `.gym`, `.pips`,
-  `.people`, `.tally`, `.ditto`, `.vh`, `.switch` (the Change picker),
-  `.recent`, `.last`, `.big-pair`, `.big`, `.unit`, `.times`.
-
-New pieces, all in `<style id="page">`:
+New, all in `<style id="page">`:
 
 | Piece | What it is |
 | --- | --- |
-| `.sheet > .tab` | Your state chip, worn as the sheet's name tab |
-| `.rest`, `.rest-top`, `.timer`, `.rest-what`, `.rest-say`, `.rest-static`, `.rest-adjust` | The rest block |
-| `.tool` | Small VT323 buttons inside the sheet: −15 s, +15 s, Skip, Start/Stop, Reset |
-| `.big-time`, `.mmss`, `.colon`, `.running` | The m:ss time fields, shared by plank and cardio |
-| `.big-pair.even`, `.big-pair.cardio` | Column ratios for the bodyweight and cardio kinds |
-| `.stopwatch` | The stopwatch row |
-| `.panel-clock` | The workout clock on the log panel's border |
-| `.log .set`, `.u`, `.sub`, `.fix`, `tr[aria-current]` | The log table: units, the pace line, the pencil column, the row being edited |
-| `.confirm`, `.if-open`/`.if-closed`, `.confirm-box` | The one confirm pattern |
-| `.quiet` | Smaller secondary buttons for room and log actions |
-| `.lift-row`, `.lift-cancel`, `.logged-at` | The edit header |
-| `.badge.host` | The host's badge |
-| `.sheet.flash` | The rest-over flash |
+| `.map-panel`, `.map`, `.tiles` | The map's frame, the scaled 10 × 10 tile board, and its static tile layer |
+| `.map-sign` | The `h1`: the passcode, on the map's top border, as the gym's sign |
+| `.conn`, `.conn .lost` | Top-right of the map's border: `Live` badge, or `Reconnecting…` |
+| `.station`, `.station.mine` | A station's equipment or numbered empty bay; your station's leaf corners |
+| `.avatar`, `.avatar.on-station`, `.avatar.me`, `.avatar.away` | An avatar button: tag over sprite |
+| `.tag` | The name tag, in the state's colour |
+| `.av` and its slot rules | The Lobby group's avatar sprite (marked `shared`), plus three prop slots `pm pw pr` |
+| `.people` rows (rewritten), `.who`, `.what`, `.chips`, `.chip.away` | The squad list |
+| `.dock`, `.dock-timer` | The sheet's primary button; on phones a fixed bar, carrying a timer copy when needed |
+| `.spot` | "Your spot: Lifting platform 5" |
+| `.rest.slacking` | Red only once the server says Slacking (was `.rest.over`) |
+| `.recent button` | The recent-lift chips, now submit buttons |
+| `.room-link` | The invite link in the Room panel |
 
-Four 8 × 8 icons are new, for `src/sprites/icons.ts`: an idle standing
-figure, play, stop and a pencil. Their grids are the `<symbol>`s at the top
-of the mockup. `dumbbell`, `drop` and `phone` already exist there.
+Three 8 × 8 icons are new (`phone-off`, `signal`, `claim`); the gym's tiles,
+scenery and equipment are new sprites (appendix).
 
 ### Template check, and what it changed
 
-The first plan was a dark card stack with a timer widget on top and a
-kebab menu holding Leave and End. Change the colours and that is any
-fitness app. These changes came out of the check:
+The first plan was a dark card with a grid of avatar circles above the old
+page. Swap the colours and that's any "who's online" widget. What changed:
 
-- **The sheet wears your state.** Your state chip is the sheet's name tab,
-  the way an avatar wears a name tag on the map. It reads Idle, Lifting,
-  Resting or Slacking, with its pixel icon. The old 8 px "Log a set" title
-  became a visually hidden `h2`.
-- **The rest block is the water cooler.** Its border is `--resting` blue,
-  the one non-green hue in the scenery. When rest runs out the border and
-  the count-up turn `--slacking` red and the line
-  `Your squad can see you 👀` appears. You see the same state change your
-  squad will see on the map later.
-- **The stopwatch has no display of its own.** It ticks inside the
-  minutes and seconds fields, so pressing Stop simply leaves the time where
-  it was logged. There is no second number to copy across.
-- **The log stays a paper logbook.** It keeps the ditto marks, uses one
-  "Set" column written like a lifter writes, puts the pace in small type
-  under a run, and gives each row a pixel pencil. The workout clock rides
-  the panel's border like a game timer.
-- **No room menu.** There are only two room actions, and system section 14
-  rules out a hamburger for three items or fewer. Leave and End sit in the
-  Room panel, at the opposite end of the page from Done.
-- **The destructive confirms name the people affected**: "Mia, Ji-woo and
-  Tom get sent home". They name who, instead of a generic "Are you sure?".
+- **It's a room you could walk around.** Mirrors and a clock on the back
+  wall, a water cooler set into one side wall and lockers into the other, a
+  green mat at the door with an arrow pointing in, a walkway through the
+  middle. Twelve stations in two bays of two either side of it, like rows of
+  racks.
+- **Where you stand says what you're doing.** Lifting: on your equipment,
+  bar overhead. Resting: at the cooler with a blue bottle. Slacking: sitting
+  *on* your bench with your phone, hogging it, which is the joke a lifter
+  recognises. Idle: by the lockers, just in. Away: faded where you were.
+- **Name tags are the state colour**, so the map reads like the squad list's
+  chips: a glance across the room is a glance at the state.
+- **Empty stations are numbered bays**, like rack numbers in a real gym, so
+  "flat bench 2" in the list and on your sheet can be found on the map.
+- **Your bay is claimed in leaf**, and your tag wears a leaf ring.
+- **The passcode is the gym's sign** over the map, and `Live` sits on the
+  other corner like a broadcast bug; it turns into `Reconnecting…` there.
+- **On a phone, Done is a bar the timer can ride on**, not a generic
+  floating button: when the big timer is out of sight, its copy sits beside
+  Done.
 
 ## 2. Requirements covered
 
 | Requirement (source) | Element |
 | --- | --- |
-| "A normal set costs exactly two taps … Done logs the set with pre-filled values" (MVP, Key screens) | Pre-filled 48 px fields and a single `.wide` Done at the foot of `.sheet`. Nothing is added between the fields and Done. |
-| LOG-3 "A set records what its exercise's kind measures … Each pre-fills from the person's last set of that exercise" (4-week) | One form per kind, from `exercise.kind` (section 3), with values from `lastSet()`. |
-| LOG-4 "Done … starts a rest timer from the exercise's default (60 to 180 s; none after cardio), adjustable by ±15 s or skipped. The next set of that exercise starts from the rest last chosen for it" | `.rest` with `.timer` counting down to `completedAt + restTargetS × 1000`, and `.rest-adjust` (−15 s / +15 s / Skip) posting `action=rest`. No rest block after cardio (`restTargetS` 0); a `.bubble` explains why. |
-| LOG-5 "When rest ends, the page plays a sound and flashes, if it is open" | At 0: a square-wave beep, `.sheet.flash` (3 flashes at 2 Hz), then the slacking look. |
-| LOG-6 "… cardio distance" and the tally | `.tally`: "N sets · X kg moved · Y km covered so far". Each part appears only when it isn't zero. |
-| LOG-8 "Edit or delete a set after logging it" (P1) | A pencil link `?edit=<id>` on every log row opens the sheet's edit state: Save posts `action=edit`, Delete posts `action=delete` behind a confirm. |
-| ROOM-5 "People can … leave at any time. Leaving … does not delete anything" | "Leave room" (`action=leave`), with the note "Leaving finishes your workout. Your sets stay in the book." |
-| ROOM-6 "The host can also end it for everyone … keeping every set" | "End room" (`action=end`): host only, behind the `.confirm` box naming who gets sent home. |
-| GYM-11 "their own screen says 'your squad can see you'" | `.rest.over .rest-say` |
-| GYM-15 "a text list of everyone in the room" | `.people`, unchanged, plus a `Host` badge. |
-| ROOM-1/2/4, passcode and 12 people | `.passcode`, the 12 `.pips`, "N of 12 in", and the invite hint. |
-| "Tap targets at least 48 px, with primary buttons in the bottom third" (MVP, UX rules) | `.sheet` is sticky at the bottom below 900 px. Done and Save are 64 px tall, the fields 72 px, `.tool` buttons 48 px, pencils 44 × 44 px. |
-| "Timers and weights readable at arm's length (at least 32 px numerals)" | Timer 80 px; fields 48 px; the no-JS rest text 32 px. |
-| "Taps only" | `<details>` and buttons only. No gestures. |
-| Workout clock (brief) | `.panel-clock` on the log panel, ticking from `openWorkoutStart()`. |
-| Stopwatch for duration and cardio (brief) | `.stopwatch` with Start/Stop and Reset driving the `minutes`/`seconds` fields. It survives a reload through `sessionStorage`. |
-| Copy bank (system 3) | `Your squad can see you 👀`; `Just you so far. Send the passcode to the squad 📲`. "Rest's up. Back under the bar 🔔" is used for the first 30 s over (see States). |
+| GYM-1 "one fixed map on a 16 px tile grid: walls, floor, an entrance, a water cooler, aisles, and 12 stations. It fits a portrait phone screen and a laptop window without scrolling" (4-week) | `.map`: the 10 × 10 grid in section 3.2, drawn at the largest whole-number scale that fits: 2× (320 px) on a 360 to 430 px phone, 3× (480 px) on a laptop. Never cropped or scrolled. |
+| "scaled by the largest whole number that fits, and recomputed on resize" (4-week, Rendering) | The scale script in 3.8; CSS media queries are the no-JS fallback. |
+| GYM-2 "A new room starts with the treadmill, flat bench, squat rack and dumbbell rack on four stations, and eight empty stations" | Slots 1 to 4 (the row along the mirrors) hold those four; slots 5 to 12 are numbered empty bays. State "Room alone". |
+| GYM-4 / brief: "you are told which station you claimed" | `.station.mine` (leaf corners), the leaf ring on your tag, `p.spot` "Your spot: Lifting platform 5" in the sheet, and your row in the list. Choosing posts `action=choose` (as the server now expects). |
+| Brief: "Equipment that is delivered this week simply appears on its station" | A station's equipment is drawn from the room's layout; a change arrives over SSE and the sprite is swapped in place. No animation, no message. |
+| GYM-9, GYM-10 (states on the map) | Lifting: on the station, lift pose. Resting: rest spots by the cooler, bottle. Slacking: on the station, sitting with phone. Idle: idle spots by the lockers. Finished: idle spots, trophy-yellow tag. Positions in 3.2. |
+| GYM-10 "Avatars walk between stations along the aisles" | Route in 3.2; one tile per 125 ms in `steps()`; reduced motion jumps. |
+| GYM-10 "**Start set** plays the equipment's exercise loop. **Done** sends the avatar to the water cooler"; system 2.1 "a normal set is two taps: Start set, then Done" | While a rest runs (Resting, Rest up, Slacking) the dock's button is **Start set**: it ends the rest and makes you Lifting the same exercise, so your avatar walks from the cooler (or stands up) to your station and plays the loop. Then the dock's button is **Done**, which logs and sends you back to the cooler. State "Lifting (after Start set)". |
+| GYM-11 "their own screen says 'your squad can see you'" | `.rest.over.slacking .rest-say` "Your squad can see you 👀", chip Slacking, red count-up, from the server's `slackAt` (30 s over). State "You slacking". |
+| GYM-13 "within about a second, with no reload" + brief: "a small, quiet connection indicator … (no modal)" | SSE on `/rooms/:id/events`; `.conn` shows `Live`, or `Reconnecting…` after 3 s without the stream. Nothing else changes; logging keeps posting. |
+| GYM-14 "shows as Away (avatar faded) after 60 s" | `.avatar.away .av` at 50%, the phone-off icon in the tag, `.chip.away` in the list next to the state chip, "Offline 2 min" in the row. |
+| GYM-15 "Below the gym, a text list of everyone in the room, their state and their equipment" | `ul.people`: head, name, what and where, state chip, Away chip. Updates in place, not announced. |
+| ACC-4 "shown above the person's avatar" | `.tag` above every sprite, the name in VT323 20 px. |
+| AV-1, AV-2 (avatars vary by palette) | `svg.av` with `--av-*` per person; six different looks in the mockup. |
+| System 12 "every sprite button has an accessible name like 'Mia, resting, flat bench'" | `aria-label` on every `.avatar` (3.2). Focus ring is the Night `--focus` ring on the whole button. |
+| System 9 ".avatar … hit area is at least 44 × 44 px" | The button is tag plus sprite: at least 44 px wide and 56 px tall at 2× (68 px on a station). |
+| Unchanged: LOG-3 to LOG-8, ROOM-5, ROOM-6, the copy bank lines | As in the last revision: the sheet's fields by kind, rest timer and ±15 s, beep and flash at 0, edit and delete, Finish, Leave, End. |
+| "Tap targets at least 48 px, with primary buttons in the bottom third" (MVP) | The dock: Done 64 px tall, fixed to the bottom of a phone. |
 
 ## 3. Structure
 
-Everything sits in one `<div class="gym">` inside `main`. The sheet comes
-last in source order, so that `position: sticky; bottom: 0` pins it on
-phones. At 900 px and up, `.gym` becomes a grid (`1fr 24rem`): the panels
-stack on the left, and `.sheet` fills the right column, sticky at
-`top: 2rem`. This is unchanged from before.
+### 3.1 Page order and the grid
 
-### 1. Room panel: `section.panel.sign`
+```
+div.gym
+  section.panel.map-panel     (GYM-1, the h1)
+  section.panel.sheet         (your state, your next set; .dock inside)
+  section.panel               Squad (people list)
+  section.panel               This workout (only with sets)
+  section.panel.sign          Room
+```
 
-- `h1.panel-title` "Room".
-- `.passcode-box`:
-  - `span.passcode`. Keep exactly `class="passcode"`, with the code as its
-    only text, because `spec/helpers.ts` scrapes it.
-  - `p.spots`: the 12 `.pips` and "N of 12 in".
-- `p.hint`: "Send the code to the squad. They join at {inviteUrl}."
-- `div.actions.room-actions` holding the leave form:
-  `<form method="post">`, hidden `action=leave`, and
-  `<button class="button secondary quiet" aria-describedby="leave-note">Leave room</button>`.
-- `p.hint.leave-note#leave-note`:
-  - Normally: "Leaving finishes your workout. Your sets stay in the book."
-  - When you are the only member: "You're the last one in, so leaving
-    closes the room."
-- **Only when `isHost` and there are other members**:
-  `details.confirm.end-room`, alone on its own row.
-  - `summary.button.secondary.quiet` contains
-    `<span class="if-closed">End room</span><span class="if-open">Cancel</span>`.
-  - Inside it, `form.confirm-box` (`method="post"`) with hidden
-    `action=end` and `p`: "End the room for everyone? {other names joined
-    with commas and 'and'} get sent home and their workouts finish. Every
-    set is kept." Then `button.button.secondary.quiet` "End room".
-  - With no one else in, End is hidden, because Leave already closes the
-    room.
-  - `isHost` is `room.hostUserId === user.id`.
+- **Phones (< 900 px)**: one column in that order. The sheet is no longer
+  sticky. Its `.dock` is `position: fixed` to the bottom of the screen, so
+  Done is in the thumb zone wherever you scroll. `body:has(.dock) footer`
+  gets 7 rem of bottom padding so the bar never hides the footer.
+- **Laptops (≥ 900 px)**: `1fr 24rem`. The sheet takes column 2,
+  `grid-row: 1 / span 4`, sticky at `top: 2rem`; the dock is just its foot.
+  The other four stack in column 1.
 
-### 2. Squad panel: `section.panel`
+Source order puts the sheet second so keyboard users meet the map's avatars,
+then Done, then the list. Your own avatar's button also jumps focus to the
+dock (3.2), as a shortcut.
 
-- `h2.panel-title` "Squad".
-- `ul.people`: one `li` per member. Names must stay in the HTML (a spec test
-  checks for "Tester").
-  - Your own row is `li.me` with `<span class="badge">You</span>`.
-  - The host's row adds `<span class="badge host">Host</span>`.
-- `p.alone` with the copy bank line when `members.length === 1`.
+### 3.2 The map panel
 
-### 3. Log panel: `section.panel`, only when the workout has sets
+```html
+<section class="panel map-panel" aria-labelledby="room-title" aria-describedby="floor">
+  <h1 class="map-sign" id="room-title"><span class="vh">Room </span><span class="passcode">SB64FR</span></h1>
+  <p class="conn" role="status"><span class="badge">Live</span></p>
+  <p class="vh" id="floor">On the floor: treadmill, flat bench, … 6 stations empty.</p>
+  <div class="map" style="--s: 2">
+    <svg class="tiles" viewBox="0 0 160 160" aria-hidden="true">…</svg>
+    <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg …/></div>
+    … 12 stations …
+    <button type="button" class="avatar on-station" style="--x: 6; --y: 1" data-state="lifting"
+            aria-label="Mia, lifting, back squat on squat rack 3">
+      <span class="tag state-lifting"><span class="nm">Mia</span></span>
+      <svg class="av" viewBox="0 0 16 16" style="--av-skin: …; --av-hair: …; --av-shirt: …">…</svg>
+    </button>
+    …
+  </div>
+</section>
+```
 
-- `h2.panel-title` "This workout".
-- `p.panel-clock`: `<span class="vh">Workout time </span><time datetime="PT31M42S" data-start="{startedAt ms}">31:42</time>`.
-  - The server renders the elapsed time with `clock()`.
-  - JS ticks it every second: m:ss, then h:mm:ss.
-  - Keep it free of icons: at 360 px the title tab and the clock only just
-    fit on the border together.
-- `p.tally`: `<b>{n}</b> set(s)`, then `· <b>{kg(volume)} kg</b> moved` if
-  the volume is above 0, then `· <b>{km(distanceKm)} km</b> covered` if
-  there is distance, then "so far".
-- `table.log`:
-  - Header: `th` "Exercise" | `th.num` "Set" | `th.fix` with
-    `<span class="vh">Edit</span>`.
-  - **Exercise cell**: the name, or a `td.ditto` with
-    `<span aria-hidden="true">"</span><span class="vh">{name}</span>`
-    when it is the same exercise as the row above.
-  - **Set cell** (`td.num.set`): `setLabel()`, with each unit wrapped in
-    `<span class="u">` so the numbers stand out. Cardio rows put the pace
-    on its own line: `5 <span class="u">km</span> · 25:00<span class="sub">5:00 /km</span>`.
-    So write cardio as the "best" form (`5 km · 25:00`) plus a pace `.sub`,
-    not as the one-line `setLabel()`.
-  - **Pencil cell** (`td.fix`):
-    `<a href="?edit={id}"><svg 16×16 pencil/><span class="vh">Edit {name}, {label}</span></a>`.
-  - **The row being edited** gets `aria-current="true"`. It is marked with
-    a leaf bar on its left edge and a pencil on a leaf fill. Its link goes
-    back to `?exercise={exerciseId}` with `aria-label="Editing this set. Cancel"`.
-- The finish form: hidden `action=finish` and
-  `button.secondary.button.quiet` "Finish workout". It now redirects to
-  `/workouts/<id>`.
+- **The passcode stays `<span class="passcode">` with the code as its only
+  text** (`spec/helpers.ts` scrapes `class="passcode"`). It moves here from
+  the Room panel, which no longer shows it.
+- **`.conn`** is `p[role="status"]`, so "Reconnecting…" and then "Live" are
+  each announced once when they change (not on load).
+- **The floor line** (`p.vh#floor`) lists the equipment on the floor and how
+  many stations are empty, for screen readers; the stations themselves are
+  `aria-hidden` art. Rewrite it when the layout changes.
 
-### 4. Sheet: `section.panel.sheet`
+#### Size
 
-From top to bottom:
+`--t` is one tile: `16px × --s`. The board is `10 × --t` square, centred in
+the panel. `--s` is the largest whole number with
+`160 × s ≤ the panel's inner width` and
+`160 × s ≤ innerHeight − top bar height − 48`, at least 1, recomputed on
+`resize` (3.8). Without JS: `--s: 2`, and `3` at `min-width: 900px` and
+`min-height: 600px`. Results: 2× (320 px) on every phone from 360 to 430 px
+wide, 3× (480 px) in a 1280 × 800 laptop window. The panel's top padding is
+16 px; the passcode tab overhangs the border by half its height.
 
-1. **`span.chip.state-{state}.tab`**: the 16 px icon plus the word. The
-   state comes from the page:
+#### The grid (10 × 10 tiles, origin top left)
 
-   | State | When |
-   | --- | --- |
-   | Slacking | Rest is running and past its target |
-   | Resting | Rest is running |
-   | Lifting | An exercise is chosen |
-   | Idle | Otherwise |
+```
+     x 0 1 2 3 4 5 6 7 8 9
+y 0    W M M M K P M M M W     back wall: mirrors, the clock, a poster
+y 1    [ 1 . 2 : : 3 . 4 ]     stations 1-4 against the mirrors
+y 2    [ : : : : : : : : ]     aisle
+y 3    [ 5 . 6 : : 7 . 8 ]     stations 5-8
+y 4    [ : : : : : : : : ]     aisle
+y 5    [ 9 . 10: : 11. 12]     stations 9-12
+y 6    [ : : : : : : : : ]     aisle
+y 7    C r . r : : i . i L     water cooler in the left wall, lockers in the right
+y 8    [ . r . : : . i . ]     lobby
+y 9    _ _ _ _ E e _ _ _ _     front wall; the entrance is (4,9) and (5,9)
+```
 
-   "Rest is running" means: there is an open workout, its newest set has
-   `restTargetS > 0`, and `restEndedAt` is null.
-2. **`h2`**:
-   - Lifting or resting: `h2.vh` "Log a set".
-   - Idle: a visible `h2.lift.lift-row` "Pick a lift".
-   - Editing: a visible `h2.lift` inside the edit header.
-3. **`div.rest`** (`.rest.over` when slacking), whenever rest is running,
-   in every sheet state:
-   - `p.rest-say[role=status]`, only when over (see States for the text).
-   - `div.rest-top`:
-     - `p.timer[role=timer]`, holding "m:ss" left, or "+m:ss" over.
-       `data-end` is the end time in ms.
-     - `p.rest-what`, two `span`s:
-       - "of <b>3:00</b> rest" (when over: "over a <b>3:00</b> rest").
-       - "after <b>{setLabel of the newest set}</b>". Put the lift name in
-         front if the newest set was a different exercise from the one in
-         the form: "after <b>Deadlift 140 kg × 5</b>".
-   - `p.rest-static`: "Rest 3:00 · next set at 6:42 pm". The server renders
-     it and JS removes it. The server also renders the timer `p` with
-     `hidden`, and JS shows it.
-   - `form.rest-adjust` (`method="post"`): hidden `action=rest`, then
-     three `button.button.secondary.tool` with `name="delta"`:
-     - `value="-15"`, label "-15 s", `aria-label="15 seconds less rest"`
-     - `value="15"`, label "+15 s", `aria-label="15 seconds more rest"`
-     - `value="skip"`, label "Skip"
+- `W` wall, `M` mirror, `K` clock, `P` poster, `[` `]` side walls, `_`
+  front wall, `E` `e` the entrance mat (an arrow pointing in), `.` rubber
+  floor, `:` aisle walkway, `C` the water cooler (over a side wall tile),
+  `L` the lockers (over a side wall tile).
+- **Aisles**: the central walkway is columns 4 and 5 from row 1 to the door;
+  the cross aisles are rows 2, 4 and 6 from column 1 to 8.
+- **Stations** (slot: tile): 1 (1,1), 2 (3,1), 3 (6,1), 4 (8,1), 5 (1,3),
+  6 (3,3), 7 (6,3), 8 (8,3), 9 (1,5), 10 (3,5), 11 (6,5), 12 (8,5). Each is
+  entered from the aisle tile below it. Two stations in a row are never
+  closer than 2 tiles, so 2× name tags of up to 6 characters don't touch.
+- **Opening layout (GYM-2)**: 1 treadmill, 2 flat bench, 3 squat rack,
+  4 dumbbell rack: the row along the mirrors. Suggestion for GYM-4's
+  "empty station" rule: fill empty stations in slot order (5, 6, … 12), so
+  the floor fills from the top.
+- **The tile layer is static**: render it once (`Sprite.astro` can draw the
+  whole 160 × 160 grid as one SVG, or the page can use a cached `<symbol>`).
 
-     JS may submit these with `fetch` and update `data-end` in place.
-     Without JS they post and redirect back.
-4. **Idle** (no `?exercise`, not editing): `form.pick` (GET) containing:
-   - the `h2`;
-   - `.recent-label` and `.recent` chips (only when there are sets);
-   - `label[for=exercise]` and `select#exercise[name=exercise]` with the 8
-     equipment optgroups;
-   - `button.wide` "Choose".
-5. **Lifting or resting**:
-   1. `details.switch`, as before: the summary holds `.lift`, `.set-no`
-      "Set n" and `.change`, and the picker form inside is unchanged.
-   2. `form.set-form` (`method="post"`): hidden `exercise_id`, then:
-   3. `p.last`. Only show it when it adds something, that is when the rest
-      block isn't already showing a set of this same exercise:
-      - With a last set: "Last time <b>{setLabel(lastSet)}</b>".
-      - Without one: "First time on this one. Ease into it."
-   4. The fields for the kind (below).
-   5. `p.error#set-error[role=alert]` when there is an error. The field it
-      is about gets `aria-invalid="true"` and
-      `aria-describedby="set-error"`. `readSet()` already returns `field`.
-   6. `.stopwatch`, for duration and cardio only.
-   7. `button.wide` "Done".
-6. **Editing** (`?edit=<id>`, and `setToEdit()` returns a set):
-   1. `div.lift-row` holding:
-      - `h2.lift` {name}
-      - `.set-no` "Set n" (its number among sets of that exercise in this
-        workout)
-      - `span.badge` "Editing"
-      - `a.lift-cancel[href=?exercise={exerciseId}]` "Cancel". It stands
-        where Change stands.
-   2. `p.hint.logged-at`: "Logged at 6:38 pm" (`completedAt`, en-AU,
-      lowercase am/pm).
-   3. `form#set-edit.set-form` (`method="post"`): hidden `action=edit`,
-      hidden `set_id`, and the kind's fields pre-filled with **that set's**
-      values.
-   4. `details.confirm`, alone on its row:
-      - The summary is `.button.secondary.quiet` with
-        `<span class="if-closed">Delete</span><span class="if-open">Keep it</span>`.
-      - Inside, `form.confirm-box`: hidden `action=delete`, hidden
-        `set_id`, then `p` "Delete {name} set {n}, {label}? It can't be
-        undone." and `button.button.secondary.quiet` "Delete set".
-   5. `<button type="submit" form="set-edit" class="wide">Save</button>`.
-      The button sits outside the form, using the `form` attribute, so
-      Save stays at the foot of the sheet where Done was.
+#### Who stands where
 
-#### Fields by kind
+| State | Tile | Pose | Tag |
+| --- | --- | --- | --- |
+| Lifting | their station, `.on-station` | `lift` (bar overhead); `stand` on the treadmill (the run loop's first frame) | `state-lifting` |
+| Resting | the next free rest spot | `rest` (blue bottle) | `state-resting` |
+| Slacking | their station, `.on-station` | `sit` (phone, glow) | `state-slacking` |
+| Idle | the next free idle spot | `stand` | `state-idle` |
+| Finished | the next free idle spot | `stand` (flex and wave later) | `state-finished` |
+| Away (flag) | wherever their state puts them | that pose, sprite at 50% | that state's, plus the phone-off icon after the name |
 
-Keep `name` before `value` on `weight_kg` and `reps` (a spec test checks
-this with a regex).
+- **Rest spots**, in fill order: (1,7), (3,7), (2,8), then (1,8), (3,8),
+  (2,7), (1,6), (3,6), (2,6), (4,8), (4,7), (4,6).
+- **Idle spots** (also Finished), in fill order: (8,7), (6,7), (7,8), then
+  (8,8), (6,8), (7,7), (8,6), (6,6), (7,6), (5,8), (5,7), (5,6).
+- The first three of each never overlap. From the fourth on, tags may
+  overlap a neighbour's legs; it only happens with four or more people in
+  the same state, and the list is the readable view.
+- **Spots are given out by join order** among the people in that state, so
+  every screen puts everyone in the same place with no server state.
+- **On a station** the avatar's feet drop 6 sprite pixels into the aisle
+  below (`top: (y + 1.375) × --t`) and the tag keeps a 6-pixel gap above the
+  head, so the top of the equipment shows between them.
+- **Stacking**: `z-index: y`, so lower rows draw over higher ones; a hovered
+  or focused avatar goes to 15, so its tag is never hidden.
 
-| Kind | Markup |
+#### Walking (GYM-10)
+
+When someone's tile changes, step their avatar one tile at a time, 125 ms
+per tile (`steps(1)`, about 8 tiles a second), along this route:
+
+1. From a station, step down into its aisle row (`y + 1`). From the lobby
+   (rows 7 and 8), walk up the same column to row 6. From the door, start at
+   (4,9).
+2. Along that row to the central column, x = 4.
+3. Up or down column 4 to the target's aisle row (the station's `y + 1`, or
+   6 for the lobby).
+4. Along that row to the target's column, then step into the target.
+
+A new arrival walks in from the door. With `prefers-reduced-motion`, jump
+straight to the target. Walking never delays anything in the sheet.
+
+#### The avatar button
+
+- `button.avatar` with `style="--x; --y"`, plus `.on-station`, `.me` and
+  `.away` as they apply. It holds `span.tag.state-{state}` > `span.nm` (and
+  the 16 px phone-off icon when Away), then `svg.av`.
+- **The tag**: VT323 20 px, ink on the state colour, 2 px ink border, the
+  name cut to 6 characters (`max-width: 6ch`, no ellipsis). Full names are
+  in the accessible name and the list. Yours adds a leaf ring past an ink
+  gap.
+- **Accessible name** (`aria-label`): `{name}{ (you)}, {state}{, away},
+  {where}`, where `where` is:
+  - Lifting: `{exercise} on {equipment} {slot}`, e.g. "Mia, lifting, back
+    squat on squat rack 3".
+  - Resting or Slacking: `{equipment} {slot}`, e.g. "Ji-woo, slacking, flat
+    bench 2".
+  - Idle: `no station yet`. Finished: `finished`.
+- **What it does this week**: nothing for others' avatars beyond focus
+  (INT-1 opens the menu next week; it will add `aria-haspopup="menu"`).
+  Your own avatar moves focus to the dock's button, a shortcut to Done.
+- Equipment names in text: treadmill, flat bench, squat rack, dumbbell
+  rack, lifting platform, pull-up bar, cable machine, exercise mat, followed
+  by the slot number. Capitalised only at the start of a line.
+
+#### Stations
+
+`div.station` with `style="--x; --y"`, `data-slot`, and `data-equipment`
+when there is equipment. It holds one 16 × 16 SVG: the equipment, or the
+empty bay with its number. Yours (the slot you hold while Lifting, Resting,
+Slacking or Away) adds `.mine` and a second SVG, the leaf corners.
+
+### 3.3 The sheet
+
+Unchanged, apart from these:
+
+1. **The dock.** The primary button moves out of its form into
+   `div.dock`, the sheet's last child, and points back with the `form`
+   attribute, as Save already did:
+   - Lifting: `form.set-form#set-log`, then
+     `<div class="dock"><button type="submit" form="set-log" class="wide">Done</button></div>`.
+   - A rest running (Resting, Rest up, Slacking): the same form, and
+     `<div class="dock"><p class="dock-timer" aria-hidden="true" hidden>1:24</p><button type="submit" form="set-log" name="action" value="start" class="wide">Start set</button></div>`.
+     Done is not on the screen until Start set is tapped.
+   - Editing: `<div class="dock"><button type="submit" form="set-edit" class="wide">Save</button></div>`.
+   - Idle: `form.pick#pick`, then `<div class="dock"><button type="submit" form="pick" class="wide">Choose</button></div>`.
+
+   Field names, values and the existing `action`s don't change; `start` is
+   the one new value (item 7). The pending script now disables the dock's
+   button (`event.submitter`, or
+   `document.querySelector('[form="set-log"]')`) along with the fields.
+2. **The dock timer** (`p.dock-timer`, rendered only while a rest is
+   running). It shows the same text as `.timer` each tick, and takes
+   `.slacking` (red) when the rest block does. It is shown only while the
+   big `.timer` is not fully visible: an `IntersectionObserver` on `.timer`
+   with `rootMargin: 0px 0px -{dock height}px 0px` and `threshold: 1`. On a
+   laptop it never shows. Screen readers use the big timer.
+3. **Your spot** (`p.spot`), after the lift row (`details.switch`) whenever
+   you hold a station: the 16 px `claim` icon, then
+   `Your spot: <b>{Equipment} {slot}</b>`. Not shown while editing or Idle.
+4. **Idle**: under the select, `p.hint#pick-hint` "Choosing one claims a
+   station on the map.", referenced by the select's `aria-describedby`.
+5. **Choosing claims a station**: the idle `form.pick` and the switch's
+   `form.picker` are `method="post"` with a hidden `action=choose` (the
+   handler already staged). The "From this workout" chips become
+   `<button type="submit" name="exercise" value="{id}">`, with
+   `aria-current="true"` on the current lift, drawn as the chips they were.
+6. **Rest over, in two steps** (GYM-11). Start set is the button in both:
+   - **0 to 30 s over**: `div.rest.over`. The border stays `--resting`, the
+     count-up `+0:12` is paper, the tab stays **Resting**, and `.rest-say`
+     reads "Rest's up. Back under the bar 🔔". The beep and the three
+     flashes happen at 0, as before.
+   - **From the server's `slackAt`** (30 s over): `div.rest.over.slacking`.
+     The border and the count-up turn `--slacking`, the tab becomes
+     **Slacking**, and `.rest-say` reads "Your squad can see you 👀". Your
+     avatar sits down on your station on every screen at the same moment.
+7. **Start set** (`action=start`, new). A distinct value rather than
+   `action=rest&delta=skip`, because it does more than skip: it ends the
+   rest **and** sets Lifting on the exercise in the form, and the server
+   logs it as its own state change (OPS-1).
+   - **Where**: the dock's button whenever a rest is running and an exercise
+     is chosen. It submits the set form (`form="set-log"`, `name="action"
+     value="start"`), so `exercise_id` and the fields you may have just
+     corrected go with it. Done's own submit carries no `action`, so it
+     still logs, as before.
+   - **Server**: `adjustRest(…, "skip")`, then `setLifting(user, room,
+     exercise_id)`, then broadcast. The weight and reps it received are not
+     saved; they are only echoed back.
+   - **With JS**: post with `fetch`, and switch the sheet in place: the rest
+     block goes, the tab becomes Lifting, `.last` shows "Last time 140 kg ×
+     5", the dock's button becomes Done, and the fields keep what was typed.
+     Focus moves to Done. For a hold or cardio, Start set also starts the
+     stopwatch.
+   - **Without JS**: the server answers 200 with the page rendered as
+     Lifting and the submitted fields echoed (as the error path already
+     echoes them), rather than redirecting.
+   - **Skip is gone.** It did what Start set does minus the Lifting, so the
+     rest row is now `−15 s` and `+15 s`. The server keeps accepting
+     `delta=skip` (nothing in `spec/` posts it, but it costs nothing).
+   - **While resting, the stopwatch row is hidden** for holds and cardio:
+     Start set starts it.
+   - **While editing** a set during a rest, the dock stays Save; Start set
+     comes back after Save or Cancel.
+
+### 3.4 The squad list (`section.panel` "Squad", `ul.people`)
+
+One `li` per member: **you first, then by join order** (stable, so rows
+don't jump as states change). Names stay in the HTML (a spec test looks for
+them).
+
+```html
+<li class="me">                                   <!-- .me for you, .away when Away -->
+  <svg class="av" viewBox="1 0 14 11" style="--av-…">…</svg>
+  <span class="who">Priya <span class="badge">You</span> <span class="badge host">Host</span>
+    <span class="what">Rest <span class="n">1:24 left</span> · lifting platform 5</span></span>
+  <span class="chips"><span class="chip state-resting"><svg…/>Resting</span></span>
+</li>
+```
+
+`.what` by state (`span.n` keeps a time on one line):
+
+| State | `.what` |
 | --- | --- |
-| `weight` | `.big-pair`: `.big` > `label` "Weight" + `.field` > `input#weight_kg[name=weight_kg]` (step 0.5, 0–1000, required) + `.unit` "kg"; `.times` "×"; `.big` > `label` "Reps" + `input#reps[name=reps]` (1–1000, required). This is the same as before. |
-| `bodyweight` | `.big-pair.even`. The left label is `BW + <span class="vh">added weight</span>`, and the weight input is **not** `required`, so blank means 0. Pre-fill 0 when the last set had none. Reps are as for `weight`. |
-| `duration` | `fieldset.big-time` > `legend` "Hold" > `.mmss`: `label.vh` "Minutes" + `input#minutes[name=minutes]` (0–600), `span.colon` ":", `label.vh` "Seconds" + `input#seconds[name=seconds]` (0–59). Pre-fill from `lastSet().durationS`. |
-| `cardio` | `.big-pair.cardio`: `.big` > `label` "Distance" + `input#distance_km[name=distance_km]` (0.01–1000, step 0.01, required) + `.unit` "km"; then `fieldset.big-time` with `legend` "Time" and the same `.mmss`. Pre-fill from `distanceM / 1000` and `durationS`. |
+| Lifting | `{Exercise} · {equipment} {slot}`: "Back squat · squat rack 3" |
+| Resting | `Rest {m:ss} left · {equipment} {slot}` |
+| Slacking | `{m:ss} over rest · {equipment} {slot}` |
+| Idle | `No station yet` |
+| Finished | `{n} sets · {duration}`, as home writes it |
+| Away | `Offline {n} min · {equipment} {slot}` (or just `Offline {n} min` when Idle); the head fades to 50%, and `.chip.away` (phone-off icon, `Away`, dashed `--dim` border on `--night`) sits under the state chip |
 
-#### The stopwatch row
+- The times tick every second on the client, from the server's
+  `stateStartedAt` / rest end / `slackAt`. The list has no live region:
+  other people's changes update quietly (system 12).
+- `p.alone` "Just you so far. Send the passcode to the squad 📲" stays,
+  when you are the only member.
 
-`.stopwatch` holds two `button.button.secondary.tool` (`type="button"`) and
-a `p.say`:
+### 3.5 This workout
 
-- **Start/Stop**: a pixel play icon and "Start", or a stop icon and "Stop"
-  with `aria-pressed="true"`.
-- **Reset**.
-- **`p.say`**:
-  - Duration: "Start, hold, Stop."
-  - Cardio, idle: "Pace <b>4:52 /km</b>", worked out live from the fields.
-    With no valid distance: "Pace shows once there's a distance."
-  - Running: "Clock's running. Stop fills the time."
+Unchanged.
 
-Render the two buttons `hidden` on the server and let JS reveal them.
-Without JS the person types the time.
+### 3.6 The Room panel (`section.panel.sign`)
 
-#### Sheet ids
+- `h2.panel-title` "Room" (the page's `h1` is now the map's sign).
+- `p.spots`: the 12 pips and "N of 12 in".
+- `p.hint`: "Send the code to the squad, or this link:
+  `<span class="room-link">spotter.fly.dev/join/SB64FR</span>`" (ROOM-3's
+  invite link; the host is `Astro.url.host`).
+- Leave, the leave note and End room (host, with others in) are unchanged.
 
-The real ids are `exercise`, `weight_kg`, `reps`, `minutes`, `seconds`,
-`distance_km`, `set-error` and `set-edit`.
+### 3.7 What the page needs from the server
+
+`roomView()` (staged in `src/lib/presence.ts`) gives state, away, exercise
+and `slackAt` per member. The map also needs:
+
+- per member: `slot` (the station they hold, or null), the avatar JSON,
+  `stateStartedAt` (for "Offline 2 min" and the walk-in), and the rest end
+  (for "1:24 left");
+- per room: the 12 stations, `{ slot, equipment | null }`.
+
+The first render comes from the server (so it works without JS and after a
+reload, GYM-8). Each SSE message carries the same view; the client redraws
+stations, avatars and rows from it.
+
+### 3.8 The script (additions)
+
+- **Scale**: on load and on `resize`, set `--s` on `.map` (3.2).
+- **Live stream**: `new EventSource("/rooms/{id}/events")`. On each message,
+  update stations, avatars (start a walk when a tile changes) and list rows.
+  On `error`, if the stream hasn't reopened within 3 s, swap `.conn`'s content
+  to the `.lost` chip (signal icon, "Reconnecting…"). On `open`,
+  swap back to `Live` and redraw from the fresh view. Nothing else changes:
+  no modal, no red, the map keeps its last picture, and every form still
+  posts normally.
+- **Ticks**: the existing 1 s tick also updates the list's times and the
+  dock timer, and flips people to Slacking at their `slackAt` without
+  waiting for the server.
+- **Dock timer**: the `IntersectionObserver` in 3.3.
+- **Your avatar**: `click` moves focus to `.dock button`.
 
 ## 4. States
 
 | State | Trigger | What changes |
 | --- | --- | --- |
-| **Resting** (default) | The newest set's rest is running and not yet at 0 | Tab: Resting (drop icon). The `.rest` block has a blue border and counts down. Below it are the lift row and the pre-filled next set, and there is no `.last` line. |
-| **Rest over (slacking)** | The timer reaches 0 | Once: a square-wave beep (Web Audio), `.sheet.flash`, and the tab switches to Slacking (phone icon). Then `.rest.over`: a red border, `+m:ss` counting up in `--slacking`, and `.rest-say`. For the first 30 s over the line reads "Rest's up. Back under the bar 🔔", then "Your squad can see you 👀" (GYM-11). `role=status` announces each line once, never the seconds. With reduced motion there is no flash; the red border and the text still change. |
-| **Lifting** | An exercise is chosen and no rest is running (after Skip, before the first set, or after cardio) | Tab: Lifting (dumbbell). No rest block. `.last` shows. |
-| **Idle** | No `?exercise` and not editing | Tab: Idle (standing figure). "Pick a lift", the recent chips, the select and a primary Choose. A running rest block still shows above it. |
-| **Empty** | Alone, no sets | 1 of 12 pips, one `li.me` with both badges, `.alone`, no log panel, an idle sheet without chips, Leave only, and the last-one-in note. |
-| **Cardio** | The exercise kind is `cardio` | Distance and time side by side, the stopwatch row and a live pace. Its Done never starts a rest. After the redirect (`?rested=1`) the sheet shows `p.bubble[role=status]` "Logged! No rest timer after cardio 🏃". |
-| **Stopwatch running** | Start tapped | The time fields become `readonly` and `.big-time.running` (leaf border and digits), ticking every second. The button says Stop. **Stop** writes the elapsed time into the fields and makes them editable again. **Reset** sets 0:00. **Done while running** stops the stopwatch first, then submits. Stored in `sessionStorage` under `spotter:stopwatch:{roomId}:{exerciseId}` = start time in ms, and resumed on reload. The stored start is cleared on Stop, Reset, or a successful log. |
-| **Duration** | The exercise kind is `duration` (Plank) | "Hold" as m:ss plus the stopwatch. The drawn example also shows a rest block from the previous plank set. |
-| **Bodyweight** | The exercise kind is `bodyweight` | "BW +" kg (optional) × Reps; "Last time BW + 10 kg × 6". |
-| **First time on a lift** | No `lastSet` for the exercise | "First time on this one. Ease into it." Weight 0 × 8 reps. For duration, cardio and bodyweight the fields start empty (or 0 added weight) rather than inventing numbers. |
-| **Edit set** | `?edit=<id>` for a set of yours in this open workout | The sheet switches to the edit header, "Logged at", the fields filled with that set, Delete and Save. The log row is marked. A running rest block stays at the top, because a correction usually happens during rest. An unknown or someone else's id falls back to the normal sheet. |
-| **Delete confirm** | Delete tapped once | `details[open]`: the summary now reads "Keep it", in the same place, and the `.confirm-box` below it holds the sentence and "Delete set". After deleting, redirect to `?exercise={id}`. |
-| **End room confirm** (host) | End room tapped once | The same pattern: the summary reads "Cancel" and the box names who gets sent home. Ending redirects the host to `/workouts/<id>` or `/`. Everyone else finds out on their next request: they land on home with a notice (home's design). |
-| **Non-host** | `!isHost` | No End room details. The Squad list shows who the host is. |
-| **Error** | POST validation fails (400) | `.error` under the fields, with the message from `readSet()` (for example "Distance is 0.01 to 1000 km."). The field gets `aria-invalid`. **Echo the submitted values** in the fields, not the pre-fill, so the person can see what was wrong. |
-| **Pending** | Done or Save submitted | The button is `disabled` (label kept, `--dim` fill), the fields are `readonly`, and the sheet has `aria-busy`. The rest block keeps ticking. The existing script and its `pageshow` reset carry over; apply them to `#set-edit` too. |
-| **Without JS** | No script | The `.rest-static` text replaces the timer. ±15 s and Skip still post. The stopwatch buttons stay hidden. The clock shows its server-rendered value. No beep or flash. |
-| **Signed out / not a member / room closed** | — | Unchanged: redirect to sign in, or 404. A closed room redirects home with a notice (home's design). |
-
-The rest-over moment (the 3 flashes) is described here but not drawn,
-because it is motion. The CSS is `.sheet.flash` in `<style id="page">`.
+| **Busy room** (default) | Six in: you resting, two lifting, one slacking, one resting and Away, one Idle | All of the above at once. Your station 5 has leaf corners while you stand at the cooler; Ji-woo sits on the bench with her phone; Tom is faded at the cooler with the phone-off icon; Sam stands by the lockers. |
+| **Room alone** (empty) | You are the only member | The opening four on slots 1 to 4, bays 5 to 12 empty, you Idle by the lockers. The Idle sheet with the claim hint and Choose. Squad: your row and `.alone`. Room: 1 of 12, the leave-closes note, no End. |
+| **You slacking** | The server's `slackAt` passes | Your tag goes red, you sit on your station with your phone (on every screen); the sheet's rest block, tab and line as in 3.3 step 6; your row reads "2:47 over rest". |
+| **Rest up** | 0 to 30 s past the rest's end | Blue border, paper count-up, Resting tab, "Rest's up. Back under the bar 🔔", Start set in the dock. On the map you're still at the cooler. |
+| **Lifting (after Start set)** | Start set tapped | No rest block; tab Lifting; "Last time 140 kg × 5"; your spot; fields as typed; **Done** in the dock. On the map you walk from the cooler to your station and lift. |
+| **Reconnecting** | The event stream has been down for 3 s | `.conn` shows the dashed `Reconnecting…` chip with the signal icon. Everything else stays: the map holds its last picture, times keep ticking, Done still posts. When the stream reopens, `Live` returns and the room redraws. After 60 s down, the others see you as Away; your own screen doesn't. |
+| **Someone Away** | Their last heartbeat is 60 s old | Their sprite fades, the phone-off icon joins their tag, `Away` joins their list row. They keep their spot and station. |
+| **Equipment arrives** | Someone claims an empty bay (GYM-4) | The bay's sprite becomes the equipment, in place, on every screen. No animation this week. |
+| **Phone, first screen** | A 390 × 660 phone (browser bars showing) | The whole map, then the sheet; the fixed dock covers the lower half of the big timer, so the dock shows its copy beside Start set. With the bars collapsed (about 750 tall) the big timer is clear and the copy hides. |
+| **Phone, scrolled** | Scrolled to the squad list | The dock stays with its timer copy and Start set. |
+| **Finished** (others; not drawn) | Someone finished their workout here | They stand at an idle spot with a trophy-yellow tag; their row reads "12 sets · 48 min" with the Finished chip. |
+| Idle, edit set, delete confirm, end-room confirm, pending, without JS, first time, bodyweight, duration, cardio, stopwatch running, error | As in the last revision | Unchanged, except that the primary button is in the dock, a chosen lift shows `p.spot`, and every sheet with a rest running has Start set instead of Done and no Skip (pending, without JS, duration, which also hides its stopwatch until Start set; edit and delete keep Save). Pending disables the dock's button. Without JS the map is the server's render at the CSS scale, the list shows server times, and `.conn` stays `Live`. |
 
 ## 5. Departures
 
-- **The own state chip is drawn on the sheet before server presence
-  exists.** It is derived on the page from the newest set's timestamps,
-  which matches GYM-12's method. When SSE lands, use the server's state.
-- **The red count-up starts at 0, not at +30 s.** The brief asks for the
-  slacking look once rest runs out, but GYM-11 makes Slacking a server state
-  only at 30 s over. The design follows the brief for the timer colour and
-  the chip, and uses the 30 s mark only to switch from "Rest's up …" to
-  "Your squad can see you 👀". **Open question**: once others can see your
-  state, should your own chip also wait 30 s, so both screens agree?
-- **`.tool` buttons use VT323 24 px**, not the display font, because their
-  labels are numbers (system section 6: every number in VT323). They are
-  `.button.secondary` in every other respect.
-- **`.quiet` (8 px display label)** applies to the room and log actions,
-  which follows system section 6 (8–12 px for buttons other than primary
-  gym actions). Finish workout drops from 16 px to 8 px with it.
-- **New visual patterns** not yet in the system: the panel clock on the
-  border, the chip as the sheet tab, and the summary-turns-into-Cancel
-  confirm. They use only tokens and the `--px` grid. Add them to system
-  section 9 if they stay.
-- **Phone sheet height.** While resting with a weight lift, the pinned
-  sheet is about 470 px tall at 390 px wide, roughly 70% of a phone screen
-  with browser chrome. That is because the timer, the next set and Done
-  all belong there. Scrolling up through the log shows a strip of about
-  200 px above it. This is accepted for now; revisit if it feels cramped in
-  the gym (one option: a smaller `.timer` while editing).
+1. **Map size: 10 × 10 tiles**, confirmed by the user (system 16 had left
+   it open). It gives 2× on a 360 px phone, with room for 12 stations two
+   tiles apart, a cooler, lockers, aisles and a door.
+2. **Name tags are the state colour with an ink name**, not paper on 70%
+   black. System 5 says the state colour is used for the name tag; system 9
+   describes it the other way. At 2× there's no room for an icon box in the
+   tag, so the map shows state by colour and pose, and the word is in the
+   avatar's accessible name and the list (system 2.3 still holds on the
+   page as a whole).
+3. **Tags cut names to 6 characters** on the map. Display names run to 20;
+   the full name is in the list and the accessible name.
+4. **The connection indicator sits on the map's border, not the top bar**
+   (system 13). The top bar is the layout's, shared by every page; the map
+   is what goes stale.
+5. **The passcode moves to the map's sign** and the Room panel's `h1`
+   becomes an `h2`. System 8 sketches the passcode and headcount in a gym
+   top bar; the layout's top bar is unchanged here.
+6. **On phones the sheet is no longer pinned; only its dock is** (system 8:
+   "Bottom panel: pinned to the bottom on phones"). A pinned sheet is about
+   470 px tall while resting, so with the map above it neither could be
+   seen whole. The dock keeps Done pinned, and its timer copy (48 px VT323,
+   above the 32 px floor) keeps the timer in view.
+7. **Red waits for the server's Slacking** (30 s over). This settles the
+   last revision's open question: your screen and your squad's now turn
+   red at the same moment.
+8. **Away has a chip** (`.chip.away`, dashed `--dim` on `--night`). It is a
+   flag, not a state, so it has no colour.
+9. **The recent-lift chips are buttons**, because choosing now posts. They
+   look the same.
+10. **The cooler and the lockers are set into the side walls**, to keep the
+    lobby free for people.
+11. **New patterns**: the map sign, the `Live` badge on a border, the dock
+    timer. They use only tokens and the `--px` grid.
+12. **Start set replaces Skip, and Done waits for it.** The last revision
+    let Done log straight from a rest (one tap). Now a set is Start set,
+    then Done, as system 2.1 describes, so the squad sees you lifting rather
+    than slacking. Done never appears while a rest runs.
 
-## Layout changes
+## 6. Open questions
 
-None needed. Everything is in `<style id="page">`. The global block in the
-mockup is the current `Layout.astro` block, unchanged. Move `.panel`,
-`.panel-title` and `.quiet` to the layout when the workout summary page
-uses them.
+- None on map size: 10 × 10 is confirmed by the user.
+- **Exercise loops.** The 4-week spec asks for eight two-frame loops. The
+  mockup draws one lift pose (bar overhead) and the treadmill's standing
+  frame. If time is short this week, one shared two-frame lift loop for
+  every piece of equipment is a reasonable first cut.
+- **Crowds.** With four or more people resting (or Idle) at once, tags
+  start to overlap. The showcase will test this; staggering tag heights is
+  the next step if it reads badly.
 
-## Notes for the build
+## 7. Notes for the build
 
-- The four new icons go in `src/sprites/icons.ts` as 8 × 8 grids, drawn
-  with `Sprite` at scale 2.
-- One `<script>` covers all the JS:
-  - the rest timer (from `data-end`; beep, flash and state swap at 0);
-  - the workout clock;
-  - the stopwatch;
-  - `fetch` for the rest forms;
-  - pending on submit.
+- Sprites: the avatar body, hair and slot classes come from the Lobby
+  group's `src/sprites/avatar.ts`. The poses below are built on that body.
+  The gym's tiles, scenery and equipment go in a new `src/sprites/gym.ts`
+  (appendix). All are drawn with `Sprite.astro`-style rects, crisp edges,
+  whole-number scale.
+- Two-frame loops (system 11): Idle and Resting bob the upper body (rows 0
+  to 12) 1 px every 400 ms; Lifting alternates the lift pose with the bar
+  at shoulder height every 250 ms; Slacking alternates the phone glow on
+  and off every 400 ms. Freeze on frame one under reduced motion.
+- Keep the old ids for everything the spec tests touch: `class="passcode"`,
+  `?edit=` links, `name` before `value` on `weight_kg` and `reps`.
 
-  Tick once a second with `setInterval`, and recompute from `Date.now()`
-  each tick so the timers don't drift after the phone sleeps.
-- The beep is the only sound, and it is on by default (system section 11).
-  A sound toggle belongs to the gym menu later.
+## Appendix: the gym's sprites
+
+### Poses (on the Lobby group's `BODY`, slots `k s t h`)
+
+- **stand**: `BODY` with the hair overlay at row 0.
+- **lift**: `BODY` with rows 9 to 12 replaced by
+  `".kskttttttttksk."`, `"..kttttttttttk.."`, `"..kttttttttttk.."`,
+  `"...kttttttttk..."`; arms at columns 1 to 2 and 13 to 14: row 1 is `k k`
+  / `k k`, rows 2 to 8 are `k s` / `s k`. Then the hair overlay, then a bar
+  prop on row 0: `"mmwwwwwwwwwwwwmm"` (`m` dim, `w` paper).
+- **rest**: stand, plus a bottle prop at (12, 8):
+  `".k."`, `"kwk"`, `"krk"`, `"krk"`, `"krk"`, `"kkk"` (`r` resting blue).
+- **sit**: two empty rows, `BODY` rows 0 to 8, then
+  `"...kkttttttkk..."`, `"..ktttkkkktttk.."`, `"..ktskkkkkkstk.."`,
+  `".kkkkkkkkkkkkkk."`, `".kssk......kssk."`; the hair overlay at row 2; a
+  phone glow prop `"ww"` at (7, 12).
+
+Prop slots in CSS: `.av .pm { fill: var(--dim) }`, `.av .pw { fill:
+var(--paper) }`, `.av .pr { fill: var(--resting) }`.
+
+### Map, tiles, scenery, equipment
+
+```ts
+// src/sprites/gym.ts (proposed). Palette letters are token values:
+// k ink, n night, f floor, p panel, d deep, g green, e edge, m dim, w paper, l leaf, r resting
+export const MAP = [
+  "WMMMKPMMMW",
+  "[...::...]",
+  "[::::::::]",
+  "[...::...]",
+  "[::::::::]",
+  "[...::...]",
+  "[::::::::]",
+  "C...::...L",
+  "[...::...]",
+  "____Ee____",
+];
+
+export const STATIONS = [ // slot 1 to 12, [x, y]
+  [1, 1], [3, 1], [6, 1], [8, 1], [1, 3], [3, 3], [6, 3], [8, 3], [1, 5], [3, 5], [6, 5], [8, 5],
+];
+
+export const TILES = {
+  ".": [
+    "pppppppppppppppp",
+    "pfffffffffffffff",
+    "pfffffnfffffffff",
+    "pfffffffffffnfff",
+    "pffnffffffffffff",
+    "pfffffffffffffff",
+    "pfffffffffnfffff",
+    "pfffffffffffffff",
+    "pffffffnffffffff",
+    "pfffffffffffffff",
+    "pfffffffffffffnf",
+    "pffnffffffffffff",
+    "pfffffffffffffff",
+    "pfffffffnfffffff",
+    "pfffffffffffffff",
+    "pfffffffffffffff",
+  ],
+  ":": [
+    "pppppppppppppppp",
+    "pppppppppppppppp",
+    "ppgppppppppgpppp",
+    "pppppppppppppppp",
+    "pppppppppppppppp",
+    "pppppppppppppppp",
+    "pppppgppppppppgp",
+    "pppppppppppppppp",
+    "pppppppppppppppp",
+    "pppppppppppppppp",
+    "ppgppppppppgpppp",
+    "pppppppppppppppp",
+    "pppppppppppppppp",
+    "pppppppppppppppp",
+    "pppppgppppppppgp",
+    "pppppppppppppppp",
+  ],
+  "W": [
+    "kkkkkkkkkkkkkkkk",
+    "dddddddddddddddd",
+    "dddddddddddddddd",
+    "dddddddddddddddd",
+    "dddddddddddddddd",
+    "dddddddddddddddd",
+    "dddddddddddddddd",
+    "dddddddddddddddd",
+    "gggggggggggggggg",
+    "gggggggggggggggg",
+    "dddddddddddddddd",
+    "dddddddddddddddd",
+    "dddddddddddddddd",
+    "dddddddddddddddd",
+    "kkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkk",
+  ],
+  "M": [
+    "kkkkkkkkkkkkkkkk",
+    "dddddddddddddddd",
+    "dkkkkkkkkkkkkkkd",
+    "dkmmmmmmmmmwmmkd",
+    "dkmmmmmmmmwmmmkd",
+    "dkmmmmmmmwmmmmkd",
+    "dkmmmmmmwmmmmmkd",
+    "dkmmmmmwmmmmwmkd",
+    "dkmmmmwmmmmwmmkd",
+    "dkmmmwmmmmwmmmkd",
+    "dkmmmmmmmwmmmmkd",
+    "dkmmmmmmmmmmmmkd",
+    "dkkkkkkkkkkkkkkd",
+    "dddddddddddddddd",
+    "kkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkk",
+  ],
+  "K": [
+    "kkkkkkkkkkkkkkkk",
+    "dddddddddddddddd",
+    "dddddkkkkkkddddd",
+    "ddddkwwwwwwkdddd",
+    "dddkwwwwkwwwkddd",
+    "dddkwwwwkwwwkddd",
+    "dddkwwwwkwwwkddd",
+    "dddkwwwwkkkwkddd",
+    "gggkwwwwwwwwkggg",
+    "gggkwwwwwwwwkggg",
+    "ddddkwwwwwwkdddd",
+    "dddddkkkkkkddddd",
+    "dddddddddddddddd",
+    "dddddddddddddddd",
+    "kkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkk",
+  ],
+  "P": [
+    "kkkkkkkkkkkkkkkk",
+    "dddddddddddddddd",
+    "ddkkkkkkkkkkkkdd",
+    "ddkllllllllllkdd",
+    "ddkllllllllllkdd",
+    "ddklkkllllkklkdd",
+    "ddklkkkkkkkklkdd",
+    "ddklkkllllkklkdd",
+    "ggkllllllllllkgg",
+    "ggklkkkkkkkklkgg",
+    "ddkllllllllllkdd",
+    "ddklkkkkkllllkdd",
+    "ddkkkkkkkkkkkkdd",
+    "dddddddddddddddd",
+    "kkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkk",
+  ],
+  "[": [
+    "kdddddddddddddgk",
+    "kdddddddddddddgk",
+    "kdddddddddddddgk",
+    "kdddddddddddddgk",
+    "kdddddddddddddgk",
+    "kdddddddddddddgk",
+    "kdddddddddddddgk",
+    "kkkkkkkkkkkkkkgk",
+    "kdddddddddddddgk",
+    "kdddddddddddddgk",
+    "kdddddddddddddgk",
+    "kdddddddddddddgk",
+    "kdddddddddddddgk",
+    "kdddddddddddddgk",
+    "kdddddddddddddgk",
+    "kkkkkkkkkkkkkkgk",
+  ],
+  "]": [
+    "kgdddddddddddddk",
+    "kgdddddddddddddk",
+    "kgdddddddddddddk",
+    "kgdddddddddddddk",
+    "kgdddddddddddddk",
+    "kgdddddddddddddk",
+    "kgdddddddddddddk",
+    "kgkkkkkkkkkkkkkk",
+    "kgdddddddddddddk",
+    "kgdddddddddddddk",
+    "kgdddddddddddddk",
+    "kgdddddddddddddk",
+    "kgdddddddddddddk",
+    "kgdddddddddddddk",
+    "kgdddddddddddddk",
+    "kgkkkkkkkkkkkkkk",
+  ],
+  "_": [
+    "kkkkkkkkkkkkkkkk",
+    "gggggggggggggggg",
+    "dddddddddddddddd",
+    "dddddddddddddddd",
+    "dddddddddddddddd",
+    "dddddddddddddddd",
+    "dddddddddddddddd",
+    "kkkkkkkkkkkkkkkk",
+    "dddddddddddddddd",
+    "dddddddddddddddd",
+    "dddddddddddddddd",
+    "dddddddddddddddd",
+    "dddddddddddddddd",
+    "dddddddddddddddd",
+    "dddddddddddddddd",
+    "kkkkkkkkkkkkkkkk",
+  ],
+  "E": [
+    "kdkggggggggggggg",
+    "kdkggggggggggggg",
+    "kdkggggggggggggg",
+    "kdkggggggggggggl",
+    "kdkgggggggggggll",
+    "kdkgggggggggglll",
+    "kdkgggggggggllll",
+    "kdkggggggggggggl",
+    "kdkggggggggggggl",
+    "kdkggggggggggggl",
+    "kdkggggggggggggl",
+    "kdkggggggggggggl",
+    "kdkggggggggggggl",
+    "kdkggggggggggggg",
+    "kdkggggggggggggg",
+    "kdkggggggggggggg",
+  ],
+  "e": [
+    "gggggggggggggkdk",
+    "gggggggggggggkdk",
+    "gggggggggggggkdk",
+    "lggggggggggggkdk",
+    "llgggggggggggkdk",
+    "lllggggggggggkdk",
+    "llllgggggggggkdk",
+    "lggggggggggggkdk",
+    "lggggggggggggkdk",
+    "lggggggggggggkdk",
+    "lggggggggggggkdk",
+    "lggggggggggggkdk",
+    "lggggggggggggkdk",
+    "gggggggggggggkdk",
+    "gggggggggggggkdk",
+    "gggggggggggggkdk",
+  ],
+};
+
+// drawn over the wall tile named by base
+export const SCENERY = {
+  C: { base: "[", grid: [
+    "................",
+    ".....kkkkkk.....",
+    "....krrrrrrk....",
+    "....krrwrrrk....",
+    "....krrwrrrk....",
+    "....krrrrrrk....",
+    ".....kkrrkk.....",
+    "...kkkkkkkkkk...",
+    "...kwwwwwwwwk...",
+    "...kwrkwwkrwk...",
+    "...kwwwwwwwwk...",
+    "...kmmmmmmmmk...",
+    "...kmmmmmmmmk...",
+    "...kmmmmmmmmk...",
+    "...kmmmmmmmmk...",
+    "...kkkkkkkkkk...",
+  ] },
+  L: { base: "]", grid: [
+    "kkkkkkkkkkkkkkkk",
+    "keeeeeekkeeeeeek",
+    "kemmmmekkemmmmek",
+    "keeeeeekkeeeeeek",
+    "kemmmmekkemmmmek",
+    "keeeeeekkeeeeeek",
+    "keeeeeekkeeeeeek",
+    "keeeewekkeweeeek",
+    "keeeewekkeweeeek",
+    "keeeeeekkeeeeeek",
+    "keeeeeekkeeeeeek",
+    "keeeeeekkeeeeeek",
+    "keeeeeekkeeeeeek",
+    "keeeeeekkeeeeeek",
+    "kkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkk",
+  ] },
+};
+
+export const EQUIPMENT = {
+  "treadmill": [
+    "..kkkkkkkkkkkk..",
+    "..kmmmmmmmmmmk..",
+    "..kmkkkkkkkkmk..",
+    "..kmkwwwwwwkmk..",
+    "..kmkkkkkkkkmk..",
+    "..kmmmmmmmmmmk..",
+    "..kkmkkkkkkmkk..",
+    "..kmmknnnnkmmk..",
+    "..kmmknnnnkmmk..",
+    "..kmmkkkkkkmmk..",
+    "..kmmknnnnkmmk..",
+    "..kmmknnnnkmmk..",
+    "..kmmkkkkkkmmk..",
+    "..kmmknnnnkmmk..",
+    "..kmmknnnnkmmk..",
+    "..kkkkkkkkkkkk..",
+  ],
+  "flat-bench": [
+    "kkkk........kkkk",
+    "kmmkwwwwwwwwkmmk",
+    "kmmk.kk..kk.kmmk",
+    "kkkk.kk..kk.kkkk",
+    "....kkkkkkkk....",
+    "....kggggggk....",
+    "....kggggggk....",
+    "....kggggggk....",
+    "....kggggggk....",
+    "....kggggggk....",
+    "....kggggggk....",
+    "....kggggggk....",
+    "....kkkkkkkk....",
+    ".....kmk.kmk....",
+    ".....kmk.kmk....",
+    ".....kkk.kkk....",
+  ],
+  "squat-rack": [
+    "..kkkkkkkkkkkk..",
+    "..kmmmmmmmmmmk..",
+    "..kkkkkkkkkkkk..",
+    "..kmk......kmk..",
+    "kkkmk......kmkkk",
+    "kmkmk......kmkmk",
+    "kmwwwwwwwwwwwwmk",
+    "kmkmk......kmkmk",
+    "kkkmk......kmkkk",
+    "..kmk......kmk..",
+    "..kmk......kmk..",
+    "..kmk......kmk..",
+    "..kmk......kmk..",
+    ".kkmkk....kkmkk.",
+    ".kmmmk....kmmmk.",
+    ".kkkkk....kkkkk.",
+  ],
+  "dumbbell-rack": [
+    "................",
+    ".kkk.kkkkkk.kkk.",
+    ".kmkkkmkkmkkkmk.",
+    ".kmwwwmkkmwwwmk.",
+    ".kmkkkmkkmkkkmk.",
+    ".kkk.kkkkkk.kkk.",
+    "keeeeeeeeeeeeeek",
+    "kkkkkkkkkkkkkkkk",
+    ".kkk.kkkkkk.kkk.",
+    ".kmkkkmkkmkkkmk.",
+    ".kmwwwmkkmwwwmk.",
+    ".kmkkkmkkmkkkmk.",
+    ".kkk.kkkkkk.kkk.",
+    "keeeeeeeeeeeeeek",
+    "kkkkkkkkkkkkkkkk",
+    ".kk..........kk.",
+  ],
+  "lifting-platform": [
+    "kkkkkkkkkkkkkkkk",
+    "keeeeeeeeeeeeeek",
+    "keeeeeeeeeeeeeek",
+    "keekkkeeeekkkeek",
+    "keekmkeeeekmkeek",
+    "keekmkeeeekmkeek",
+    "keekmkkkkkkmkeek",
+    "keekmwwwwwwmkeek",
+    "keekmkkkkkkmkeek",
+    "keekmkeeeekmkeek",
+    "keekmkeeeekmkeek",
+    "keekkkeeeekkkeek",
+    "keeeeeeeeeeeeeek",
+    "keeeeeeeeeeeeeek",
+    "keeeeeeeeeeeeeek",
+    "kkkkkkkkkkkkkkkk",
+  ],
+  "pull-up-bar": [
+    ".kkkkkkkkkkkkkk.",
+    ".kwwwwwwwwwwwwk.",
+    ".kkkkkkkkkkkkkk.",
+    ".kmk........kmk.",
+    ".kmk........kmk.",
+    ".kmk........kmk.",
+    ".kmk........kmk.",
+    ".kmk........kmk.",
+    ".kmk........kmk.",
+    ".kmk........kmk.",
+    ".kmk........kmk.",
+    ".kmk........kmk.",
+    ".kmk........kmk.",
+    "kkmkk......kkmkk",
+    "kmmmk......kmmmk",
+    "kkkkk......kkkkk",
+  ],
+  "cable-machine": [
+    "..kkkkkkkkkkkk..",
+    "..kmmmmmmmmmmk..",
+    "..kmkkkkkkkkmk..",
+    "..kmk......kmk..",
+    "..kmk.kkkk.kmk..",
+    "..kmk.kwwk.kmk..",
+    "..kmk.kkkk.kmk..",
+    "..kmk.kwwk.kmk..",
+    "..kmk.kkkk.kmk..",
+    "..kmk.kwwk.kmk..",
+    "..kmk.kkkk.kmk..",
+    "..kmk.kwwk.kmk..",
+    "..kmk.kkkk.kmk..",
+    ".kkmkkkkkkkkmkk.",
+    ".kmmmmmmmmmmmmk.",
+    ".kkkkkkkkkkkkkk.",
+  ],
+  "exercise-mat": [
+    "................",
+    "...kkkkkkkkkk...",
+    "...kggggggggk...",
+    "...keeeeeeeek...",
+    "...kggggggggk...",
+    "...kggggggggk...",
+    "...keeeeeeeek...",
+    "...kggggggggk...",
+    "...kggggggggk...",
+    "...keeeeeeeek...",
+    "...kggggggggk...",
+    "...kggggggggk...",
+    "...keeeeeeeek...",
+    "...kggggggggk...",
+    "...kkkkkkkkkk...",
+    "................",
+  ],
+};
+
+export const CLAIM = [ // your station: leaf corners
+  "llll........llll",
+  "l..............l",
+  "l..............l",
+  "l..............l",
+  "................",
+  "................",
+  "................",
+  "................",
+  "................",
+  "................",
+  "................",
+  "................",
+  "l..............l",
+  "l..............l",
+  "l..............l",
+  "llll........llll",
+];
+```
+
+The empty bay is generated, not drawn: a dashed square in `e` on rows and columns 1 and 14 (pixels `i` where `((i - 1) >> 1) % 2 === 0`, plus 14), and the slot number in 3 × 5 digits in `e`, centred, from row 5. Bay 7 comes out as:
+
+```
+................
+.ee..ee..ee..ee.
+.e............e.
+................
+................
+.e....eee.....e.
+.e......e.....e.
+.......e........
+.......e........
+.e.....e......e.
+.e............e.
+................
+................
+.e............e.
+.ee..ee..ee..ee.
+................
+```
+
+New 8 × 8 icons for `src/sprites/icons.ts` (`c` is the text colour):
+
+```ts
+export const phoneOffIcon = icon("cccc.c.c", "c..c..c.", "c..c.c.c", "c..c....", "c..c....", "cccc....", "c.cc....", "cccc....");
+export const signalIcon = icon("......c.", "........", "...cc.c.", "...cc...", "cc.cc.c.", "cc.cc...", "cc.cc.c.", "........");
+export const claimIcon = icon("cc....cc", "c......c", "........", "........", "........", "........", "c......c", "cc....cc");
+```

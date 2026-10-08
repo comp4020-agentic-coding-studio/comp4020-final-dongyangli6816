@@ -13,3 +13,6 @@ export const idleIcon = icon("...cc...", "...cc...", ".cccccc.", "...cc...", "..
 export const playIcon = icon("..c.....", "..cc....", "..ccc...", "..cccc..", "..cccc..", "..ccc...", "..cc....", "..c.....");
 export const stopIcon = icon("........", ".cccccc.", ".cccccc.", ".cccccc.", ".cccccc.", ".cccccc.", ".cccccc.", "........");
 export const pencilIcon = icon("......c.", ".....ccc", "....ccc.", "...ccc..", "..ccc...", ".ccc....", ".cc.....", "c.......");
+// the squad list and the map's connection badge (docs/design/room/spec.md)
+export const phoneOffIcon = icon("cccc.c.c", "c..c..c.", "c..c.c.c", "c..c....", "c..c....", "cccc....", "c.cc....", "cccc....");
+export const signalIcon = icon("......c.", "........", "...cc.c.", "...cc...", "cc.cc.c.", "cc.cc...", "cc.cc.c.", "........");

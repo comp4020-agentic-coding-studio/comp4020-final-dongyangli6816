@@ -50,3 +50,67 @@ export async function createRoom(b: Browser): Promise<{ path: string; passcode: 
   const passcode = html.match(/class="passcode"[^>]*>([A-Z0-9]{6})</)![1];
   return { path, passcode };
 }
+
+// A room's live stream (GYM-13) as this browser sees it. next() resolves with
+// the next `room` event, or rejects if none arrives within ms; close() hangs up.
+export type RoomEvent = {
+  now: number;
+  closed: boolean;
+  members: { id: number; name: string; host: boolean; state: string; away: boolean; exercise: string | null; slackAt: number | null }[];
+};
+
+export async function openEvents(b: Browser, roomPath: string) {
+  const hangUp = new AbortController();
+  const res = await b.request(`${roomPath}/events`, { signal: hangUp.signal });
+  const queue: RoomEvent[] = [];
+  const waiting: ((e: RoomEvent) => void)[] = [];
+  if (res.ok && res.body) {
+    (async () => {
+      const decoder = new TextDecoder();
+      let buffer = "";
+      try {
+        for await (const chunk of res.body!) {
+          buffer += decoder.decode(chunk as Uint8Array, { stream: true });
+          let end;
+          while ((end = buffer.indexOf("\n\n")) >= 0) {
+            const block = buffer.slice(0, end);
+            buffer = buffer.slice(end + 2);
+            if (!/^event: room$/m.test(block)) continue;
+            const data = JSON.parse(block.match(/^data: (.*)$/m)![1]) as RoomEvent;
+            const w = waiting.shift();
+            if (w) w(data);
+            else queue.push(data);
+          }
+        }
+      } catch {
+        // hung up
+      }
+    })();
+  }
+  return {
+    res,
+    next: (ms = 1000) =>
+      new Promise<RoomEvent>((resolve, reject) => {
+        const queued = queue.shift();
+        if (queued) return resolve(queued);
+        const timer = setTimeout(() => {
+          waiting.splice(waiting.indexOf(done), 1);
+          reject(new Error(`no room event within ${ms} ms`));
+        }, ms);
+        const done = (e: RoomEvent) => {
+          clearTimeout(timer);
+          resolve(e);
+        };
+        waiting.push(done);
+      }),
+    // the next event that passes the test, skipping any before it
+    async until(test: (e: RoomEvent) => boolean, ms = 1000): Promise<RoomEvent> {
+      const deadline = Date.now() + ms;
+      for (;;) {
+        const e = await this.next(Math.max(1, deadline - Date.now()));
+        if (test(e)) return e;
+      }
+    },
+    close: () => hangUp.abort(),
+  };
+}
