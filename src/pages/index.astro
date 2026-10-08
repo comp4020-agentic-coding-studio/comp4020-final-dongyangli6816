@@ -7,10 +7,13 @@ import { normalisePasscode, PASSCODE_ALPHABET } from "../lib/passcode.ts";
 import { roomMembers, rooms } from "../lib/schema.ts";
 import { history } from "../lib/workouts.ts";
 import Layout from "../layouts/Layout.astro";
-import { head } from "../sprites/avatar.ts";
-import { arrowIcon, dropIcon, dumbbellIcon, phoneIcon, trophyIcon } from "../sprites/icons.ts";
+import Avatar from "../components/Avatar.astro";
+import { lookOf } from "../lib/avatars.ts";
+import type { Look } from "../sprites/avatar.ts";
+import { arrowIcon, dropIcon, dumbbellIcon, pencilIcon, phoneIcon, trophyIcon } from "../sprites/icons.ts";
 
 const user = Astro.locals.user;
+const look = user ? lookOf(user.id) : undefined;
 const last = user ? history(user.id)[0] : undefined;
 // open rooms you're still in; a room you left would 404
 const myRooms = user
@@ -50,12 +53,17 @@ const left = code("left");
 const ended = code("ended");
 const endedLogged = Astro.url.searchParams.has("logged");
 
-// the landing's peek at a squad: an illustration, not live data
+// the landing's peek at a squad: an illustration, not live data. The looks
+// are the design's mockup people, so every page draws them the same.
+const mia: Look = { skin: "3", hair: "long", hairColour: "dark-brown", shirt: "teal" };
+const tom: Look = { skin: "1", hair: "crop", hairColour: "ginger", shirt: "navy" };
+const jiwoo: Look = { skin: "2", hair: "ponytail", hairColour: "pink", shirt: "white" };
+const priya: Look = { skin: "5", hair: "curls", hairColour: "black", shirt: "orange" };
 const squad = [
-  { name: "Mia", what: "Back squat · ", n: "100 kg × 5", after: "", state: "lifting", word: "Lifting", icon: dumbbellIcon, head: head("#2b1a12", "#d9a77c") },
-  { name: "Tom", what: "Rest · ", n: "1:12", after: " to go", state: "resting", word: "Resting", icon: dropIcon, head: head("#c9a24a", "#f1c9a5") },
-  { name: "Ji-woo", what: "Rest · ", n: "2:40", after: " over", state: "slacking", word: "Slacking", icon: phoneIcon, head: head("#3a2a5e", "#e8bf96") },
-  { name: "Priya", what: "", n: "16 sets · 52 min", after: "", state: "finished", word: "Finished", icon: trophyIcon, head: head("#1a1010", "#a86a43") },
+  { name: "Mia", what: "Back squat · ", n: "100 kg × 5", after: "", state: "lifting", word: "Lifting", icon: dumbbellIcon, look: mia },
+  { name: "Tom", what: "Rest · ", n: "1:12", after: " to go", state: "resting", word: "Resting", icon: dropIcon, look: tom },
+  { name: "Ji-woo", what: "Rest · ", n: "2:40", after: " over", state: "slacking", word: "Slacking", icon: phoneIcon, look: jiwoo },
+  { name: "Priya", what: "", n: "16 sets · 52 min", after: "", state: "finished", word: "Finished", icon: trophyIcon, look: priya },
 ];
 const steps = [
   ["Open a room", "Get a passcode. Drop it in the group chat."],
@@ -68,7 +76,24 @@ const steps = [
   {
     user ? (
       <>
-        <h1>Hi, {user.displayName}</h1>
+        {/* you on your patch of floor beside the greeting: the tile is a
+            pointer shortcut to the editor, the link is the one keyboard and
+            screen readers get */}
+        <header class="player">
+          <a href="/avatar" class="floor player-tile" tabindex="-1" aria-hidden="true">
+            <span class="stand">
+              <span class="nametag">{user.displayName}</span>
+              <Avatar look={look} />
+            </span>
+          </a>
+          <div>
+            <h1>Hi, {user.displayName}</h1>
+            <a href="/avatar" class="edit-link">
+              <Sprite sprite={pencilIcon} scale={2} />
+              Edit avatar
+            </a>
+          </div>
+        </header>
         {left ? (
           <p class="bubble notice" role="status">
             You left room <span class="passcode">{left}</span>. See you next session 👋
@@ -220,7 +245,7 @@ const steps = [
           <ul class="squad">
             {squad.map((m) => (
               <li>
-                <Sprite sprite={m.head} scale={4} class="sprite" />
+                <Avatar look={m.look} head />
                 <span>
                   {m.name}{" "}
                   <span class="what">
@@ -320,7 +345,7 @@ const steps = [
   }
   .squad li {
     display: grid;
-    grid-template-columns: 32px 1fr auto;
+    grid-template-columns: 42px 1fr auto;
     align-items: center;
     gap: 0 0.75rem;
     padding: 0.5rem 0;
@@ -328,6 +353,89 @@ const steps = [
   }
   .squad li:first-child {
     border-top: 0;
+  }
+  /* the head crop of the avatar: 14 x 11 sprite pixels at 3x */
+  .squad :global(.av) {
+    width: 42px;
+    height: 33px;
+  }
+
+  /* signed in: you on your patch of floor beside the greeting */
+  .player {
+    display: grid;
+    grid-template-columns: 9rem 1fr;
+    align-items: center;
+    gap: 0 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .player h1 {
+    margin: 0 0 0.25rem;
+  }
+  .floor {
+    --s: 4px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    min-height: calc(var(--s) * 16 + 88px);
+    padding: 0 0.5rem 0.75rem;
+    border: var(--px) solid var(--ink);
+    border-top: calc(var(--px) * 4) solid var(--deep);
+    box-shadow: inset 0 var(--px) 0 var(--green);
+    background-color: var(--paper);
+    background-image: conic-gradient(var(--tile) 25%, transparent 0 50%, var(--tile) 0 75%, transparent 0);
+    background-size: 32px 32px;
+  }
+  .player-tile {
+    text-decoration: none;
+  }
+  .stand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .nametag {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 0.5rem;
+    font: 22px/1.3 var(--body);
+    white-space: nowrap;
+    color: var(--paper);
+    background: rgb(0 0 0 / 70%);
+  }
+  .player-tile:hover .nametag {
+    color: var(--leaf);
+  }
+  .floor :global(.av) {
+    width: calc(var(--s) * 16);
+    height: calc(var(--s) * 16);
+  }
+  .floor :global(.av-top) {
+    animation: idle 800ms steps(1) infinite;
+  }
+  @keyframes idle {
+    50% {
+      transform: translateY(1px); /* one sprite pixel */
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .floor :global(.av-top) {
+      animation: none;
+    }
+  }
+  .edit-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+  }
+  .edit-link :global(svg) {
+    flex: none;
   }
   .squad .what {
     display: block;

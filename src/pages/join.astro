@@ -1,6 +1,7 @@
 ---
 import JoinCard from "../components/JoinCard.astro";
 import Layout from "../layouts/Layout.astro";
+import { lookOf } from "../lib/avatars.ts";
 import { normalisePasscode } from "../lib/passcode.ts";
 import { joinRoom } from "../lib/rooms.ts";
 
@@ -22,5 +23,5 @@ if (Astro.request.method === "POST") {
 ---
 
 <Layout title="Join a room">
-  <JoinCard mode="join" passcode={passcode} error={error} name={user.displayName} />
+  <JoinCard mode="join" passcode={passcode} error={error} name={user.displayName} look={lookOf(user.id)} />
 </Layout>

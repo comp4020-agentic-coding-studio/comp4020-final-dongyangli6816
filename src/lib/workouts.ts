@@ -46,11 +46,14 @@ export function readSet(kind: Kind, form: FormData): { values: SetValues } | { e
 }
 
 // LOG-1: a workout belongs to one person and, optionally, the room it was done
-// in. Logging a set uses the person's open workout there, or starts one.
-function openWorkout(userId: number, roomId: number): number {
+// in. It starts when they walk into the room, so the workout clock counts the
+// whole session, not just from the first set; logging a set uses it, or
+// starts one if they finished and carried on. One that ends with no sets is
+// removed (finishWorkout).
+export function openWorkout(userId: number, roomId: number, at = Date.now()): number {
   const open = openWorkoutId(userId, roomId);
   if (open) return open;
-  return db.insert(workouts).values({ userId, roomId, startedAt: Date.now() }).returning({ id: workouts.id }).get().id;
+  return db.insert(workouts).values({ userId, roomId, startedAt: at }).returning({ id: workouts.id }).get().id;
 }
 
 export function openWorkoutId(userId: number, roomId: number): number | undefined {
@@ -212,12 +215,13 @@ function setsOf(workoutIds: number[]) {
     .all();
 }
 
-// LOG-7: the person's workouts, newest first, each with its sets.
+// LOG-7: the person's workouts, newest first, each with its sets. A workout
+// still open with nothing logged yet isn't one to show.
 export function history(userId: number) {
   const list = db.select().from(workouts).where(eq(workouts.userId, userId)).orderBy(desc(workouts.startedAt)).all();
   if (list.length === 0) return [];
   const rows = setsOf(list.map((w) => w.id));
-  return list.map((w) => ({ ...w, sets: rows.filter((r) => r.workoutId === w.id) }));
+  return list.map((w) => ({ ...w, sets: rows.filter((r) => r.workoutId === w.id) })).filter((w) => w.sets.length > 0);
 }
 
 // LOG-6: one of the person's own workouts with its sets and the room it was

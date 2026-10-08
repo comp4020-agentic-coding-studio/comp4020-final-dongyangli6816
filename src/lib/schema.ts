@@ -11,6 +11,9 @@ export const users = sqliteTable("users", {
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   displayName: text("display_name").notNull(),
+  // AV-1: the look, as JSON (src/sprites/avatar.ts); never an image. Null
+  // for accounts from before avatars, which get one rolled on first read.
+  avatar: text("avatar"),
   createdAt: integer("created_at").notNull(),
 });
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Browser, createRoom, signUp } from "./helpers.ts";
+import { Browser, createRoom, openEvents, signUp } from "./helpers.ts";
 
 // What a set records depends on the exercise (docs/adr/0002-exercise-kinds.md),
 // sets can be fixed after logging (LOG-8), and finishing lands on a summary
@@ -98,6 +98,30 @@ describe("finishing shows a summary that only its owner can see", () => {
     const stranger = new Browser();
     await signUp(stranger);
     expect((await stranger.get(summaryPath.split("?")[0])).status).toBe(404);
+  });
+});
+
+describe("the workout clock", () => {
+  it("starts when you walk into the room, not at the first set", async () => {
+    const b = new Browser();
+    await signUp(b);
+    const { path } = await createRoom(b);
+    await new Promise((r) => setTimeout(r, 1100));
+    await b.post(path, { exercise_id: BENCH, weight_kg: "40", reps: "10" });
+    const screen = await openEvents(b, path);
+    await screen.next();
+    await b.post(path, { action: "finish" });
+    const e = await screen.until((e) => e.members[0]?.state === "finished");
+    screen.close();
+    const done = (e.members[0] as unknown as { done: { startedAt: number; endedAt: number } }).done;
+    expect(done.endedAt - done.startedAt).toBeGreaterThanOrEqual(1000);
+  });
+
+  it("keeps a workout with nothing logged yet out of history", async () => {
+    const b = new Browser();
+    await signUp(b);
+    await createRoom(b);
+    expect(await (await b.get("/history")).text()).toContain("No workouts yet");
   });
 });
 
