@@ -2,7 +2,8 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
 import Sprite from "../components/Sprite.astro";
 import { db } from "../lib/db.ts";
-import { byExercise, kg, minutes, topSet, volume } from "../lib/logbook.ts";
+import { bestLabel, byExercise, distanceKm, kg, km, minutes, volume } from "../lib/logbook.ts";
+import { normalisePasscode, PASSCODE_ALPHABET } from "../lib/passcode.ts";
 import { roomMembers, rooms } from "../lib/schema.ts";
 import { history } from "../lib/workouts.ts";
 import Layout from "../layouts/Layout.astro";
@@ -11,13 +12,13 @@ import { arrowIcon, dropIcon, dumbbellIcon, phoneIcon, trophyIcon } from "../spr
 
 const user = Astro.locals.user;
 const last = user ? history(user.id)[0] : undefined;
-// rooms you're still in; a room you left would 404
+// open rooms you're still in; a room you left would 404
 const myRooms = user
   ? db
       .select({ id: rooms.id, passcode: rooms.passcode, lastActiveAt: rooms.lastActiveAt })
       .from(roomMembers)
       .innerJoin(rooms, eq(rooms.id, roomMembers.roomId))
-      .where(and(eq(roomMembers.userId, user.id), isNull(roomMembers.leftAt)))
+      .where(and(eq(roomMembers.userId, user.id), isNull(roomMembers.leftAt), isNull(rooms.closedAt)))
       .orderBy(desc(rooms.lastActiveAt))
       .limit(5)
       .all()
@@ -36,10 +37,18 @@ const lastWhen = last
       .toLocaleString("en-AU", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })
       .replace(/^(\w+),/, "$1")
   : "";
-const best = (sets: { weightKg: number; reps: number; name: string }[]) => {
-  const top = topSet(sets);
-  return top.weightKg === 0 ? `${top.reps} reps` : `${top.weightKg} kg × ${top.reps}`;
+const lastVolume = last ? volume(last.sets) : 0;
+const lastDistance = last ? distanceKm(last.sets) : 0;
+
+// ?left= and ?ended= come back from the room (ROOM-5, ROOM-6). Only a
+// well-formed passcode is shown, and only ever as text.
+const code = (name: string) => {
+  const v = normalisePasscode(Astro.url.searchParams.get(name) ?? "");
+  return v.length === 6 && [...v].every((c) => PASSCODE_ALPHABET.includes(c)) ? v : "";
 };
+const left = code("left");
+const ended = code("ended");
+const endedLogged = Astro.url.searchParams.has("logged");
 
 // the landing's peek at a squad: an illustration, not live data
 const squad = [
@@ -50,7 +59,7 @@ const squad = [
 ];
 const steps = [
   ["Open a room", "Get a passcode. Drop it in the group chat."],
-  ["Log your sets", "Weight and reps, filled in from last time."],
+  ["Log your sets", "Reps, kilos, holds or runs, filled in from last time."],
   ["Get spotted", "Rest too long and the squad will know 👀"],
 ];
 ---
@@ -60,8 +69,23 @@ const steps = [
     user ? (
       <>
         <h1>Hi, {user.displayName}</h1>
-        {myRooms.length === 0 && !last && (
-          <p class="bubble">New here? Join your squad's room, or start one and send the code 📲</p>
+        {left ? (
+          <p class="bubble notice" role="status">
+            You left room <span class="passcode">{left}</span>. See you next session 👋
+          </p>
+        ) : ended && endedLogged ? (
+          <p class="bubble notice" role="status">
+            Room <span class="passcode closed">{ended}</span> has closed, so we wrapped up your workout. Every set is
+            safe in <a href="/history">your history</a> 📒
+          </p>
+        ) : ended ? (
+          <p class="bubble notice" role="status">
+            Room <span class="passcode closed">{ended}</span> has closed. Start a new one below and send the squad the
+            code 📲
+          </p>
+        ) : (
+          myRooms.length === 0 &&
+          !last && <p class="bubble">New here? Join your squad's room, or start one and send the code 📲</p>
         )}
         <section class="card door" aria-labelledby="door-h">
           <h2 id="door-h">Train with the squad</h2>
@@ -91,7 +115,7 @@ const steps = [
         {myRooms.length > 0 && (
           <section class="card" aria-labelledby="rooms-h">
             <h2 id="rooms-h">Your rooms</h2>
-            <p class="hint">Last active, newest first.</p>
+            <p class="hint">Still open, newest first.</p>
             <ul class="room-keys">
               {myRooms.map((r) => (
                 <li>
@@ -120,12 +144,22 @@ const steps = [
                   <dt>Sets</dt>
                   <dd>{last.sets.length}</dd>
                 </div>
-                <div>
-                  <dt>Volume</dt>
-                  <dd>
-                    {kg(volume(last.sets))} <span class="unit">kg</span>
-                  </dd>
-                </div>
+                {lastVolume > 0 && (
+                  <div>
+                    <dt>Volume</dt>
+                    <dd>
+                      {kg(lastVolume)} <span class="unit">kg</span>
+                    </dd>
+                  </div>
+                )}
+                {lastDistance > 0 && (
+                  <div>
+                    <dt>Distance</dt>
+                    <dd>
+                      {km(lastDistance)} <span class="unit">km</span>
+                    </dd>
+                  </div>
+                )}
               </dl>
             </>
           )}
@@ -143,7 +177,7 @@ const steps = [
                   <tr>
                     <td>{g.name}</td>
                     <td class="num">{g.sets.length}</td>
-                    <td class="num">{best(g.sets)}</td>
+                    <td class="num">{bestLabel(g.sets)}</td>
                   </tr>
                 ))
               ) : (
@@ -154,7 +188,14 @@ const steps = [
             </tbody>
           </table>
           {last ? (
-            <a href="/history" class="button secondary">All history</a>
+            <div class="actions">
+              {last.endedAt && (
+                <a href={`/workouts/${last.id}`} class="button secondary">
+                  See summary
+                </a>
+              )}
+              <a href="/history" class="button secondary">All history</a>
+            </div>
           ) : (
             <p class="hint">Your first set lands here once you log it in a room.</p>
           )}
@@ -250,6 +291,20 @@ const steps = [
   }
 
   /* signed out: a peek at a squad mid-session */
+  /* a room you left or that closed. A closed room's key is dimmed, because
+     it no longer opens anything (the words say so too). */
+  .notice .passcode {
+    vertical-align: 2px;
+  }
+  .notice .passcode.closed {
+    color: var(--paper);
+    background: var(--muted);
+    border-color: var(--ink);
+  }
+  .notice a {
+    color: var(--ink);
+  }
+
   .peek .bubble {
     margin-bottom: 1.5rem;
   }
@@ -372,7 +427,9 @@ const steps = [
   .room-keys a:hover {
     background: var(--leaf);
   }
-  .room-keys .passcode {
+  /* shared with .notice, so a key tag is drawn one way */
+  .room-keys .passcode,
+  .notice .passcode {
     padding: 0.25rem 0.5rem;
     font-size: 16px;
   }
@@ -387,7 +444,8 @@ const steps = [
   .totals {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem 2rem;
+    /* three figures fit one row on a 360 px phone */
+    gap: 0.5rem 1.5rem;
     margin: 0 0 1rem;
   }
   .totals dt {
@@ -402,6 +460,9 @@ const steps = [
   }
   .totals .unit {
     font-size: 22px;
+  }
+  .logbook .actions {
+    margin-top: 0;
   }
   .logbook .empty {
     padding: 1rem 0.6rem;

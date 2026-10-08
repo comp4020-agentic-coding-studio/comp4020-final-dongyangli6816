@@ -1,0 +1,221 @@
+---
+// The inputs of one set, by the exercise's kind (docs/adr/0002-exercise-kinds.md),
+// for the gym's log and edit forms. The numbers sit at arm's length: 48 px,
+// in 72 px fields. `name` comes before `value` on weight_kg and reps, which
+// spec/core-loop.test.ts matches.
+import type { Kind } from "../lib/exercises.ts";
+
+export type FieldValues = { weight_kg: string; reps: string; minutes: string; seconds: string; distance_km: string };
+
+interface Props {
+  kind: Kind;
+  values: FieldValues;
+  // the field an error is about, from readSet()
+  invalid?: string;
+}
+const { kind, values, invalid = "" } = Astro.props;
+const bad = (name: string) =>
+  invalid === name ? { "aria-invalid": "true" as const, "aria-describedby": "set-error" } : {};
+---
+
+{
+  (kind === "weight" || kind === "bodyweight") && (
+    <div class:list={["big-pair", { even: kind === "bodyweight" }]}>
+      <div class="big">
+        {kind === "weight" ? (
+          <label for="weight_kg">Weight</label>
+        ) : (
+          <label for="weight_kg">
+            BW + <span class="vh">added weight</span>
+          </label>
+        )}
+        <span class="field">
+          <input
+            id="weight_kg"
+            name="weight_kg"
+            type="number"
+            inputmode="decimal"
+            min="0"
+            max="1000"
+            step="0.5"
+            value={values.weight_kg}
+            required={kind === "weight"}
+            {...bad("weight_kg")}
+          />
+          <span class="unit" aria-hidden="true">kg</span>
+        </span>
+      </div>
+      <span class="times" aria-hidden="true">×</span>
+      <div class="big">
+        <label for="reps">Reps</label>
+        <span class="field">
+          <input
+            id="reps"
+            name="reps"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            max="1000"
+            step="1"
+            value={values.reps}
+            required
+            {...bad("reps")}
+          />
+        </span>
+      </div>
+    </div>
+  )
+}
+{
+  (kind === "duration" || kind === "cardio") && (
+    <div class:list={{ "big-pair": kind === "cardio", cardio: kind === "cardio" }}>
+      {kind === "cardio" && (
+        <div class="big">
+          <label for="distance_km">Distance</label>
+          <span class="field">
+            <input
+              id="distance_km"
+              name="distance_km"
+              type="number"
+              inputmode="decimal"
+              min="0.01"
+              max="1000"
+              step="0.01"
+              value={values.distance_km}
+              required
+              {...bad("distance_km")}
+            />
+            <span class="unit" aria-hidden="true">km</span>
+          </span>
+        </div>
+      )}
+      <fieldset class="big-time">
+        <legend>{kind === "cardio" ? "Time" : "Hold"}</legend>
+        <div class="mmss">
+          <label class="vh" for="minutes">Minutes</label>
+          <input
+            id="minutes"
+            name="minutes"
+            type="number"
+            inputmode="numeric"
+            min="0"
+            max="600"
+            step="1"
+            value={values.minutes}
+            {...bad("minutes")}
+          />
+          <span class="colon" aria-hidden="true">:</span>
+          <label class="vh" for="seconds">Seconds</label>
+          <input
+            id="seconds"
+            name="seconds"
+            type="number"
+            inputmode="numeric"
+            min="0"
+            max="59"
+            step="1"
+            value={values.seconds}
+            {...bad("seconds")}
+          />
+        </div>
+      </fieldset>
+    </div>
+  )
+}
+
+<style>
+  .vh {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .big-pair {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) auto minmax(0, 2fr);
+    align-items: end;
+    gap: 0 0.5rem;
+  }
+  .big-pair.even {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+  .big-pair.cardio {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    gap: 0 0.75rem;
+  }
+  .big label,
+  .big-time legend {
+    margin: 0 0 0.25rem;
+    padding: 0;
+    color: var(--dim);
+  }
+  .big .field {
+    position: relative;
+    display: block;
+  }
+  .big input,
+  .big-time input {
+    min-height: 72px;
+    padding: 0.25rem 0.75rem;
+    font-size: 48px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+  .big input::-webkit-inner-spin-button,
+  .big input::-webkit-outer-spin-button,
+  .big-time input::-webkit-inner-spin-button,
+  .big-time input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .big .unit {
+    position: absolute;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    font-size: 24px;
+    line-height: 1;
+    color: var(--dim);
+    pointer-events: none;
+  }
+  .big .field:has(.unit) input {
+    padding-right: 2.75rem;
+  }
+  .times {
+    padding-bottom: 1rem;
+    font-size: 32px;
+    line-height: 1;
+    color: var(--dim);
+  }
+  /* a time as m:ss, two fields; plank and cardio share it */
+  .big-time {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .mmss {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0 0.25rem;
+  }
+  .mmss input {
+    padding: 0.25rem 0.5rem;
+    text-align: center;
+  }
+  .colon {
+    font-size: 48px;
+    line-height: 1;
+    color: var(--dim);
+  }
+  /* stopwatch running (the room's script sets .running): the time fields
+     tick in place, in leaf */
+  .big-time.running input {
+    color: var(--leaf);
+    border-color: var(--leaf);
+  }
+</style>

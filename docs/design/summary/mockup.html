@@ -1,0 +1,984 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f3d22" />
+    <title>Workout · Spotter (mockup)</title>
+    <link rel="stylesheet" href="../../../node_modules/@fontsource/press-start-2p/400.css" />
+    <link rel="stylesheet" href="../../../node_modules/@fontsource/vt323/400.css" />
+    <style id="global">
+  /* Deep green, after the Game Boy's four-shade screen. One "pixel" of
+     decoration is --px, so borders and shadows stay on the same grid. */
+  :root {
+    --ink: #0b2416;
+    --deep: #0f3d22;
+    --green: #1f6b3a;
+    --leaf: #c8e66b;
+    --paper: #e8f0d8;
+    --card: #f7fbef;
+    --muted: #3d5a45;
+    --error: #a3241b;
+    --focus: #f2c94c;
+    --green-hover: #1a5c32;
+    --leaf-hover: #d6ef86;
+    --tile: #dbe7c6;
+    --row: #eef5e1;
+    /* person states (GYM-9): always a fill under ink text, with an icon and a word */
+    --idle: #e8f0d8;
+    --lifting: #c8e66b;
+    --resting: #7cc6e8;
+    --slacking: #ff6b5e;
+    --finished: #f2c94c;
+    /* Night: the gym after hours */
+    --night: #081a10;
+    --floor: #0f2a1a;
+    --panel: #143822;
+    --edge: #3f8f5a;
+    --dim: #8fa896;
+    --px: 4px;
+    --display: "Press Start 2P", ui-monospace, monospace;
+    --body: "VT323", ui-monospace, monospace;
+    color-scheme: light;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    color: var(--ink);
+    font: 22px/1.35 var(--body);
+    /* pixel fonts have one weight; a faked bold smears them */
+    font-synthesis: none;
+    /* a faint 16 px checker, like gym floor tiles */
+    background-color: var(--paper);
+    background-image: conic-gradient(var(--tile) 25%, transparent 0 50%, var(--tile) 0 75%, transparent 0);
+    background-size: 32px 32px;
+  }
+
+  /* ---------- top bar ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--deep);
+    border-bottom: var(--px) solid var(--ink);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--paper);
+    text-decoration: none;
+    font: 16px/1 var(--display);
+    text-transform: uppercase;
+  }
+  .logo {
+    image-rendering: pixelated;
+  }
+  .topbar nav {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+  }
+  .topbar nav a,
+  .topbar .linklike {
+    color: var(--paper);
+    font: 24px/1 var(--body);
+    text-decoration: none;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .topbar nav a:hover,
+  .topbar .linklike:hover {
+    color: var(--leaf);
+  }
+  .topbar nav a[aria-current="page"] {
+    color: var(--leaf);
+    text-decoration: underline;
+    text-decoration-thickness: var(--px);
+    text-underline-offset: 6px;
+  }
+  .topbar form {
+    margin: 0;
+  }
+
+  /* ---------- page ---------- */
+  main {
+    flex: 1;
+    width: 100%;
+    max-width: 44rem;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 2rem;
+  }
+  footer {
+    padding: 1rem;
+    text-align: center;
+    border-top: var(--px) solid var(--ink);
+    background: var(--deep);
+  }
+  footer a {
+    color: var(--leaf);
+  }
+  footer a[aria-current="page"] {
+    text-decoration: none;
+  }
+  footer a[aria-current="page"]::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 0.5rem;
+    background: var(--leaf);
+    vertical-align: middle;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--display);
+    font-weight: 400;
+    line-height: 1.4;
+    margin: 0 0 1rem;
+  }
+  /* Press Start 2P is drawn on an 8 px grid: crisp only at 8, 16, 24, 32 */
+  h1 {
+    font-size: 24px;
+  }
+  h2 {
+    font-size: 16px;
+    color: var(--green);
+  }
+  h3 {
+    font-size: 16px;
+  }
+  p {
+    margin: 0 0 1rem;
+  }
+  a {
+    color: var(--green);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+  }
+
+  /* ---------- pixel panels ---------- */
+  .card {
+    position: relative;
+    margin: 0 0 1.5rem;
+    padding: 1.25rem;
+    background: var(--card);
+    border: var(--px) solid var(--ink);
+    box-shadow: var(--px) var(--px) 0 var(--green), calc(var(--px) * 2) calc(var(--px) * 2) 0 var(--ink);
+  }
+  .card > :last-child {
+    margin-bottom: 0;
+  }
+
+  /* ---------- forms ---------- */
+  label {
+    display: block;
+    margin: 1rem 0 0.35rem;
+    color: var(--deep);
+  }
+  input,
+  select {
+    width: 100%;
+    min-height: 48px;
+    padding: 0.5rem 0.75rem;
+    font: 26px/1.1 var(--body);
+    color: var(--ink);
+    background: #fff;
+    border: var(--px) solid var(--ink);
+    border-radius: 0;
+    box-shadow: inset var(--px) var(--px) 0 var(--tile);
+  }
+  select {
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%),
+      linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+    background-position: calc(100% - 22px) 50%, calc(100% - 14px) 50%;
+    background-size: 8px 8px;
+    background-repeat: no-repeat;
+    padding-right: 2.5rem;
+  }
+  button,
+  .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding: 0.75rem 1.25rem;
+    font: 16px/1.4 var(--display);
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--paper);
+    background: var(--green);
+    border: 0;
+    cursor: pointer;
+    /* a notched pixel outline plus a drop shadow; pressing moves it down */
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--ink),
+      0 var(--px) 0 var(--ink),
+      calc(var(--px) * -1) 0 0 var(--ink),
+      var(--px) 0 0 var(--ink),
+      0 calc(var(--px) * 2) 0 var(--ink),
+      inset 0 calc(var(--px) * -1) 0 var(--deep);
+    margin: var(--px) var(--px) calc(var(--px) * 2);
+    transition: transform 60ms steps(1);
+  }
+  button:hover,
+  .button:hover {
+    background: var(--green-hover);
+  }
+  button:active,
+  .button:active {
+    transform: translateY(var(--px));
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--ink),
+      0 var(--px) 0 var(--ink),
+      calc(var(--px) * -1) 0 0 var(--ink),
+      var(--px) 0 0 var(--ink);
+  }
+  .button.secondary {
+    color: var(--ink);
+    background: var(--leaf);
+  }
+  .button.secondary:hover {
+    background: var(--leaf-hover);
+  }
+  /* pending: held down, label kept, never a spinner */
+  button:disabled,
+  button:disabled:hover {
+    cursor: progress;
+    color: var(--paper);
+    background: var(--muted);
+    transform: translateY(var(--px));
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--ink),
+      0 var(--px) 0 var(--ink),
+      calc(var(--px) * -1) 0 0 var(--ink),
+      var(--px) 0 0 var(--ink);
+  }
+  .wide {
+    width: calc(100% - var(--px) * 2);
+  }
+  .topbar .linklike {
+    background: none;
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+    text-transform: none;
+  }
+  /* ink ring on Paper; the yellow one fails contrast there (1.4:1) and is
+     kept for the dark bars and Night */
+  :focus-visible {
+    outline: var(--px) solid var(--ink);
+    outline-offset: var(--px);
+  }
+  .topbar :focus-visible,
+  footer :focus-visible,
+  body.night :focus-visible {
+    outline-color: var(--focus);
+  }
+  input[aria-invalid="true"] {
+    box-shadow: inset var(--px) var(--px) 0 var(--error);
+  }
+  /* the ring reaches 8 px past a field, so the error sits 12 px below it */
+  .error {
+    margin: 0.75rem 0 0;
+    padding: 0.4rem 0.6rem;
+    color: #fff;
+    background: var(--error);
+    border-left: calc(var(--px) * 2) solid var(--ink);
+  }
+  .error a {
+    color: #fff;
+  }
+  .hint {
+    color: var(--muted);
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    align-items: center;
+    margin-top: 1.25rem;
+  }
+
+  /* ---------- Night: same components, surface colours swapped ---------- */
+  body.night {
+    color: var(--paper);
+    color-scheme: dark;
+    background-color: var(--night);
+    background-image: conic-gradient(var(--floor) 25%, transparent 0 50%, var(--floor) 0 75%, transparent 0);
+  }
+  /* the gym needs room for two columns at 900 px and up */
+  body.night main {
+    max-width: 64rem;
+  }
+  .night h2 {
+    color: var(--leaf);
+  }
+  .night label {
+    color: var(--paper);
+  }
+  .night .bubble {
+    color: var(--ink);
+  }
+  .night .hint {
+    color: var(--dim);
+  }
+  .night main a {
+    color: var(--leaf);
+  }
+  /* --green disappears on the dark floor, so primary is leaf with ink */
+  .night button,
+  .night .button {
+    color: var(--ink);
+    background: var(--leaf);
+  }
+  .night button:hover,
+  .night .button:hover {
+    background: var(--leaf-hover);
+  }
+  /* secondary on Night: night fill, paper label, the notch in --edge */
+  .night .button.secondary {
+    color: var(--paper);
+    background: var(--night);
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--edge),
+      0 var(--px) 0 var(--edge),
+      calc(var(--px) * -1) 0 0 var(--edge),
+      var(--px) 0 0 var(--edge),
+      0 calc(var(--px) * 2) 0 #000;
+  }
+  .night .button.secondary:hover {
+    background: var(--floor);
+  }
+  .night .button.secondary:active {
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--edge),
+      0 var(--px) 0 var(--edge),
+      calc(var(--px) * -1) 0 0 var(--edge),
+      var(--px) 0 0 var(--edge);
+  }
+  .night button:disabled {
+    color: var(--ink);
+    background: var(--dim);
+  }
+  .night input,
+  .night select {
+    color: var(--paper);
+    background-color: var(--night);
+    border-color: var(--edge);
+    box-shadow: inset var(--px) var(--px) 0 #000;
+  }
+  .night select {
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--paper) 50%),
+      linear-gradient(135deg, var(--paper) 50%, transparent 50%);
+  }
+  .night th,
+  .night td {
+    border-color: var(--edge);
+  }
+  .night tbody tr:nth-child(even) td {
+    background: var(--floor);
+  }
+
+  /* ---------- bits ---------- */
+  .passcode-box {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+  .passcode {
+    display: inline-block;
+    padding: 0.5rem 0.75rem;
+    font: 24px/1 var(--display);
+    letter-spacing: 0.12em;
+    color: var(--leaf);
+    background: var(--ink);
+    border: var(--px) solid var(--green);
+  }
+  .bubble {
+    position: relative;
+    margin: 0 0 1.25rem;
+    padding: 0.75rem 1rem;
+    background: var(--leaf);
+    border: var(--px) solid var(--ink);
+  }
+  .bubble::after {
+    content: "";
+    position: absolute;
+    left: 1.5rem;
+    bottom: calc(var(--px) * -3);
+    width: calc(var(--px) * 3);
+    height: calc(var(--px) * 3);
+    background: var(--leaf);
+    border-right: var(--px) solid var(--ink);
+    border-bottom: var(--px) solid var(--ink);
+    transform: skewY(45deg);
+  }
+  .roster {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .roster li {
+    padding: 0.25rem 0.6rem;
+    background: var(--paper);
+    border: var(--px) solid var(--ink);
+  }
+  .roster li::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 0.5rem;
+    background: var(--green);
+    vertical-align: middle;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 24px;
+  }
+  th {
+    font: 8px/2 var(--display);
+    text-transform: uppercase;
+    color: var(--paper);
+    background: var(--deep);
+  }
+  th,
+  td {
+    text-align: left;
+    padding: 0.5rem 0.6rem;
+    border: 2px solid var(--ink);
+  }
+  td.num,
+  th.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  tbody tr:nth-child(even) td {
+    background: var(--row);
+  }
+  .stat {
+    font-family: var(--display);
+    font-size: 8px;
+    color: var(--muted);
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    font: 8px/1 var(--display);
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--ink);
+    border: 2px solid var(--ink);
+  }
+  .chip svg {
+    flex: none;
+  }
+  .state-idle {
+    background: var(--idle);
+  }
+  .state-lifting {
+    background: var(--lifting);
+  }
+  .state-resting {
+    background: var(--resting);
+  }
+  .state-slacking {
+    background: var(--slacking);
+  }
+  .state-finished {
+    background: var(--finished);
+  }
+  .badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.15rem 0.4rem;
+    font: 8px/1.4 var(--display);
+    vertical-align: middle;
+    color: var(--ink);
+    background: var(--leaf);
+    border: 2px solid var(--ink);
+  }
+
+  @media (max-width: 420px) {
+    body {
+      font-size: 21px;
+    }
+    h1 {
+      font-size: 16px;
+    }
+    .card {
+      padding: 1rem;
+    }
+    .passcode {
+      font-size: 20px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    button,
+    .button {
+      transition: none;
+    }
+  }
+    </style>
+    <style id="page">
+      /* ===== shared: logbook =====
+         One workout is drawn the same way on /history and /workouts/:id.
+         Written identically in both mockups; move to one place
+         (a WorkoutLog.astro component, see spec.md). */
+
+      /* shared: logbook. When it was: "6:42 – 7:46 pm" */
+      .when {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      /* shared: logbook. The tally: Time, Sets, then Volume and Distance
+         only when they're above zero. 2 px ink lines come from the gaps, so
+         any count of boxes, in any arrangement, is ruled the same way. */
+      .tally {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: auto;
+        gap: 2px;
+        margin: 0 0 1rem;
+        background: var(--ink);
+        border: 2px solid var(--ink);
+      }
+      .tally div {
+        padding: 0.25rem 0.5rem;
+        background: var(--paper);
+      }
+      .tally dt {
+        font: 8px/1.4 var(--display);
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .tally dd {
+        margin: 0;
+        font-size: 28px;
+        line-height: 1.1;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      @media (max-width: 420px) {
+        /* four boxes don't fit a 360 px card in one row: 2 × 2 */
+        .tally:has(> :nth-child(4)) {
+          grid-auto-flow: row;
+          grid-template-columns: auto auto;
+        }
+      }
+
+      /* shared: logbook. The set table: one tbody per exercise, its name
+         and best set in a row header, then one written set per row. */
+      .log th.lift {
+        font: 24px/1.15 var(--body);
+        text-transform: none;
+        color: var(--ink);
+        vertical-align: top;
+      }
+      .log .best {
+        display: block;
+        margin-top: 0.25rem;
+        font-size: 21px;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      /* the figure never splits; on a phone the line breaks after "Best" */
+      .log .best span {
+        white-space: nowrap;
+      }
+      .log .set {
+        width: 1%;
+        text-align: right;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+      /* cardio: pace on its own line, so "5 km · 25:00" fits a phone */
+      .log .pace {
+        display: block;
+        font-size: 21px;
+        color: var(--muted);
+      }
+      .log tbody tr > * {
+        background: var(--card);
+      }
+      .log tbody:nth-of-type(even) tr > * {
+        background: var(--paper);
+      }
+      .log tbody + tbody tr:first-child > * {
+        border-top-width: var(--px);
+      }
+
+      /* shared: logbook. Text for screen readers only */
+      .vh {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+
+      /* ===== summary page (/workouts/:id) ===== */
+
+      /* the trophy card: you, Finished, and the numbers. Sized to fit the
+         first phone screen, so one screenshot carries it to the group chat. */
+      .trophy .bubble {
+        width: fit-content;
+        max-width: 100%;
+        margin-bottom: 1.5rem;
+      }
+      .who {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        margin: 0 0 1rem;
+      }
+      /* your avatar with its state chip under it, as on the gym floor */
+      .me-box {
+        display: flex;
+        flex: none;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .me {
+        display: block;
+        width: 64px;
+        height: 64px;
+        image-rendering: pixelated;
+      }
+      /* 4× on phones, 6× from 421 px: whole-number scales only */
+      @media (min-width: 421px) {
+        .me {
+          width: 96px;
+          height: 96px;
+        }
+      }
+      .who h1 {
+        margin: 0.5rem 0 0.5rem;
+      }
+      /* the room it happened in; "closed" only on the night it closed */
+      .room {
+        margin: 0 0 1rem;
+        color: var(--muted);
+      }
+      /* the passcode as a key tag, the same as home's room list */
+      .room .passcode {
+        padding: 0.25rem 0.5rem;
+        font-size: 16px;
+      }
+
+      /* the tally at summary size: 48 px figures, 24 px units */
+      .tally.big dd {
+        font-size: 48px;
+        line-height: 1;
+      }
+      .tally.big .unit {
+        font-size: 24px;
+      }
+      .tally.big div {
+        padding: 0.5rem 0.75rem;
+      }
+      @media (max-width: 420px) {
+        .tally.big {
+          grid-auto-flow: row;
+          grid-template-columns: auto auto;
+        }
+        .tally.big > :last-child:nth-child(odd) {
+          grid-column: 1 / -1;
+        }
+      }
+
+      /* the way out, straight under the trophy card, in the thumb zone */
+      .after {
+        margin: 0 0 1.5rem;
+      }
+      .nothing {
+        margin: 0;
+        color: var(--muted);
+      }
+    </style>
+    <style id="mockup">
+      /* mockup scaffolding only: state labels. Not part of the page. */
+      .state {
+        margin: 0 0 3rem;
+      }
+      .state + .state {
+        padding-top: 2rem;
+        border-top: calc(var(--px) * 2) dashed var(--muted);
+      }
+      .state-label {
+        display: inline-block;
+        margin: 0 0 1rem;
+        padding: 0.25rem 0.5rem;
+        font: 8px/1.4 var(--display);
+        text-transform: uppercase;
+        color: var(--paper);
+        background: var(--ink);
+      }
+      .state-note {
+        margin: 0 0 1rem;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Pixel icons on an 8 × 8 grid in currentColor, shown at 2×. The build
+         draws them with Sprite.astro from src/sprites/icons.ts. -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <symbol id="i-trophy" viewBox="0 0 8 8"><rect x="0" y="0" width="1" height="1" fill="currentColor"/><rect x="1" y="0" width="1" height="1" fill="currentColor"/><rect x="2" y="0" width="1" height="1" fill="currentColor"/><rect x="3" y="0" width="1" height="1" fill="currentColor"/><rect x="4" y="0" width="1" height="1" fill="currentColor"/><rect x="5" y="0" width="1" height="1" fill="currentColor"/><rect x="6" y="0" width="1" height="1" fill="currentColor"/><rect x="7" y="0" width="1" height="1" fill="currentColor"/><rect x="0" y="1" width="1" height="1" fill="currentColor"/><rect x="2" y="1" width="1" height="1" fill="currentColor"/><rect x="3" y="1" width="1" height="1" fill="currentColor"/><rect x="4" y="1" width="1" height="1" fill="currentColor"/><rect x="5" y="1" width="1" height="1" fill="currentColor"/><rect x="7" y="1" width="1" height="1" fill="currentColor"/><rect x="0" y="2" width="1" height="1" fill="currentColor"/><rect x="2" y="2" width="1" height="1" fill="currentColor"/><rect x="3" y="2" width="1" height="1" fill="currentColor"/><rect x="4" y="2" width="1" height="1" fill="currentColor"/><rect x="5" y="2" width="1" height="1" fill="currentColor"/><rect x="7" y="2" width="1" height="1" fill="currentColor"/><rect x="1" y="3" width="1" height="1" fill="currentColor"/><rect x="2" y="3" width="1" height="1" fill="currentColor"/><rect x="3" y="3" width="1" height="1" fill="currentColor"/><rect x="4" y="3" width="1" height="1" fill="currentColor"/><rect x="5" y="3" width="1" height="1" fill="currentColor"/><rect x="6" y="3" width="1" height="1" fill="currentColor"/><rect x="2" y="4" width="1" height="1" fill="currentColor"/><rect x="3" y="4" width="1" height="1" fill="currentColor"/><rect x="4" y="4" width="1" height="1" fill="currentColor"/><rect x="5" y="4" width="1" height="1" fill="currentColor"/><rect x="3" y="5" width="1" height="1" fill="currentColor"/><rect x="4" y="5" width="1" height="1" fill="currentColor"/><rect x="2" y="6" width="1" height="1" fill="currentColor"/><rect x="3" y="6" width="1" height="1" fill="currentColor"/><rect x="4" y="6" width="1" height="1" fill="currentColor"/><rect x="5" y="6" width="1" height="1" fill="currentColor"/><rect x="1" y="7" width="1" height="1" fill="currentColor"/><rect x="2" y="7" width="1" height="1" fill="currentColor"/><rect x="3" y="7" width="1" height="1" fill="currentColor"/><rect x="4" y="7" width="1" height="1" fill="currentColor"/><rect x="5" y="7" width="1" height="1" fill="currentColor"/><rect x="6" y="7" width="1" height="1" fill="currentColor"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 8 8"><rect x="3" y="1" width="1" height="1" fill="currentColor"/><rect x="3" y="2" width="1" height="1" fill="currentColor"/><rect x="4" y="2" width="1" height="1" fill="currentColor"/><rect x="0" y="3" width="1" height="1" fill="currentColor"/><rect x="1" y="3" width="1" height="1" fill="currentColor"/><rect x="2" y="3" width="1" height="1" fill="currentColor"/><rect x="3" y="3" width="1" height="1" fill="currentColor"/><rect x="4" y="3" width="1" height="1" fill="currentColor"/><rect x="5" y="3" width="1" height="1" fill="currentColor"/><rect x="0" y="4" width="1" height="1" fill="currentColor"/><rect x="1" y="4" width="1" height="1" fill="currentColor"/><rect x="2" y="4" width="1" height="1" fill="currentColor"/><rect x="3" y="4" width="1" height="1" fill="currentColor"/><rect x="4" y="4" width="1" height="1" fill="currentColor"/><rect x="5" y="4" width="1" height="1" fill="currentColor"/><rect x="6" y="4" width="1" height="1" fill="currentColor"/><rect x="0" y="5" width="1" height="1" fill="currentColor"/><rect x="1" y="5" width="1" height="1" fill="currentColor"/><rect x="2" y="5" width="1" height="1" fill="currentColor"/><rect x="3" y="5" width="1" height="1" fill="currentColor"/><rect x="4" y="5" width="1" height="1" fill="currentColor"/><rect x="5" y="5" width="1" height="1" fill="currentColor"/><rect x="3" y="6" width="1" height="1" fill="currentColor"/><rect x="4" y="6" width="1" height="1" fill="currentColor"/><rect x="3" y="7" width="1" height="1" fill="currentColor"/></symbol>
+    </svg>
+    <header class="topbar">
+      <a href="/" class="brand" aria-label="Spotter home">
+        <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges">
+          <rect x="0" y="2" width="2" height="4" fill="#c8e66b" />
+          <rect x="2" y="0" width="2" height="8" fill="#c8e66b" />
+          <rect x="4" y="3" width="8" height="2" fill="#e8f0d8" />
+          <rect x="12" y="0" width="2" height="8" fill="#c8e66b" />
+          <rect x="14" y="2" width="2" height="4" fill="#c8e66b" />
+        </svg>
+        <span>Spotter</span>
+      </a>
+      <nav>
+        <a href="/history">History</a>
+        <form method="post" action="/signout">
+          <button type="submit" class="linklike">Sign out</button>
+        </form>
+      </nav>
+    </header>
+    <main>
+      <!-- state: just finished -->
+      <section class="state">
+        <p class="state-label">State: just finished · mixed kinds · ?done=1</p>
+        <p class="state-note">Mia tapped Finish workout in K7M2QX and was the last one out, so the room closed behind her.</p>
+
+        <section class="card trophy" aria-labelledby="t-done">
+          <p class="bubble" role="status">In the book: about two utes of iron 🛻</p>
+          <div class="who">
+            <div class="me-box">
+              <svg class="me" viewBox="0 0 16 16" width="64" height="64" shape-rendering="crispEdges" aria-hidden="true"><rect x="5" y="1" width="6" height="1" fill="#0b2416"/><rect x="4" y="2" width="1" height="1" fill="#0b2416"/><rect x="5" y="2" width="6" height="1" fill="#3b2219"/><rect x="11" y="2" width="1" height="1" fill="#0b2416"/><rect x="3" y="3" width="1" height="1" fill="#0b2416"/><rect x="4" y="3" width="8" height="1" fill="#3b2219"/><rect x="12" y="3" width="1" height="1" fill="#0b2416"/><rect x="3" y="4" width="1" height="1" fill="#0b2416"/><rect x="4" y="4" width="1" height="1" fill="#3b2219"/><rect x="5" y="4" width="6" height="1" fill="#c68642"/><rect x="11" y="4" width="1" height="1" fill="#3b2219"/><rect x="12" y="4" width="1" height="1" fill="#0b2416"/><rect x="3" y="5" width="1" height="1" fill="#0b2416"/><rect x="4" y="5" width="1" height="1" fill="#c68642"/><rect x="5" y="5" width="1" height="1" fill="#0b2416"/><rect x="6" y="5" width="4" height="1" fill="#c68642"/><rect x="10" y="5" width="1" height="1" fill="#0b2416"/><rect x="11" y="5" width="1" height="1" fill="#c68642"/><rect x="12" y="5" width="1" height="1" fill="#0b2416"/><rect x="3" y="6" width="1" height="1" fill="#0b2416"/><rect x="4" y="6" width="8" height="1" fill="#c68642"/><rect x="12" y="6" width="1" height="1" fill="#0b2416"/><rect x="4" y="7" width="1" height="1" fill="#0b2416"/><rect x="5" y="7" width="6" height="1" fill="#c68642"/><rect x="11" y="7" width="1" height="1" fill="#0b2416"/><rect x="3" y="8" width="2" height="1" fill="#0b2416"/><rect x="5" y="8" width="6" height="1" fill="#6a4c93"/><rect x="11" y="8" width="2" height="1" fill="#0b2416"/><rect x="2" y="9" width="1" height="1" fill="#0b2416"/><rect x="3" y="9" width="10" height="1" fill="#6a4c93"/><rect x="13" y="9" width="1" height="1" fill="#0b2416"/><rect x="2" y="10" width="1" height="1" fill="#0b2416"/><rect x="3" y="10" width="10" height="1" fill="#6a4c93"/><rect x="13" y="10" width="1" height="1" fill="#0b2416"/><rect x="2" y="11" width="1" height="1" fill="#0b2416"/><rect x="3" y="11" width="1" height="1" fill="#c68642"/><rect x="4" y="11" width="1" height="1" fill="#0b2416"/><rect x="5" y="11" width="6" height="1" fill="#6a4c93"/><rect x="11" y="11" width="1" height="1" fill="#0b2416"/><rect x="12" y="11" width="1" height="1" fill="#c68642"/><rect x="13" y="11" width="1" height="1" fill="#0b2416"/><rect x="3" y="12" width="10" height="1" fill="#0b2416"/><rect x="3" y="13" width="4" height="1" fill="#0b2416"/><rect x="9" y="13" width="4" height="1" fill="#0b2416"/><rect x="3" y="14" width="1" height="1" fill="#0b2416"/><rect x="4" y="14" width="2" height="1" fill="#c68642"/><rect x="6" y="14" width="1" height="1" fill="#0b2416"/><rect x="9" y="14" width="1" height="1" fill="#0b2416"/><rect x="10" y="14" width="2" height="1" fill="#c68642"/><rect x="12" y="14" width="1" height="1" fill="#0b2416"/><rect x="3" y="15" width="4" height="1" fill="#0b2416"/><rect x="9" y="15" width="4" height="1" fill="#0b2416"/></svg>
+              <span class="chip state-finished"><svg width="16" height="16" aria-hidden="true"><use href="#i-trophy" /></svg>Finished</span>
+            </div>
+            <div>
+              <h1 id="t-done">Today</h1>
+              <p class="when"><time datetime="2026-10-08T18:42">6:42</time> – <time datetime="2026-10-08T19:46">7:46 pm</time></p>
+            </div>
+          </div>
+          <p class="room">Room <span class="passcode">K7M2QX</span> closed</p>
+          <dl class="tally big">
+            <div><dt>Time</dt><dd>64<span class="unit"> min</span></dd></div>
+            <div><dt>Sets</dt><dd>13</dd></div>
+            <div><dt>Volume</dt><dd>3,520<span class="unit"> kg</span></dd></div>
+            <div><dt>Distance</dt><dd>1.2<span class="unit"> km</span></dd></div>
+          </dl>
+        </section>
+
+        <div class="actions after">
+          <a href="/" class="button">Back home</a>
+          <a href="/history" class="button secondary">All history</a>
+        </div>
+
+        <section class="card" aria-labelledby="log-done">
+          <h2 id="log-done">Every set</h2>
+          <table class="log">
+            <thead><tr><th scope="col">Exercise</th><th scope="col" class="num">Set</th></tr></thead>
+            <tbody>
+              <tr><th scope="rowgroup" rowspan="4" class="lift">Bench press<span class="best">Best <span>82.5 kg × 8</span></span></th><td class="set">60 kg × 10</td></tr>
+              <tr><td class="set">80 kg × 8</td></tr>
+              <tr><td class="set">82.5 kg × 8</td></tr>
+              <tr><td class="set">82.5 kg × 6</td></tr>
+            </tbody>
+            <tbody>
+              <tr><th scope="rowgroup" rowspan="3" class="lift">Overhead press<span class="best">Best <span>45 kg × 8</span></span></th><td class="set">45 kg × 8</td></tr>
+              <tr><td class="set">45 kg × 7</td></tr>
+              <tr><td class="set">42.5 kg × 8</td></tr>
+            </tbody>
+            <tbody>
+              <tr><th scope="rowgroup" rowspan="3" class="lift">Pull-up<span class="best">Best <span>BW × 10</span></span></th><td class="set">BW × 10</td></tr>
+              <tr><td class="set">BW + 10 kg × 6</td></tr>
+              <tr><td class="set">BW + 10 kg × 5</td></tr>
+            </tbody>
+            <tbody>
+              <tr><th scope="rowgroup" rowspan="2" class="lift">Plank<span class="best">Best <span>1:30</span></span></th><td class="set">1:30</td></tr>
+              <tr><td class="set">1:15</td></tr>
+            </tbody>
+            <tbody>
+              <tr><th scope="rowgroup" class="lift">Incline walk</th><td class="set">1.2 km · 15:00<span class="pace">12:30 /km</span></td></tr>
+            </tbody>
+          </table>
+        </section>
+      </section>
+
+      <!-- state: revisited -->
+      <section class="state">
+        <p class="state-label">State: revisited from history · weights and bodyweight</p>
+        <p class="state-note">Opened from the "Tue 6 Oct" link on /history. No bubble, no "room closed": that was news only on the night.</p>
+
+        <section class="card trophy" aria-labelledby="t-old">
+          <div class="who">
+            <div class="me-box">
+              <svg class="me" viewBox="0 0 16 16" width="64" height="64" shape-rendering="crispEdges" aria-hidden="true"><rect x="5" y="1" width="6" height="1" fill="#0b2416"/><rect x="4" y="2" width="1" height="1" fill="#0b2416"/><rect x="5" y="2" width="6" height="1" fill="#3b2219"/><rect x="11" y="2" width="1" height="1" fill="#0b2416"/><rect x="3" y="3" width="1" height="1" fill="#0b2416"/><rect x="4" y="3" width="8" height="1" fill="#3b2219"/><rect x="12" y="3" width="1" height="1" fill="#0b2416"/><rect x="3" y="4" width="1" height="1" fill="#0b2416"/><rect x="4" y="4" width="1" height="1" fill="#3b2219"/><rect x="5" y="4" width="6" height="1" fill="#c68642"/><rect x="11" y="4" width="1" height="1" fill="#3b2219"/><rect x="12" y="4" width="1" height="1" fill="#0b2416"/><rect x="3" y="5" width="1" height="1" fill="#0b2416"/><rect x="4" y="5" width="1" height="1" fill="#c68642"/><rect x="5" y="5" width="1" height="1" fill="#0b2416"/><rect x="6" y="5" width="4" height="1" fill="#c68642"/><rect x="10" y="5" width="1" height="1" fill="#0b2416"/><rect x="11" y="5" width="1" height="1" fill="#c68642"/><rect x="12" y="5" width="1" height="1" fill="#0b2416"/><rect x="3" y="6" width="1" height="1" fill="#0b2416"/><rect x="4" y="6" width="8" height="1" fill="#c68642"/><rect x="12" y="6" width="1" height="1" fill="#0b2416"/><rect x="4" y="7" width="1" height="1" fill="#0b2416"/><rect x="5" y="7" width="6" height="1" fill="#c68642"/><rect x="11" y="7" width="1" height="1" fill="#0b2416"/><rect x="3" y="8" width="2" height="1" fill="#0b2416"/><rect x="5" y="8" width="6" height="1" fill="#6a4c93"/><rect x="11" y="8" width="2" height="1" fill="#0b2416"/><rect x="2" y="9" width="1" height="1" fill="#0b2416"/><rect x="3" y="9" width="10" height="1" fill="#6a4c93"/><rect x="13" y="9" width="1" height="1" fill="#0b2416"/><rect x="2" y="10" width="1" height="1" fill="#0b2416"/><rect x="3" y="10" width="10" height="1" fill="#6a4c93"/><rect x="13" y="10" width="1" height="1" fill="#0b2416"/><rect x="2" y="11" width="1" height="1" fill="#0b2416"/><rect x="3" y="11" width="1" height="1" fill="#c68642"/><rect x="4" y="11" width="1" height="1" fill="#0b2416"/><rect x="5" y="11" width="6" height="1" fill="#6a4c93"/><rect x="11" y="11" width="1" height="1" fill="#0b2416"/><rect x="12" y="11" width="1" height="1" fill="#c68642"/><rect x="13" y="11" width="1" height="1" fill="#0b2416"/><rect x="3" y="12" width="10" height="1" fill="#0b2416"/><rect x="3" y="13" width="4" height="1" fill="#0b2416"/><rect x="9" y="13" width="4" height="1" fill="#0b2416"/><rect x="3" y="14" width="1" height="1" fill="#0b2416"/><rect x="4" y="14" width="2" height="1" fill="#c68642"/><rect x="6" y="14" width="1" height="1" fill="#0b2416"/><rect x="9" y="14" width="1" height="1" fill="#0b2416"/><rect x="10" y="14" width="2" height="1" fill="#c68642"/><rect x="12" y="14" width="1" height="1" fill="#0b2416"/><rect x="3" y="15" width="4" height="1" fill="#0b2416"/><rect x="9" y="15" width="4" height="1" fill="#0b2416"/></svg>
+              <span class="chip state-finished"><svg width="16" height="16" aria-hidden="true"><use href="#i-trophy" /></svg>Finished</span>
+            </div>
+            <div>
+              <h1 id="t-old">Tue 6 Oct</h1>
+              <p class="when"><time datetime="2026-10-06T07:05">7:05</time> – <time datetime="2026-10-06T08:10">8:10 am</time></p>
+            </div>
+          </div>
+          <p class="room">Trained in <span class="passcode">HR4TWP</span></p>
+          <dl class="tally big">
+            <div><dt>Time</dt><dd>65<span class="unit"> min</span></dd></div>
+            <div><dt>Sets</dt><dd>12</dd></div>
+            <div><dt>Volume</dt><dd>3,680<span class="unit"> kg</span></dd></div>
+          </dl>
+        </section>
+
+        <div class="actions after">
+          <a href="/" class="button">Back home</a>
+          <a href="/history" class="button secondary">All history</a>
+        </div>
+
+        <section class="card" aria-labelledby="log-old">
+          <h2 id="log-old">Every set</h2>
+          <table class="log">
+            <thead><tr><th scope="col">Exercise</th><th scope="col" class="num">Set</th></tr></thead>
+            <tbody>
+              <tr><th scope="rowgroup" rowspan="4" class="lift">Deadlift<span class="best">Best <span>140 kg × 3</span></span></th><td class="set">100 kg × 5</td></tr>
+              <tr><td class="set">130 kg × 5</td></tr>
+              <tr><td class="set">140 kg × 3</td></tr>
+              <tr><td class="set">140 kg × 3</td></tr>
+            </tbody>
+            <tbody>
+              <tr><th scope="rowgroup" rowspan="3" class="lift">Pull-up<span class="best">Best <span>BW × 8</span></span></th><td class="set">BW × 8</td></tr>
+              <tr><td class="set">BW × 8</td></tr>
+              <tr><td class="set">BW × 7</td></tr>
+            </tbody>
+            <tbody>
+              <tr><th scope="rowgroup" rowspan="3" class="lift">Seated cable row<span class="best">Best <span>60 kg × 10</span></span></th><td class="set">55 kg × 10</td></tr>
+              <tr><td class="set">60 kg × 10</td></tr>
+              <tr><td class="set">60 kg × 9</td></tr>
+            </tbody>
+            <tbody>
+              <tr><th scope="rowgroup" rowspan="2" class="lift">Hanging leg raise<span class="best">Best <span>BW × 12</span></span></th><td class="set">BW × 12</td></tr>
+              <tr><td class="set">BW × 10</td></tr>
+            </tbody>
+          </table>
+        </section>
+      </section>
+
+      <!-- state: cardio only -->
+      <section class="state">
+        <p class="state-label">State: just finished · cardio only · ?done=1</p>
+        <p class="state-note">Ji-woo's early run: Distance takes Volume's place, and the bubble talks kilometres.</p>
+
+        <section class="card trophy" aria-labelledby="t-run">
+          <p class="bubble" role="status">In the book: 5.8 km down 🏃</p>
+          <div class="who">
+            <div class="me-box">
+              <svg class="me" viewBox="0 0 16 16" width="64" height="64" shape-rendering="crispEdges" aria-hidden="true"><rect x="5" y="1" width="6" height="1" fill="#0b2416"/><rect x="4" y="2" width="1" height="1" fill="#0b2416"/><rect x="5" y="2" width="6" height="1" fill="#3b2219"/><rect x="11" y="2" width="1" height="1" fill="#0b2416"/><rect x="3" y="3" width="1" height="1" fill="#0b2416"/><rect x="4" y="3" width="8" height="1" fill="#3b2219"/><rect x="12" y="3" width="1" height="1" fill="#0b2416"/><rect x="3" y="4" width="1" height="1" fill="#0b2416"/><rect x="4" y="4" width="1" height="1" fill="#3b2219"/><rect x="5" y="4" width="6" height="1" fill="#c68642"/><rect x="11" y="4" width="1" height="1" fill="#3b2219"/><rect x="12" y="4" width="1" height="1" fill="#0b2416"/><rect x="3" y="5" width="1" height="1" fill="#0b2416"/><rect x="4" y="5" width="1" height="1" fill="#c68642"/><rect x="5" y="5" width="1" height="1" fill="#0b2416"/><rect x="6" y="5" width="4" height="1" fill="#c68642"/><rect x="10" y="5" width="1" height="1" fill="#0b2416"/><rect x="11" y="5" width="1" height="1" fill="#c68642"/><rect x="12" y="5" width="1" height="1" fill="#0b2416"/><rect x="3" y="6" width="1" height="1" fill="#0b2416"/><rect x="4" y="6" width="8" height="1" fill="#c68642"/><rect x="12" y="6" width="1" height="1" fill="#0b2416"/><rect x="4" y="7" width="1" height="1" fill="#0b2416"/><rect x="5" y="7" width="6" height="1" fill="#c68642"/><rect x="11" y="7" width="1" height="1" fill="#0b2416"/><rect x="3" y="8" width="2" height="1" fill="#0b2416"/><rect x="5" y="8" width="6" height="1" fill="#6a4c93"/><rect x="11" y="8" width="2" height="1" fill="#0b2416"/><rect x="2" y="9" width="1" height="1" fill="#0b2416"/><rect x="3" y="9" width="10" height="1" fill="#6a4c93"/><rect x="13" y="9" width="1" height="1" fill="#0b2416"/><rect x="2" y="10" width="1" height="1" fill="#0b2416"/><rect x="3" y="10" width="10" height="1" fill="#6a4c93"/><rect x="13" y="10" width="1" height="1" fill="#0b2416"/><rect x="2" y="11" width="1" height="1" fill="#0b2416"/><rect x="3" y="11" width="1" height="1" fill="#c68642"/><rect x="4" y="11" width="1" height="1" fill="#0b2416"/><rect x="5" y="11" width="6" height="1" fill="#6a4c93"/><rect x="11" y="11" width="1" height="1" fill="#0b2416"/><rect x="12" y="11" width="1" height="1" fill="#c68642"/><rect x="13" y="11" width="1" height="1" fill="#0b2416"/><rect x="3" y="12" width="10" height="1" fill="#0b2416"/><rect x="3" y="13" width="4" height="1" fill="#0b2416"/><rect x="9" y="13" width="4" height="1" fill="#0b2416"/><rect x="3" y="14" width="1" height="1" fill="#0b2416"/><rect x="4" y="14" width="2" height="1" fill="#c68642"/><rect x="6" y="14" width="1" height="1" fill="#0b2416"/><rect x="9" y="14" width="1" height="1" fill="#0b2416"/><rect x="10" y="14" width="2" height="1" fill="#c68642"/><rect x="12" y="14" width="1" height="1" fill="#0b2416"/><rect x="3" y="15" width="4" height="1" fill="#0b2416"/><rect x="9" y="15" width="4" height="1" fill="#0b2416"/></svg>
+              <span class="chip state-finished"><svg width="16" height="16" aria-hidden="true"><use href="#i-trophy" /></svg>Finished</span>
+            </div>
+            <div>
+              <h1 id="t-run">Today</h1>
+              <p class="when"><time datetime="2026-10-08T06:10">6:10</time> – <time datetime="2026-10-08T06:48">6:48 am</time></p>
+            </div>
+          </div>
+          <p class="room">Room <span class="passcode">9BDMXE</span> closed</p>
+          <dl class="tally big">
+            <div><dt>Time</dt><dd>38<span class="unit"> min</span></dd></div>
+            <div><dt>Sets</dt><dd>2</dd></div>
+            <div><dt>Distance</dt><dd>5.8<span class="unit"> km</span></dd></div>
+          </dl>
+        </section>
+
+        <div class="actions after">
+          <a href="/" class="button">Back home</a>
+          <a href="/history" class="button secondary">All history</a>
+        </div>
+
+        <section class="card" aria-labelledby="log-run">
+          <h2 id="log-run">Every set</h2>
+          <table class="log">
+            <thead><tr><th scope="col">Exercise</th><th scope="col" class="num">Set</th></tr></thead>
+            <tbody>
+              <tr><th scope="rowgroup" class="lift">Run</th><td class="set">5 km · 25:00<span class="pace">5:00 /km</span></td></tr>
+            </tbody>
+            <tbody>
+              <tr><th scope="rowgroup" class="lift">Incline walk</th><td class="set">0.8 km · 10:00<span class="pace">12:30 /km</span></td></tr>
+            </tbody>
+          </table>
+        </section>
+      </section>
+
+      <!-- state: empty -->
+      <section class="state">
+        <p class="state-label">State: empty · a workout with no sets</p>
+        <p class="state-note">The server deletes empty workouts at Finish, so nothing links here; if one is reached anyway, it reads calmly.</p>
+
+        <section class="card trophy" aria-labelledby="t-empty">
+          <div class="who">
+            <div class="me-box">
+              <svg class="me" viewBox="0 0 16 16" width="64" height="64" shape-rendering="crispEdges" aria-hidden="true"><rect x="5" y="1" width="6" height="1" fill="#0b2416"/><rect x="4" y="2" width="1" height="1" fill="#0b2416"/><rect x="5" y="2" width="6" height="1" fill="#3b2219"/><rect x="11" y="2" width="1" height="1" fill="#0b2416"/><rect x="3" y="3" width="1" height="1" fill="#0b2416"/><rect x="4" y="3" width="8" height="1" fill="#3b2219"/><rect x="12" y="3" width="1" height="1" fill="#0b2416"/><rect x="3" y="4" width="1" height="1" fill="#0b2416"/><rect x="4" y="4" width="1" height="1" fill="#3b2219"/><rect x="5" y="4" width="6" height="1" fill="#c68642"/><rect x="11" y="4" width="1" height="1" fill="#3b2219"/><rect x="12" y="4" width="1" height="1" fill="#0b2416"/><rect x="3" y="5" width="1" height="1" fill="#0b2416"/><rect x="4" y="5" width="1" height="1" fill="#c68642"/><rect x="5" y="5" width="1" height="1" fill="#0b2416"/><rect x="6" y="5" width="4" height="1" fill="#c68642"/><rect x="10" y="5" width="1" height="1" fill="#0b2416"/><rect x="11" y="5" width="1" height="1" fill="#c68642"/><rect x="12" y="5" width="1" height="1" fill="#0b2416"/><rect x="3" y="6" width="1" height="1" fill="#0b2416"/><rect x="4" y="6" width="8" height="1" fill="#c68642"/><rect x="12" y="6" width="1" height="1" fill="#0b2416"/><rect x="4" y="7" width="1" height="1" fill="#0b2416"/><rect x="5" y="7" width="6" height="1" fill="#c68642"/><rect x="11" y="7" width="1" height="1" fill="#0b2416"/><rect x="3" y="8" width="2" height="1" fill="#0b2416"/><rect x="5" y="8" width="6" height="1" fill="#6a4c93"/><rect x="11" y="8" width="2" height="1" fill="#0b2416"/><rect x="2" y="9" width="1" height="1" fill="#0b2416"/><rect x="3" y="9" width="10" height="1" fill="#6a4c93"/><rect x="13" y="9" width="1" height="1" fill="#0b2416"/><rect x="2" y="10" width="1" height="1" fill="#0b2416"/><rect x="3" y="10" width="10" height="1" fill="#6a4c93"/><rect x="13" y="10" width="1" height="1" fill="#0b2416"/><rect x="2" y="11" width="1" height="1" fill="#0b2416"/><rect x="3" y="11" width="1" height="1" fill="#c68642"/><rect x="4" y="11" width="1" height="1" fill="#0b2416"/><rect x="5" y="11" width="6" height="1" fill="#6a4c93"/><rect x="11" y="11" width="1" height="1" fill="#0b2416"/><rect x="12" y="11" width="1" height="1" fill="#c68642"/><rect x="13" y="11" width="1" height="1" fill="#0b2416"/><rect x="3" y="12" width="10" height="1" fill="#0b2416"/><rect x="3" y="13" width="4" height="1" fill="#0b2416"/><rect x="9" y="13" width="4" height="1" fill="#0b2416"/><rect x="3" y="14" width="1" height="1" fill="#0b2416"/><rect x="4" y="14" width="2" height="1" fill="#c68642"/><rect x="6" y="14" width="1" height="1" fill="#0b2416"/><rect x="9" y="14" width="1" height="1" fill="#0b2416"/><rect x="10" y="14" width="2" height="1" fill="#c68642"/><rect x="12" y="14" width="1" height="1" fill="#0b2416"/><rect x="3" y="15" width="4" height="1" fill="#0b2416"/><rect x="9" y="15" width="4" height="1" fill="#0b2416"/></svg>
+              <span class="chip state-finished"><svg width="16" height="16" aria-hidden="true"><use href="#i-trophy" /></svg>Finished</span>
+            </div>
+            <div>
+              <h1 id="t-empty">Today</h1>
+              <p class="when"><time datetime="2026-10-08T19:58">7:58</time> – <time datetime="2026-10-08T20:00">8:00 pm</time></p>
+            </div>
+          </div>
+          <p class="room">Trained in <span class="passcode">K7M2QX</span></p>
+          <dl class="tally big">
+            <div><dt>Time</dt><dd>2<span class="unit"> min</span></dd></div>
+            <div><dt>Sets</dt><dd>0</dd></div>
+          </dl>
+        </section>
+
+        <div class="actions after">
+          <a href="/" class="button">Back home</a>
+          <a href="/history" class="button secondary">All history</a>
+        </div>
+
+        <section class="card" aria-labelledby="log-empty">
+          <h2 id="log-empty">Every set</h2>
+          <p class="nothing">No sets this time. The bar's not going anywhere 🏋️</p>
+        </section>
+      </section>
+
+      <!-- state: signed out, not yours, unfinished, pending, error -->
+      <section class="state">
+        <p class="state-label">States with no screen of their own</p>
+        <p class="state-note">Signed out: 303 to /signin?next=/workouts/31. Someone else's workout, or no such id: 404. Not finished yet: 303 to /rooms/:roomId. Pending and error: no form on the page; both actions are plain links.</p>
+      </section>
+    </main>
+    <footer>
+      <a href="/readme/">What Spotter is for</a>
+    </footer>
+  </body>
+</html>
