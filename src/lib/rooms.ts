@@ -3,6 +3,7 @@ import { db } from "./db.ts";
 import { newPasscode } from "./passcode.ts";
 import { clearPresence } from "./presence.ts";
 import { broadcast } from "./realtime.ts";
+import { releaseStation, seedStations } from "./stations.ts";
 import { roomMembers, rooms, workouts } from "./schema.ts";
 import { finishWorkout } from "./workouts.ts";
 
@@ -22,6 +23,7 @@ export function createRoom(hostUserId: number): { id: number; passcode: string }
           .returning({ id: rooms.id, passcode: rooms.passcode })
           .get();
         tx.insert(roomMembers).values({ roomId: room.id, userId: hostUserId, joinedAt: now, lastSeenAt: now }).run();
+        seedStations(room.id, now);
         return room;
       });
     } catch (err) {
@@ -65,6 +67,7 @@ export function leaveRoom(userId: number, roomId: number): number | undefined {
   const workoutId = db.transaction(() => {
     const workoutId = finishWorkout(userId, roomId);
     clearPresence(roomId, userId);
+    releaseStation(roomId, userId);
     db.update(roomMembers)
       .set({ leftAt: Date.now() })
       .where(and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)))
@@ -112,6 +115,7 @@ function closeRoom(roomId: number): void {
       .where(and(eq(roomMembers.roomId, roomId), isNull(roomMembers.leftAt)))
       .run();
     clearPresence(roomId);
+    releaseStation(roomId);
     db.update(rooms).set({ closedAt: now }).where(and(eq(rooms.id, roomId), isNull(rooms.closedAt))).run();
   });
 }

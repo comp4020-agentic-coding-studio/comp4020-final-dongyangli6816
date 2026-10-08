@@ -21,12 +21,14 @@ export const stateAt = (m: MemberView, now: number): State =>
 // Each part is [text, keep-on-one-line].
 export function whatParts(m: MemberView, now: number): [string, boolean][] {
   const state = stateAt(m, now);
-  const lift: [string, boolean][] = m.exercise ? [[` · ${m.exercise}`, false]] : [];
+  // "Rest 1:24 left · squat rack 3": where they are, once they hold a station
+  const where = m.station ? `${m.station.equipment.toLowerCase()} ${m.station.slot}` : m.exercise?.toLowerCase();
+  const lift: [string, boolean][] = where ? [[` · ${where}`, false]] : [];
   const offline: [string, boolean][] = m.away ? [[`Offline ${Math.max(1, Math.floor((now - m.seenAt) / 60_000))} min`, true]] : [];
   const sep: [string, boolean][] = offline.length ? [[" · ", false]] : [];
   switch (state) {
     case "lifting":
-      return [...offline, ...sep, [m.exercise ?? "Lifting", false]];
+      return [...offline, ...sep, [m.exercise ?? "Lifting", false], ...(m.station ? lift : [])];
     case "resting":
       return [...offline, ...sep, ["Rest ", false], [`${clock((m.restEnd! - now) / 1000)} left`, true], ...lift];
     case "slacking":

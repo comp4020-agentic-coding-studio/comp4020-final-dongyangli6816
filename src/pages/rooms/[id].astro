@@ -3,7 +3,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import SetFields, { type FieldValues } from "../../components/SetFields.astro";
 import Sprite from "../../components/Sprite.astro";
 import { db } from "../../lib/db.ts";
-import { EXERCISES, exerciseById, type Exercise } from "../../lib/exercises.ts";
+import { EQUIPMENT, EXERCISES, exerciseById, type Exercise } from "../../lib/exercises.ts";
 import { clock, distanceKm, kg, km, pace, setLabel, timeOfDay, volume } from "../../lib/logbook.ts";
 import { roomView, setFinished, setLifting, SLACK_GRACE_S, type State } from "../../lib/presence.ts";
 import { STATE_WORD, stateAt, whatParts } from "../../lib/squad.ts";
@@ -36,6 +36,7 @@ import {
   signalIcon,
   stopIcon,
   trophyIcon,
+  claimIcon,
 } from "../../sprites/icons.ts";
 
 const user = Astro.locals.user;
@@ -188,6 +189,8 @@ const view = roomView(roomId, now);
 const squad = [...view.members].sort((a, b) => Number(b.id === user.id) - Number(a.id === user.id));
 // a stand-in head for everyone until avatars arrive (AV-1)
 const memberHead = head("#3b2219", "#c68642");
+// GYM-4: the station you claimed, shown in the sheet while you're on a lift
+const myStation = !editing && exercise ? view.members.find((m) => m.id === user.id)?.station : undefined;
 
 // The fields: what was just submitted after an error, the set being edited,
 // or the last set of this exercise (LOG-3).
@@ -215,16 +218,6 @@ const values: FieldValues | undefined =
     : fieldsFrom(editing ?? prefill, exercise));
 
 const ROOM_SIZE = 12; // ROOM-4: twelve people, twelve stations
-const EQUIPMENT: Record<string, string> = {
-  treadmill: "Treadmill",
-  "flat-bench": "Flat bench",
-  "squat-rack": "Squat rack",
-  "dumbbell-rack": "Dumbbell rack",
-  "lifting-platform": "Lifting platform",
-  "pull-up-bar": "Pull-up bar",
-  "cable-machine": "Cable machine",
-  "exercise-mat": "Exercise mat",
-};
 const groups = Object.entries(EQUIPMENT).map(([key, label]) => ({
   label,
   exercises: EXERCISES.filter((e) => e.equipment === key),
@@ -592,6 +585,17 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
                 </div>
               </form>
             </details>
+            {myStation && (
+              <p class="spot">
+                <Sprite sprite={claimIcon} scale={2} />
+                <span>
+                  Your spot:{" "}
+                  <b>
+                    {myStation.equipment} {myStation.slot}
+                  </b>
+                </span>
+              </p>
+            )}
             <form method="post" class="set-form" data-kind={exercise.kind} data-exercise={exercise.id}>
               <input type="hidden" name="exercise_id" value={exercise.id} />
               {showLast &&
@@ -659,7 +663,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
               </>
             )}
             <label for="exercise">Exercise</label>
-            <select id="exercise" name="exercise">
+            <select id="exercise" name="exercise" aria-describedby="pick-hint">
               {groups.map((g) => (
                 <optgroup label={g.label}>
                   {g.exercises.map((e) => (
@@ -668,6 +672,9 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
                 </optgroup>
               ))}
             </select>
+            <p class="hint" id="pick-hint">
+              Choosing one claims a station in the gym.
+            </p>
             {error && (
               <p class="error" id="set-error" role="alert">
                 {error}
@@ -1636,6 +1643,25 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     color: var(--ink);
     background: var(--leaf);
     border-color: var(--leaf);
+  }
+  /* the station you claimed (GYM-4) */
+  .spot {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: -0.25rem 0 0.75rem;
+    color: var(--dim);
+  }
+  .spot :global(svg) {
+    flex: none;
+    color: var(--leaf);
+  }
+  .spot b {
+    font-weight: 400;
+    color: var(--paper);
+  }
+  .pick .hint {
+    margin: 0.5rem 0 0;
   }
   .last {
     margin: 0 0 0.75rem;

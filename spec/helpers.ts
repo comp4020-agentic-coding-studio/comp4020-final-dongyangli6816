@@ -56,7 +56,17 @@ export async function createRoom(b: Browser): Promise<{ path: string; passcode: 
 export type RoomEvent = {
   now: number;
   closed: boolean;
-  members: { id: number; name: string; host: boolean; state: string; away: boolean; exercise: string | null; slackAt: number | null }[];
+  members: {
+    id: number;
+    name: string;
+    host: boolean;
+    state: string;
+    away: boolean;
+    exercise: string | null;
+    station: { slot: number; equipment: string } | null;
+    slackAt: number | null;
+  }[];
+  stations: { slot: number; equipment: string | null }[];
 };
 
 export async function openEvents(b: Browser, roomPath: string) {

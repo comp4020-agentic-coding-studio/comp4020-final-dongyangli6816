@@ -16,3 +16,4 @@ export const pencilIcon = icon("......c.", ".....ccc", "....ccc.", "...ccc..", "
 // the squad list and the map's connection badge (docs/design/room/spec.md)
 export const phoneOffIcon = icon("cccc.c.c", "c..c..c.", "c..c.c.c", "c..c....", "c..c....", "cccc....", "c.cc....", "cccc....");
 export const signalIcon = icon("......c.", "........", "...cc.c.", "...cc...", "cc.cc.c.", "cc.cc...", "cc.cc.c.", "........");
+export const claimIcon = icon("cc....cc", "c......c", "........", "........", "........", "........", "c......c", "cc....cc");
