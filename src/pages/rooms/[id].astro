@@ -1032,11 +1032,12 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   const STAY = new Set(["log", "edit", "delete", "rest", "choose", "start"]);
 
   // after() runs once the new room is in, and names the control to focus
-  async function swap(url: URL, init: RequestInit, fallback: () => void, after: () => HTMLElement | null) {
+  // (the request is not called `init`, which would hide init() below)
+  async function swap(url: URL, request: RequestInit, fallback: () => void, after: () => HTMLElement | null) {
     const focused = !!document.activeElement?.closest(".gym");
     let res: Response;
     try {
-      res = await fetch(url, init);
+      res = await fetch(url, request);
     } catch {
       return fallback(); // offline or dropped: let the browser try
     }
