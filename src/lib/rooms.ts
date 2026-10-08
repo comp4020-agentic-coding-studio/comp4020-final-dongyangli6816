@@ -1,4 +1,4 @@
-import { and, eq, isNull, lt } from "drizzle-orm";
+import { and, count, eq, isNull, lt, ne } from "drizzle-orm";
 import { db } from "./db.ts";
 import { newPasscode } from "./passcode.ts";
 import { clearPresence } from "./presence.ts";
@@ -8,6 +8,7 @@ import { roomMembers, rooms, workouts } from "./schema.ts";
 import { finishWorkout } from "./workouts.ts";
 
 export const ROOM_IDLE_MS = 4 * 3_600_000; // ROOM-6
+export const ROOM_SIZE = 12; // ROOM-4: twelve people, one per station
 
 // ROOM-1: any signed-in user can create a room and becomes its host. The
 // partial unique index on open passcodes is the real guard; a collision just
@@ -32,24 +33,40 @@ export function createRoom(hostUserId: number): { id: number; passcode: string }
   }
 }
 
-// ROOM-2: joins the open room with this passcode, or returns null. Rejoining
-// a room you left brings you back rather than adding a second membership.
-export function joinRoom(userId: number, passcode: string): number | null {
+// ROOM-2, ROOM-4: joins the open room with this passcode. "none" for no open
+// room with it, "full" when twelve others are in. Someone already in, or
+// rejoining a room they left, comes back rather than adding a second
+// membership. The headcount and the join are one transaction, so two people
+// arriving for the twelfth place can't both get it.
+export type Join = { roomId: number } | { error: "none" | "full" };
+export function joinRoom(userId: number, passcode: string): Join {
   sweepIdleRooms();
-  const room = db
-    .select({ id: rooms.id })
-    .from(rooms)
-    .where(and(eq(rooms.passcode, passcode), isNull(rooms.closedAt)))
-    .get();
-  if (!room) return null;
   const now = Date.now();
-  db.insert(roomMembers)
-    .values({ roomId: room.id, userId, joinedAt: now, lastSeenAt: now })
-    .onConflictDoUpdate({ target: [roomMembers.roomId, roomMembers.userId], set: { leftAt: null, lastSeenAt: now } })
-    .run();
-  db.update(rooms).set({ lastActiveAt: now }).where(eq(rooms.id, room.id)).run();
-  broadcast(room.id);
-  return room.id;
+  const joined = db.transaction(
+    (tx): Join => {
+      const room = tx
+        .select({ id: rooms.id })
+        .from(rooms)
+        .where(and(eq(rooms.passcode, passcode), isNull(rooms.closedAt)))
+        .get();
+      if (!room) return { error: "none" };
+      const others = tx
+        .select({ n: count() })
+        .from(roomMembers)
+        .where(and(eq(roomMembers.roomId, room.id), isNull(roomMembers.leftAt), ne(roomMembers.userId, userId)))
+        .get()!.n;
+      if (others >= ROOM_SIZE) return { error: "full" };
+      tx.insert(roomMembers)
+        .values({ roomId: room.id, userId, joinedAt: now, lastSeenAt: now })
+        .onConflictDoUpdate({ target: [roomMembers.roomId, roomMembers.userId], set: { leftAt: null, lastSeenAt: now } })
+        .run();
+      tx.update(rooms).set({ lastActiveAt: now }).where(eq(rooms.id, room.id)).run();
+      return { roomId: room.id };
+    },
+    { behavior: "immediate" },
+  );
+  if ("roomId" in joined) broadcast(joined.roomId);
+  return joined;
 }
 
 export function isMember(roomId: number, userId: number): boolean {

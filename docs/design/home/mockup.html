@@ -544,11 +544,203 @@
       transition: none;
     }
   }
-    </style>
+</style>
     <style id="page">
       /* ==================================================================
-         HOME PAGE BLOCK. index.astro's <style> as built today, plus the
-         rules marked "new" for the room notices and the set kinds.
+         SHARED: lobby. Identical in home, join and avatar. Move to
+         Layout.astro (or one Lobby stylesheet) when building.
+         ================================================================== */
+
+      /* shared: lobby. The line under a card's h1 (signup's .lead, Auth) */
+      .lead {
+        margin: -0.5rem 0 1rem;
+      }
+
+      /* shared: lobby. A patch of gym floor: a deep wall along the top with
+         a green skirting line, and the page's own 16 px checker. Same rule
+         as signup's .floor (Auth), plus --s, the sprite scale, so the
+         editor can draw you bigger on whole pixels. */
+      .floor {
+        --s: 4px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        min-height: calc(var(--s) * 16 + 88px);
+        padding: 0 0.5rem 0.75rem;
+        border: var(--px) solid var(--ink);
+        border-top: calc(var(--px) * 4) solid var(--deep);
+        box-shadow: inset 0 var(--px) 0 var(--green);
+        background-color: var(--paper);
+        background-image: conic-gradient(var(--tile) 25%, transparent 0 50%, var(--tile) 0 75%, transparent 0);
+        background-size: 32px 32px;
+      }
+      /* shared: lobby. You, with your name tag, as you stand in the gym */
+      .stand {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 0;
+        max-width: 100%;
+      }
+      .nametag {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding: 0 0.5rem;
+        font: 22px/1.3 var(--body);
+        white-space: nowrap;
+        color: var(--paper);
+        background: rgb(0 0 0 / 70%);
+      }
+      .nametag.is-empty {
+        color: var(--leaf);
+      }
+      .floor .av {
+        width: calc(var(--s) * 16);
+        height: calc(var(--s) * 16);
+      }
+      .floor .av-top {
+        animation: idle 800ms steps(1) infinite;
+      }
+      @keyframes idle {
+        50% {
+          transform: translateY(1px); /* one sprite pixel */
+        }
+      }
+
+      /* shared: lobby. The avatar sprite: palette slots are classes, the
+         colours are custom properties, so a palette swap is three
+         variables (AV-2). Hex values only come from the sprite palette. */
+      .av {
+        display: block;
+        flex: none;
+      }
+      .av .k {
+        fill: var(--ink);
+      }
+      .av .s {
+        fill: var(--av-skin);
+      }
+      .av .h {
+        fill: var(--av-hair);
+      }
+      .av .t {
+        fill: var(--av-shirt);
+      }
+
+      /* shared: lobby. .code-input: ONE real <input name="passcode"> drawn as
+         six name-entry slots (home's door card, join, the invite). Press
+         Start 2P is 1em per glyph, so letter-spacing = cell - glyph drops
+         each character into its own slot with no JavaScript. */
+      .code-input {
+        --cell: 44px; /* one slot + one divider */
+        --glyph: 24px;
+        --slot-h: 48px;
+        --pad: calc((var(--cell) - var(--px) - var(--glyph)) / 2);
+        width: calc(6 * var(--cell) + var(--px) * 3);
+        max-width: 100%;
+        height: calc(var(--slot-h) + var(--px) * 4);
+        overflow: hidden;
+        border: var(--px) solid var(--ink);
+        background-color: var(--green);
+        background-image:
+          repeating-linear-gradient(
+            90deg,
+            transparent 0 calc(var(--px) + var(--pad)),
+            var(--green) 0 calc(var(--px) + var(--pad) + var(--glyph)),
+            transparent 0 var(--cell)
+          ),
+          repeating-linear-gradient(90deg, transparent 0 var(--px), var(--ink) 0 var(--cell));
+        background-size:
+          100% var(--px),
+          100% var(--slot-h);
+        background-position:
+          0 calc(var(--slot-h) - var(--px)),
+          0 var(--px);
+        background-repeat: no-repeat;
+      }
+      /* the typed field, and the invite's read-only code, sit on the slots
+         the same way */
+      .code-input input,
+      .code-input .code {
+        display: block;
+        width: calc(100% + 2 * var(--cell));
+        height: 100%;
+        min-height: 0;
+        margin: 0;
+        padding: 0 0 0 calc(var(--px) + var(--pad));
+        font: var(--glyph) / 1 var(--display);
+        letter-spacing: calc(var(--cell) - var(--glyph));
+        text-transform: uppercase;
+        white-space: nowrap;
+        color: var(--leaf);
+        caret-color: var(--leaf);
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      .code-input .code {
+        line-height: calc(var(--slot-h) + var(--px) * 2);
+      }
+      .code-input input::selection {
+        color: var(--ink);
+        background: var(--leaf);
+      }
+      .code-input input:focus-visible {
+        outline: none;
+      }
+      .code-input:focus-within {
+        outline: var(--px) solid var(--ink);
+        outline-offset: var(--px);
+      }
+      .code-input.invalid {
+        border-color: var(--error);
+      }
+      @media (min-width: 900px) {
+        .code-input {
+          --cell: 64px;
+          --glyph: 32px;
+          --slot-h: 64px;
+        }
+      }
+
+      /* shared: lobby. The line under a card: a short hint and one
+         secondary way out (join: New room / Sign in; avatar: Later). */
+      .lobby-alt {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem 1rem;
+      }
+      .lobby-alt p {
+        flex: 1 1 14rem;
+        margin: 0;
+      }
+      .lobby-alt form {
+        margin: 0;
+      }
+      /* shared: lobby. A pending or "not saved" line; no room while empty */
+      .status-line {
+        margin: 0.5rem 0 0;
+      }
+      .status-line:empty {
+        display: none;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .floor .av-top {
+          animation: none;
+        }
+      }
+
+      /* ==================================================================
+         HOME PAGE (src/pages/index.astro). index.astro's <style> as built,
+         with the rules marked "new" / "changed" for this revision.
          ================================================================== */
 
       /* signed out: the pitch */
@@ -575,7 +767,9 @@
       }
       .squad li {
         display: grid;
-        grid-template-columns: 32px 1fr auto;
+        /* changed: 32px -> 42px, each face is now the person's real avatar
+           head (14 x 11 sprite pixels at 3x) */
+        grid-template-columns: 42px 1fr auto;
         align-items: center;
         gap: 0 0.75rem;
         padding: 0.5rem 0;
@@ -583,6 +777,10 @@
       }
       .squad li:first-child {
         border-top: 0;
+      }
+      .squad .av {
+        width: 42px;
+        height: 33px;
       }
       .squad .what {
         display: block;
@@ -632,9 +830,36 @@
         margin: 0;
       }
 
-      /* new: signed in, a room you left or that closed. The passcode is the
-         same key tag as Your rooms; a closed room's key is dimmed, because
-         it no longer opens anything (the words say so too). */
+      /* new: signed in, you on your patch of floor beside the greeting.
+         The tile is a pointer shortcut to the editor; the text link is
+         the one keyboard and screen readers get. */
+      .player {
+        display: grid;
+        grid-template-columns: 9rem 1fr;
+        align-items: center;
+        gap: 0 1rem;
+        margin-bottom: 1.5rem;
+      }
+      .player h1 {
+        margin: 0 0 0.25rem;
+      }
+      .player-tile {
+        text-decoration: none;
+      }
+      .player-tile:hover .nametag {
+        color: var(--leaf);
+      }
+      .edit-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-height: 44px;
+      }
+      .edit-link svg {
+        flex: none;
+      }
+
+      /* signed in: a room you left or that closed */
       .notice .passcode {
         vertical-align: 2px;
       }
@@ -670,13 +895,10 @@
         flex: 1;
         border-top: var(--px) dashed var(--ink);
       }
-      .passcode-input {
-        font: 24px/1 var(--display);
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-      }
-      .door .hint {
-        margin: 0.5rem 0 0;
+      /* changed: the passcode field is join's .code-input (shared above),
+         so .passcode-input goes, and the hint sits above the slots as on join */
+      .door label + .hint {
+        margin: 0 0 0.5rem;
       }
 
       /* signed in: your rooms, as key tags */
@@ -702,7 +924,6 @@
       .room-keys a:hover {
         background: var(--leaf);
       }
-      /* changed: shared with .notice, so a key tag is drawn one way */
       .room-keys .passcode,
       .notice .passcode {
         padding: 0.25rem 0.5rem;
@@ -719,7 +940,6 @@
       .totals {
         display: flex;
         flex-wrap: wrap;
-        /* changed: 2rem → 1.5rem, so three figures fit one row on a 360 px phone */
         gap: 0.5rem 1.5rem;
         margin: 0 0 1rem;
       }
@@ -752,20 +972,15 @@
           font-size: 22px;
         }
       }
-
+    </style>
+    <style id="mockup-only">
       /* ==================================================================
          MOCKUP ONLY. State labels and frames; do not build these.
-         (Sprite.astro already draws crisp edges in the build.)
          ================================================================== */
-      .chip svg,
-      .px,
-      .sprite {
-        shape-rendering: crispEdges;
-      }
       .mock-state {
         margin: 0;
         padding: 0.75rem 1rem;
-        font: 8px/1.4 var(--display);
+        font: 8px/1.6 var(--display);
         text-transform: uppercase;
         color: var(--leaf);
         background: var(--ink);
@@ -780,32 +995,30 @@
         margin: 0 auto;
         padding: 1.5rem 1rem;
       }
+      .mock-note code,
+      .mock-note strong {
+        font: inherit;
+        color: var(--deep);
+      }
+      .mock-note p:last-child {
+        margin-bottom: 0;
+      }
+      /* the build uses :focus-within; the mockup fakes it */
+      .code-input.mock-focus {
+        outline: var(--px) solid var(--ink);
+        outline-offset: var(--px);
+      }
     </style>
   </head>
   <body>
-    <!-- Pixel icons, drawn on an 8 x 8 grid in currentColor and shown at 2x.
-         In the build this sheet would be a small Icon.astro component. -->
-    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
-      <symbol id="i-dumbbell" viewBox="0 0 8 8"><rect x="1" y="1" width="1" height="1" fill="currentColor"/><rect x="6" y="1" width="1" height="1" fill="currentColor"/><rect x="0" y="2" width="2" height="1" fill="currentColor"/><rect x="6" y="2" width="2" height="1" fill="currentColor"/><rect x="0" y="3" width="8" height="1" fill="currentColor"/><rect x="0" y="4" width="2" height="1" fill="currentColor"/><rect x="6" y="4" width="2" height="1" fill="currentColor"/><rect x="1" y="5" width="1" height="1" fill="currentColor"/><rect x="6" y="5" width="1" height="1" fill="currentColor"/></symbol>
-      <symbol id="i-drop" viewBox="0 0 8 8"><rect x="3" y="0" width="2" height="2" fill="currentColor"/><rect x="2" y="2" width="4" height="1" fill="currentColor"/><rect x="1" y="3" width="2" height="1" fill="currentColor"/><rect x="4" y="3" width="3" height="1" fill="currentColor"/><rect x="1" y="4" width="1" height="1" fill="currentColor"/><rect x="3" y="4" width="4" height="1" fill="currentColor"/><rect x="1" y="5" width="6" height="1" fill="currentColor"/><rect x="2" y="6" width="4" height="1" fill="currentColor"/></symbol>
-      <symbol id="i-phone" viewBox="0 0 8 8"><rect x="1" y="0" width="5" height="1" fill="currentColor"/><rect x="1" y="1" width="1" height="4" fill="currentColor"/><rect x="5" y="1" width="1" height="4" fill="currentColor"/><rect x="1" y="5" width="5" height="1" fill="currentColor"/><rect x="1" y="6" width="2" height="1" fill="currentColor"/><rect x="4" y="6" width="2" height="1" fill="currentColor"/><rect x="1" y="7" width="5" height="1" fill="currentColor"/></symbol>
-      <symbol id="i-trophy" viewBox="0 0 8 8"><rect x="0" y="0" width="8" height="1" fill="currentColor"/><rect x="0" y="1" width="1" height="2" fill="currentColor"/><rect x="2" y="1" width="4" height="2" fill="currentColor"/><rect x="7" y="1" width="1" height="2" fill="currentColor"/><rect x="1" y="3" width="6" height="1" fill="currentColor"/><rect x="2" y="4" width="4" height="1" fill="currentColor"/><rect x="3" y="5" width="2" height="1" fill="currentColor"/><rect x="2" y="6" width="4" height="1" fill="currentColor"/><rect x="1" y="7" width="6" height="1" fill="currentColor"/></symbol>
-      <symbol id="i-arrow" viewBox="0 0 8 8"><rect x="3" y="1" width="1" height="1" fill="currentColor"/><rect x="3" y="2" width="2" height="1" fill="currentColor"/><rect x="0" y="3" width="6" height="1" fill="currentColor"/><rect x="0" y="4" width="7" height="1" fill="currentColor"/><rect x="0" y="5" width="6" height="1" fill="currentColor"/><rect x="3" y="6" width="2" height="1" fill="currentColor"/><rect x="3" y="7" width="1" height="1" fill="currentColor"/></symbol>
-    </svg>
 
     <!-- ============================================================ -->
     <!-- state: signed-out -->
-    <p class="mock-state">State: signed out (landing) · no session cookie</p>
+    <p class="mock-state">State: signed out (landing) · no session cookie · unchanged apart from the squad's faces, now their real avatars</p>
     <div class="mock-frame">
       <header class="topbar">
         <a href="/" class="brand" aria-label="Spotter home">
-          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges">
-            <rect x="0" y="2" width="2" height="4" fill="#c8e66b" />
-            <rect x="2" y="0" width="2" height="8" fill="#c8e66b" />
-            <rect x="4" y="3" width="8" height="2" fill="#e8f0d8" />
-            <rect x="12" y="0" width="2" height="8" fill="#c8e66b" />
-            <rect x="14" y="2" width="2" height="4" fill="#c8e66b" />
-          </svg>
+          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><rect x="0" y="2" width="2" height="4" fill="#c8e66b" /><rect x="2" y="0" width="2" height="8" fill="#c8e66b" /><rect x="4" y="3" width="8" height="2" fill="#e8f0d8" /><rect x="12" y="0" width="2" height="8" fill="#c8e66b" /><rect x="14" y="2" width="2" height="4" fill="#c8e66b" /></svg>
           <span>Spotter</span>
         </a>
         <nav>
@@ -827,45 +1040,19 @@
           <h2 id="peek-h">What your squad sees</h2>
           <p class="bubble">Priya to Ji-woo: Put the phone down 📵</p>
           <ul class="squad">
-            <li>
-              <svg class="sprite" viewBox="0 0 8 8" width="32" height="32" aria-hidden="true" shape-rendering="crispEdges"><rect x="2" y="0" width="4" height="1" fill="#0b2416"/><rect x="1" y="1" width="1" height="1" fill="#0b2416"/><rect x="2" y="1" width="4" height="1" fill="#2b1a12"/><rect x="6" y="1" width="1" height="1" fill="#0b2416"/><rect x="0" y="2" width="1" height="1" fill="#0b2416"/><rect x="1" y="2" width="6" height="1" fill="#2b1a12"/><rect x="7" y="2" width="1" height="1" fill="#0b2416"/><rect x="0" y="3" width="1" height="1" fill="#0b2416"/><rect x="1" y="3" width="1" height="1" fill="#2b1a12"/><rect x="2" y="3" width="4" height="1" fill="#d9a77c"/><rect x="6" y="3" width="1" height="1" fill="#2b1a12"/><rect x="7" y="3" width="1" height="1" fill="#0b2416"/><rect x="0" y="4" width="1" height="1" fill="#0b2416"/><rect x="1" y="4" width="1" height="1" fill="#d9a77c"/><rect x="2" y="4" width="1" height="1" fill="#0b2416"/><rect x="3" y="4" width="2" height="1" fill="#d9a77c"/><rect x="5" y="4" width="1" height="1" fill="#0b2416"/><rect x="6" y="4" width="1" height="1" fill="#d9a77c"/><rect x="7" y="4" width="1" height="1" fill="#0b2416"/><rect x="0" y="5" width="1" height="1" fill="#0b2416"/><rect x="1" y="5" width="6" height="1" fill="#d9a77c"/><rect x="7" y="5" width="1" height="1" fill="#0b2416"/><rect x="1" y="6" width="1" height="1" fill="#0b2416"/><rect x="2" y="6" width="4" height="1" fill="#d9a77c"/><rect x="6" y="6" width="1" height="1" fill="#0b2416"/><rect x="2" y="7" width="4" height="1" fill="#0b2416"/></svg>
-              <span>Mia <span class="what">Back squat · <span class="n">100 kg × 5</span></span></span>
-              <span class="chip state-lifting"><svg width="16" height="16" aria-hidden="true"><use href="#i-dumbbell" /></svg>Lifting</span>
-            </li>
-            <li>
-              <svg class="sprite" viewBox="0 0 8 8" width="32" height="32" aria-hidden="true" shape-rendering="crispEdges"><rect x="2" y="0" width="4" height="1" fill="#0b2416"/><rect x="1" y="1" width="1" height="1" fill="#0b2416"/><rect x="2" y="1" width="4" height="1" fill="#c9a24a"/><rect x="6" y="1" width="1" height="1" fill="#0b2416"/><rect x="0" y="2" width="1" height="1" fill="#0b2416"/><rect x="1" y="2" width="6" height="1" fill="#c9a24a"/><rect x="7" y="2" width="1" height="1" fill="#0b2416"/><rect x="0" y="3" width="1" height="1" fill="#0b2416"/><rect x="1" y="3" width="1" height="1" fill="#c9a24a"/><rect x="2" y="3" width="4" height="1" fill="#f1c9a5"/><rect x="6" y="3" width="1" height="1" fill="#c9a24a"/><rect x="7" y="3" width="1" height="1" fill="#0b2416"/><rect x="0" y="4" width="1" height="1" fill="#0b2416"/><rect x="1" y="4" width="1" height="1" fill="#f1c9a5"/><rect x="2" y="4" width="1" height="1" fill="#0b2416"/><rect x="3" y="4" width="2" height="1" fill="#f1c9a5"/><rect x="5" y="4" width="1" height="1" fill="#0b2416"/><rect x="6" y="4" width="1" height="1" fill="#f1c9a5"/><rect x="7" y="4" width="1" height="1" fill="#0b2416"/><rect x="0" y="5" width="1" height="1" fill="#0b2416"/><rect x="1" y="5" width="6" height="1" fill="#f1c9a5"/><rect x="7" y="5" width="1" height="1" fill="#0b2416"/><rect x="1" y="6" width="1" height="1" fill="#0b2416"/><rect x="2" y="6" width="4" height="1" fill="#f1c9a5"/><rect x="6" y="6" width="1" height="1" fill="#0b2416"/><rect x="2" y="7" width="4" height="1" fill="#0b2416"/></svg>
-              <span>Tom <span class="what">Rest · <span class="n">1:12</span> to go</span></span>
-              <span class="chip state-resting"><svg width="16" height="16" aria-hidden="true"><use href="#i-drop" /></svg>Resting</span>
-            </li>
-            <li>
-              <svg class="sprite" viewBox="0 0 8 8" width="32" height="32" aria-hidden="true" shape-rendering="crispEdges"><rect x="2" y="0" width="4" height="1" fill="#0b2416"/><rect x="1" y="1" width="1" height="1" fill="#0b2416"/><rect x="2" y="1" width="4" height="1" fill="#3a2a5e"/><rect x="6" y="1" width="1" height="1" fill="#0b2416"/><rect x="0" y="2" width="1" height="1" fill="#0b2416"/><rect x="1" y="2" width="6" height="1" fill="#3a2a5e"/><rect x="7" y="2" width="1" height="1" fill="#0b2416"/><rect x="0" y="3" width="1" height="1" fill="#0b2416"/><rect x="1" y="3" width="1" height="1" fill="#3a2a5e"/><rect x="2" y="3" width="4" height="1" fill="#e8bf96"/><rect x="6" y="3" width="1" height="1" fill="#3a2a5e"/><rect x="7" y="3" width="1" height="1" fill="#0b2416"/><rect x="0" y="4" width="1" height="1" fill="#0b2416"/><rect x="1" y="4" width="1" height="1" fill="#e8bf96"/><rect x="2" y="4" width="1" height="1" fill="#0b2416"/><rect x="3" y="4" width="2" height="1" fill="#e8bf96"/><rect x="5" y="4" width="1" height="1" fill="#0b2416"/><rect x="6" y="4" width="1" height="1" fill="#e8bf96"/><rect x="7" y="4" width="1" height="1" fill="#0b2416"/><rect x="0" y="5" width="1" height="1" fill="#0b2416"/><rect x="1" y="5" width="6" height="1" fill="#e8bf96"/><rect x="7" y="5" width="1" height="1" fill="#0b2416"/><rect x="1" y="6" width="1" height="1" fill="#0b2416"/><rect x="2" y="6" width="4" height="1" fill="#e8bf96"/><rect x="6" y="6" width="1" height="1" fill="#0b2416"/><rect x="2" y="7" width="4" height="1" fill="#0b2416"/></svg>
-              <span>Ji-woo <span class="what">Rest · <span class="n">2:40</span> over</span></span>
-              <span class="chip state-slacking"><svg width="16" height="16" aria-hidden="true"><use href="#i-phone" /></svg>Slacking</span>
-            </li>
-            <li>
-              <svg class="sprite" viewBox="0 0 8 8" width="32" height="32" aria-hidden="true" shape-rendering="crispEdges"><rect x="2" y="0" width="4" height="1" fill="#0b2416"/><rect x="1" y="1" width="1" height="1" fill="#0b2416"/><rect x="2" y="1" width="4" height="1" fill="#1a1010"/><rect x="6" y="1" width="1" height="1" fill="#0b2416"/><rect x="0" y="2" width="1" height="1" fill="#0b2416"/><rect x="1" y="2" width="6" height="1" fill="#1a1010"/><rect x="7" y="2" width="1" height="1" fill="#0b2416"/><rect x="0" y="3" width="1" height="1" fill="#0b2416"/><rect x="1" y="3" width="1" height="1" fill="#1a1010"/><rect x="2" y="3" width="4" height="1" fill="#a86a43"/><rect x="6" y="3" width="1" height="1" fill="#1a1010"/><rect x="7" y="3" width="1" height="1" fill="#0b2416"/><rect x="0" y="4" width="1" height="1" fill="#0b2416"/><rect x="1" y="4" width="1" height="1" fill="#a86a43"/><rect x="2" y="4" width="1" height="1" fill="#0b2416"/><rect x="3" y="4" width="2" height="1" fill="#a86a43"/><rect x="5" y="4" width="1" height="1" fill="#0b2416"/><rect x="6" y="4" width="1" height="1" fill="#a86a43"/><rect x="7" y="4" width="1" height="1" fill="#0b2416"/><rect x="0" y="5" width="1" height="1" fill="#0b2416"/><rect x="1" y="5" width="6" height="1" fill="#a86a43"/><rect x="7" y="5" width="1" height="1" fill="#0b2416"/><rect x="1" y="6" width="1" height="1" fill="#0b2416"/><rect x="2" y="6" width="4" height="1" fill="#a86a43"/><rect x="6" y="6" width="1" height="1" fill="#0b2416"/><rect x="2" y="7" width="4" height="1" fill="#0b2416"/></svg>
-              <span>Priya <span class="what">16 sets · 52 min</span></span>
-              <span class="chip state-finished"><svg width="16" height="16" aria-hidden="true"><use href="#i-trophy" /></svg>Finished</span>
-            </li>
+            <li><svg class="av " viewBox="1 0 14 11" shape-rendering="crispEdges" aria-hidden="true" style="--av-skin: #d09a68; --av-hair: #4a2c1a; --av-shirt: #1f8a86"><g class="av-top"><rect x="5" y="1" width="6" height="1" class="k"/><rect x="4" y="2" width="1" height="1" class="k"/><rect x="5" y="2" width="6" height="1" class="s"/><rect x="11" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="s"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="8" height="1" class="s"/><rect x="12" y="4" width="1" height="1" class="k"/><rect x="3" y="5" width="1" height="1" class="k"/><rect x="4" y="5" width="1" height="1" class="s"/><rect x="5" y="5" width="1" height="1" class="k"/><rect x="6" y="5" width="4" height="1" class="s"/><rect x="10" y="5" width="1" height="1" class="k"/><rect x="11" y="5" width="1" height="1" class="s"/><rect x="12" y="5" width="1" height="1" class="k"/><rect x="3" y="6" width="1" height="1" class="k"/><rect x="4" y="6" width="1" height="1" class="s"/><rect x="5" y="6" width="1" height="1" class="k"/><rect x="6" y="6" width="4" height="1" class="s"/><rect x="10" y="6" width="1" height="1" class="k"/><rect x="11" y="6" width="1" height="1" class="s"/><rect x="12" y="6" width="1" height="1" class="k"/><rect x="3" y="7" width="1" height="1" class="k"/><rect x="4" y="7" width="8" height="1" class="s"/><rect x="12" y="7" width="1" height="1" class="k"/><rect x="4" y="8" width="1" height="1" class="k"/><rect x="5" y="8" width="6" height="1" class="s"/><rect x="11" y="8" width="1" height="1" class="k"/><rect x="3" y="9" width="2" height="1" class="k"/><rect x="5" y="9" width="6" height="1" class="t"/><rect x="11" y="9" width="2" height="1" class="k"/><rect x="2" y="10" width="1" height="1" class="k"/><rect x="3" y="10" width="10" height="1" class="t"/><rect x="13" y="10" width="1" height="1" class="k"/><rect x="2" y="11" width="1" height="1" class="k"/><rect x="3" y="11" width="1" height="1" class="t"/><rect x="4" y="11" width="1" height="1" class="k"/><rect x="5" y="11" width="6" height="1" class="t"/><rect x="11" y="11" width="1" height="1" class="k"/><rect x="12" y="11" width="1" height="1" class="t"/><rect x="13" y="11" width="1" height="1" class="k"/><rect x="2" y="12" width="1" height="1" class="k"/><rect x="3" y="12" width="1" height="1" class="s"/><rect x="4" y="12" width="1" height="1" class="k"/><rect x="5" y="12" width="6" height="1" class="t"/><rect x="11" y="12" width="1" height="1" class="k"/><rect x="12" y="12" width="1" height="1" class="s"/><rect x="13" y="12" width="1" height="1" class="k"/><g class="hair hair-long"><rect x="5" y="0" width="6" height="1" class="k"/><rect x="4" y="1" width="1" height="1" class="k"/><rect x="5" y="1" width="6" height="1" class="h"/><rect x="11" y="1" width="1" height="1" class="k"/><rect x="3" y="2" width="1" height="1" class="k"/><rect x="4" y="2" width="8" height="1" class="h"/><rect x="12" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="h"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="2" height="1" class="h"/><rect x="10" y="4" width="2" height="1" class="h"/><rect x="12" y="4" width="1" height="1" class="k"/><rect x="2" y="5" width="1" height="1" class="k"/><rect x="3" y="5" width="1" height="1" class="h"/><rect x="12" y="5" width="1" height="1" class="h"/><rect x="13" y="5" width="1" height="1" class="k"/><rect x="2" y="6" width="1" height="1" class="k"/><rect x="3" y="6" width="1" height="1" class="h"/><rect x="12" y="6" width="1" height="1" class="h"/><rect x="13" y="6" width="1" height="1" class="k"/><rect x="2" y="7" width="1" height="1" class="k"/><rect x="3" y="7" width="1" height="1" class="h"/><rect x="12" y="7" width="1" height="1" class="h"/><rect x="13" y="7" width="1" height="1" class="k"/><rect x="2" y="8" width="1" height="1" class="k"/><rect x="3" y="8" width="1" height="1" class="h"/><rect x="12" y="8" width="1" height="1" class="h"/><rect x="13" y="8" width="1" height="1" class="k"/><rect x="2" y="9" width="1" height="1" class="k"/><rect x="3" y="9" width="2" height="1" class="h"/><rect x="11" y="9" width="2" height="1" class="h"/><rect x="13" y="9" width="1" height="1" class="k"/><rect x="2" y="10" width="3" height="1" class="k"/><rect x="11" y="10" width="3" height="1" class="k"/></g></g><rect x="3" y="13" width="10" height="1" class="k"/><rect x="3" y="14" width="1" height="1" class="k"/><rect x="4" y="14" width="2" height="1" class="s"/><rect x="6" y="14" width="1" height="1" class="k"/><rect x="9" y="14" width="1" height="1" class="k"/><rect x="10" y="14" width="2" height="1" class="s"/><rect x="12" y="14" width="1" height="1" class="k"/><rect x="3" y="15" width="4" height="1" class="k"/><rect x="9" y="15" width="4" height="1" class="k"/></svg><span>Mia <span class="what">Back squat · <span class="n">100 kg × 5</span></span></span><span class="chip state-lifting"><svg class="" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true" width="16" height="16"><rect x="1" y="1" width="1" height="1" fill="currentColor"/><rect x="6" y="1" width="1" height="1" fill="currentColor"/><rect x="0" y="2" width="2" height="1" fill="currentColor"/><rect x="6" y="2" width="2" height="1" fill="currentColor"/><rect x="0" y="3" width="8" height="1" fill="currentColor"/><rect x="0" y="4" width="2" height="1" fill="currentColor"/><rect x="6" y="4" width="2" height="1" fill="currentColor"/><rect x="1" y="5" width="1" height="1" fill="currentColor"/><rect x="6" y="5" width="1" height="1" fill="currentColor"/></svg>Lifting</span></li>
+            <li><svg class="av " viewBox="1 0 14 11" shape-rendering="crispEdges" aria-hidden="true" style="--av-skin: #f6d7bd; --av-hair: #b5552a; --av-shirt: #2e3f7f"><g class="av-top"><rect x="5" y="1" width="6" height="1" class="k"/><rect x="4" y="2" width="1" height="1" class="k"/><rect x="5" y="2" width="6" height="1" class="s"/><rect x="11" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="s"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="8" height="1" class="s"/><rect x="12" y="4" width="1" height="1" class="k"/><rect x="3" y="5" width="1" height="1" class="k"/><rect x="4" y="5" width="1" height="1" class="s"/><rect x="5" y="5" width="1" height="1" class="k"/><rect x="6" y="5" width="4" height="1" class="s"/><rect x="10" y="5" width="1" height="1" class="k"/><rect x="11" y="5" width="1" height="1" class="s"/><rect x="12" y="5" width="1" height="1" class="k"/><rect x="3" y="6" width="1" height="1" class="k"/><rect x="4" y="6" width="1" height="1" class="s"/><rect x="5" y="6" width="1" height="1" class="k"/><rect x="6" y="6" width="4" height="1" class="s"/><rect x="10" y="6" width="1" height="1" class="k"/><rect x="11" y="6" width="1" height="1" class="s"/><rect x="12" y="6" width="1" height="1" class="k"/><rect x="3" y="7" width="1" height="1" class="k"/><rect x="4" y="7" width="8" height="1" class="s"/><rect x="12" y="7" width="1" height="1" class="k"/><rect x="4" y="8" width="1" height="1" class="k"/><rect x="5" y="8" width="6" height="1" class="s"/><rect x="11" y="8" width="1" height="1" class="k"/><rect x="3" y="9" width="2" height="1" class="k"/><rect x="5" y="9" width="6" height="1" class="t"/><rect x="11" y="9" width="2" height="1" class="k"/><rect x="2" y="10" width="1" height="1" class="k"/><rect x="3" y="10" width="10" height="1" class="t"/><rect x="13" y="10" width="1" height="1" class="k"/><rect x="2" y="11" width="1" height="1" class="k"/><rect x="3" y="11" width="1" height="1" class="t"/><rect x="4" y="11" width="1" height="1" class="k"/><rect x="5" y="11" width="6" height="1" class="t"/><rect x="11" y="11" width="1" height="1" class="k"/><rect x="12" y="11" width="1" height="1" class="t"/><rect x="13" y="11" width="1" height="1" class="k"/><rect x="2" y="12" width="1" height="1" class="k"/><rect x="3" y="12" width="1" height="1" class="s"/><rect x="4" y="12" width="1" height="1" class="k"/><rect x="5" y="12" width="6" height="1" class="t"/><rect x="11" y="12" width="1" height="1" class="k"/><rect x="12" y="12" width="1" height="1" class="s"/><rect x="13" y="12" width="1" height="1" class="k"/><g class="hair hair-crop"><rect x="5" y="0" width="6" height="1" class="k"/><rect x="4" y="1" width="1" height="1" class="k"/><rect x="5" y="1" width="6" height="1" class="h"/><rect x="11" y="1" width="1" height="1" class="k"/><rect x="3" y="2" width="1" height="1" class="k"/><rect x="4" y="2" width="8" height="1" class="h"/><rect x="12" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="h"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="1" height="1" class="h"/><rect x="11" y="4" width="1" height="1" class="h"/><rect x="12" y="4" width="1" height="1" class="k"/></g></g><rect x="3" y="13" width="10" height="1" class="k"/><rect x="3" y="14" width="1" height="1" class="k"/><rect x="4" y="14" width="2" height="1" class="s"/><rect x="6" y="14" width="1" height="1" class="k"/><rect x="9" y="14" width="1" height="1" class="k"/><rect x="10" y="14" width="2" height="1" class="s"/><rect x="12" y="14" width="1" height="1" class="k"/><rect x="3" y="15" width="4" height="1" class="k"/><rect x="9" y="15" width="4" height="1" class="k"/></svg><span>Tom <span class="what">Rest · <span class="n">1:12</span> to go</span></span><span class="chip state-resting"><svg class="" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true" width="16" height="16"><rect x="3" y="0" width="2" height="1" fill="currentColor"/><rect x="3" y="1" width="2" height="1" fill="currentColor"/><rect x="2" y="2" width="4" height="1" fill="currentColor"/><rect x="1" y="3" width="2" height="1" fill="currentColor"/><rect x="4" y="3" width="3" height="1" fill="currentColor"/><rect x="1" y="4" width="1" height="1" fill="currentColor"/><rect x="3" y="4" width="4" height="1" fill="currentColor"/><rect x="1" y="5" width="6" height="1" fill="currentColor"/><rect x="2" y="6" width="4" height="1" fill="currentColor"/></svg>Resting</span></li>
+            <li><svg class="av " viewBox="1 0 14 11" shape-rendering="crispEdges" aria-hidden="true" style="--av-skin: #e9bd94; --av-hair: #e46fae; --av-shirt: #eeeee6"><g class="av-top"><rect x="5" y="1" width="6" height="1" class="k"/><rect x="4" y="2" width="1" height="1" class="k"/><rect x="5" y="2" width="6" height="1" class="s"/><rect x="11" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="s"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="8" height="1" class="s"/><rect x="12" y="4" width="1" height="1" class="k"/><rect x="3" y="5" width="1" height="1" class="k"/><rect x="4" y="5" width="1" height="1" class="s"/><rect x="5" y="5" width="1" height="1" class="k"/><rect x="6" y="5" width="4" height="1" class="s"/><rect x="10" y="5" width="1" height="1" class="k"/><rect x="11" y="5" width="1" height="1" class="s"/><rect x="12" y="5" width="1" height="1" class="k"/><rect x="3" y="6" width="1" height="1" class="k"/><rect x="4" y="6" width="1" height="1" class="s"/><rect x="5" y="6" width="1" height="1" class="k"/><rect x="6" y="6" width="4" height="1" class="s"/><rect x="10" y="6" width="1" height="1" class="k"/><rect x="11" y="6" width="1" height="1" class="s"/><rect x="12" y="6" width="1" height="1" class="k"/><rect x="3" y="7" width="1" height="1" class="k"/><rect x="4" y="7" width="8" height="1" class="s"/><rect x="12" y="7" width="1" height="1" class="k"/><rect x="4" y="8" width="1" height="1" class="k"/><rect x="5" y="8" width="6" height="1" class="s"/><rect x="11" y="8" width="1" height="1" class="k"/><rect x="3" y="9" width="2" height="1" class="k"/><rect x="5" y="9" width="6" height="1" class="t"/><rect x="11" y="9" width="2" height="1" class="k"/><rect x="2" y="10" width="1" height="1" class="k"/><rect x="3" y="10" width="10" height="1" class="t"/><rect x="13" y="10" width="1" height="1" class="k"/><rect x="2" y="11" width="1" height="1" class="k"/><rect x="3" y="11" width="1" height="1" class="t"/><rect x="4" y="11" width="1" height="1" class="k"/><rect x="5" y="11" width="6" height="1" class="t"/><rect x="11" y="11" width="1" height="1" class="k"/><rect x="12" y="11" width="1" height="1" class="t"/><rect x="13" y="11" width="1" height="1" class="k"/><rect x="2" y="12" width="1" height="1" class="k"/><rect x="3" y="12" width="1" height="1" class="s"/><rect x="4" y="12" width="1" height="1" class="k"/><rect x="5" y="12" width="6" height="1" class="t"/><rect x="11" y="12" width="1" height="1" class="k"/><rect x="12" y="12" width="1" height="1" class="s"/><rect x="13" y="12" width="1" height="1" class="k"/><g class="hair hair-ponytail"><rect x="5" y="0" width="6" height="1" class="k"/><rect x="4" y="1" width="1" height="1" class="k"/><rect x="5" y="1" width="6" height="1" class="h"/><rect x="11" y="1" width="2" height="1" class="k"/><rect x="3" y="2" width="1" height="1" class="k"/><rect x="4" y="2" width="9" height="1" class="h"/><rect x="13" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="10" height="1" class="h"/><rect x="14" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="1" height="1" class="h"/><rect x="11" y="4" width="3" height="1" class="h"/><rect x="14" y="4" width="1" height="1" class="k"/><rect x="12" y="5" width="1" height="1" class="k"/><rect x="13" y="5" width="1" height="1" class="h"/><rect x="14" y="5" width="1" height="1" class="k"/><rect x="12" y="6" width="1" height="1" class="k"/><rect x="13" y="6" width="1" height="1" class="h"/><rect x="14" y="6" width="1" height="1" class="k"/><rect x="13" y="7" width="1" height="1" class="k"/></g></g><rect x="3" y="13" width="10" height="1" class="k"/><rect x="3" y="14" width="1" height="1" class="k"/><rect x="4" y="14" width="2" height="1" class="s"/><rect x="6" y="14" width="1" height="1" class="k"/><rect x="9" y="14" width="1" height="1" class="k"/><rect x="10" y="14" width="2" height="1" class="s"/><rect x="12" y="14" width="1" height="1" class="k"/><rect x="3" y="15" width="4" height="1" class="k"/><rect x="9" y="15" width="4" height="1" class="k"/></svg><span>Ji-woo <span class="what">Rest · <span class="n">2:40</span> over</span></span><span class="chip state-slacking"><svg class="" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true" width="16" height="16"><rect x="1" y="0" width="5" height="1" fill="currentColor"/><rect x="1" y="1" width="1" height="1" fill="currentColor"/><rect x="5" y="1" width="1" height="1" fill="currentColor"/><rect x="1" y="2" width="1" height="1" fill="currentColor"/><rect x="5" y="2" width="1" height="1" fill="currentColor"/><rect x="1" y="3" width="1" height="1" fill="currentColor"/><rect x="5" y="3" width="1" height="1" fill="currentColor"/><rect x="1" y="4" width="1" height="1" fill="currentColor"/><rect x="5" y="4" width="1" height="1" fill="currentColor"/><rect x="1" y="5" width="5" height="1" fill="currentColor"/><rect x="1" y="6" width="2" height="1" fill="currentColor"/><rect x="4" y="6" width="2" height="1" fill="currentColor"/><rect x="1" y="7" width="5" height="1" fill="currentColor"/></svg>Slacking</span></li>
+            <li><svg class="av " viewBox="1 0 14 11" shape-rendering="crispEdges" aria-hidden="true" style="--av-skin: #8a5532; --av-hair: #1d1714; --av-shirt: #e07b28"><g class="av-top"><rect x="5" y="1" width="6" height="1" class="k"/><rect x="4" y="2" width="1" height="1" class="k"/><rect x="5" y="2" width="6" height="1" class="s"/><rect x="11" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="s"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="8" height="1" class="s"/><rect x="12" y="4" width="1" height="1" class="k"/><rect x="3" y="5" width="1" height="1" class="k"/><rect x="4" y="5" width="1" height="1" class="s"/><rect x="5" y="5" width="1" height="1" class="k"/><rect x="6" y="5" width="4" height="1" class="s"/><rect x="10" y="5" width="1" height="1" class="k"/><rect x="11" y="5" width="1" height="1" class="s"/><rect x="12" y="5" width="1" height="1" class="k"/><rect x="3" y="6" width="1" height="1" class="k"/><rect x="4" y="6" width="1" height="1" class="s"/><rect x="5" y="6" width="1" height="1" class="k"/><rect x="6" y="6" width="4" height="1" class="s"/><rect x="10" y="6" width="1" height="1" class="k"/><rect x="11" y="6" width="1" height="1" class="s"/><rect x="12" y="6" width="1" height="1" class="k"/><rect x="3" y="7" width="1" height="1" class="k"/><rect x="4" y="7" width="8" height="1" class="s"/><rect x="12" y="7" width="1" height="1" class="k"/><rect x="4" y="8" width="1" height="1" class="k"/><rect x="5" y="8" width="6" height="1" class="s"/><rect x="11" y="8" width="1" height="1" class="k"/><rect x="3" y="9" width="2" height="1" class="k"/><rect x="5" y="9" width="6" height="1" class="t"/><rect x="11" y="9" width="2" height="1" class="k"/><rect x="2" y="10" width="1" height="1" class="k"/><rect x="3" y="10" width="10" height="1" class="t"/><rect x="13" y="10" width="1" height="1" class="k"/><rect x="2" y="11" width="1" height="1" class="k"/><rect x="3" y="11" width="1" height="1" class="t"/><rect x="4" y="11" width="1" height="1" class="k"/><rect x="5" y="11" width="6" height="1" class="t"/><rect x="11" y="11" width="1" height="1" class="k"/><rect x="12" y="11" width="1" height="1" class="t"/><rect x="13" y="11" width="1" height="1" class="k"/><rect x="2" y="12" width="1" height="1" class="k"/><rect x="3" y="12" width="1" height="1" class="s"/><rect x="4" y="12" width="1" height="1" class="k"/><rect x="5" y="12" width="6" height="1" class="t"/><rect x="11" y="12" width="1" height="1" class="k"/><rect x="12" y="12" width="1" height="1" class="s"/><rect x="13" y="12" width="1" height="1" class="k"/><g class="hair hair-curls"><rect x="4" y="0" width="8" height="1" class="k"/><rect x="3" y="1" width="1" height="1" class="k"/><rect x="4" y="1" width="8" height="1" class="h"/><rect x="12" y="1" width="1" height="1" class="k"/><rect x="2" y="2" width="1" height="1" class="k"/><rect x="3" y="2" width="3" height="1" class="h"/><rect x="6" y="2" width="1" height="1" class="k"/><rect x="7" y="2" width="2" height="1" class="h"/><rect x="9" y="2" width="1" height="1" class="k"/><rect x="10" y="2" width="3" height="1" class="h"/><rect x="13" y="2" width="1" height="1" class="k"/><rect x="2" y="3" width="1" height="1" class="k"/><rect x="3" y="3" width="10" height="1" class="h"/><rect x="13" y="3" width="1" height="1" class="k"/><rect x="2" y="4" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="h"/><rect x="4" y="4" width="1" height="1" class="k"/><rect x="5" y="4" width="6" height="1" class="h"/><rect x="11" y="4" width="1" height="1" class="k"/><rect x="12" y="4" width="1" height="1" class="h"/><rect x="13" y="4" width="1" height="1" class="k"/><rect x="2" y="5" width="1" height="1" class="k"/><rect x="3" y="5" width="2" height="1" class="h"/><rect x="11" y="5" width="2" height="1" class="h"/><rect x="13" y="5" width="1" height="1" class="k"/><rect x="2" y="6" width="1" height="1" class="k"/><rect x="3" y="6" width="1" height="1" class="h"/><rect x="12" y="6" width="1" height="1" class="h"/><rect x="13" y="6" width="1" height="1" class="k"/></g></g><rect x="3" y="13" width="10" height="1" class="k"/><rect x="3" y="14" width="1" height="1" class="k"/><rect x="4" y="14" width="2" height="1" class="s"/><rect x="6" y="14" width="1" height="1" class="k"/><rect x="9" y="14" width="1" height="1" class="k"/><rect x="10" y="14" width="2" height="1" class="s"/><rect x="12" y="14" width="1" height="1" class="k"/><rect x="3" y="15" width="4" height="1" class="k"/><rect x="9" y="15" width="4" height="1" class="k"/></svg><span>Priya <span class="what"><span class="n">16 sets · 52 min</span></span></span><span class="chip state-finished"><svg class="" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true" width="16" height="16"><rect x="0" y="0" width="8" height="1" fill="currentColor"/><rect x="0" y="1" width="1" height="1" fill="currentColor"/><rect x="2" y="1" width="4" height="1" fill="currentColor"/><rect x="7" y="1" width="1" height="1" fill="currentColor"/><rect x="0" y="2" width="1" height="1" fill="currentColor"/><rect x="2" y="2" width="4" height="1" fill="currentColor"/><rect x="7" y="2" width="1" height="1" fill="currentColor"/><rect x="1" y="3" width="6" height="1" fill="currentColor"/><rect x="2" y="4" width="4" height="1" fill="currentColor"/><rect x="3" y="5" width="2" height="1" fill="currentColor"/><rect x="2" y="6" width="4" height="1" fill="currentColor"/><rect x="1" y="7" width="6" height="1" fill="currentColor"/></svg>Finished</span></li>
           </ul>
         </section>
-
 
         <section class="card" aria-labelledby="howto-h">
           <h2 id="howto-h">How a session goes</h2>
           <ol class="howto">
-            <li>
-              <span class="set-no" aria-hidden="true">Set<span>1</span></span>
-              <div><h3>Open a room</h3><p>Get a passcode. Drop it in the group chat.</p></div>
-            </li>
-            <li>
-              <span class="set-no" aria-hidden="true">Set<span>2</span></span>
-              <div><h3>Log your sets</h3><p>Weight and reps, filled in from last time.</p></div>
-            </li>
-            <li>
-              <span class="set-no" aria-hidden="true">Set<span>3</span></span>
-              <div><h3>Get spotted</h3><p>Rest too long and the squad will know 👀</p></div>
-            </li>
+            <li><span class="set-no" aria-hidden="true">Set<span>1</span></span><div><h3>Open a room</h3><p>Get a passcode. Drop it in the group chat.</p></div></li>
+            <li><span class="set-no" aria-hidden="true">Set<span>2</span></span><div><h3>Log your sets</h3><p>Reps, kilos, holds or runs, filled in from last time.</p></div></li>
+            <li><span class="set-no" aria-hidden="true">Set<span>3</span></span><div><h3>Get spotted</h3><p>Rest too long and the squad will know 👀</p></div></li>
           </ol>
         </section>
         <p><a href="/readme/">Read what Spotter is for</a></p>
@@ -875,20 +1062,13 @@
       </footer>
     </div>
 
-
     <!-- ============================================================ -->
     <!-- state: signed-in-default -->
-    <p class="mock-state">State: signed in · Mia, 3 open rooms, last workout yesterday with all four kinds of set</p>
+    <p class="mock-state">State: signed in · Mia, 3 open rooms, last workout yesterday with all four kinds of set · her avatar beside the greeting</p>
     <div class="mock-frame">
       <header class="topbar">
         <a href="/" class="brand" aria-label="Spotter home">
-          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges">
-            <rect x="0" y="2" width="2" height="4" fill="#c8e66b" />
-            <rect x="2" y="0" width="2" height="8" fill="#c8e66b" />
-            <rect x="4" y="3" width="8" height="2" fill="#e8f0d8" />
-            <rect x="12" y="0" width="2" height="8" fill="#c8e66b" />
-            <rect x="14" y="2" width="2" height="4" fill="#c8e66b" />
-          </svg>
+          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><rect x="0" y="2" width="2" height="4" fill="#c8e66b" /><rect x="2" y="0" width="2" height="8" fill="#c8e66b" /><rect x="4" y="3" width="8" height="2" fill="#e8f0d8" /><rect x="12" y="0" width="2" height="8" fill="#c8e66b" /><rect x="14" y="2" width="2" height="4" fill="#c8e66b" /></svg>
           <span>Spotter</span>
         </a>
         <nav>
@@ -897,7 +1077,18 @@
         </nav>
       </header>
       <main>
-        <h1>Hi, Mia</h1>
+        <header class="player">
+          <a href="/avatar" class="floor player-tile" tabindex="-1" aria-hidden="true">
+            <span class="stand">
+              <span class="nametag">Mia</span>
+              <svg class="av " viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" style="--av-skin: #d09a68; --av-hair: #4a2c1a; --av-shirt: #1f8a86"><g class="av-top"><rect x="5" y="1" width="6" height="1" class="k"/><rect x="4" y="2" width="1" height="1" class="k"/><rect x="5" y="2" width="6" height="1" class="s"/><rect x="11" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="s"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="8" height="1" class="s"/><rect x="12" y="4" width="1" height="1" class="k"/><rect x="3" y="5" width="1" height="1" class="k"/><rect x="4" y="5" width="1" height="1" class="s"/><rect x="5" y="5" width="1" height="1" class="k"/><rect x="6" y="5" width="4" height="1" class="s"/><rect x="10" y="5" width="1" height="1" class="k"/><rect x="11" y="5" width="1" height="1" class="s"/><rect x="12" y="5" width="1" height="1" class="k"/><rect x="3" y="6" width="1" height="1" class="k"/><rect x="4" y="6" width="1" height="1" class="s"/><rect x="5" y="6" width="1" height="1" class="k"/><rect x="6" y="6" width="4" height="1" class="s"/><rect x="10" y="6" width="1" height="1" class="k"/><rect x="11" y="6" width="1" height="1" class="s"/><rect x="12" y="6" width="1" height="1" class="k"/><rect x="3" y="7" width="1" height="1" class="k"/><rect x="4" y="7" width="8" height="1" class="s"/><rect x="12" y="7" width="1" height="1" class="k"/><rect x="4" y="8" width="1" height="1" class="k"/><rect x="5" y="8" width="6" height="1" class="s"/><rect x="11" y="8" width="1" height="1" class="k"/><rect x="3" y="9" width="2" height="1" class="k"/><rect x="5" y="9" width="6" height="1" class="t"/><rect x="11" y="9" width="2" height="1" class="k"/><rect x="2" y="10" width="1" height="1" class="k"/><rect x="3" y="10" width="10" height="1" class="t"/><rect x="13" y="10" width="1" height="1" class="k"/><rect x="2" y="11" width="1" height="1" class="k"/><rect x="3" y="11" width="1" height="1" class="t"/><rect x="4" y="11" width="1" height="1" class="k"/><rect x="5" y="11" width="6" height="1" class="t"/><rect x="11" y="11" width="1" height="1" class="k"/><rect x="12" y="11" width="1" height="1" class="t"/><rect x="13" y="11" width="1" height="1" class="k"/><rect x="2" y="12" width="1" height="1" class="k"/><rect x="3" y="12" width="1" height="1" class="s"/><rect x="4" y="12" width="1" height="1" class="k"/><rect x="5" y="12" width="6" height="1" class="t"/><rect x="11" y="12" width="1" height="1" class="k"/><rect x="12" y="12" width="1" height="1" class="s"/><rect x="13" y="12" width="1" height="1" class="k"/><g class="hair hair-long"><rect x="5" y="0" width="6" height="1" class="k"/><rect x="4" y="1" width="1" height="1" class="k"/><rect x="5" y="1" width="6" height="1" class="h"/><rect x="11" y="1" width="1" height="1" class="k"/><rect x="3" y="2" width="1" height="1" class="k"/><rect x="4" y="2" width="8" height="1" class="h"/><rect x="12" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="h"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="2" height="1" class="h"/><rect x="10" y="4" width="2" height="1" class="h"/><rect x="12" y="4" width="1" height="1" class="k"/><rect x="2" y="5" width="1" height="1" class="k"/><rect x="3" y="5" width="1" height="1" class="h"/><rect x="12" y="5" width="1" height="1" class="h"/><rect x="13" y="5" width="1" height="1" class="k"/><rect x="2" y="6" width="1" height="1" class="k"/><rect x="3" y="6" width="1" height="1" class="h"/><rect x="12" y="6" width="1" height="1" class="h"/><rect x="13" y="6" width="1" height="1" class="k"/><rect x="2" y="7" width="1" height="1" class="k"/><rect x="3" y="7" width="1" height="1" class="h"/><rect x="12" y="7" width="1" height="1" class="h"/><rect x="13" y="7" width="1" height="1" class="k"/><rect x="2" y="8" width="1" height="1" class="k"/><rect x="3" y="8" width="1" height="1" class="h"/><rect x="12" y="8" width="1" height="1" class="h"/><rect x="13" y="8" width="1" height="1" class="k"/><rect x="2" y="9" width="1" height="1" class="k"/><rect x="3" y="9" width="2" height="1" class="h"/><rect x="11" y="9" width="2" height="1" class="h"/><rect x="13" y="9" width="1" height="1" class="k"/><rect x="2" y="10" width="3" height="1" class="k"/><rect x="11" y="10" width="3" height="1" class="k"/></g></g><rect x="3" y="13" width="10" height="1" class="k"/><rect x="3" y="14" width="1" height="1" class="k"/><rect x="4" y="14" width="2" height="1" class="s"/><rect x="6" y="14" width="1" height="1" class="k"/><rect x="9" y="14" width="1" height="1" class="k"/><rect x="10" y="14" width="2" height="1" class="s"/><rect x="12" y="14" width="1" height="1" class="k"/><rect x="3" y="15" width="4" height="1" class="k"/><rect x="9" y="15" width="4" height="1" class="k"/></svg>
+            </span>
+          </a>
+          <div>
+            <h1>Hi, Mia</h1>
+            <a href="/avatar" class="edit-link"><svg class="px" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true" width="16" height="16"><rect x="6" y="0" width="1" height="1" fill="currentColor"/><rect x="5" y="1" width="3" height="1" fill="currentColor"/><rect x="4" y="2" width="3" height="1" fill="currentColor"/><rect x="3" y="3" width="3" height="1" fill="currentColor"/><rect x="2" y="4" width="3" height="1" fill="currentColor"/><rect x="1" y="5" width="3" height="1" fill="currentColor"/><rect x="1" y="6" width="2" height="1" fill="currentColor"/><rect x="0" y="7" width="1" height="1" fill="currentColor"/></svg>Edit avatar</a>
+          </div>
+        </header>
 
         <section class="card door" aria-labelledby="door-h1">
           <h2 id="door-h1">Train with the squad</h2>
@@ -908,8 +1099,10 @@
           <p class="or">or join one</p>
           <form method="post" action="/join">
             <label for="passcode1">Passcode</label>
-            <input id="passcode1" name="passcode" class="passcode-input" autocomplete="off" autocapitalize="characters" maxlength="8" required aria-describedby="passcode-hint1" />
-            <p id="passcode-hint1" class="hint">Six letters and numbers, from your squad.</p>
+            <p id="passcode-hint1" class="hint">6 characters · no 0 O 1 I L</p>
+            <div class="code-input">
+              <input id="passcode1" name="passcode" value="" autocomplete="off" autocapitalize="characters" maxlength="8" required spellcheck="false" autocorrect="off" enterkeyhint="go" aria-describedby="passcode-hint1" />
+            </div>
             <div class="actions"><button type="submit" class="wide">Join</button></div>
           </form>
         </section>
@@ -918,9 +1111,9 @@
           <h2 id="rooms-h1">Your rooms</h2>
           <p class="hint">Still open, newest first.</p>
           <ul class="room-keys">
-            <li><a href="/rooms/42"><span class="passcode">K7M2QX</span><span class="when">12 min ago</span><svg class="px" width="16" height="16" aria-hidden="true"><use href="#i-arrow" /></svg></a></li>
-            <li><a href="/rooms/37"><span class="passcode">HR4TWP</span><span class="when">Yesterday</span><svg class="px" width="16" height="16" aria-hidden="true"><use href="#i-arrow" /></svg></a></li>
-            <li><a href="/rooms/31"><span class="passcode">9BDMXE</span><span class="when">3 Oct</span><svg class="px" width="16" height="16" aria-hidden="true"><use href="#i-arrow" /></svg></a></li>
+            <li><a href="/rooms/42"><span class="passcode">K7M2QX</span><span class="when">12 min ago</span><svg class="px" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true" width="16" height="16"><rect x="3" y="1" width="1" height="1" fill="currentColor"/><rect x="3" y="2" width="2" height="1" fill="currentColor"/><rect x="0" y="3" width="6" height="1" fill="currentColor"/><rect x="0" y="4" width="7" height="1" fill="currentColor"/><rect x="0" y="5" width="6" height="1" fill="currentColor"/><rect x="3" y="6" width="2" height="1" fill="currentColor"/><rect x="3" y="7" width="1" height="1" fill="currentColor"/></svg></a></li>
+            <li><a href="/rooms/37"><span class="passcode">HR4TWP</span><span class="when">Yesterday</span><svg class="px" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true" width="16" height="16"><rect x="3" y="1" width="1" height="1" fill="currentColor"/><rect x="3" y="2" width="2" height="1" fill="currentColor"/><rect x="0" y="3" width="6" height="1" fill="currentColor"/><rect x="0" y="4" width="7" height="1" fill="currentColor"/><rect x="0" y="5" width="6" height="1" fill="currentColor"/><rect x="3" y="6" width="2" height="1" fill="currentColor"/><rect x="3" y="7" width="1" height="1" fill="currentColor"/></svg></a></li>
+            <li><a href="/rooms/31"><span class="passcode">9BDMXE</span><span class="when">3 Oct</span><svg class="px" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true" width="16" height="16"><rect x="3" y="1" width="1" height="1" fill="currentColor"/><rect x="3" y="2" width="2" height="1" fill="currentColor"/><rect x="0" y="3" width="6" height="1" fill="currentColor"/><rect x="0" y="4" width="7" height="1" fill="currentColor"/><rect x="0" y="5" width="6" height="1" fill="currentColor"/><rect x="3" y="6" width="2" height="1" fill="currentColor"/><rect x="3" y="7" width="1" height="1" fill="currentColor"/></svg></a></li>
           </ul>
         </section>
 
@@ -962,13 +1155,7 @@
     <div class="mock-frame">
       <header class="topbar">
         <a href="/" class="brand" aria-label="Spotter home">
-          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges">
-            <rect x="0" y="2" width="2" height="4" fill="#c8e66b" />
-            <rect x="2" y="0" width="2" height="8" fill="#c8e66b" />
-            <rect x="4" y="3" width="8" height="2" fill="#e8f0d8" />
-            <rect x="12" y="0" width="2" height="8" fill="#c8e66b" />
-            <rect x="14" y="2" width="2" height="4" fill="#c8e66b" />
-          </svg>
+          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><rect x="0" y="2" width="2" height="4" fill="#c8e66b" /><rect x="2" y="0" width="2" height="8" fill="#c8e66b" /><rect x="4" y="3" width="8" height="2" fill="#e8f0d8" /><rect x="12" y="0" width="2" height="8" fill="#c8e66b" /><rect x="14" y="2" width="2" height="4" fill="#c8e66b" /></svg>
           <span>Spotter</span>
         </a>
         <nav>
@@ -977,7 +1164,19 @@
         </nav>
       </header>
       <main>
-        <h1>Hi, Tom</h1>
+        <header class="player">
+          <a href="/avatar" class="floor player-tile" tabindex="-1" aria-hidden="true">
+            <span class="stand">
+              <span class="nametag">Tom</span>
+              <svg class="av " viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" style="--av-skin: #f6d7bd; --av-hair: #b5552a; --av-shirt: #2e3f7f"><g class="av-top"><rect x="5" y="1" width="6" height="1" class="k"/><rect x="4" y="2" width="1" height="1" class="k"/><rect x="5" y="2" width="6" height="1" class="s"/><rect x="11" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="s"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="8" height="1" class="s"/><rect x="12" y="4" width="1" height="1" class="k"/><rect x="3" y="5" width="1" height="1" class="k"/><rect x="4" y="5" width="1" height="1" class="s"/><rect x="5" y="5" width="1" height="1" class="k"/><rect x="6" y="5" width="4" height="1" class="s"/><rect x="10" y="5" width="1" height="1" class="k"/><rect x="11" y="5" width="1" height="1" class="s"/><rect x="12" y="5" width="1" height="1" class="k"/><rect x="3" y="6" width="1" height="1" class="k"/><rect x="4" y="6" width="1" height="1" class="s"/><rect x="5" y="6" width="1" height="1" class="k"/><rect x="6" y="6" width="4" height="1" class="s"/><rect x="10" y="6" width="1" height="1" class="k"/><rect x="11" y="6" width="1" height="1" class="s"/><rect x="12" y="6" width="1" height="1" class="k"/><rect x="3" y="7" width="1" height="1" class="k"/><rect x="4" y="7" width="8" height="1" class="s"/><rect x="12" y="7" width="1" height="1" class="k"/><rect x="4" y="8" width="1" height="1" class="k"/><rect x="5" y="8" width="6" height="1" class="s"/><rect x="11" y="8" width="1" height="1" class="k"/><rect x="3" y="9" width="2" height="1" class="k"/><rect x="5" y="9" width="6" height="1" class="t"/><rect x="11" y="9" width="2" height="1" class="k"/><rect x="2" y="10" width="1" height="1" class="k"/><rect x="3" y="10" width="10" height="1" class="t"/><rect x="13" y="10" width="1" height="1" class="k"/><rect x="2" y="11" width="1" height="1" class="k"/><rect x="3" y="11" width="1" height="1" class="t"/><rect x="4" y="11" width="1" height="1" class="k"/><rect x="5" y="11" width="6" height="1" class="t"/><rect x="11" y="11" width="1" height="1" class="k"/><rect x="12" y="11" width="1" height="1" class="t"/><rect x="13" y="11" width="1" height="1" class="k"/><rect x="2" y="12" width="1" height="1" class="k"/><rect x="3" y="12" width="1" height="1" class="s"/><rect x="4" y="12" width="1" height="1" class="k"/><rect x="5" y="12" width="6" height="1" class="t"/><rect x="11" y="12" width="1" height="1" class="k"/><rect x="12" y="12" width="1" height="1" class="s"/><rect x="13" y="12" width="1" height="1" class="k"/><g class="hair hair-crop"><rect x="5" y="0" width="6" height="1" class="k"/><rect x="4" y="1" width="1" height="1" class="k"/><rect x="5" y="1" width="6" height="1" class="h"/><rect x="11" y="1" width="1" height="1" class="k"/><rect x="3" y="2" width="1" height="1" class="k"/><rect x="4" y="2" width="8" height="1" class="h"/><rect x="12" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="h"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="1" height="1" class="h"/><rect x="11" y="4" width="1" height="1" class="h"/><rect x="12" y="4" width="1" height="1" class="k"/></g></g><rect x="3" y="13" width="10" height="1" class="k"/><rect x="3" y="14" width="1" height="1" class="k"/><rect x="4" y="14" width="2" height="1" class="s"/><rect x="6" y="14" width="1" height="1" class="k"/><rect x="9" y="14" width="1" height="1" class="k"/><rect x="10" y="14" width="2" height="1" class="s"/><rect x="12" y="14" width="1" height="1" class="k"/><rect x="3" y="15" width="4" height="1" class="k"/><rect x="9" y="15" width="4" height="1" class="k"/></svg>
+            </span>
+          </a>
+          <div>
+            <h1>Hi, Tom</h1>
+            <a href="/avatar" class="edit-link"><svg class="px" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true" width="16" height="16"><rect x="6" y="0" width="1" height="1" fill="currentColor"/><rect x="5" y="1" width="3" height="1" fill="currentColor"/><rect x="4" y="2" width="3" height="1" fill="currentColor"/><rect x="3" y="3" width="3" height="1" fill="currentColor"/><rect x="2" y="4" width="3" height="1" fill="currentColor"/><rect x="1" y="5" width="3" height="1" fill="currentColor"/><rect x="1" y="6" width="2" height="1" fill="currentColor"/><rect x="0" y="7" width="1" height="1" fill="currentColor"/></svg>Edit avatar</a>
+          </div>
+        </header>
+
         <p class="bubble notice" role="status">You left room <span class="passcode">K7M2QX</span>. See you next session 👋</p>
 
         <section class="card door" aria-labelledby="door-h2">
@@ -989,8 +1188,10 @@
           <p class="or">or join one</p>
           <form method="post" action="/join">
             <label for="passcode2">Passcode</label>
-            <input id="passcode2" name="passcode" class="passcode-input" autocomplete="off" autocapitalize="characters" maxlength="8" required aria-describedby="passcode-hint2" />
-            <p id="passcode-hint2" class="hint">Six letters and numbers, from your squad.</p>
+            <p id="passcode-hint2" class="hint">6 characters · no 0 O 1 I L</p>
+            <div class="code-input">
+              <input id="passcode2" name="passcode" value="" autocomplete="off" autocapitalize="characters" maxlength="8" required spellcheck="false" autocorrect="off" enterkeyhint="go" aria-describedby="passcode-hint2" />
+            </div>
             <div class="actions"><button type="submit" class="wide">Join</button></div>
           </form>
         </section>
@@ -999,8 +1200,8 @@
           <h2 id="rooms-h2">Your rooms</h2>
           <p class="hint">Still open, newest first.</p>
           <ul class="room-keys">
-            <li><a href="/rooms/37"><span class="passcode">HR4TWP</span><span class="when">Yesterday</span><svg class="px" width="16" height="16" aria-hidden="true"><use href="#i-arrow" /></svg></a></li>
-            <li><a href="/rooms/31"><span class="passcode">9BDMXE</span><span class="when">3 Oct</span><svg class="px" width="16" height="16" aria-hidden="true"><use href="#i-arrow" /></svg></a></li>
+            <li><a href="/rooms/37"><span class="passcode">HR4TWP</span><span class="when">Yesterday</span><svg class="px" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true" width="16" height="16"><rect x="3" y="1" width="1" height="1" fill="currentColor"/><rect x="3" y="2" width="2" height="1" fill="currentColor"/><rect x="0" y="3" width="6" height="1" fill="currentColor"/><rect x="0" y="4" width="7" height="1" fill="currentColor"/><rect x="0" y="5" width="6" height="1" fill="currentColor"/><rect x="3" y="6" width="2" height="1" fill="currentColor"/><rect x="3" y="7" width="1" height="1" fill="currentColor"/></svg></a></li>
+            <li><a href="/rooms/31"><span class="passcode">9BDMXE</span><span class="when">3 Oct</span><svg class="px" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true" width="16" height="16"><rect x="3" y="1" width="1" height="1" fill="currentColor"/><rect x="3" y="2" width="2" height="1" fill="currentColor"/><rect x="0" y="3" width="6" height="1" fill="currentColor"/><rect x="0" y="4" width="7" height="1" fill="currentColor"/><rect x="0" y="5" width="6" height="1" fill="currentColor"/><rect x="3" y="6" width="2" height="1" fill="currentColor"/><rect x="3" y="7" width="1" height="1" fill="currentColor"/></svg></a></li>
           </ul>
         </section>
 
@@ -1039,13 +1240,7 @@
     <div class="mock-frame">
       <header class="topbar">
         <a href="/" class="brand" aria-label="Spotter home">
-          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges">
-            <rect x="0" y="2" width="2" height="4" fill="#c8e66b" />
-            <rect x="2" y="0" width="2" height="8" fill="#c8e66b" />
-            <rect x="4" y="3" width="8" height="2" fill="#e8f0d8" />
-            <rect x="12" y="0" width="2" height="8" fill="#c8e66b" />
-            <rect x="14" y="2" width="2" height="4" fill="#c8e66b" />
-          </svg>
+          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><rect x="0" y="2" width="2" height="4" fill="#c8e66b" /><rect x="2" y="0" width="2" height="8" fill="#c8e66b" /><rect x="4" y="3" width="8" height="2" fill="#e8f0d8" /><rect x="12" y="0" width="2" height="8" fill="#c8e66b" /><rect x="14" y="2" width="2" height="4" fill="#c8e66b" /></svg>
           <span>Spotter</span>
         </a>
         <nav>
@@ -1054,7 +1249,19 @@
         </nav>
       </header>
       <main>
-        <h1>Hi, Ji-woo</h1>
+        <header class="player">
+          <a href="/avatar" class="floor player-tile" tabindex="-1" aria-hidden="true">
+            <span class="stand">
+              <span class="nametag">Ji-woo</span>
+              <svg class="av " viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" style="--av-skin: #e9bd94; --av-hair: #e46fae; --av-shirt: #eeeee6"><g class="av-top"><rect x="5" y="1" width="6" height="1" class="k"/><rect x="4" y="2" width="1" height="1" class="k"/><rect x="5" y="2" width="6" height="1" class="s"/><rect x="11" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="s"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="8" height="1" class="s"/><rect x="12" y="4" width="1" height="1" class="k"/><rect x="3" y="5" width="1" height="1" class="k"/><rect x="4" y="5" width="1" height="1" class="s"/><rect x="5" y="5" width="1" height="1" class="k"/><rect x="6" y="5" width="4" height="1" class="s"/><rect x="10" y="5" width="1" height="1" class="k"/><rect x="11" y="5" width="1" height="1" class="s"/><rect x="12" y="5" width="1" height="1" class="k"/><rect x="3" y="6" width="1" height="1" class="k"/><rect x="4" y="6" width="1" height="1" class="s"/><rect x="5" y="6" width="1" height="1" class="k"/><rect x="6" y="6" width="4" height="1" class="s"/><rect x="10" y="6" width="1" height="1" class="k"/><rect x="11" y="6" width="1" height="1" class="s"/><rect x="12" y="6" width="1" height="1" class="k"/><rect x="3" y="7" width="1" height="1" class="k"/><rect x="4" y="7" width="8" height="1" class="s"/><rect x="12" y="7" width="1" height="1" class="k"/><rect x="4" y="8" width="1" height="1" class="k"/><rect x="5" y="8" width="6" height="1" class="s"/><rect x="11" y="8" width="1" height="1" class="k"/><rect x="3" y="9" width="2" height="1" class="k"/><rect x="5" y="9" width="6" height="1" class="t"/><rect x="11" y="9" width="2" height="1" class="k"/><rect x="2" y="10" width="1" height="1" class="k"/><rect x="3" y="10" width="10" height="1" class="t"/><rect x="13" y="10" width="1" height="1" class="k"/><rect x="2" y="11" width="1" height="1" class="k"/><rect x="3" y="11" width="1" height="1" class="t"/><rect x="4" y="11" width="1" height="1" class="k"/><rect x="5" y="11" width="6" height="1" class="t"/><rect x="11" y="11" width="1" height="1" class="k"/><rect x="12" y="11" width="1" height="1" class="t"/><rect x="13" y="11" width="1" height="1" class="k"/><rect x="2" y="12" width="1" height="1" class="k"/><rect x="3" y="12" width="1" height="1" class="s"/><rect x="4" y="12" width="1" height="1" class="k"/><rect x="5" y="12" width="6" height="1" class="t"/><rect x="11" y="12" width="1" height="1" class="k"/><rect x="12" y="12" width="1" height="1" class="s"/><rect x="13" y="12" width="1" height="1" class="k"/><g class="hair hair-ponytail"><rect x="5" y="0" width="6" height="1" class="k"/><rect x="4" y="1" width="1" height="1" class="k"/><rect x="5" y="1" width="6" height="1" class="h"/><rect x="11" y="1" width="2" height="1" class="k"/><rect x="3" y="2" width="1" height="1" class="k"/><rect x="4" y="2" width="9" height="1" class="h"/><rect x="13" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="10" height="1" class="h"/><rect x="14" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="1" height="1" class="h"/><rect x="11" y="4" width="3" height="1" class="h"/><rect x="14" y="4" width="1" height="1" class="k"/><rect x="12" y="5" width="1" height="1" class="k"/><rect x="13" y="5" width="1" height="1" class="h"/><rect x="14" y="5" width="1" height="1" class="k"/><rect x="12" y="6" width="1" height="1" class="k"/><rect x="13" y="6" width="1" height="1" class="h"/><rect x="14" y="6" width="1" height="1" class="k"/><rect x="13" y="7" width="1" height="1" class="k"/></g></g><rect x="3" y="13" width="10" height="1" class="k"/><rect x="3" y="14" width="1" height="1" class="k"/><rect x="4" y="14" width="2" height="1" class="s"/><rect x="6" y="14" width="1" height="1" class="k"/><rect x="9" y="14" width="1" height="1" class="k"/><rect x="10" y="14" width="2" height="1" class="s"/><rect x="12" y="14" width="1" height="1" class="k"/><rect x="3" y="15" width="4" height="1" class="k"/><rect x="9" y="15" width="4" height="1" class="k"/></svg>
+            </span>
+          </a>
+          <div>
+            <h1>Hi, Ji-woo</h1>
+            <a href="/avatar" class="edit-link"><svg class="px" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true" width="16" height="16"><rect x="6" y="0" width="1" height="1" fill="currentColor"/><rect x="5" y="1" width="3" height="1" fill="currentColor"/><rect x="4" y="2" width="3" height="1" fill="currentColor"/><rect x="3" y="3" width="3" height="1" fill="currentColor"/><rect x="2" y="4" width="3" height="1" fill="currentColor"/><rect x="1" y="5" width="3" height="1" fill="currentColor"/><rect x="1" y="6" width="2" height="1" fill="currentColor"/><rect x="0" y="7" width="1" height="1" fill="currentColor"/></svg>Edit avatar</a>
+          </div>
+        </header>
+
         <p class="bubble notice" role="status">Room <span class="passcode closed">9BDMXE</span> has closed, so we wrapped up your workout. Every set is safe in <a href="/history">your history</a> 📒</p>
 
         <section class="card door" aria-labelledby="door-h3">
@@ -1066,8 +1273,10 @@
           <p class="or">or join one</p>
           <form method="post" action="/join">
             <label for="passcode3">Passcode</label>
-            <input id="passcode3" name="passcode" class="passcode-input" autocomplete="off" autocapitalize="characters" maxlength="8" required aria-describedby="passcode-hint3" />
-            <p id="passcode-hint3" class="hint">Six letters and numbers, from your squad.</p>
+            <p id="passcode-hint3" class="hint">6 characters · no 0 O 1 I L</p>
+            <div class="code-input">
+              <input id="passcode3" name="passcode" value="" autocomplete="off" autocapitalize="characters" maxlength="8" required spellcheck="false" autocorrect="off" enterkeyhint="go" aria-describedby="passcode-hint3" />
+            </div>
             <div class="actions"><button type="submit" class="wide">Join</button></div>
           </form>
         </section>
@@ -1102,17 +1311,11 @@
 
     <!-- ============================================================ -->
     <!-- state: ended (nothing logged) -->
-    <p class="mock-state">State: ended, nothing logged there · /?ended=9BDMXE · Priya never logged in that room (rest of the page as usual)</p>
+    <p class="mock-state">State: ended, nothing logged there · /?ended=9BDMXE · Priya never logged in that room (rest of the page as usual, cut short here)</p>
     <div class="mock-frame">
       <header class="topbar">
         <a href="/" class="brand" aria-label="Spotter home">
-          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges">
-            <rect x="0" y="2" width="2" height="4" fill="#c8e66b" />
-            <rect x="2" y="0" width="2" height="8" fill="#c8e66b" />
-            <rect x="4" y="3" width="8" height="2" fill="#e8f0d8" />
-            <rect x="12" y="0" width="2" height="8" fill="#c8e66b" />
-            <rect x="14" y="2" width="2" height="4" fill="#c8e66b" />
-          </svg>
+          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><rect x="0" y="2" width="2" height="4" fill="#c8e66b" /><rect x="2" y="0" width="2" height="8" fill="#c8e66b" /><rect x="4" y="3" width="8" height="2" fill="#e8f0d8" /><rect x="12" y="0" width="2" height="8" fill="#c8e66b" /><rect x="14" y="2" width="2" height="4" fill="#c8e66b" /></svg>
           <span>Spotter</span>
         </a>
         <nav>
@@ -1121,7 +1324,19 @@
         </nav>
       </header>
       <main>
-        <h1>Hi, Priya</h1>
+        <header class="player">
+          <a href="/avatar" class="floor player-tile" tabindex="-1" aria-hidden="true">
+            <span class="stand">
+              <span class="nametag">Priya</span>
+              <svg class="av " viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" style="--av-skin: #8a5532; --av-hair: #1d1714; --av-shirt: #e07b28"><g class="av-top"><rect x="5" y="1" width="6" height="1" class="k"/><rect x="4" y="2" width="1" height="1" class="k"/><rect x="5" y="2" width="6" height="1" class="s"/><rect x="11" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="s"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="8" height="1" class="s"/><rect x="12" y="4" width="1" height="1" class="k"/><rect x="3" y="5" width="1" height="1" class="k"/><rect x="4" y="5" width="1" height="1" class="s"/><rect x="5" y="5" width="1" height="1" class="k"/><rect x="6" y="5" width="4" height="1" class="s"/><rect x="10" y="5" width="1" height="1" class="k"/><rect x="11" y="5" width="1" height="1" class="s"/><rect x="12" y="5" width="1" height="1" class="k"/><rect x="3" y="6" width="1" height="1" class="k"/><rect x="4" y="6" width="1" height="1" class="s"/><rect x="5" y="6" width="1" height="1" class="k"/><rect x="6" y="6" width="4" height="1" class="s"/><rect x="10" y="6" width="1" height="1" class="k"/><rect x="11" y="6" width="1" height="1" class="s"/><rect x="12" y="6" width="1" height="1" class="k"/><rect x="3" y="7" width="1" height="1" class="k"/><rect x="4" y="7" width="8" height="1" class="s"/><rect x="12" y="7" width="1" height="1" class="k"/><rect x="4" y="8" width="1" height="1" class="k"/><rect x="5" y="8" width="6" height="1" class="s"/><rect x="11" y="8" width="1" height="1" class="k"/><rect x="3" y="9" width="2" height="1" class="k"/><rect x="5" y="9" width="6" height="1" class="t"/><rect x="11" y="9" width="2" height="1" class="k"/><rect x="2" y="10" width="1" height="1" class="k"/><rect x="3" y="10" width="10" height="1" class="t"/><rect x="13" y="10" width="1" height="1" class="k"/><rect x="2" y="11" width="1" height="1" class="k"/><rect x="3" y="11" width="1" height="1" class="t"/><rect x="4" y="11" width="1" height="1" class="k"/><rect x="5" y="11" width="6" height="1" class="t"/><rect x="11" y="11" width="1" height="1" class="k"/><rect x="12" y="11" width="1" height="1" class="t"/><rect x="13" y="11" width="1" height="1" class="k"/><rect x="2" y="12" width="1" height="1" class="k"/><rect x="3" y="12" width="1" height="1" class="s"/><rect x="4" y="12" width="1" height="1" class="k"/><rect x="5" y="12" width="6" height="1" class="t"/><rect x="11" y="12" width="1" height="1" class="k"/><rect x="12" y="12" width="1" height="1" class="s"/><rect x="13" y="12" width="1" height="1" class="k"/><g class="hair hair-curls"><rect x="4" y="0" width="8" height="1" class="k"/><rect x="3" y="1" width="1" height="1" class="k"/><rect x="4" y="1" width="8" height="1" class="h"/><rect x="12" y="1" width="1" height="1" class="k"/><rect x="2" y="2" width="1" height="1" class="k"/><rect x="3" y="2" width="3" height="1" class="h"/><rect x="6" y="2" width="1" height="1" class="k"/><rect x="7" y="2" width="2" height="1" class="h"/><rect x="9" y="2" width="1" height="1" class="k"/><rect x="10" y="2" width="3" height="1" class="h"/><rect x="13" y="2" width="1" height="1" class="k"/><rect x="2" y="3" width="1" height="1" class="k"/><rect x="3" y="3" width="10" height="1" class="h"/><rect x="13" y="3" width="1" height="1" class="k"/><rect x="2" y="4" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="h"/><rect x="4" y="4" width="1" height="1" class="k"/><rect x="5" y="4" width="6" height="1" class="h"/><rect x="11" y="4" width="1" height="1" class="k"/><rect x="12" y="4" width="1" height="1" class="h"/><rect x="13" y="4" width="1" height="1" class="k"/><rect x="2" y="5" width="1" height="1" class="k"/><rect x="3" y="5" width="2" height="1" class="h"/><rect x="11" y="5" width="2" height="1" class="h"/><rect x="13" y="5" width="1" height="1" class="k"/><rect x="2" y="6" width="1" height="1" class="k"/><rect x="3" y="6" width="1" height="1" class="h"/><rect x="12" y="6" width="1" height="1" class="h"/><rect x="13" y="6" width="1" height="1" class="k"/></g></g><rect x="3" y="13" width="10" height="1" class="k"/><rect x="3" y="14" width="1" height="1" class="k"/><rect x="4" y="14" width="2" height="1" class="s"/><rect x="6" y="14" width="1" height="1" class="k"/><rect x="9" y="14" width="1" height="1" class="k"/><rect x="10" y="14" width="2" height="1" class="s"/><rect x="12" y="14" width="1" height="1" class="k"/><rect x="3" y="15" width="4" height="1" class="k"/><rect x="9" y="15" width="4" height="1" class="k"/></svg>
+            </span>
+          </a>
+          <div>
+            <h1>Hi, Priya</h1>
+            <a href="/avatar" class="edit-link"><svg class="px" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true" width="16" height="16"><rect x="6" y="0" width="1" height="1" fill="currentColor"/><rect x="5" y="1" width="3" height="1" fill="currentColor"/><rect x="4" y="2" width="3" height="1" fill="currentColor"/><rect x="3" y="3" width="3" height="1" fill="currentColor"/><rect x="2" y="4" width="3" height="1" fill="currentColor"/><rect x="1" y="5" width="3" height="1" fill="currentColor"/><rect x="1" y="6" width="2" height="1" fill="currentColor"/><rect x="0" y="7" width="1" height="1" fill="currentColor"/></svg>Edit avatar</a>
+          </div>
+        </header>
+
         <p class="bubble notice" role="status">Room <span class="passcode closed">9BDMXE</span> has closed. Start a new one below and send the squad the code 📲</p>
 
         <section class="card door" aria-labelledby="door-h4">
@@ -1133,27 +1348,26 @@
           <p class="or">or join one</p>
           <form method="post" action="/join">
             <label for="passcode4">Passcode</label>
-            <input id="passcode4" name="passcode" class="passcode-input" autocomplete="off" autocapitalize="characters" maxlength="8" required aria-describedby="passcode-hint4" />
-            <p id="passcode-hint4" class="hint">Six letters and numbers, from your squad.</p>
+            <p id="passcode-hint4" class="hint">6 characters · no 0 O 1 I L</p>
+            <div class="code-input">
+              <input id="passcode4" name="passcode" value="" autocomplete="off" autocapitalize="characters" maxlength="8" required spellcheck="false" autocorrect="off" enterkeyhint="go" aria-describedby="passcode-hint4" />
+            </div>
             <div class="actions"><button type="submit" class="wide">Join</button></div>
           </form>
         </section>
       </main>
+      <footer>
+        <a href="/readme/">What Spotter is for</a>
+      </footer>
     </div>
 
     <!-- ============================================================ -->
     <!-- state: signed-in-first-use (empty) -->
-    <p class="mock-state">State: first use (empty) · Priya just signed up, no rooms, no workouts</p>
+    <p class="mock-state">State: first use (empty) · Priya just signed up (or tapped Later in the editor): her random avatar, no rooms, no workouts</p>
     <div class="mock-frame">
       <header class="topbar">
         <a href="/" class="brand" aria-label="Spotter home">
-          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges">
-            <rect x="0" y="2" width="2" height="4" fill="#c8e66b" />
-            <rect x="2" y="0" width="2" height="8" fill="#c8e66b" />
-            <rect x="4" y="3" width="8" height="2" fill="#e8f0d8" />
-            <rect x="12" y="0" width="2" height="8" fill="#c8e66b" />
-            <rect x="14" y="2" width="2" height="4" fill="#c8e66b" />
-          </svg>
+          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><rect x="0" y="2" width="2" height="4" fill="#c8e66b" /><rect x="2" y="0" width="2" height="8" fill="#c8e66b" /><rect x="4" y="3" width="8" height="2" fill="#e8f0d8" /><rect x="12" y="0" width="2" height="8" fill="#c8e66b" /><rect x="14" y="2" width="2" height="4" fill="#c8e66b" /></svg>
           <span>Spotter</span>
         </a>
         <nav>
@@ -1162,7 +1376,19 @@
         </nav>
       </header>
       <main>
-        <h1>Hi, Priya</h1>
+        <header class="player">
+          <a href="/avatar" class="floor player-tile" tabindex="-1" aria-hidden="true">
+            <span class="stand">
+              <span class="nametag">Priya</span>
+              <svg class="av " viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" style="--av-skin: #8a5532; --av-hair: #4d6bd6; --av-shirt: #6a4c93"><g class="av-top"><rect x="5" y="1" width="6" height="1" class="k"/><rect x="4" y="2" width="1" height="1" class="k"/><rect x="5" y="2" width="6" height="1" class="s"/><rect x="11" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="s"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="8" height="1" class="s"/><rect x="12" y="4" width="1" height="1" class="k"/><rect x="3" y="5" width="1" height="1" class="k"/><rect x="4" y="5" width="1" height="1" class="s"/><rect x="5" y="5" width="1" height="1" class="k"/><rect x="6" y="5" width="4" height="1" class="s"/><rect x="10" y="5" width="1" height="1" class="k"/><rect x="11" y="5" width="1" height="1" class="s"/><rect x="12" y="5" width="1" height="1" class="k"/><rect x="3" y="6" width="1" height="1" class="k"/><rect x="4" y="6" width="1" height="1" class="s"/><rect x="5" y="6" width="1" height="1" class="k"/><rect x="6" y="6" width="4" height="1" class="s"/><rect x="10" y="6" width="1" height="1" class="k"/><rect x="11" y="6" width="1" height="1" class="s"/><rect x="12" y="6" width="1" height="1" class="k"/><rect x="3" y="7" width="1" height="1" class="k"/><rect x="4" y="7" width="8" height="1" class="s"/><rect x="12" y="7" width="1" height="1" class="k"/><rect x="4" y="8" width="1" height="1" class="k"/><rect x="5" y="8" width="6" height="1" class="s"/><rect x="11" y="8" width="1" height="1" class="k"/><rect x="3" y="9" width="2" height="1" class="k"/><rect x="5" y="9" width="6" height="1" class="t"/><rect x="11" y="9" width="2" height="1" class="k"/><rect x="2" y="10" width="1" height="1" class="k"/><rect x="3" y="10" width="10" height="1" class="t"/><rect x="13" y="10" width="1" height="1" class="k"/><rect x="2" y="11" width="1" height="1" class="k"/><rect x="3" y="11" width="1" height="1" class="t"/><rect x="4" y="11" width="1" height="1" class="k"/><rect x="5" y="11" width="6" height="1" class="t"/><rect x="11" y="11" width="1" height="1" class="k"/><rect x="12" y="11" width="1" height="1" class="t"/><rect x="13" y="11" width="1" height="1" class="k"/><rect x="2" y="12" width="1" height="1" class="k"/><rect x="3" y="12" width="1" height="1" class="s"/><rect x="4" y="12" width="1" height="1" class="k"/><rect x="5" y="12" width="6" height="1" class="t"/><rect x="11" y="12" width="1" height="1" class="k"/><rect x="12" y="12" width="1" height="1" class="s"/><rect x="13" y="12" width="1" height="1" class="k"/><g class="hair hair-crop"><rect x="5" y="0" width="6" height="1" class="k"/><rect x="4" y="1" width="1" height="1" class="k"/><rect x="5" y="1" width="6" height="1" class="h"/><rect x="11" y="1" width="1" height="1" class="k"/><rect x="3" y="2" width="1" height="1" class="k"/><rect x="4" y="2" width="8" height="1" class="h"/><rect x="12" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="h"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="1" height="1" class="h"/><rect x="11" y="4" width="1" height="1" class="h"/><rect x="12" y="4" width="1" height="1" class="k"/></g></g><rect x="3" y="13" width="10" height="1" class="k"/><rect x="3" y="14" width="1" height="1" class="k"/><rect x="4" y="14" width="2" height="1" class="s"/><rect x="6" y="14" width="1" height="1" class="k"/><rect x="9" y="14" width="1" height="1" class="k"/><rect x="10" y="14" width="2" height="1" class="s"/><rect x="12" y="14" width="1" height="1" class="k"/><rect x="3" y="15" width="4" height="1" class="k"/><rect x="9" y="15" width="4" height="1" class="k"/></svg>
+            </span>
+          </a>
+          <div>
+            <h1>Hi, Priya</h1>
+            <a href="/avatar" class="edit-link"><svg class="px" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true" width="16" height="16"><rect x="6" y="0" width="1" height="1" fill="currentColor"/><rect x="5" y="1" width="3" height="1" fill="currentColor"/><rect x="4" y="2" width="3" height="1" fill="currentColor"/><rect x="3" y="3" width="3" height="1" fill="currentColor"/><rect x="2" y="4" width="3" height="1" fill="currentColor"/><rect x="1" y="5" width="3" height="1" fill="currentColor"/><rect x="1" y="6" width="2" height="1" fill="currentColor"/><rect x="0" y="7" width="1" height="1" fill="currentColor"/></svg>Edit avatar</a>
+          </div>
+        </header>
+
         <p class="bubble">New here? Join your squad's room, or start one and send the code 📲</p>
 
         <section class="card door" aria-labelledby="door-h5">
@@ -1174,8 +1400,10 @@
           <p class="or">or join one</p>
           <form method="post" action="/join">
             <label for="passcode5">Passcode</label>
-            <input id="passcode5" name="passcode" class="passcode-input" autocomplete="off" autocapitalize="characters" maxlength="8" required aria-describedby="passcode-hint5" />
-            <p id="passcode-hint5" class="hint">Six letters and numbers, from your squad.</p>
+            <p id="passcode-hint5" class="hint">6 characters · no 0 O 1 I L</p>
+            <div class="code-input">
+              <input id="passcode5" name="passcode" value="" autocomplete="off" autocapitalize="characters" maxlength="8" required spellcheck="false" autocorrect="off" enterkeyhint="go" aria-describedby="passcode-hint5" />
+            </div>
             <div class="actions"><button type="submit" class="wide">Join</button></div>
           </form>
         </section>
@@ -1200,17 +1428,11 @@
 
     <!-- ============================================================ -->
     <!-- state: pending -->
-    <p class="mock-state">State: pending · Mia tapped Join on a slow connection (rest of the page unchanged)</p>
+    <p class="mock-state">State: pending · Mia tapped Join on a slow connection (rest of the page unchanged, cut short here)</p>
     <div class="mock-frame">
       <header class="topbar">
         <a href="/" class="brand" aria-label="Spotter home">
-          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges">
-            <rect x="0" y="2" width="2" height="4" fill="#c8e66b" />
-            <rect x="2" y="0" width="2" height="8" fill="#c8e66b" />
-            <rect x="4" y="3" width="8" height="2" fill="#e8f0d8" />
-            <rect x="12" y="0" width="2" height="8" fill="#c8e66b" />
-            <rect x="14" y="2" width="2" height="4" fill="#c8e66b" />
-          </svg>
+          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><rect x="0" y="2" width="2" height="4" fill="#c8e66b" /><rect x="2" y="0" width="2" height="8" fill="#c8e66b" /><rect x="4" y="3" width="8" height="2" fill="#e8f0d8" /><rect x="12" y="0" width="2" height="8" fill="#c8e66b" /><rect x="14" y="2" width="2" height="4" fill="#c8e66b" /></svg>
           <span>Spotter</span>
         </a>
         <nav>
@@ -1219,7 +1441,19 @@
         </nav>
       </header>
       <main>
-        <h1>Hi, Mia</h1>
+        <header class="player">
+          <a href="/avatar" class="floor player-tile" tabindex="-1" aria-hidden="true">
+            <span class="stand">
+              <span class="nametag">Mia</span>
+              <svg class="av " viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" style="--av-skin: #d09a68; --av-hair: #4a2c1a; --av-shirt: #1f8a86"><g class="av-top"><rect x="5" y="1" width="6" height="1" class="k"/><rect x="4" y="2" width="1" height="1" class="k"/><rect x="5" y="2" width="6" height="1" class="s"/><rect x="11" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="s"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="8" height="1" class="s"/><rect x="12" y="4" width="1" height="1" class="k"/><rect x="3" y="5" width="1" height="1" class="k"/><rect x="4" y="5" width="1" height="1" class="s"/><rect x="5" y="5" width="1" height="1" class="k"/><rect x="6" y="5" width="4" height="1" class="s"/><rect x="10" y="5" width="1" height="1" class="k"/><rect x="11" y="5" width="1" height="1" class="s"/><rect x="12" y="5" width="1" height="1" class="k"/><rect x="3" y="6" width="1" height="1" class="k"/><rect x="4" y="6" width="1" height="1" class="s"/><rect x="5" y="6" width="1" height="1" class="k"/><rect x="6" y="6" width="4" height="1" class="s"/><rect x="10" y="6" width="1" height="1" class="k"/><rect x="11" y="6" width="1" height="1" class="s"/><rect x="12" y="6" width="1" height="1" class="k"/><rect x="3" y="7" width="1" height="1" class="k"/><rect x="4" y="7" width="8" height="1" class="s"/><rect x="12" y="7" width="1" height="1" class="k"/><rect x="4" y="8" width="1" height="1" class="k"/><rect x="5" y="8" width="6" height="1" class="s"/><rect x="11" y="8" width="1" height="1" class="k"/><rect x="3" y="9" width="2" height="1" class="k"/><rect x="5" y="9" width="6" height="1" class="t"/><rect x="11" y="9" width="2" height="1" class="k"/><rect x="2" y="10" width="1" height="1" class="k"/><rect x="3" y="10" width="10" height="1" class="t"/><rect x="13" y="10" width="1" height="1" class="k"/><rect x="2" y="11" width="1" height="1" class="k"/><rect x="3" y="11" width="1" height="1" class="t"/><rect x="4" y="11" width="1" height="1" class="k"/><rect x="5" y="11" width="6" height="1" class="t"/><rect x="11" y="11" width="1" height="1" class="k"/><rect x="12" y="11" width="1" height="1" class="t"/><rect x="13" y="11" width="1" height="1" class="k"/><rect x="2" y="12" width="1" height="1" class="k"/><rect x="3" y="12" width="1" height="1" class="s"/><rect x="4" y="12" width="1" height="1" class="k"/><rect x="5" y="12" width="6" height="1" class="t"/><rect x="11" y="12" width="1" height="1" class="k"/><rect x="12" y="12" width="1" height="1" class="s"/><rect x="13" y="12" width="1" height="1" class="k"/><g class="hair hair-long"><rect x="5" y="0" width="6" height="1" class="k"/><rect x="4" y="1" width="1" height="1" class="k"/><rect x="5" y="1" width="6" height="1" class="h"/><rect x="11" y="1" width="1" height="1" class="k"/><rect x="3" y="2" width="1" height="1" class="k"/><rect x="4" y="2" width="8" height="1" class="h"/><rect x="12" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="h"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="2" height="1" class="h"/><rect x="10" y="4" width="2" height="1" class="h"/><rect x="12" y="4" width="1" height="1" class="k"/><rect x="2" y="5" width="1" height="1" class="k"/><rect x="3" y="5" width="1" height="1" class="h"/><rect x="12" y="5" width="1" height="1" class="h"/><rect x="13" y="5" width="1" height="1" class="k"/><rect x="2" y="6" width="1" height="1" class="k"/><rect x="3" y="6" width="1" height="1" class="h"/><rect x="12" y="6" width="1" height="1" class="h"/><rect x="13" y="6" width="1" height="1" class="k"/><rect x="2" y="7" width="1" height="1" class="k"/><rect x="3" y="7" width="1" height="1" class="h"/><rect x="12" y="7" width="1" height="1" class="h"/><rect x="13" y="7" width="1" height="1" class="k"/><rect x="2" y="8" width="1" height="1" class="k"/><rect x="3" y="8" width="1" height="1" class="h"/><rect x="12" y="8" width="1" height="1" class="h"/><rect x="13" y="8" width="1" height="1" class="k"/><rect x="2" y="9" width="1" height="1" class="k"/><rect x="3" y="9" width="2" height="1" class="h"/><rect x="11" y="9" width="2" height="1" class="h"/><rect x="13" y="9" width="1" height="1" class="k"/><rect x="2" y="10" width="3" height="1" class="k"/><rect x="11" y="10" width="3" height="1" class="k"/></g></g><rect x="3" y="13" width="10" height="1" class="k"/><rect x="3" y="14" width="1" height="1" class="k"/><rect x="4" y="14" width="2" height="1" class="s"/><rect x="6" y="14" width="1" height="1" class="k"/><rect x="9" y="14" width="1" height="1" class="k"/><rect x="10" y="14" width="2" height="1" class="s"/><rect x="12" y="14" width="1" height="1" class="k"/><rect x="3" y="15" width="4" height="1" class="k"/><rect x="9" y="15" width="4" height="1" class="k"/></svg>
+            </span>
+          </a>
+          <div>
+            <h1>Hi, Mia</h1>
+            <a href="/avatar" class="edit-link"><svg class="px" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true" width="16" height="16"><rect x="6" y="0" width="1" height="1" fill="currentColor"/><rect x="5" y="1" width="3" height="1" fill="currentColor"/><rect x="4" y="2" width="3" height="1" fill="currentColor"/><rect x="3" y="3" width="3" height="1" fill="currentColor"/><rect x="2" y="4" width="3" height="1" fill="currentColor"/><rect x="1" y="5" width="3" height="1" fill="currentColor"/><rect x="1" y="6" width="2" height="1" fill="currentColor"/><rect x="0" y="7" width="1" height="1" fill="currentColor"/></svg>Edit avatar</a>
+          </div>
+        </header>
+
         <section class="card door" aria-labelledby="door-h6">
           <h2 id="door-h6">Train with the squad</h2>
           <form method="post" action="/rooms" class="door-create">
@@ -1229,19 +1463,23 @@
           <p class="or">or join one</p>
           <form method="post" action="/join" aria-busy="true">
             <label for="passcode6">Passcode</label>
-            <input id="passcode6" name="passcode" class="passcode-input" value="K7M2QX" autocomplete="off" autocapitalize="characters" maxlength="8" required readonly aria-describedby="passcode-hint6" />
-            <p id="passcode-hint6" class="hint">Six letters and numbers, from your squad.</p>
+            <p id="passcode-hint6" class="hint">6 characters · no 0 O 1 I L</p>
+            <div class="code-input">
+              <input id="passcode6" name="passcode" value="K7M2QX" autocomplete="off" autocapitalize="characters" maxlength="8" required spellcheck="false" autocorrect="off" enterkeyhint="go" aria-describedby="passcode-hint6" readonly />
+            </div>
             <div class="actions"><button type="submit" class="wide" disabled>Join</button></div>
           </form>
         </section>
       </main>
+      <footer>
+        <a href="/readme/">What Spotter is for</a>
+      </footer>
     </div>
 
     <!-- ============================================================ -->
     <!-- state: error -->
     <p class="mock-state">State: error · not rendered on home</p>
-    <div class="mock-note">
-      <p>Home renders no errors of its own. An empty passcode is stopped by the field's "required". A wrong passcode posts to /join, which shows "No open room has that passcode. Check it with your squad." under its own slots (the join page's design). Create room has no user error. A ?left or ?ended value that isn't a well-formed passcode is ignored: no bubble.</p>
-    </div>
+    <div class="mock-note"><p>Home renders no errors of its own. An empty passcode is stopped by the field's <code>required</code>. A wrong, closed or full room posts to /join, which shows the error under its own slots, with the code kept (the join page's design). A <code>?left</code> or <code>?ended</code> value that isn't a well-formed passcode is ignored: no bubble.</p></div>
+
   </body>
 </html>

@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#0f3d22" />
-    <title>Join a room · Spotter</title>
+    <title>Join mockup · Spotter</title>
     <link rel="stylesheet" href="../../../node_modules/@fontsource/press-start-2p/400.css" />
     <link rel="stylesheet" href="../../../node_modules/@fontsource/vt323/400.css" />
     <style id="global">
@@ -20,6 +20,22 @@
     --muted: #3d5a45;
     --error: #a3241b;
     --focus: #f2c94c;
+    --green-hover: #1a5c32;
+    --leaf-hover: #d6ef86;
+    --tile: #dbe7c6;
+    --row: #eef5e1;
+    /* person states (GYM-9): always a fill under ink text, with an icon and a word */
+    --idle: #e8f0d8;
+    --lifting: #c8e66b;
+    --resting: #7cc6e8;
+    --slacking: #ff6b5e;
+    --finished: #f2c94c;
+    /* Night: the gym after hours */
+    --night: #081a10;
+    --floor: #0f2a1a;
+    --panel: #143822;
+    --edge: #3f8f5a;
+    --dim: #8fa896;
     --px: 4px;
     --display: "Press Start 2P", ui-monospace, monospace;
     --body: "VT323", ui-monospace, monospace;
@@ -42,7 +58,7 @@
     font-synthesis: none;
     /* a faint 16 px checker, like gym floor tiles */
     background-color: var(--paper);
-    background-image: conic-gradient(#dbe7c6 25%, transparent 0 50%, #dbe7c6 0 75%, transparent 0);
+    background-image: conic-gradient(var(--tile) 25%, transparent 0 50%, var(--tile) 0 75%, transparent 0);
     background-size: 32px 32px;
   }
 
@@ -87,6 +103,12 @@
   .topbar .linklike:hover {
     color: var(--leaf);
   }
+  .topbar nav a[aria-current="page"] {
+    color: var(--leaf);
+    text-decoration: underline;
+    text-decoration-thickness: var(--px);
+    text-underline-offset: 6px;
+  }
   .topbar form {
     margin: 0;
   }
@@ -108,6 +130,18 @@
   footer a {
     color: var(--leaf);
   }
+  footer a[aria-current="page"] {
+    text-decoration: none;
+  }
+  footer a[aria-current="page"]::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 0.5rem;
+    background: var(--leaf);
+    vertical-align: middle;
+  }
   h1,
   h2,
   h3 {
@@ -116,15 +150,16 @@
     line-height: 1.4;
     margin: 0 0 1rem;
   }
+  /* Press Start 2P is drawn on an 8 px grid: crisp only at 8, 16, 24, 32 */
   h1 {
-    font-size: clamp(18px, 5vw, 26px);
+    font-size: 24px;
   }
   h2 {
-    font-size: 14px;
+    font-size: 16px;
     color: var(--green);
   }
   h3 {
-    font-size: 12px;
+    font-size: 16px;
   }
   p {
     margin: 0 0 1rem;
@@ -164,7 +199,7 @@
     background: #fff;
     border: var(--px) solid var(--ink);
     border-radius: 0;
-    box-shadow: inset var(--px) var(--px) 0 #dbe7c6;
+    box-shadow: inset var(--px) var(--px) 0 var(--tile);
   }
   select {
     appearance: none;
@@ -183,7 +218,7 @@
     gap: 0.5rem;
     min-height: 48px;
     padding: 0.75rem 1.25rem;
-    font: 12px/1.4 var(--display);
+    font: 16px/1.4 var(--display);
     text-transform: uppercase;
     text-decoration: none;
     color: var(--paper);
@@ -203,7 +238,7 @@
   }
   button:hover,
   .button:hover {
-    background: #26804a;
+    background: var(--green-hover);
   }
   button:active,
   .button:active {
@@ -219,7 +254,20 @@
     background: var(--leaf);
   }
   .button.secondary:hover {
-    background: #d6ef86;
+    background: var(--leaf-hover);
+  }
+  /* pending: held down, label kept, never a spinner */
+  button:disabled,
+  button:disabled:hover {
+    cursor: progress;
+    color: var(--paper);
+    background: var(--muted);
+    transform: translateY(var(--px));
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--ink),
+      0 var(--px) 0 var(--ink),
+      calc(var(--px) * -1) 0 0 var(--ink),
+      var(--px) 0 0 var(--ink);
   }
   .wide {
     width: calc(100% - var(--px) * 2);
@@ -231,16 +279,30 @@
     padding: 0;
     text-transform: none;
   }
+  /* ink ring on Paper; the yellow one fails contrast there (1.4:1) and is
+     kept for the dark bars and Night */
   :focus-visible {
-    outline: var(--px) solid var(--focus);
+    outline: var(--px) solid var(--ink);
     outline-offset: var(--px);
   }
+  .topbar :focus-visible,
+  footer :focus-visible,
+  body.night :focus-visible {
+    outline-color: var(--focus);
+  }
+  input[aria-invalid="true"] {
+    box-shadow: inset var(--px) var(--px) 0 var(--error);
+  }
+  /* the ring reaches 8 px past a field, so the error sits 12 px below it */
   .error {
-    margin: 0.5rem 0 0;
+    margin: 0.75rem 0 0;
     padding: 0.4rem 0.6rem;
     color: #fff;
     background: var(--error);
     border-left: calc(var(--px) * 2) solid var(--ink);
+  }
+  .error a {
+    color: #fff;
   }
   .hint {
     color: var(--muted);
@@ -251,6 +313,87 @@
     gap: 0.75rem 1rem;
     align-items: center;
     margin-top: 1.25rem;
+  }
+
+  /* ---------- Night: same components, surface colours swapped ---------- */
+  body.night {
+    color: var(--paper);
+    color-scheme: dark;
+    background-color: var(--night);
+    background-image: conic-gradient(var(--floor) 25%, transparent 0 50%, var(--floor) 0 75%, transparent 0);
+  }
+  /* the gym needs room for two columns at 900 px and up */
+  body.night main {
+    max-width: 64rem;
+  }
+  .night h2 {
+    color: var(--leaf);
+  }
+  .night label {
+    color: var(--paper);
+  }
+  .night .bubble {
+    color: var(--ink);
+  }
+  .night .hint {
+    color: var(--dim);
+  }
+  .night main a {
+    color: var(--leaf);
+  }
+  /* --green disappears on the dark floor, so primary is leaf with ink */
+  .night button,
+  .night .button {
+    color: var(--ink);
+    background: var(--leaf);
+  }
+  .night button:hover,
+  .night .button:hover {
+    background: var(--leaf-hover);
+  }
+  /* secondary on Night: night fill, paper label, the notch in --edge */
+  .night .button.secondary {
+    color: var(--paper);
+    background: var(--night);
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--edge),
+      0 var(--px) 0 var(--edge),
+      calc(var(--px) * -1) 0 0 var(--edge),
+      var(--px) 0 0 var(--edge),
+      0 calc(var(--px) * 2) 0 #000;
+  }
+  .night .button.secondary:hover {
+    background: var(--floor);
+  }
+  .night .button.secondary:active {
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--edge),
+      0 var(--px) 0 var(--edge),
+      calc(var(--px) * -1) 0 0 var(--edge),
+      var(--px) 0 0 var(--edge);
+  }
+  .night button:disabled {
+    color: var(--ink);
+    background: var(--dim);
+  }
+  .night input,
+  .night select {
+    color: var(--paper);
+    background-color: var(--night);
+    border-color: var(--edge);
+    box-shadow: inset var(--px) var(--px) 0 #000;
+  }
+  .night select {
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--paper) 50%),
+      linear-gradient(135deg, var(--paper) 50%, transparent 50%);
+  }
+  .night th,
+  .night td {
+    border-color: var(--edge);
+  }
+  .night tbody tr:nth-child(even) td {
+    background: var(--floor);
   }
 
   /* ---------- bits ---------- */
@@ -317,7 +460,7 @@
     font-size: 24px;
   }
   th {
-    font: 10px/1.4 var(--display);
+    font: 8px/2 var(--display);
     text-transform: uppercase;
     color: var(--paper);
     background: var(--deep);
@@ -334,41 +477,59 @@
     font-variant-numeric: tabular-nums;
   }
   tbody tr:nth-child(even) td {
-    background: #eef5e1;
+    background: var(--row);
   }
   .stat {
     font-family: var(--display);
-    font-size: 12px;
+    font-size: 8px;
     color: var(--muted);
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    font: 8px/1 var(--display);
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--ink);
+    border: 2px solid var(--ink);
+  }
+  .chip svg {
+    flex: none;
+  }
+  .state-idle {
+    background: var(--idle);
+  }
+  .state-lifting {
+    background: var(--lifting);
+  }
+  .state-resting {
+    background: var(--resting);
+  }
+  .state-slacking {
+    background: var(--slacking);
+  }
+  .state-finished {
+    background: var(--finished);
   }
   .badge {
     display: inline-block;
     margin-left: 0.5rem;
     padding: 0.15rem 0.4rem;
-    font: 9px/1.4 var(--display);
+    font: 8px/1.4 var(--display);
     vertical-align: middle;
     color: var(--ink);
     background: var(--leaf);
     border: 2px solid var(--ink);
   }
 
-  /* ---------- /readme/ ---------- */
-  .prose h1 {
-    font-size: clamp(18px, 5vw, 24px);
-  }
-  .prose h2 {
-    margin-top: 2rem;
-  }
-  .prose li {
-    margin-bottom: 0.4rem;
-  }
-
   @media (max-width: 420px) {
     body {
       font-size: 21px;
     }
-    .brand {
-      font-size: 13px;
+    h1 {
+      font-size: 16px;
     }
     .card {
       padding: 1rem;
@@ -383,91 +544,101 @@
       transition: none;
     }
   }
-    </style>
+</style>
     <style id="page">
-      /* ======== layout changes (reconcile once in Layout.astro; see spec.md "Layout changes") ======== */
+      /* ==================================================================
+         SHARED: lobby. Identical in home, join and avatar. Move to
+         Layout.astro (or one Lobby stylesheet) when building.
+         ================================================================== */
 
-      /* layout change: Paper focus ring is ink, not yellow (system 12, known gap 1) */
-      :focus-visible {
-        outline-color: var(--ink);
+      /* shared: lobby. The line under a card's h1 (signup's .lead, Auth) */
+      .lead {
+        margin: -0.5rem 0 1rem;
       }
-      /* layout change: darker button hover, as a token (known gap 2) */
-      :root {
-        --green-hover: #1a5c32;
+
+      /* shared: lobby. A patch of gym floor: a deep wall along the top with
+         a green skirting line, and the page's own 16 px checker. Same rule
+         as signup's .floor (Auth), plus --s, the sprite scale, so the
+         editor can draw you bigger on whole pixels. */
+      .floor {
+        --s: 4px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        min-height: calc(var(--s) * 16 + 88px);
+        padding: 0 0.5rem 0.75rem;
+        border: var(--px) solid var(--ink);
+        border-top: calc(var(--px) * 4) solid var(--deep);
+        box-shadow: inset 0 var(--px) 0 var(--green);
+        background-color: var(--paper);
+        background-image: conic-gradient(var(--tile) 25%, transparent 0 50%, var(--tile) 0 75%, transparent 0);
+        background-size: 32px 32px;
       }
-      button:hover,
-      .button:hover {
-        background: var(--green-hover);
+      /* shared: lobby. You, with your name tag, as you stand in the gym */
+      .stand {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 0;
+        max-width: 100%;
       }
-      /* layout change: h1 and button labels on the 8 px grid (known gap 3) */
-      h1 {
-        font-size: 24px;
+      .nametag {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding: 0 0.5rem;
+        font: 22px/1.3 var(--body);
+        white-space: nowrap;
+        color: var(--paper);
+        background: rgb(0 0 0 / 70%);
       }
-      button,
-      .button {
-        font-size: 16px;
+      .nametag.is-empty {
+        color: var(--leaf);
       }
-      @media (max-width: 420px) {
-        h1 {
-          font-size: 16px;
+      .floor .av {
+        width: calc(var(--s) * 16);
+        height: calc(var(--s) * 16);
+      }
+      .floor .av-top {
+        animation: idle 800ms steps(1) infinite;
+      }
+      @keyframes idle {
+        50% {
+          transform: translateY(1px); /* one sprite pixel */
         }
       }
-      /* layout change: pending buttons stay pressed in, label kept (system 13, Pending) */
-      button:disabled,
-      button:disabled:hover {
-        cursor: progress;
-        color: var(--paper);
-        background: var(--muted);
-        transform: translateY(var(--px));
-        box-shadow:
-          0 calc(var(--px) * -1) 0 var(--ink),
-          0 var(--px) 0 var(--ink),
-          calc(var(--px) * -1) 0 0 var(--ink),
-          var(--px) 0 0 var(--ink);
-      }
 
-      /* ======== /join ======== */
-
-      .join-card,
-      .join-alt {
-        max-width: 30rem;
-        margin-inline: auto;
-      }
-      .join-head {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin-bottom: 0.75rem;
-      }
-      .join-head h1 {
-        margin: 0;
-      }
-      .door {
+      /* shared: lobby. The avatar sprite: palette slots are classes, the
+         colours are custom properties, so a palette swap is three
+         variables (AV-2). Hex values only come from the sprite palette. */
+      .av {
+        display: block;
         flex: none;
-        image-rendering: pixelated;
       }
-      .join-form label {
-        margin-top: 1.5rem;
+      .av .k {
+        fill: var(--ink);
       }
-      .join-form .hint {
-        margin: 0 0 0.5rem;
+      .av .s {
+        fill: var(--av-skin);
       }
-      .join-status {
-        margin: 0.5rem 0 0;
+      .av .h {
+        fill: var(--av-hair);
       }
-      .join-status:empty {
-        display: none;
+      .av .t {
+        fill: var(--av-shirt);
       }
 
-      /* .code-input: ONE real <input name="passcode">, drawn as six hotbar
-         slots. Press Start 2P is monospaced at 1em per glyph, so
-         letter-spacing = cell - glyph drops each character into its own slot
-         with no JavaScript. The input is wider than the frame (room for the
-         8-character maxlength) and the frame clips it, so the 6th character
-         never scrolls the row out of line. */
+      /* shared: lobby. .code-input: ONE real <input name="passcode"> drawn as
+         six name-entry slots (home's door card, join, the invite). Press
+         Start 2P is 1em per glyph, so letter-spacing = cell - glyph drops
+         each character into its own slot with no JavaScript. */
       .code-input {
         --cell: 44px; /* one slot + one divider */
-        --glyph: 24px; /* display font, on the 8 px grid */
+        --glyph: 24px;
         --slot-h: 48px;
         --pad: calc((var(--cell) - var(--px) - var(--glyph)) / 2);
         width: calc(6 * var(--cell) + var(--px) * 3);
@@ -477,24 +648,35 @@
         border: var(--px) solid var(--ink);
         background-color: var(--green);
         background-image:
-          /* name-entry underline in each slot */
-          repeating-linear-gradient(90deg, transparent 0 calc(var(--px) + var(--pad)), var(--green) 0 calc(var(--px) + var(--pad) + var(--glyph)), transparent 0 var(--cell)),
-          /* the six ink slots, green dividers between */
+          repeating-linear-gradient(
+            90deg,
+            transparent 0 calc(var(--px) + var(--pad)),
+            var(--green) 0 calc(var(--px) + var(--pad) + var(--glyph)),
+            transparent 0 var(--cell)
+          ),
           repeating-linear-gradient(90deg, transparent 0 var(--px), var(--ink) 0 var(--cell));
-        background-size: 100% var(--px), 100% var(--slot-h);
-        background-position: 0 calc(var(--slot-h) - var(--px)), 0 var(--px);
+        background-size:
+          100% var(--px),
+          100% var(--slot-h);
+        background-position:
+          0 calc(var(--slot-h) - var(--px)),
+          0 var(--px);
         background-repeat: no-repeat;
       }
-      .code-input input {
+      /* the typed field, and the invite's read-only code, sit on the slots
+         the same way */
+      .code-input input,
+      .code-input .code {
         display: block;
         width: calc(100% + 2 * var(--cell));
         height: 100%;
         min-height: 0;
         margin: 0;
         padding: 0 0 0 calc(var(--px) + var(--pad));
-        font: var(--glyph)/1 var(--display);
+        font: var(--glyph) / 1 var(--display);
         letter-spacing: calc(var(--cell) - var(--glyph));
         text-transform: uppercase;
+        white-space: nowrap;
         color: var(--leaf);
         caret-color: var(--leaf);
         background: transparent;
@@ -502,11 +684,13 @@
         border-radius: 0;
         box-shadow: none;
       }
+      .code-input .code {
+        line-height: calc(var(--slot-h) + var(--px) * 2);
+      }
       .code-input input::selection {
         color: var(--ink);
         background: var(--leaf);
       }
-      /* the ring goes on the frame, because the frame clips the input */
       .code-input input:focus-visible {
         outline: none;
       }
@@ -517,22 +701,6 @@
       .code-input.invalid {
         border-color: var(--error);
       }
-
-      .join-alt {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.5rem 1rem;
-      }
-      .join-alt p {
-        flex: 1 1 14rem;
-        margin: 0;
-      }
-      .join-alt form {
-        margin: 0;
-      }
-
       @media (min-width: 900px) {
         .code-input {
           --cell: 64px;
@@ -540,240 +708,441 @@
           --slot-h: 64px;
         }
       }
+
+      /* shared: lobby. The line under a card: a short hint and one
+         secondary way out (join: New room / Sign in; avatar: Later). */
+      .lobby-alt {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem 1rem;
+      }
+      .lobby-alt p {
+        flex: 1 1 14rem;
+        margin: 0;
+      }
+      .lobby-alt form {
+        margin: 0;
+      }
+      /* shared: lobby. A pending or "not saved" line; no room while empty */
+      .status-line {
+        margin: 0.5rem 0 0;
+      }
+      .status-line:empty {
+        display: none;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .floor .av-top {
+          animation: none;
+        }
+      }
+
+      /* ==================================================================
+         JOIN PAGE (src/pages/join.astro, and /join/:code)
+         ================================================================== */
+      .join-card,
+      .join-alt {
+        max-width: 30rem;
+        margin-inline: auto;
+      }
+      /* the scene: the gym's open doorway, and you about to walk in */
+      .scene {
+        flex-direction: row;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 1.5rem;
+      }
+      .scene .doorway {
+        flex: none;
+        display: block;
+        width: 64px; /* 16 px sprite at 4x */
+        height: 64px;
+      }
+      /* signed out: the spot where you'll stand, as an outline */
+      .av.ghost {
+        --av-skin: var(--card);
+        --av-shirt: var(--card);
+      }
+      .av.ghost .k {
+        fill: var(--muted);
+      }
+      .join-form label,
+      .code-label {
+        margin-top: 1.5rem;
+      }
+      .code-label {
+        margin-bottom: 0.35rem;
+        color: var(--deep);
+      }
+      .join-form .hint {
+        margin: 0 0 0.5rem;
+      }
+      .join-form .status-line {
+        margin: 0.5rem 0 0;
+      }
     </style>
     <style id="mockup-only">
-      /* Not for the build: state labels, and a stand-in for :focus-within. */
-      .mock-label {
-        max-width: 30rem;
-        margin: 2.5rem auto 0.75rem;
-        padding: 0.25rem 0.5rem;
-        font: 20px/1.2 var(--body);
-        color: var(--paper);
+      /* ==================================================================
+         MOCKUP ONLY. State labels and frames; do not build these.
+         ================================================================== */
+      .mock-state {
+        margin: 0;
+        padding: 0.75rem 1rem;
+        font: 8px/1.6 var(--display);
+        text-transform: uppercase;
+        color: var(--leaf);
         background: var(--ink);
+        border-top: calc(var(--px) * 4) solid var(--leaf);
       }
-      main > .mock-label:first-child {
-        margin-top: 0;
+      .mock-frame {
+        display: flex;
+        flex-direction: column;
       }
-      .mock-focus {
+      .mock-note {
+        max-width: 44rem;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+      }
+      .mock-note code,
+      .mock-note strong {
+        font: inherit;
+        color: var(--deep);
+      }
+      .mock-note p:last-child {
+        margin-bottom: 0;
+      }
+      /* the build uses :focus-within; the mockup fakes it */
+      .code-input.mock-focus {
         outline: var(--px) solid var(--ink);
         outline-offset: var(--px);
-      }
-      .mock-sep {
-        max-width: 30rem;
-        margin: 2.5rem auto 0;
-        border: 0;
-        border-top: var(--px) dashed var(--muted);
       }
     </style>
   </head>
   <body>
-    <header class="topbar">
-      <a href="/" class="brand" aria-label="Spotter home">
-        <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges">
-          <rect x="0" y="2" width="2" height="4" fill="#c8e66b" />
-          <rect x="2" y="0" width="2" height="8" fill="#c8e66b" />
-          <rect x="4" y="3" width="8" height="2" fill="#e8f0d8" />
-          <rect x="12" y="0" width="2" height="8" fill="#c8e66b" />
-          <rect x="14" y="2" width="2" height="4" fill="#c8e66b" />
-        </svg>
-        <span>Spotter</span>
-      </a>
-      <nav>
-        <a href="/history">History</a>
-        <form method="post" action="/signout">
-          <button type="submit" class="linklike">Sign out</button>
-        </form>
-      </nav>
-    </header>
-    <main>
-      <!-- state: default -->
-      <p class="mock-label">State: default · first visit, empty slots (also what no-JS looks like)</p>
-      <div class="card join-card">
-        <div class="join-head">
-          <svg class="door" viewBox="0 0 16 16" width="64" height="64" aria-hidden="true" shape-rendering="crispEdges">
-            <!-- the gym's front door: a sign with the dumbbell, a lit doorway, the door swung open, a doormat -->
-            <rect x="1" y="1" width="14" height="5" fill="#0b2416" />
-            <rect x="2" y="2" width="12" height="3" fill="#c8e66b" />
-            <rect x="4" y="2" width="1" height="3" fill="#0b2416" />
-            <rect x="11" y="2" width="1" height="3" fill="#0b2416" />
-            <rect x="3" y="3" width="10" height="1" fill="#0b2416" />
-            <rect x="2" y="6" width="12" height="8" fill="#0b2416" />
-            <rect x="3" y="6" width="7" height="8" fill="#c8e66b" />
-            <rect x="11" y="6" width="2" height="8" fill="#1f6b3a" />
-            <rect x="12" y="9" width="1" height="1" fill="#c8e66b" />
-            <rect x="1" y="14" width="14" height="2" fill="#0b2416" />
-            <rect x="2" y="14" width="12" height="1" fill="#0f3d22" />
-          </svg>
-          <h1>Join your squad</h1>
-        </div>
-        <p>Got the code? Pop it in 📲</p>
-        <form method="post" class="join-form">
-          <label for="passcode">Passcode</label>
-          <p class="hint" id="passcode-hint">6 characters · no 0 O 1 I L</p>
-          <div class="code-input">
-            <input id="passcode" name="passcode" value="" autocomplete="off" autocapitalize="characters" maxlength="8" required spellcheck="false" autocorrect="off" enterkeyhint="go" aria-describedby="passcode-hint" />
-          </div>
-          <div class="actions"><button type="submit" class="wide">Join</button></div>
-          <p class="hint join-status" role="status"></p>
-        </form>
-      </div>
-      <div class="join-alt">
-        <p class="hint">Room closed? Start a new one and send the squad the code.</p>
-        <form method="post" action="/rooms"><button type="submit" class="button secondary">New room</button></form>
-      </div>
 
-      <!-- state: typing -->
-      <p class="mock-label">State: typing · focused, 3 of 6 in, focus ring on the frame</p>
-      <div class="card join-card">
-        <div class="join-head">
-          <svg class="door" viewBox="0 0 16 16" width="64" height="64" aria-hidden="true" shape-rendering="crispEdges">
-            <!-- the gym's front door: a sign with the dumbbell, a lit doorway, the door swung open, a doormat -->
-            <rect x="1" y="1" width="14" height="5" fill="#0b2416" />
-            <rect x="2" y="2" width="12" height="3" fill="#c8e66b" />
-            <rect x="4" y="2" width="1" height="3" fill="#0b2416" />
-            <rect x="11" y="2" width="1" height="3" fill="#0b2416" />
-            <rect x="3" y="3" width="10" height="1" fill="#0b2416" />
-            <rect x="2" y="6" width="12" height="8" fill="#0b2416" />
-            <rect x="3" y="6" width="7" height="8" fill="#c8e66b" />
-            <rect x="11" y="6" width="2" height="8" fill="#1f6b3a" />
-            <rect x="12" y="9" width="1" height="1" fill="#c8e66b" />
-            <rect x="1" y="14" width="14" height="2" fill="#0b2416" />
-            <rect x="2" y="14" width="12" height="1" fill="#0f3d22" />
-          </svg>
+    <!-- ============================================================ -->
+    <!-- state: default -->
+    <p class="mock-state">State: default · /join, signed in · Tom, six empty slots (also what no-JS looks like)</p>
+    <div class="mock-frame">
+      <header class="topbar">
+        <a href="/" class="brand" aria-label="Spotter home">
+          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><rect x="0" y="2" width="2" height="4" fill="#c8e66b" /><rect x="2" y="0" width="2" height="8" fill="#c8e66b" /><rect x="4" y="3" width="8" height="2" fill="#e8f0d8" /><rect x="12" y="0" width="2" height="8" fill="#c8e66b" /><rect x="14" y="2" width="2" height="4" fill="#c8e66b" /></svg>
+          <span>Spotter</span>
+        </a>
+        <nav>
+          <a href="/history">History</a>
+          <form method="post" action="/signout"><button type="submit" class="linklike">Sign out</button></form>
+        </nav>
+      </header>
+      <main>
+        <div class="card join-card">
           <h1>Join your squad</h1>
-        </div>
-        <p>Got the code? Pop it in 📲</p>
-        <form method="post" class="join-form">
-          <label for="passcode-2">Passcode</label>
-          <p class="hint" id="passcode-2-hint">6 characters · no 0 O 1 I L</p>
-          <div class="code-input mock-focus">
-            <input id="passcode-2" name="passcode" value="K7M" autocomplete="off" autocapitalize="characters" maxlength="8" required spellcheck="false" autocorrect="off" enterkeyhint="go" aria-describedby="passcode-2-hint" />
+          <p class="lead">Got the code? Pop it in 📲</p>
+          <div class="floor scene" aria-hidden="true">
+            <svg class="doorway" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="1" y="1" width="14" height="1" fill="#0b2416"/><rect x="1" y="2" width="1" height="1" fill="#0b2416"/><rect x="2" y="2" width="2" height="1" fill="#c8e66b"/><rect x="4" y="2" width="1" height="1" fill="#0b2416"/><rect x="5" y="2" width="6" height="1" fill="#c8e66b"/><rect x="11" y="2" width="1" height="1" fill="#0b2416"/><rect x="12" y="2" width="2" height="1" fill="#c8e66b"/><rect x="14" y="2" width="1" height="1" fill="#0b2416"/><rect x="1" y="3" width="1" height="1" fill="#0b2416"/><rect x="2" y="3" width="1" height="1" fill="#c8e66b"/><rect x="3" y="3" width="10" height="1" fill="#0b2416"/><rect x="13" y="3" width="1" height="1" fill="#c8e66b"/><rect x="14" y="3" width="1" height="1" fill="#0b2416"/><rect x="1" y="4" width="1" height="1" fill="#0b2416"/><rect x="2" y="4" width="2" height="1" fill="#c8e66b"/><rect x="4" y="4" width="1" height="1" fill="#0b2416"/><rect x="5" y="4" width="6" height="1" fill="#c8e66b"/><rect x="11" y="4" width="1" height="1" fill="#0b2416"/><rect x="12" y="4" width="2" height="1" fill="#c8e66b"/><rect x="14" y="4" width="1" height="1" fill="#0b2416"/><rect x="1" y="5" width="14" height="1" fill="#0b2416"/><rect x="2" y="6" width="1" height="1" fill="#0b2416"/><rect x="3" y="6" width="7" height="1" fill="#c8e66b"/><rect x="10" y="6" width="1" height="1" fill="#0b2416"/><rect x="11" y="6" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="6" width="1" height="1" fill="#0b2416"/><rect x="2" y="7" width="1" height="1" fill="#0b2416"/><rect x="3" y="7" width="7" height="1" fill="#c8e66b"/><rect x="10" y="7" width="1" height="1" fill="#0b2416"/><rect x="11" y="7" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="7" width="1" height="1" fill="#0b2416"/><rect x="2" y="8" width="1" height="1" fill="#0b2416"/><rect x="3" y="8" width="7" height="1" fill="#c8e66b"/><rect x="10" y="8" width="1" height="1" fill="#0b2416"/><rect x="11" y="8" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="8" width="1" height="1" fill="#0b2416"/><rect x="2" y="9" width="1" height="1" fill="#0b2416"/><rect x="3" y="9" width="7" height="1" fill="#c8e66b"/><rect x="10" y="9" width="1" height="1" fill="#0b2416"/><rect x="11" y="9" width="1" height="1" fill="#1f6b3a"/><rect x="12" y="9" width="1" height="1" fill="#c8e66b"/><rect x="13" y="9" width="1" height="1" fill="#0b2416"/><rect x="2" y="10" width="1" height="1" fill="#0b2416"/><rect x="3" y="10" width="7" height="1" fill="#c8e66b"/><rect x="10" y="10" width="1" height="1" fill="#0b2416"/><rect x="11" y="10" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="10" width="1" height="1" fill="#0b2416"/><rect x="2" y="11" width="1" height="1" fill="#0b2416"/><rect x="3" y="11" width="7" height="1" fill="#c8e66b"/><rect x="10" y="11" width="1" height="1" fill="#0b2416"/><rect x="11" y="11" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="11" width="1" height="1" fill="#0b2416"/><rect x="2" y="12" width="1" height="1" fill="#0b2416"/><rect x="3" y="12" width="7" height="1" fill="#c8e66b"/><rect x="10" y="12" width="1" height="1" fill="#0b2416"/><rect x="11" y="12" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="12" width="1" height="1" fill="#0b2416"/><rect x="2" y="13" width="1" height="1" fill="#0b2416"/><rect x="3" y="13" width="7" height="1" fill="#c8e66b"/><rect x="10" y="13" width="1" height="1" fill="#0b2416"/><rect x="11" y="13" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="13" width="1" height="1" fill="#0b2416"/><rect x="1" y="14" width="1" height="1" fill="#0b2416"/><rect x="2" y="14" width="12" height="1" fill="#0f3d22"/><rect x="14" y="14" width="1" height="1" fill="#0b2416"/><rect x="1" y="15" width="14" height="1" fill="#0b2416"/></svg>
+            <div class="stand">
+              <span class="nametag">Tom</span>
+              <svg class="av " viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" style="--av-skin: #f6d7bd; --av-hair: #b5552a; --av-shirt: #2e3f7f"><g class="av-top"><rect x="5" y="1" width="6" height="1" class="k"/><rect x="4" y="2" width="1" height="1" class="k"/><rect x="5" y="2" width="6" height="1" class="s"/><rect x="11" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="s"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="8" height="1" class="s"/><rect x="12" y="4" width="1" height="1" class="k"/><rect x="3" y="5" width="1" height="1" class="k"/><rect x="4" y="5" width="1" height="1" class="s"/><rect x="5" y="5" width="1" height="1" class="k"/><rect x="6" y="5" width="4" height="1" class="s"/><rect x="10" y="5" width="1" height="1" class="k"/><rect x="11" y="5" width="1" height="1" class="s"/><rect x="12" y="5" width="1" height="1" class="k"/><rect x="3" y="6" width="1" height="1" class="k"/><rect x="4" y="6" width="1" height="1" class="s"/><rect x="5" y="6" width="1" height="1" class="k"/><rect x="6" y="6" width="4" height="1" class="s"/><rect x="10" y="6" width="1" height="1" class="k"/><rect x="11" y="6" width="1" height="1" class="s"/><rect x="12" y="6" width="1" height="1" class="k"/><rect x="3" y="7" width="1" height="1" class="k"/><rect x="4" y="7" width="8" height="1" class="s"/><rect x="12" y="7" width="1" height="1" class="k"/><rect x="4" y="8" width="1" height="1" class="k"/><rect x="5" y="8" width="6" height="1" class="s"/><rect x="11" y="8" width="1" height="1" class="k"/><rect x="3" y="9" width="2" height="1" class="k"/><rect x="5" y="9" width="6" height="1" class="t"/><rect x="11" y="9" width="2" height="1" class="k"/><rect x="2" y="10" width="1" height="1" class="k"/><rect x="3" y="10" width="10" height="1" class="t"/><rect x="13" y="10" width="1" height="1" class="k"/><rect x="2" y="11" width="1" height="1" class="k"/><rect x="3" y="11" width="1" height="1" class="t"/><rect x="4" y="11" width="1" height="1" class="k"/><rect x="5" y="11" width="6" height="1" class="t"/><rect x="11" y="11" width="1" height="1" class="k"/><rect x="12" y="11" width="1" height="1" class="t"/><rect x="13" y="11" width="1" height="1" class="k"/><rect x="2" y="12" width="1" height="1" class="k"/><rect x="3" y="12" width="1" height="1" class="s"/><rect x="4" y="12" width="1" height="1" class="k"/><rect x="5" y="12" width="6" height="1" class="t"/><rect x="11" y="12" width="1" height="1" class="k"/><rect x="12" y="12" width="1" height="1" class="s"/><rect x="13" y="12" width="1" height="1" class="k"/><g class="hair hair-crop"><rect x="5" y="0" width="6" height="1" class="k"/><rect x="4" y="1" width="1" height="1" class="k"/><rect x="5" y="1" width="6" height="1" class="h"/><rect x="11" y="1" width="1" height="1" class="k"/><rect x="3" y="2" width="1" height="1" class="k"/><rect x="4" y="2" width="8" height="1" class="h"/><rect x="12" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="h"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="1" height="1" class="h"/><rect x="11" y="4" width="1" height="1" class="h"/><rect x="12" y="4" width="1" height="1" class="k"/></g></g><rect x="3" y="13" width="10" height="1" class="k"/><rect x="3" y="14" width="1" height="1" class="k"/><rect x="4" y="14" width="2" height="1" class="s"/><rect x="6" y="14" width="1" height="1" class="k"/><rect x="9" y="14" width="1" height="1" class="k"/><rect x="10" y="14" width="2" height="1" class="s"/><rect x="12" y="14" width="1" height="1" class="k"/><rect x="3" y="15" width="4" height="1" class="k"/><rect x="9" y="15" width="4" height="1" class="k"/></svg>
+            </div>
           </div>
-          <div class="actions"><button type="submit" class="wide">Join</button></div>
-          <p class="hint join-status" role="status"></p>
-        </form>
-      </div>
-      <div class="join-alt">
-        <p class="hint">Room closed? Start a new one and send the squad the code.</p>
-        <form method="post" action="/rooms"><button type="submit" class="button secondary">New room</button></form>
-      </div>
+          <form method="post" action="/join" class="join-form">
+            <label for="passcode-j1">Passcode</label>
+            <p class="hint" id="passcode-hint-j1">6 characters · no 0 O 1 I L</p>
+            <div class="code-input">
+              <input id="passcode-j1" name="passcode" value="" autocomplete="off" autocapitalize="characters" maxlength="8" required spellcheck="false" autocorrect="off" enterkeyhint="go" aria-describedby="passcode-hint-j1" />
+            </div>
+            <div class="actions"><button type="submit" class="wide">Join</button></div>
+            <p class="hint status-line" role="status"></p>
+          </form>
+        </div>
+        <div class="lobby-alt join-alt">
+          <p class="hint">Room closed or full? Start a new one and send the squad the code.</p>
+          <form method="post" action="/rooms"><button type="submit" class="button secondary">New room</button></form>
+        </div>
+      </main>
+      <footer>
+        <a href="/readme/">What Spotter is for</a>
+      </footer>
+    </div>
 
-      <!-- state: error -->
-      <p class="mock-label">State: error · wrong code (ROOM-2), echoed back normalised for comparing</p>
-      <div class="card join-card">
-        <div class="join-head">
-          <svg class="door" viewBox="0 0 16 16" width="64" height="64" aria-hidden="true" shape-rendering="crispEdges">
-            <!-- the gym's front door: a sign with the dumbbell, a lit doorway, the door swung open, a doormat -->
-            <rect x="1" y="1" width="14" height="5" fill="#0b2416" />
-            <rect x="2" y="2" width="12" height="3" fill="#c8e66b" />
-            <rect x="4" y="2" width="1" height="3" fill="#0b2416" />
-            <rect x="11" y="2" width="1" height="3" fill="#0b2416" />
-            <rect x="3" y="3" width="10" height="1" fill="#0b2416" />
-            <rect x="2" y="6" width="12" height="8" fill="#0b2416" />
-            <rect x="3" y="6" width="7" height="8" fill="#c8e66b" />
-            <rect x="11" y="6" width="2" height="8" fill="#1f6b3a" />
-            <rect x="12" y="9" width="1" height="1" fill="#c8e66b" />
-            <rect x="1" y="14" width="14" height="2" fill="#0b2416" />
-            <rect x="2" y="14" width="12" height="1" fill="#0f3d22" />
-          </svg>
+    <!-- ============================================================ -->
+    <!-- state: typing -->
+    <p class="mock-state">State: typing · focused, 3 of 6 in, focus ring on the frame</p>
+    <div class="mock-frame">
+      <header class="topbar">
+        <a href="/" class="brand" aria-label="Spotter home">
+          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><rect x="0" y="2" width="2" height="4" fill="#c8e66b" /><rect x="2" y="0" width="2" height="8" fill="#c8e66b" /><rect x="4" y="3" width="8" height="2" fill="#e8f0d8" /><rect x="12" y="0" width="2" height="8" fill="#c8e66b" /><rect x="14" y="2" width="2" height="4" fill="#c8e66b" /></svg>
+          <span>Spotter</span>
+        </a>
+        <nav>
+          <a href="/history">History</a>
+          <form method="post" action="/signout"><button type="submit" class="linklike">Sign out</button></form>
+        </nav>
+      </header>
+      <main>
+        <div class="card join-card">
           <h1>Join your squad</h1>
-        </div>
-        <p>Got the code? Pop it in 📲</p>
-        <form method="post" class="join-form">
-          <label for="passcode-3">Passcode</label>
-          <p class="hint" id="passcode-3-hint">6 characters · no 0 O 1 I L</p>
-          <div class="code-input invalid">
-            <input id="passcode-3" name="passcode" value="K7N2QX" autocomplete="off" autocapitalize="characters" maxlength="8" required spellcheck="false" autocorrect="off" enterkeyhint="go" aria-describedby="passcode-3-hint passcode-3-error" aria-invalid="true" />
+          <p class="lead">Got the code? Pop it in 📲</p>
+          <div class="floor scene" aria-hidden="true">
+            <svg class="doorway" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="1" y="1" width="14" height="1" fill="#0b2416"/><rect x="1" y="2" width="1" height="1" fill="#0b2416"/><rect x="2" y="2" width="2" height="1" fill="#c8e66b"/><rect x="4" y="2" width="1" height="1" fill="#0b2416"/><rect x="5" y="2" width="6" height="1" fill="#c8e66b"/><rect x="11" y="2" width="1" height="1" fill="#0b2416"/><rect x="12" y="2" width="2" height="1" fill="#c8e66b"/><rect x="14" y="2" width="1" height="1" fill="#0b2416"/><rect x="1" y="3" width="1" height="1" fill="#0b2416"/><rect x="2" y="3" width="1" height="1" fill="#c8e66b"/><rect x="3" y="3" width="10" height="1" fill="#0b2416"/><rect x="13" y="3" width="1" height="1" fill="#c8e66b"/><rect x="14" y="3" width="1" height="1" fill="#0b2416"/><rect x="1" y="4" width="1" height="1" fill="#0b2416"/><rect x="2" y="4" width="2" height="1" fill="#c8e66b"/><rect x="4" y="4" width="1" height="1" fill="#0b2416"/><rect x="5" y="4" width="6" height="1" fill="#c8e66b"/><rect x="11" y="4" width="1" height="1" fill="#0b2416"/><rect x="12" y="4" width="2" height="1" fill="#c8e66b"/><rect x="14" y="4" width="1" height="1" fill="#0b2416"/><rect x="1" y="5" width="14" height="1" fill="#0b2416"/><rect x="2" y="6" width="1" height="1" fill="#0b2416"/><rect x="3" y="6" width="7" height="1" fill="#c8e66b"/><rect x="10" y="6" width="1" height="1" fill="#0b2416"/><rect x="11" y="6" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="6" width="1" height="1" fill="#0b2416"/><rect x="2" y="7" width="1" height="1" fill="#0b2416"/><rect x="3" y="7" width="7" height="1" fill="#c8e66b"/><rect x="10" y="7" width="1" height="1" fill="#0b2416"/><rect x="11" y="7" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="7" width="1" height="1" fill="#0b2416"/><rect x="2" y="8" width="1" height="1" fill="#0b2416"/><rect x="3" y="8" width="7" height="1" fill="#c8e66b"/><rect x="10" y="8" width="1" height="1" fill="#0b2416"/><rect x="11" y="8" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="8" width="1" height="1" fill="#0b2416"/><rect x="2" y="9" width="1" height="1" fill="#0b2416"/><rect x="3" y="9" width="7" height="1" fill="#c8e66b"/><rect x="10" y="9" width="1" height="1" fill="#0b2416"/><rect x="11" y="9" width="1" height="1" fill="#1f6b3a"/><rect x="12" y="9" width="1" height="1" fill="#c8e66b"/><rect x="13" y="9" width="1" height="1" fill="#0b2416"/><rect x="2" y="10" width="1" height="1" fill="#0b2416"/><rect x="3" y="10" width="7" height="1" fill="#c8e66b"/><rect x="10" y="10" width="1" height="1" fill="#0b2416"/><rect x="11" y="10" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="10" width="1" height="1" fill="#0b2416"/><rect x="2" y="11" width="1" height="1" fill="#0b2416"/><rect x="3" y="11" width="7" height="1" fill="#c8e66b"/><rect x="10" y="11" width="1" height="1" fill="#0b2416"/><rect x="11" y="11" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="11" width="1" height="1" fill="#0b2416"/><rect x="2" y="12" width="1" height="1" fill="#0b2416"/><rect x="3" y="12" width="7" height="1" fill="#c8e66b"/><rect x="10" y="12" width="1" height="1" fill="#0b2416"/><rect x="11" y="12" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="12" width="1" height="1" fill="#0b2416"/><rect x="2" y="13" width="1" height="1" fill="#0b2416"/><rect x="3" y="13" width="7" height="1" fill="#c8e66b"/><rect x="10" y="13" width="1" height="1" fill="#0b2416"/><rect x="11" y="13" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="13" width="1" height="1" fill="#0b2416"/><rect x="1" y="14" width="1" height="1" fill="#0b2416"/><rect x="2" y="14" width="12" height="1" fill="#0f3d22"/><rect x="14" y="14" width="1" height="1" fill="#0b2416"/><rect x="1" y="15" width="14" height="1" fill="#0b2416"/></svg>
+            <div class="stand">
+              <span class="nametag">Tom</span>
+              <svg class="av " viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" style="--av-skin: #f6d7bd; --av-hair: #b5552a; --av-shirt: #2e3f7f"><g class="av-top"><rect x="5" y="1" width="6" height="1" class="k"/><rect x="4" y="2" width="1" height="1" class="k"/><rect x="5" y="2" width="6" height="1" class="s"/><rect x="11" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="s"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="8" height="1" class="s"/><rect x="12" y="4" width="1" height="1" class="k"/><rect x="3" y="5" width="1" height="1" class="k"/><rect x="4" y="5" width="1" height="1" class="s"/><rect x="5" y="5" width="1" height="1" class="k"/><rect x="6" y="5" width="4" height="1" class="s"/><rect x="10" y="5" width="1" height="1" class="k"/><rect x="11" y="5" width="1" height="1" class="s"/><rect x="12" y="5" width="1" height="1" class="k"/><rect x="3" y="6" width="1" height="1" class="k"/><rect x="4" y="6" width="1" height="1" class="s"/><rect x="5" y="6" width="1" height="1" class="k"/><rect x="6" y="6" width="4" height="1" class="s"/><rect x="10" y="6" width="1" height="1" class="k"/><rect x="11" y="6" width="1" height="1" class="s"/><rect x="12" y="6" width="1" height="1" class="k"/><rect x="3" y="7" width="1" height="1" class="k"/><rect x="4" y="7" width="8" height="1" class="s"/><rect x="12" y="7" width="1" height="1" class="k"/><rect x="4" y="8" width="1" height="1" class="k"/><rect x="5" y="8" width="6" height="1" class="s"/><rect x="11" y="8" width="1" height="1" class="k"/><rect x="3" y="9" width="2" height="1" class="k"/><rect x="5" y="9" width="6" height="1" class="t"/><rect x="11" y="9" width="2" height="1" class="k"/><rect x="2" y="10" width="1" height="1" class="k"/><rect x="3" y="10" width="10" height="1" class="t"/><rect x="13" y="10" width="1" height="1" class="k"/><rect x="2" y="11" width="1" height="1" class="k"/><rect x="3" y="11" width="1" height="1" class="t"/><rect x="4" y="11" width="1" height="1" class="k"/><rect x="5" y="11" width="6" height="1" class="t"/><rect x="11" y="11" width="1" height="1" class="k"/><rect x="12" y="11" width="1" height="1" class="t"/><rect x="13" y="11" width="1" height="1" class="k"/><rect x="2" y="12" width="1" height="1" class="k"/><rect x="3" y="12" width="1" height="1" class="s"/><rect x="4" y="12" width="1" height="1" class="k"/><rect x="5" y="12" width="6" height="1" class="t"/><rect x="11" y="12" width="1" height="1" class="k"/><rect x="12" y="12" width="1" height="1" class="s"/><rect x="13" y="12" width="1" height="1" class="k"/><g class="hair hair-crop"><rect x="5" y="0" width="6" height="1" class="k"/><rect x="4" y="1" width="1" height="1" class="k"/><rect x="5" y="1" width="6" height="1" class="h"/><rect x="11" y="1" width="1" height="1" class="k"/><rect x="3" y="2" width="1" height="1" class="k"/><rect x="4" y="2" width="8" height="1" class="h"/><rect x="12" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="h"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="1" height="1" class="h"/><rect x="11" y="4" width="1" height="1" class="h"/><rect x="12" y="4" width="1" height="1" class="k"/></g></g><rect x="3" y="13" width="10" height="1" class="k"/><rect x="3" y="14" width="1" height="1" class="k"/><rect x="4" y="14" width="2" height="1" class="s"/><rect x="6" y="14" width="1" height="1" class="k"/><rect x="9" y="14" width="1" height="1" class="k"/><rect x="10" y="14" width="2" height="1" class="s"/><rect x="12" y="14" width="1" height="1" class="k"/><rect x="3" y="15" width="4" height="1" class="k"/><rect x="9" y="15" width="4" height="1" class="k"/></svg>
+            </div>
           </div>
-            <p class="error" id="passcode-3-error">No open room has that passcode. Check it with your squad.</p>
-          <div class="actions"><button type="submit" class="wide">Join</button></div>
-          <p class="hint join-status" role="status"></p>
-        </form>
-      </div>
-      <div class="join-alt">
-        <p class="hint">Room closed? Start a new one and send the squad the code.</p>
-        <form method="post" action="/rooms"><button type="submit" class="button secondary">New room</button></form>
-      </div>
+          <form method="post" action="/join" class="join-form">
+            <label for="passcode-j2">Passcode</label>
+            <p class="hint" id="passcode-hint-j2">6 characters · no 0 O 1 I L</p>
+            <div class="code-input mock-focus">
+              <input id="passcode-j2" name="passcode" value="K7M" autocomplete="off" autocapitalize="characters" maxlength="8" required spellcheck="false" autocorrect="off" enterkeyhint="go" aria-describedby="passcode-hint-j2" />
+            </div>
+            <div class="actions"><button type="submit" class="wide">Join</button></div>
+            <p class="hint status-line" role="status"></p>
+          </form>
+        </div>
+        <div class="lobby-alt join-alt">
+          <p class="hint">Room closed or full? Start a new one and send the squad the code.</p>
+          <form method="post" action="/rooms"><button type="submit" class="button secondary">New room</button></form>
+        </div>
+      </main>
+      <footer>
+        <a href="/readme/">What Spotter is for</a>
+      </footer>
+    </div>
 
-      <!-- state: pending -->
-      <p class="mock-label">State: pending · Join held down and disabled, label kept</p>
-      <div class="card join-card">
-        <div class="join-head">
-          <svg class="door" viewBox="0 0 16 16" width="64" height="64" aria-hidden="true" shape-rendering="crispEdges">
-            <!-- the gym's front door: a sign with the dumbbell, a lit doorway, the door swung open, a doormat -->
-            <rect x="1" y="1" width="14" height="5" fill="#0b2416" />
-            <rect x="2" y="2" width="12" height="3" fill="#c8e66b" />
-            <rect x="4" y="2" width="1" height="3" fill="#0b2416" />
-            <rect x="11" y="2" width="1" height="3" fill="#0b2416" />
-            <rect x="3" y="3" width="10" height="1" fill="#0b2416" />
-            <rect x="2" y="6" width="12" height="8" fill="#0b2416" />
-            <rect x="3" y="6" width="7" height="8" fill="#c8e66b" />
-            <rect x="11" y="6" width="2" height="8" fill="#1f6b3a" />
-            <rect x="12" y="9" width="1" height="1" fill="#c8e66b" />
-            <rect x="1" y="14" width="14" height="2" fill="#0b2416" />
-            <rect x="2" y="14" width="12" height="1" fill="#0f3d22" />
-          </svg>
+    <!-- ============================================================ -->
+    <!-- state: invite (signed out) -->
+    <p class="mock-state">State: invite, signed out · /join/K7M2QX opened from the group chat · nothing about the room is looked up until they're signed in</p>
+    <div class="mock-frame">
+      <header class="topbar">
+        <a href="/" class="brand" aria-label="Spotter home">
+          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><rect x="0" y="2" width="2" height="4" fill="#c8e66b" /><rect x="2" y="0" width="2" height="8" fill="#c8e66b" /><rect x="4" y="3" width="8" height="2" fill="#e8f0d8" /><rect x="12" y="0" width="2" height="8" fill="#c8e66b" /><rect x="14" y="2" width="2" height="4" fill="#c8e66b" /></svg>
+          <span>Spotter</span>
+        </a>
+        <nav>
+          <a href="/signin">Sign in</a>
+          <a href="/signup">Sign up</a>
+        </nav>
+      </header>
+      <main>
+        <div class="card join-card">
+          <h1>You're invited</h1>
+          <p class="lead">Your squad's training. Sign up and you'll walk straight in 🏋️</p>
+          <div class="floor scene" aria-hidden="true">
+            <svg class="doorway" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="1" y="1" width="14" height="1" fill="#0b2416"/><rect x="1" y="2" width="1" height="1" fill="#0b2416"/><rect x="2" y="2" width="2" height="1" fill="#c8e66b"/><rect x="4" y="2" width="1" height="1" fill="#0b2416"/><rect x="5" y="2" width="6" height="1" fill="#c8e66b"/><rect x="11" y="2" width="1" height="1" fill="#0b2416"/><rect x="12" y="2" width="2" height="1" fill="#c8e66b"/><rect x="14" y="2" width="1" height="1" fill="#0b2416"/><rect x="1" y="3" width="1" height="1" fill="#0b2416"/><rect x="2" y="3" width="1" height="1" fill="#c8e66b"/><rect x="3" y="3" width="10" height="1" fill="#0b2416"/><rect x="13" y="3" width="1" height="1" fill="#c8e66b"/><rect x="14" y="3" width="1" height="1" fill="#0b2416"/><rect x="1" y="4" width="1" height="1" fill="#0b2416"/><rect x="2" y="4" width="2" height="1" fill="#c8e66b"/><rect x="4" y="4" width="1" height="1" fill="#0b2416"/><rect x="5" y="4" width="6" height="1" fill="#c8e66b"/><rect x="11" y="4" width="1" height="1" fill="#0b2416"/><rect x="12" y="4" width="2" height="1" fill="#c8e66b"/><rect x="14" y="4" width="1" height="1" fill="#0b2416"/><rect x="1" y="5" width="14" height="1" fill="#0b2416"/><rect x="2" y="6" width="1" height="1" fill="#0b2416"/><rect x="3" y="6" width="7" height="1" fill="#c8e66b"/><rect x="10" y="6" width="1" height="1" fill="#0b2416"/><rect x="11" y="6" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="6" width="1" height="1" fill="#0b2416"/><rect x="2" y="7" width="1" height="1" fill="#0b2416"/><rect x="3" y="7" width="7" height="1" fill="#c8e66b"/><rect x="10" y="7" width="1" height="1" fill="#0b2416"/><rect x="11" y="7" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="7" width="1" height="1" fill="#0b2416"/><rect x="2" y="8" width="1" height="1" fill="#0b2416"/><rect x="3" y="8" width="7" height="1" fill="#c8e66b"/><rect x="10" y="8" width="1" height="1" fill="#0b2416"/><rect x="11" y="8" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="8" width="1" height="1" fill="#0b2416"/><rect x="2" y="9" width="1" height="1" fill="#0b2416"/><rect x="3" y="9" width="7" height="1" fill="#c8e66b"/><rect x="10" y="9" width="1" height="1" fill="#0b2416"/><rect x="11" y="9" width="1" height="1" fill="#1f6b3a"/><rect x="12" y="9" width="1" height="1" fill="#c8e66b"/><rect x="13" y="9" width="1" height="1" fill="#0b2416"/><rect x="2" y="10" width="1" height="1" fill="#0b2416"/><rect x="3" y="10" width="7" height="1" fill="#c8e66b"/><rect x="10" y="10" width="1" height="1" fill="#0b2416"/><rect x="11" y="10" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="10" width="1" height="1" fill="#0b2416"/><rect x="2" y="11" width="1" height="1" fill="#0b2416"/><rect x="3" y="11" width="7" height="1" fill="#c8e66b"/><rect x="10" y="11" width="1" height="1" fill="#0b2416"/><rect x="11" y="11" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="11" width="1" height="1" fill="#0b2416"/><rect x="2" y="12" width="1" height="1" fill="#0b2416"/><rect x="3" y="12" width="7" height="1" fill="#c8e66b"/><rect x="10" y="12" width="1" height="1" fill="#0b2416"/><rect x="11" y="12" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="12" width="1" height="1" fill="#0b2416"/><rect x="2" y="13" width="1" height="1" fill="#0b2416"/><rect x="3" y="13" width="7" height="1" fill="#c8e66b"/><rect x="10" y="13" width="1" height="1" fill="#0b2416"/><rect x="11" y="13" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="13" width="1" height="1" fill="#0b2416"/><rect x="1" y="14" width="1" height="1" fill="#0b2416"/><rect x="2" y="14" width="12" height="1" fill="#0f3d22"/><rect x="14" y="14" width="1" height="1" fill="#0b2416"/><rect x="1" y="15" width="14" height="1" fill="#0b2416"/></svg>
+            <div class="stand">
+              <span class="nametag is-empty">You?</span>
+              <svg class="av ghost" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><g class="av-top"><rect x="5" y="1" width="6" height="1" class="k"/><rect x="4" y="2" width="1" height="1" class="k"/><rect x="5" y="2" width="6" height="1" class="s"/><rect x="11" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="s"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="8" height="1" class="s"/><rect x="12" y="4" width="1" height="1" class="k"/><rect x="3" y="5" width="1" height="1" class="k"/><rect x="4" y="5" width="1" height="1" class="s"/><rect x="5" y="5" width="1" height="1" class="k"/><rect x="6" y="5" width="4" height="1" class="s"/><rect x="10" y="5" width="1" height="1" class="k"/><rect x="11" y="5" width="1" height="1" class="s"/><rect x="12" y="5" width="1" height="1" class="k"/><rect x="3" y="6" width="1" height="1" class="k"/><rect x="4" y="6" width="1" height="1" class="s"/><rect x="5" y="6" width="1" height="1" class="k"/><rect x="6" y="6" width="4" height="1" class="s"/><rect x="10" y="6" width="1" height="1" class="k"/><rect x="11" y="6" width="1" height="1" class="s"/><rect x="12" y="6" width="1" height="1" class="k"/><rect x="3" y="7" width="1" height="1" class="k"/><rect x="4" y="7" width="8" height="1" class="s"/><rect x="12" y="7" width="1" height="1" class="k"/><rect x="4" y="8" width="1" height="1" class="k"/><rect x="5" y="8" width="6" height="1" class="s"/><rect x="11" y="8" width="1" height="1" class="k"/><rect x="3" y="9" width="2" height="1" class="k"/><rect x="5" y="9" width="6" height="1" class="t"/><rect x="11" y="9" width="2" height="1" class="k"/><rect x="2" y="10" width="1" height="1" class="k"/><rect x="3" y="10" width="10" height="1" class="t"/><rect x="13" y="10" width="1" height="1" class="k"/><rect x="2" y="11" width="1" height="1" class="k"/><rect x="3" y="11" width="1" height="1" class="t"/><rect x="4" y="11" width="1" height="1" class="k"/><rect x="5" y="11" width="6" height="1" class="t"/><rect x="11" y="11" width="1" height="1" class="k"/><rect x="12" y="11" width="1" height="1" class="t"/><rect x="13" y="11" width="1" height="1" class="k"/><rect x="2" y="12" width="1" height="1" class="k"/><rect x="3" y="12" width="1" height="1" class="s"/><rect x="4" y="12" width="1" height="1" class="k"/><rect x="5" y="12" width="6" height="1" class="t"/><rect x="11" y="12" width="1" height="1" class="k"/><rect x="12" y="12" width="1" height="1" class="s"/><rect x="13" y="12" width="1" height="1" class="k"/></g><rect x="3" y="13" width="10" height="1" class="k"/><rect x="3" y="14" width="1" height="1" class="k"/><rect x="4" y="14" width="2" height="1" class="s"/><rect x="6" y="14" width="1" height="1" class="k"/><rect x="9" y="14" width="1" height="1" class="k"/><rect x="10" y="14" width="2" height="1" class="s"/><rect x="12" y="14" width="1" height="1" class="k"/><rect x="3" y="15" width="4" height="1" class="k"/><rect x="9" y="15" width="4" height="1" class="k"/></svg>
+            </div>
+          </div>
+          <p class="code-label" id="invite-code-label">Room passcode</p>
+          <div class="code-input" role="group" aria-labelledby="invite-code-label">
+            <span class="code">K7M2QX</span>
+          </div>
+          <div class="actions"><a href="/signup?next=%2Fjoin%2FK7M2QX" class="button wide">Sign up</a></div>
+        </div>
+        <div class="lobby-alt join-alt">
+          <p class="hint">Already on Spotter? You'll land in the same room.</p>
+          <a href="/signin?next=%2Fjoin%2FK7M2QX" class="button secondary">Sign in</a>
+        </div>
+      </main>
+      <footer>
+        <a href="/readme/">What Spotter is for</a>
+      </footer>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- state: error: unknown or closed -->
+    <p class="mock-state">State: error · wrong, unknown or closed code (ROOM-2), one message for all · 404 · code echoed back, normalised</p>
+    <div class="mock-frame">
+      <header class="topbar">
+        <a href="/" class="brand" aria-label="Spotter home">
+          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><rect x="0" y="2" width="2" height="4" fill="#c8e66b" /><rect x="2" y="0" width="2" height="8" fill="#c8e66b" /><rect x="4" y="3" width="8" height="2" fill="#e8f0d8" /><rect x="12" y="0" width="2" height="8" fill="#c8e66b" /><rect x="14" y="2" width="2" height="4" fill="#c8e66b" /></svg>
+          <span>Spotter</span>
+        </a>
+        <nav>
+          <a href="/history">History</a>
+          <form method="post" action="/signout"><button type="submit" class="linklike">Sign out</button></form>
+        </nav>
+      </header>
+      <main>
+        <div class="card join-card">
           <h1>Join your squad</h1>
-        </div>
-        <p>Got the code? Pop it in 📲</p>
-        <form method="post" class="join-form">
-          <label for="passcode-4">Passcode</label>
-          <p class="hint" id="passcode-4-hint">6 characters · no 0 O 1 I L</p>
-          <div class="code-input">
-            <input id="passcode-4" name="passcode" value="K7M2QX" autocomplete="off" autocapitalize="characters" maxlength="8" required spellcheck="false" autocorrect="off" enterkeyhint="go" aria-describedby="passcode-4-hint" readonly />
+          <p class="lead">Got the code? Pop it in 📲</p>
+          <div class="floor scene" aria-hidden="true">
+            <svg class="doorway" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="1" y="1" width="14" height="1" fill="#0b2416"/><rect x="1" y="2" width="1" height="1" fill="#0b2416"/><rect x="2" y="2" width="2" height="1" fill="#c8e66b"/><rect x="4" y="2" width="1" height="1" fill="#0b2416"/><rect x="5" y="2" width="6" height="1" fill="#c8e66b"/><rect x="11" y="2" width="1" height="1" fill="#0b2416"/><rect x="12" y="2" width="2" height="1" fill="#c8e66b"/><rect x="14" y="2" width="1" height="1" fill="#0b2416"/><rect x="1" y="3" width="1" height="1" fill="#0b2416"/><rect x="2" y="3" width="1" height="1" fill="#c8e66b"/><rect x="3" y="3" width="10" height="1" fill="#0b2416"/><rect x="13" y="3" width="1" height="1" fill="#c8e66b"/><rect x="14" y="3" width="1" height="1" fill="#0b2416"/><rect x="1" y="4" width="1" height="1" fill="#0b2416"/><rect x="2" y="4" width="2" height="1" fill="#c8e66b"/><rect x="4" y="4" width="1" height="1" fill="#0b2416"/><rect x="5" y="4" width="6" height="1" fill="#c8e66b"/><rect x="11" y="4" width="1" height="1" fill="#0b2416"/><rect x="12" y="4" width="2" height="1" fill="#c8e66b"/><rect x="14" y="4" width="1" height="1" fill="#0b2416"/><rect x="1" y="5" width="14" height="1" fill="#0b2416"/><rect x="2" y="6" width="1" height="1" fill="#0b2416"/><rect x="3" y="6" width="7" height="1" fill="#c8e66b"/><rect x="10" y="6" width="1" height="1" fill="#0b2416"/><rect x="11" y="6" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="6" width="1" height="1" fill="#0b2416"/><rect x="2" y="7" width="1" height="1" fill="#0b2416"/><rect x="3" y="7" width="7" height="1" fill="#c8e66b"/><rect x="10" y="7" width="1" height="1" fill="#0b2416"/><rect x="11" y="7" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="7" width="1" height="1" fill="#0b2416"/><rect x="2" y="8" width="1" height="1" fill="#0b2416"/><rect x="3" y="8" width="7" height="1" fill="#c8e66b"/><rect x="10" y="8" width="1" height="1" fill="#0b2416"/><rect x="11" y="8" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="8" width="1" height="1" fill="#0b2416"/><rect x="2" y="9" width="1" height="1" fill="#0b2416"/><rect x="3" y="9" width="7" height="1" fill="#c8e66b"/><rect x="10" y="9" width="1" height="1" fill="#0b2416"/><rect x="11" y="9" width="1" height="1" fill="#1f6b3a"/><rect x="12" y="9" width="1" height="1" fill="#c8e66b"/><rect x="13" y="9" width="1" height="1" fill="#0b2416"/><rect x="2" y="10" width="1" height="1" fill="#0b2416"/><rect x="3" y="10" width="7" height="1" fill="#c8e66b"/><rect x="10" y="10" width="1" height="1" fill="#0b2416"/><rect x="11" y="10" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="10" width="1" height="1" fill="#0b2416"/><rect x="2" y="11" width="1" height="1" fill="#0b2416"/><rect x="3" y="11" width="7" height="1" fill="#c8e66b"/><rect x="10" y="11" width="1" height="1" fill="#0b2416"/><rect x="11" y="11" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="11" width="1" height="1" fill="#0b2416"/><rect x="2" y="12" width="1" height="1" fill="#0b2416"/><rect x="3" y="12" width="7" height="1" fill="#c8e66b"/><rect x="10" y="12" width="1" height="1" fill="#0b2416"/><rect x="11" y="12" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="12" width="1" height="1" fill="#0b2416"/><rect x="2" y="13" width="1" height="1" fill="#0b2416"/><rect x="3" y="13" width="7" height="1" fill="#c8e66b"/><rect x="10" y="13" width="1" height="1" fill="#0b2416"/><rect x="11" y="13" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="13" width="1" height="1" fill="#0b2416"/><rect x="1" y="14" width="1" height="1" fill="#0b2416"/><rect x="2" y="14" width="12" height="1" fill="#0f3d22"/><rect x="14" y="14" width="1" height="1" fill="#0b2416"/><rect x="1" y="15" width="14" height="1" fill="#0b2416"/></svg>
+            <div class="stand">
+              <span class="nametag">Ji-woo</span>
+              <svg class="av " viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" style="--av-skin: #e9bd94; --av-hair: #e46fae; --av-shirt: #eeeee6"><g class="av-top"><rect x="5" y="1" width="6" height="1" class="k"/><rect x="4" y="2" width="1" height="1" class="k"/><rect x="5" y="2" width="6" height="1" class="s"/><rect x="11" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="s"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="8" height="1" class="s"/><rect x="12" y="4" width="1" height="1" class="k"/><rect x="3" y="5" width="1" height="1" class="k"/><rect x="4" y="5" width="1" height="1" class="s"/><rect x="5" y="5" width="1" height="1" class="k"/><rect x="6" y="5" width="4" height="1" class="s"/><rect x="10" y="5" width="1" height="1" class="k"/><rect x="11" y="5" width="1" height="1" class="s"/><rect x="12" y="5" width="1" height="1" class="k"/><rect x="3" y="6" width="1" height="1" class="k"/><rect x="4" y="6" width="1" height="1" class="s"/><rect x="5" y="6" width="1" height="1" class="k"/><rect x="6" y="6" width="4" height="1" class="s"/><rect x="10" y="6" width="1" height="1" class="k"/><rect x="11" y="6" width="1" height="1" class="s"/><rect x="12" y="6" width="1" height="1" class="k"/><rect x="3" y="7" width="1" height="1" class="k"/><rect x="4" y="7" width="8" height="1" class="s"/><rect x="12" y="7" width="1" height="1" class="k"/><rect x="4" y="8" width="1" height="1" class="k"/><rect x="5" y="8" width="6" height="1" class="s"/><rect x="11" y="8" width="1" height="1" class="k"/><rect x="3" y="9" width="2" height="1" class="k"/><rect x="5" y="9" width="6" height="1" class="t"/><rect x="11" y="9" width="2" height="1" class="k"/><rect x="2" y="10" width="1" height="1" class="k"/><rect x="3" y="10" width="10" height="1" class="t"/><rect x="13" y="10" width="1" height="1" class="k"/><rect x="2" y="11" width="1" height="1" class="k"/><rect x="3" y="11" width="1" height="1" class="t"/><rect x="4" y="11" width="1" height="1" class="k"/><rect x="5" y="11" width="6" height="1" class="t"/><rect x="11" y="11" width="1" height="1" class="k"/><rect x="12" y="11" width="1" height="1" class="t"/><rect x="13" y="11" width="1" height="1" class="k"/><rect x="2" y="12" width="1" height="1" class="k"/><rect x="3" y="12" width="1" height="1" class="s"/><rect x="4" y="12" width="1" height="1" class="k"/><rect x="5" y="12" width="6" height="1" class="t"/><rect x="11" y="12" width="1" height="1" class="k"/><rect x="12" y="12" width="1" height="1" class="s"/><rect x="13" y="12" width="1" height="1" class="k"/><g class="hair hair-ponytail"><rect x="5" y="0" width="6" height="1" class="k"/><rect x="4" y="1" width="1" height="1" class="k"/><rect x="5" y="1" width="6" height="1" class="h"/><rect x="11" y="1" width="2" height="1" class="k"/><rect x="3" y="2" width="1" height="1" class="k"/><rect x="4" y="2" width="9" height="1" class="h"/><rect x="13" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="10" height="1" class="h"/><rect x="14" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="1" height="1" class="h"/><rect x="11" y="4" width="3" height="1" class="h"/><rect x="14" y="4" width="1" height="1" class="k"/><rect x="12" y="5" width="1" height="1" class="k"/><rect x="13" y="5" width="1" height="1" class="h"/><rect x="14" y="5" width="1" height="1" class="k"/><rect x="12" y="6" width="1" height="1" class="k"/><rect x="13" y="6" width="1" height="1" class="h"/><rect x="14" y="6" width="1" height="1" class="k"/><rect x="13" y="7" width="1" height="1" class="k"/></g></g><rect x="3" y="13" width="10" height="1" class="k"/><rect x="3" y="14" width="1" height="1" class="k"/><rect x="4" y="14" width="2" height="1" class="s"/><rect x="6" y="14" width="1" height="1" class="k"/><rect x="9" y="14" width="1" height="1" class="k"/><rect x="10" y="14" width="2" height="1" class="s"/><rect x="12" y="14" width="1" height="1" class="k"/><rect x="3" y="15" width="4" height="1" class="k"/><rect x="9" y="15" width="4" height="1" class="k"/></svg>
+            </div>
           </div>
-          <div class="actions"><button type="submit" class="wide" disabled>Join</button></div>
-          <p class="hint join-status" role="status">Checking the code…</p>
-        </form>
-      </div>
-      <div class="join-alt">
-        <p class="hint">Room closed? Start a new one and send the squad the code.</p>
-        <form method="post" action="/rooms"><button type="submit" class="button secondary">New room</button></form>
-      </div>
+          <form method="post" action="/join" class="join-form">
+            <label for="passcode-j3">Passcode</label>
+            <p class="hint" id="passcode-hint-j3">6 characters · no 0 O 1 I L</p>
+            <div class="code-input invalid">
+              <input id="passcode-j3" name="passcode" value="K7N2QX" autocomplete="off" autocapitalize="characters" maxlength="8" required spellcheck="false" autocorrect="off" enterkeyhint="go" aria-describedby="passcode-hint-j3 passcode-error-j3" aria-invalid="true" />
+            </div>
+            <p class="error" id="passcode-error-j3">No open room has that passcode. Check it with your squad.</p>
+            <div class="actions"><button type="submit" class="wide">Join</button></div>
+            <p class="hint status-line" role="status"></p>
+          </form>
+        </div>
+        <div class="lobby-alt join-alt">
+          <p class="hint">Room closed or full? Start a new one and send the squad the code.</p>
+          <form method="post" action="/rooms"><button type="submit" class="button secondary">New room</button></form>
+        </div>
+      </main>
+      <footer>
+        <a href="/readme/">What Spotter is for</a>
+      </footer>
+    </div>
 
-      <hr class="mock-sep" />
-      <!-- state: room-full (later) -->
-      <p class="mock-label">Later, not built: room full (ROOM-4, week 10). Same slot, different copy</p>
-      <div class="card join-card">
-        <div class="join-head">
-          <svg class="door" viewBox="0 0 16 16" width="64" height="64" aria-hidden="true" shape-rendering="crispEdges">
-            <!-- the gym's front door: a sign with the dumbbell, a lit doorway, the door swung open, a doormat -->
-            <rect x="1" y="1" width="14" height="5" fill="#0b2416" />
-            <rect x="2" y="2" width="12" height="3" fill="#c8e66b" />
-            <rect x="4" y="2" width="1" height="3" fill="#0b2416" />
-            <rect x="11" y="2" width="1" height="3" fill="#0b2416" />
-            <rect x="3" y="3" width="10" height="1" fill="#0b2416" />
-            <rect x="2" y="6" width="12" height="8" fill="#0b2416" />
-            <rect x="3" y="6" width="7" height="8" fill="#c8e66b" />
-            <rect x="11" y="6" width="2" height="8" fill="#1f6b3a" />
-            <rect x="12" y="9" width="1" height="1" fill="#c8e66b" />
-            <rect x="1" y="14" width="14" height="2" fill="#0b2416" />
-            <rect x="2" y="14" width="12" height="1" fill="#0f3d22" />
-          </svg>
+    <!-- ============================================================ -->
+    <!-- state: error: invite to a closed room -->
+    <p class="mock-state">State: error via an invite · Priya signed up from /join/9BDMXE, but the room had closed meanwhile · same screen, code from the link</p>
+    <div class="mock-frame">
+      <header class="topbar">
+        <a href="/" class="brand" aria-label="Spotter home">
+          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><rect x="0" y="2" width="2" height="4" fill="#c8e66b" /><rect x="2" y="0" width="2" height="8" fill="#c8e66b" /><rect x="4" y="3" width="8" height="2" fill="#e8f0d8" /><rect x="12" y="0" width="2" height="8" fill="#c8e66b" /><rect x="14" y="2" width="2" height="4" fill="#c8e66b" /></svg>
+          <span>Spotter</span>
+        </a>
+        <nav>
+          <a href="/history">History</a>
+          <form method="post" action="/signout"><button type="submit" class="linklike">Sign out</button></form>
+        </nav>
+      </header>
+      <main>
+        <div class="card join-card">
           <h1>Join your squad</h1>
-        </div>
-        <p>Got the code? Pop it in 📲</p>
-        <form method="post" class="join-form">
-          <label for="passcode-5">Passcode</label>
-          <p class="hint" id="passcode-5-hint">6 characters · no 0 O 1 I L</p>
-          <div class="code-input invalid">
-            <input id="passcode-5" name="passcode" value="K7M2QX" autocomplete="off" autocapitalize="characters" maxlength="8" required spellcheck="false" autocorrect="off" enterkeyhint="go" aria-describedby="passcode-5-hint passcode-5-error" aria-invalid="true" />
+          <p class="lead">Got the code? Pop it in 📲</p>
+          <div class="floor scene" aria-hidden="true">
+            <svg class="doorway" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="1" y="1" width="14" height="1" fill="#0b2416"/><rect x="1" y="2" width="1" height="1" fill="#0b2416"/><rect x="2" y="2" width="2" height="1" fill="#c8e66b"/><rect x="4" y="2" width="1" height="1" fill="#0b2416"/><rect x="5" y="2" width="6" height="1" fill="#c8e66b"/><rect x="11" y="2" width="1" height="1" fill="#0b2416"/><rect x="12" y="2" width="2" height="1" fill="#c8e66b"/><rect x="14" y="2" width="1" height="1" fill="#0b2416"/><rect x="1" y="3" width="1" height="1" fill="#0b2416"/><rect x="2" y="3" width="1" height="1" fill="#c8e66b"/><rect x="3" y="3" width="10" height="1" fill="#0b2416"/><rect x="13" y="3" width="1" height="1" fill="#c8e66b"/><rect x="14" y="3" width="1" height="1" fill="#0b2416"/><rect x="1" y="4" width="1" height="1" fill="#0b2416"/><rect x="2" y="4" width="2" height="1" fill="#c8e66b"/><rect x="4" y="4" width="1" height="1" fill="#0b2416"/><rect x="5" y="4" width="6" height="1" fill="#c8e66b"/><rect x="11" y="4" width="1" height="1" fill="#0b2416"/><rect x="12" y="4" width="2" height="1" fill="#c8e66b"/><rect x="14" y="4" width="1" height="1" fill="#0b2416"/><rect x="1" y="5" width="14" height="1" fill="#0b2416"/><rect x="2" y="6" width="1" height="1" fill="#0b2416"/><rect x="3" y="6" width="7" height="1" fill="#c8e66b"/><rect x="10" y="6" width="1" height="1" fill="#0b2416"/><rect x="11" y="6" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="6" width="1" height="1" fill="#0b2416"/><rect x="2" y="7" width="1" height="1" fill="#0b2416"/><rect x="3" y="7" width="7" height="1" fill="#c8e66b"/><rect x="10" y="7" width="1" height="1" fill="#0b2416"/><rect x="11" y="7" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="7" width="1" height="1" fill="#0b2416"/><rect x="2" y="8" width="1" height="1" fill="#0b2416"/><rect x="3" y="8" width="7" height="1" fill="#c8e66b"/><rect x="10" y="8" width="1" height="1" fill="#0b2416"/><rect x="11" y="8" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="8" width="1" height="1" fill="#0b2416"/><rect x="2" y="9" width="1" height="1" fill="#0b2416"/><rect x="3" y="9" width="7" height="1" fill="#c8e66b"/><rect x="10" y="9" width="1" height="1" fill="#0b2416"/><rect x="11" y="9" width="1" height="1" fill="#1f6b3a"/><rect x="12" y="9" width="1" height="1" fill="#c8e66b"/><rect x="13" y="9" width="1" height="1" fill="#0b2416"/><rect x="2" y="10" width="1" height="1" fill="#0b2416"/><rect x="3" y="10" width="7" height="1" fill="#c8e66b"/><rect x="10" y="10" width="1" height="1" fill="#0b2416"/><rect x="11" y="10" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="10" width="1" height="1" fill="#0b2416"/><rect x="2" y="11" width="1" height="1" fill="#0b2416"/><rect x="3" y="11" width="7" height="1" fill="#c8e66b"/><rect x="10" y="11" width="1" height="1" fill="#0b2416"/><rect x="11" y="11" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="11" width="1" height="1" fill="#0b2416"/><rect x="2" y="12" width="1" height="1" fill="#0b2416"/><rect x="3" y="12" width="7" height="1" fill="#c8e66b"/><rect x="10" y="12" width="1" height="1" fill="#0b2416"/><rect x="11" y="12" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="12" width="1" height="1" fill="#0b2416"/><rect x="2" y="13" width="1" height="1" fill="#0b2416"/><rect x="3" y="13" width="7" height="1" fill="#c8e66b"/><rect x="10" y="13" width="1" height="1" fill="#0b2416"/><rect x="11" y="13" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="13" width="1" height="1" fill="#0b2416"/><rect x="1" y="14" width="1" height="1" fill="#0b2416"/><rect x="2" y="14" width="12" height="1" fill="#0f3d22"/><rect x="14" y="14" width="1" height="1" fill="#0b2416"/><rect x="1" y="15" width="14" height="1" fill="#0b2416"/></svg>
+            <div class="stand">
+              <span class="nametag">Priya</span>
+              <svg class="av " viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" style="--av-skin: #8a5532; --av-hair: #4d6bd6; --av-shirt: #6a4c93"><g class="av-top"><rect x="5" y="1" width="6" height="1" class="k"/><rect x="4" y="2" width="1" height="1" class="k"/><rect x="5" y="2" width="6" height="1" class="s"/><rect x="11" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="s"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="8" height="1" class="s"/><rect x="12" y="4" width="1" height="1" class="k"/><rect x="3" y="5" width="1" height="1" class="k"/><rect x="4" y="5" width="1" height="1" class="s"/><rect x="5" y="5" width="1" height="1" class="k"/><rect x="6" y="5" width="4" height="1" class="s"/><rect x="10" y="5" width="1" height="1" class="k"/><rect x="11" y="5" width="1" height="1" class="s"/><rect x="12" y="5" width="1" height="1" class="k"/><rect x="3" y="6" width="1" height="1" class="k"/><rect x="4" y="6" width="1" height="1" class="s"/><rect x="5" y="6" width="1" height="1" class="k"/><rect x="6" y="6" width="4" height="1" class="s"/><rect x="10" y="6" width="1" height="1" class="k"/><rect x="11" y="6" width="1" height="1" class="s"/><rect x="12" y="6" width="1" height="1" class="k"/><rect x="3" y="7" width="1" height="1" class="k"/><rect x="4" y="7" width="8" height="1" class="s"/><rect x="12" y="7" width="1" height="1" class="k"/><rect x="4" y="8" width="1" height="1" class="k"/><rect x="5" y="8" width="6" height="1" class="s"/><rect x="11" y="8" width="1" height="1" class="k"/><rect x="3" y="9" width="2" height="1" class="k"/><rect x="5" y="9" width="6" height="1" class="t"/><rect x="11" y="9" width="2" height="1" class="k"/><rect x="2" y="10" width="1" height="1" class="k"/><rect x="3" y="10" width="10" height="1" class="t"/><rect x="13" y="10" width="1" height="1" class="k"/><rect x="2" y="11" width="1" height="1" class="k"/><rect x="3" y="11" width="1" height="1" class="t"/><rect x="4" y="11" width="1" height="1" class="k"/><rect x="5" y="11" width="6" height="1" class="t"/><rect x="11" y="11" width="1" height="1" class="k"/><rect x="12" y="11" width="1" height="1" class="t"/><rect x="13" y="11" width="1" height="1" class="k"/><rect x="2" y="12" width="1" height="1" class="k"/><rect x="3" y="12" width="1" height="1" class="s"/><rect x="4" y="12" width="1" height="1" class="k"/><rect x="5" y="12" width="6" height="1" class="t"/><rect x="11" y="12" width="1" height="1" class="k"/><rect x="12" y="12" width="1" height="1" class="s"/><rect x="13" y="12" width="1" height="1" class="k"/><g class="hair hair-crop"><rect x="5" y="0" width="6" height="1" class="k"/><rect x="4" y="1" width="1" height="1" class="k"/><rect x="5" y="1" width="6" height="1" class="h"/><rect x="11" y="1" width="1" height="1" class="k"/><rect x="3" y="2" width="1" height="1" class="k"/><rect x="4" y="2" width="8" height="1" class="h"/><rect x="12" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="h"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="1" height="1" class="h"/><rect x="11" y="4" width="1" height="1" class="h"/><rect x="12" y="4" width="1" height="1" class="k"/></g></g><rect x="3" y="13" width="10" height="1" class="k"/><rect x="3" y="14" width="1" height="1" class="k"/><rect x="4" y="14" width="2" height="1" class="s"/><rect x="6" y="14" width="1" height="1" class="k"/><rect x="9" y="14" width="1" height="1" class="k"/><rect x="10" y="14" width="2" height="1" class="s"/><rect x="12" y="14" width="1" height="1" class="k"/><rect x="3" y="15" width="4" height="1" class="k"/><rect x="9" y="15" width="4" height="1" class="k"/></svg>
+            </div>
           </div>
-            <p class="error" id="passcode-5-error">This gym's full: 12 of 12 are in.</p>
-          <div class="actions"><button type="submit" class="wide">Join</button></div>
-          <p class="hint join-status" role="status"></p>
-        </form>
-      </div>
-      <div class="join-alt">
-        <p class="hint">Room closed? Start a new one and send the squad the code.</p>
-        <form method="post" action="/rooms"><button type="submit" class="button secondary">New room</button></form>
-      </div>
+          <form method="post" action="/join" class="join-form">
+            <label for="passcode-j4">Passcode</label>
+            <p class="hint" id="passcode-hint-j4">6 characters · no 0 O 1 I L</p>
+            <div class="code-input invalid">
+              <input id="passcode-j4" name="passcode" value="9BDMXE" autocomplete="off" autocapitalize="characters" maxlength="8" required spellcheck="false" autocorrect="off" enterkeyhint="go" aria-describedby="passcode-hint-j4 passcode-error-j4" aria-invalid="true" />
+            </div>
+            <p class="error" id="passcode-error-j4">No open room has that passcode. Check it with your squad.</p>
+            <div class="actions"><button type="submit" class="wide">Join</button></div>
+            <p class="hint status-line" role="status"></p>
+          </form>
+        </div>
+        <div class="lobby-alt join-alt">
+          <p class="hint">Room closed or full? Start a new one and send the squad the code.</p>
+          <form method="post" action="/rooms"><button type="submit" class="button secondary">New room</button></form>
+        </div>
+      </main>
+      <footer>
+        <a href="/readme/">What Spotter is for</a>
+      </footer>
+    </div>
 
-      <!-- state: signed-out -->
-      <p class="mock-label">State: signed out · nothing drawn, 303 to /signin (unchanged)</p>
-    </main>
-    <footer>
-      <a href="/readme/">What Spotter is for</a>
-    </footer>
+    <!-- ============================================================ -->
+    <!-- state: error: room full -->
+    <p class="mock-state">State: room full (ROOM-4) · the 13th person · 409 · the code is right, so the slots aren't marked wrong</p>
+    <div class="mock-frame">
+      <header class="topbar">
+        <a href="/" class="brand" aria-label="Spotter home">
+          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><rect x="0" y="2" width="2" height="4" fill="#c8e66b" /><rect x="2" y="0" width="2" height="8" fill="#c8e66b" /><rect x="4" y="3" width="8" height="2" fill="#e8f0d8" /><rect x="12" y="0" width="2" height="8" fill="#c8e66b" /><rect x="14" y="2" width="2" height="4" fill="#c8e66b" /></svg>
+          <span>Spotter</span>
+        </a>
+        <nav>
+          <a href="/history">History</a>
+          <form method="post" action="/signout"><button type="submit" class="linklike">Sign out</button></form>
+        </nav>
+      </header>
+      <main>
+        <div class="card join-card">
+          <h1>Join your squad</h1>
+          <p class="lead">Got the code? Pop it in 📲</p>
+          <div class="floor scene" aria-hidden="true">
+            <svg class="doorway" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="1" y="1" width="14" height="1" fill="#0b2416"/><rect x="1" y="2" width="1" height="1" fill="#0b2416"/><rect x="2" y="2" width="2" height="1" fill="#c8e66b"/><rect x="4" y="2" width="1" height="1" fill="#0b2416"/><rect x="5" y="2" width="6" height="1" fill="#c8e66b"/><rect x="11" y="2" width="1" height="1" fill="#0b2416"/><rect x="12" y="2" width="2" height="1" fill="#c8e66b"/><rect x="14" y="2" width="1" height="1" fill="#0b2416"/><rect x="1" y="3" width="1" height="1" fill="#0b2416"/><rect x="2" y="3" width="1" height="1" fill="#c8e66b"/><rect x="3" y="3" width="10" height="1" fill="#0b2416"/><rect x="13" y="3" width="1" height="1" fill="#c8e66b"/><rect x="14" y="3" width="1" height="1" fill="#0b2416"/><rect x="1" y="4" width="1" height="1" fill="#0b2416"/><rect x="2" y="4" width="2" height="1" fill="#c8e66b"/><rect x="4" y="4" width="1" height="1" fill="#0b2416"/><rect x="5" y="4" width="6" height="1" fill="#c8e66b"/><rect x="11" y="4" width="1" height="1" fill="#0b2416"/><rect x="12" y="4" width="2" height="1" fill="#c8e66b"/><rect x="14" y="4" width="1" height="1" fill="#0b2416"/><rect x="1" y="5" width="14" height="1" fill="#0b2416"/><rect x="2" y="6" width="1" height="1" fill="#0b2416"/><rect x="3" y="6" width="7" height="1" fill="#c8e66b"/><rect x="10" y="6" width="1" height="1" fill="#0b2416"/><rect x="11" y="6" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="6" width="1" height="1" fill="#0b2416"/><rect x="2" y="7" width="1" height="1" fill="#0b2416"/><rect x="3" y="7" width="7" height="1" fill="#c8e66b"/><rect x="10" y="7" width="1" height="1" fill="#0b2416"/><rect x="11" y="7" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="7" width="1" height="1" fill="#0b2416"/><rect x="2" y="8" width="1" height="1" fill="#0b2416"/><rect x="3" y="8" width="7" height="1" fill="#c8e66b"/><rect x="10" y="8" width="1" height="1" fill="#0b2416"/><rect x="11" y="8" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="8" width="1" height="1" fill="#0b2416"/><rect x="2" y="9" width="1" height="1" fill="#0b2416"/><rect x="3" y="9" width="7" height="1" fill="#c8e66b"/><rect x="10" y="9" width="1" height="1" fill="#0b2416"/><rect x="11" y="9" width="1" height="1" fill="#1f6b3a"/><rect x="12" y="9" width="1" height="1" fill="#c8e66b"/><rect x="13" y="9" width="1" height="1" fill="#0b2416"/><rect x="2" y="10" width="1" height="1" fill="#0b2416"/><rect x="3" y="10" width="7" height="1" fill="#c8e66b"/><rect x="10" y="10" width="1" height="1" fill="#0b2416"/><rect x="11" y="10" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="10" width="1" height="1" fill="#0b2416"/><rect x="2" y="11" width="1" height="1" fill="#0b2416"/><rect x="3" y="11" width="7" height="1" fill="#c8e66b"/><rect x="10" y="11" width="1" height="1" fill="#0b2416"/><rect x="11" y="11" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="11" width="1" height="1" fill="#0b2416"/><rect x="2" y="12" width="1" height="1" fill="#0b2416"/><rect x="3" y="12" width="7" height="1" fill="#c8e66b"/><rect x="10" y="12" width="1" height="1" fill="#0b2416"/><rect x="11" y="12" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="12" width="1" height="1" fill="#0b2416"/><rect x="2" y="13" width="1" height="1" fill="#0b2416"/><rect x="3" y="13" width="7" height="1" fill="#c8e66b"/><rect x="10" y="13" width="1" height="1" fill="#0b2416"/><rect x="11" y="13" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="13" width="1" height="1" fill="#0b2416"/><rect x="1" y="14" width="1" height="1" fill="#0b2416"/><rect x="2" y="14" width="12" height="1" fill="#0f3d22"/><rect x="14" y="14" width="1" height="1" fill="#0b2416"/><rect x="1" y="15" width="14" height="1" fill="#0b2416"/></svg>
+            <div class="stand">
+              <span class="nametag">Mia</span>
+              <svg class="av " viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" style="--av-skin: #d09a68; --av-hair: #4a2c1a; --av-shirt: #1f8a86"><g class="av-top"><rect x="5" y="1" width="6" height="1" class="k"/><rect x="4" y="2" width="1" height="1" class="k"/><rect x="5" y="2" width="6" height="1" class="s"/><rect x="11" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="s"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="8" height="1" class="s"/><rect x="12" y="4" width="1" height="1" class="k"/><rect x="3" y="5" width="1" height="1" class="k"/><rect x="4" y="5" width="1" height="1" class="s"/><rect x="5" y="5" width="1" height="1" class="k"/><rect x="6" y="5" width="4" height="1" class="s"/><rect x="10" y="5" width="1" height="1" class="k"/><rect x="11" y="5" width="1" height="1" class="s"/><rect x="12" y="5" width="1" height="1" class="k"/><rect x="3" y="6" width="1" height="1" class="k"/><rect x="4" y="6" width="1" height="1" class="s"/><rect x="5" y="6" width="1" height="1" class="k"/><rect x="6" y="6" width="4" height="1" class="s"/><rect x="10" y="6" width="1" height="1" class="k"/><rect x="11" y="6" width="1" height="1" class="s"/><rect x="12" y="6" width="1" height="1" class="k"/><rect x="3" y="7" width="1" height="1" class="k"/><rect x="4" y="7" width="8" height="1" class="s"/><rect x="12" y="7" width="1" height="1" class="k"/><rect x="4" y="8" width="1" height="1" class="k"/><rect x="5" y="8" width="6" height="1" class="s"/><rect x="11" y="8" width="1" height="1" class="k"/><rect x="3" y="9" width="2" height="1" class="k"/><rect x="5" y="9" width="6" height="1" class="t"/><rect x="11" y="9" width="2" height="1" class="k"/><rect x="2" y="10" width="1" height="1" class="k"/><rect x="3" y="10" width="10" height="1" class="t"/><rect x="13" y="10" width="1" height="1" class="k"/><rect x="2" y="11" width="1" height="1" class="k"/><rect x="3" y="11" width="1" height="1" class="t"/><rect x="4" y="11" width="1" height="1" class="k"/><rect x="5" y="11" width="6" height="1" class="t"/><rect x="11" y="11" width="1" height="1" class="k"/><rect x="12" y="11" width="1" height="1" class="t"/><rect x="13" y="11" width="1" height="1" class="k"/><rect x="2" y="12" width="1" height="1" class="k"/><rect x="3" y="12" width="1" height="1" class="s"/><rect x="4" y="12" width="1" height="1" class="k"/><rect x="5" y="12" width="6" height="1" class="t"/><rect x="11" y="12" width="1" height="1" class="k"/><rect x="12" y="12" width="1" height="1" class="s"/><rect x="13" y="12" width="1" height="1" class="k"/><g class="hair hair-long"><rect x="5" y="0" width="6" height="1" class="k"/><rect x="4" y="1" width="1" height="1" class="k"/><rect x="5" y="1" width="6" height="1" class="h"/><rect x="11" y="1" width="1" height="1" class="k"/><rect x="3" y="2" width="1" height="1" class="k"/><rect x="4" y="2" width="8" height="1" class="h"/><rect x="12" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="h"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="2" height="1" class="h"/><rect x="10" y="4" width="2" height="1" class="h"/><rect x="12" y="4" width="1" height="1" class="k"/><rect x="2" y="5" width="1" height="1" class="k"/><rect x="3" y="5" width="1" height="1" class="h"/><rect x="12" y="5" width="1" height="1" class="h"/><rect x="13" y="5" width="1" height="1" class="k"/><rect x="2" y="6" width="1" height="1" class="k"/><rect x="3" y="6" width="1" height="1" class="h"/><rect x="12" y="6" width="1" height="1" class="h"/><rect x="13" y="6" width="1" height="1" class="k"/><rect x="2" y="7" width="1" height="1" class="k"/><rect x="3" y="7" width="1" height="1" class="h"/><rect x="12" y="7" width="1" height="1" class="h"/><rect x="13" y="7" width="1" height="1" class="k"/><rect x="2" y="8" width="1" height="1" class="k"/><rect x="3" y="8" width="1" height="1" class="h"/><rect x="12" y="8" width="1" height="1" class="h"/><rect x="13" y="8" width="1" height="1" class="k"/><rect x="2" y="9" width="1" height="1" class="k"/><rect x="3" y="9" width="2" height="1" class="h"/><rect x="11" y="9" width="2" height="1" class="h"/><rect x="13" y="9" width="1" height="1" class="k"/><rect x="2" y="10" width="3" height="1" class="k"/><rect x="11" y="10" width="3" height="1" class="k"/></g></g><rect x="3" y="13" width="10" height="1" class="k"/><rect x="3" y="14" width="1" height="1" class="k"/><rect x="4" y="14" width="2" height="1" class="s"/><rect x="6" y="14" width="1" height="1" class="k"/><rect x="9" y="14" width="1" height="1" class="k"/><rect x="10" y="14" width="2" height="1" class="s"/><rect x="12" y="14" width="1" height="1" class="k"/><rect x="3" y="15" width="4" height="1" class="k"/><rect x="9" y="15" width="4" height="1" class="k"/></svg>
+            </div>
+          </div>
+          <form method="post" action="/join" class="join-form">
+            <label for="passcode-j5">Passcode</label>
+            <p class="hint" id="passcode-hint-j5">6 characters · no 0 O 1 I L</p>
+            <div class="code-input">
+              <input id="passcode-j5" name="passcode" value="K7M2QX" autocomplete="off" autocapitalize="characters" maxlength="8" required spellcheck="false" autocorrect="off" enterkeyhint="go" aria-describedby="passcode-hint-j5 passcode-error-j5" />
+            </div>
+            <p class="error" id="passcode-error-j5">This gym's full: 12 of 12 are in. Wait for someone to leave, or start a new room below.</p>
+            <div class="actions"><button type="submit" class="wide">Join</button></div>
+            <p class="hint status-line" role="status"></p>
+          </form>
+        </div>
+        <div class="lobby-alt join-alt">
+          <p class="hint">Room closed or full? Start a new one and send the squad the code.</p>
+          <form method="post" action="/rooms"><button type="submit" class="button secondary">New room</button></form>
+        </div>
+      </main>
+      <footer>
+        <a href="/readme/">What Spotter is for</a>
+      </footer>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- state: pending -->
+    <p class="mock-state">State: pending · Join held down and disabled, label kept</p>
+    <div class="mock-frame">
+      <header class="topbar">
+        <a href="/" class="brand" aria-label="Spotter home">
+          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><rect x="0" y="2" width="2" height="4" fill="#c8e66b" /><rect x="2" y="0" width="2" height="8" fill="#c8e66b" /><rect x="4" y="3" width="8" height="2" fill="#e8f0d8" /><rect x="12" y="0" width="2" height="8" fill="#c8e66b" /><rect x="14" y="2" width="2" height="4" fill="#c8e66b" /></svg>
+          <span>Spotter</span>
+        </a>
+        <nav>
+          <a href="/history">History</a>
+          <form method="post" action="/signout"><button type="submit" class="linklike">Sign out</button></form>
+        </nav>
+      </header>
+      <main>
+        <div class="card join-card">
+          <h1>Join your squad</h1>
+          <p class="lead">Got the code? Pop it in 📲</p>
+          <div class="floor scene" aria-hidden="true">
+            <svg class="doorway" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="1" y="1" width="14" height="1" fill="#0b2416"/><rect x="1" y="2" width="1" height="1" fill="#0b2416"/><rect x="2" y="2" width="2" height="1" fill="#c8e66b"/><rect x="4" y="2" width="1" height="1" fill="#0b2416"/><rect x="5" y="2" width="6" height="1" fill="#c8e66b"/><rect x="11" y="2" width="1" height="1" fill="#0b2416"/><rect x="12" y="2" width="2" height="1" fill="#c8e66b"/><rect x="14" y="2" width="1" height="1" fill="#0b2416"/><rect x="1" y="3" width="1" height="1" fill="#0b2416"/><rect x="2" y="3" width="1" height="1" fill="#c8e66b"/><rect x="3" y="3" width="10" height="1" fill="#0b2416"/><rect x="13" y="3" width="1" height="1" fill="#c8e66b"/><rect x="14" y="3" width="1" height="1" fill="#0b2416"/><rect x="1" y="4" width="1" height="1" fill="#0b2416"/><rect x="2" y="4" width="2" height="1" fill="#c8e66b"/><rect x="4" y="4" width="1" height="1" fill="#0b2416"/><rect x="5" y="4" width="6" height="1" fill="#c8e66b"/><rect x="11" y="4" width="1" height="1" fill="#0b2416"/><rect x="12" y="4" width="2" height="1" fill="#c8e66b"/><rect x="14" y="4" width="1" height="1" fill="#0b2416"/><rect x="1" y="5" width="14" height="1" fill="#0b2416"/><rect x="2" y="6" width="1" height="1" fill="#0b2416"/><rect x="3" y="6" width="7" height="1" fill="#c8e66b"/><rect x="10" y="6" width="1" height="1" fill="#0b2416"/><rect x="11" y="6" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="6" width="1" height="1" fill="#0b2416"/><rect x="2" y="7" width="1" height="1" fill="#0b2416"/><rect x="3" y="7" width="7" height="1" fill="#c8e66b"/><rect x="10" y="7" width="1" height="1" fill="#0b2416"/><rect x="11" y="7" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="7" width="1" height="1" fill="#0b2416"/><rect x="2" y="8" width="1" height="1" fill="#0b2416"/><rect x="3" y="8" width="7" height="1" fill="#c8e66b"/><rect x="10" y="8" width="1" height="1" fill="#0b2416"/><rect x="11" y="8" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="8" width="1" height="1" fill="#0b2416"/><rect x="2" y="9" width="1" height="1" fill="#0b2416"/><rect x="3" y="9" width="7" height="1" fill="#c8e66b"/><rect x="10" y="9" width="1" height="1" fill="#0b2416"/><rect x="11" y="9" width="1" height="1" fill="#1f6b3a"/><rect x="12" y="9" width="1" height="1" fill="#c8e66b"/><rect x="13" y="9" width="1" height="1" fill="#0b2416"/><rect x="2" y="10" width="1" height="1" fill="#0b2416"/><rect x="3" y="10" width="7" height="1" fill="#c8e66b"/><rect x="10" y="10" width="1" height="1" fill="#0b2416"/><rect x="11" y="10" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="10" width="1" height="1" fill="#0b2416"/><rect x="2" y="11" width="1" height="1" fill="#0b2416"/><rect x="3" y="11" width="7" height="1" fill="#c8e66b"/><rect x="10" y="11" width="1" height="1" fill="#0b2416"/><rect x="11" y="11" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="11" width="1" height="1" fill="#0b2416"/><rect x="2" y="12" width="1" height="1" fill="#0b2416"/><rect x="3" y="12" width="7" height="1" fill="#c8e66b"/><rect x="10" y="12" width="1" height="1" fill="#0b2416"/><rect x="11" y="12" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="12" width="1" height="1" fill="#0b2416"/><rect x="2" y="13" width="1" height="1" fill="#0b2416"/><rect x="3" y="13" width="7" height="1" fill="#c8e66b"/><rect x="10" y="13" width="1" height="1" fill="#0b2416"/><rect x="11" y="13" width="2" height="1" fill="#1f6b3a"/><rect x="13" y="13" width="1" height="1" fill="#0b2416"/><rect x="1" y="14" width="1" height="1" fill="#0b2416"/><rect x="2" y="14" width="12" height="1" fill="#0f3d22"/><rect x="14" y="14" width="1" height="1" fill="#0b2416"/><rect x="1" y="15" width="14" height="1" fill="#0b2416"/></svg>
+            <div class="stand">
+              <span class="nametag">Tom</span>
+              <svg class="av " viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" style="--av-skin: #f6d7bd; --av-hair: #b5552a; --av-shirt: #2e3f7f"><g class="av-top"><rect x="5" y="1" width="6" height="1" class="k"/><rect x="4" y="2" width="1" height="1" class="k"/><rect x="5" y="2" width="6" height="1" class="s"/><rect x="11" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="s"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="8" height="1" class="s"/><rect x="12" y="4" width="1" height="1" class="k"/><rect x="3" y="5" width="1" height="1" class="k"/><rect x="4" y="5" width="1" height="1" class="s"/><rect x="5" y="5" width="1" height="1" class="k"/><rect x="6" y="5" width="4" height="1" class="s"/><rect x="10" y="5" width="1" height="1" class="k"/><rect x="11" y="5" width="1" height="1" class="s"/><rect x="12" y="5" width="1" height="1" class="k"/><rect x="3" y="6" width="1" height="1" class="k"/><rect x="4" y="6" width="1" height="1" class="s"/><rect x="5" y="6" width="1" height="1" class="k"/><rect x="6" y="6" width="4" height="1" class="s"/><rect x="10" y="6" width="1" height="1" class="k"/><rect x="11" y="6" width="1" height="1" class="s"/><rect x="12" y="6" width="1" height="1" class="k"/><rect x="3" y="7" width="1" height="1" class="k"/><rect x="4" y="7" width="8" height="1" class="s"/><rect x="12" y="7" width="1" height="1" class="k"/><rect x="4" y="8" width="1" height="1" class="k"/><rect x="5" y="8" width="6" height="1" class="s"/><rect x="11" y="8" width="1" height="1" class="k"/><rect x="3" y="9" width="2" height="1" class="k"/><rect x="5" y="9" width="6" height="1" class="t"/><rect x="11" y="9" width="2" height="1" class="k"/><rect x="2" y="10" width="1" height="1" class="k"/><rect x="3" y="10" width="10" height="1" class="t"/><rect x="13" y="10" width="1" height="1" class="k"/><rect x="2" y="11" width="1" height="1" class="k"/><rect x="3" y="11" width="1" height="1" class="t"/><rect x="4" y="11" width="1" height="1" class="k"/><rect x="5" y="11" width="6" height="1" class="t"/><rect x="11" y="11" width="1" height="1" class="k"/><rect x="12" y="11" width="1" height="1" class="t"/><rect x="13" y="11" width="1" height="1" class="k"/><rect x="2" y="12" width="1" height="1" class="k"/><rect x="3" y="12" width="1" height="1" class="s"/><rect x="4" y="12" width="1" height="1" class="k"/><rect x="5" y="12" width="6" height="1" class="t"/><rect x="11" y="12" width="1" height="1" class="k"/><rect x="12" y="12" width="1" height="1" class="s"/><rect x="13" y="12" width="1" height="1" class="k"/><g class="hair hair-crop"><rect x="5" y="0" width="6" height="1" class="k"/><rect x="4" y="1" width="1" height="1" class="k"/><rect x="5" y="1" width="6" height="1" class="h"/><rect x="11" y="1" width="1" height="1" class="k"/><rect x="3" y="2" width="1" height="1" class="k"/><rect x="4" y="2" width="8" height="1" class="h"/><rect x="12" y="2" width="1" height="1" class="k"/><rect x="3" y="3" width="1" height="1" class="k"/><rect x="4" y="3" width="8" height="1" class="h"/><rect x="12" y="3" width="1" height="1" class="k"/><rect x="3" y="4" width="1" height="1" class="k"/><rect x="4" y="4" width="1" height="1" class="h"/><rect x="11" y="4" width="1" height="1" class="h"/><rect x="12" y="4" width="1" height="1" class="k"/></g></g><rect x="3" y="13" width="10" height="1" class="k"/><rect x="3" y="14" width="1" height="1" class="k"/><rect x="4" y="14" width="2" height="1" class="s"/><rect x="6" y="14" width="1" height="1" class="k"/><rect x="9" y="14" width="1" height="1" class="k"/><rect x="10" y="14" width="2" height="1" class="s"/><rect x="12" y="14" width="1" height="1" class="k"/><rect x="3" y="15" width="4" height="1" class="k"/><rect x="9" y="15" width="4" height="1" class="k"/></svg>
+            </div>
+          </div>
+          <form method="post" action="/join" class="join-form" aria-busy="true">
+            <label for="passcode-j6">Passcode</label>
+            <p class="hint" id="passcode-hint-j6">6 characters · no 0 O 1 I L</p>
+            <div class="code-input">
+              <input id="passcode-j6" name="passcode" value="K7M2QX" autocomplete="off" autocapitalize="characters" maxlength="8" required spellcheck="false" autocorrect="off" enterkeyhint="go" aria-describedby="passcode-hint-j6" readonly />
+            </div>
+            <div class="actions"><button type="submit" class="wide" disabled>Join</button></div>
+            <p class="hint status-line" role="status">Checking the code…</p>
+          </form>
+        </div>
+        <div class="lobby-alt join-alt">
+          <p class="hint">Room closed or full? Start a new one and send the squad the code.</p>
+          <form method="post" action="/rooms"><button type="submit" class="button secondary">New room</button></form>
+        </div>
+      </main>
+      <footer>
+        <a href="/readme/">What Spotter is for</a>
+      </footer>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- state: no screen -->
+    <p class="mock-state">States with no screen of their own</p>
+    <div class="mock-note"><p><strong>Invite, signed in</strong> (/join/K7M2QX): joined on the spot and 303 to <code>/rooms/:id</code>. Already a member: straight to the room. A full, closed or unknown room falls back to this page with the code in the slots and the matching error above.</p>
+      <p><strong>Invite, after signing up or in:</strong> sign up and sign in carry <code>?next=/join/K7M2QX</code>, so they land back on /join/K7M2QX signed in, which joins them (the row above).</p>
+      <p><strong>Signed out at /join</strong> (no code): 303 to <code>/signin?next=/join</code>.</p>
+      <p><strong>Malformed invite</strong> (/join/hello, wrong length or letters outside the alphabet): signed in, the error state with empty slots; signed out, 303 to <code>/signin?next=/join</code>.</p>
+      <p><strong>Success:</strong> nothing here; arriving in the gym is the confirmation.</p></div>
+
   </body>
 </html>

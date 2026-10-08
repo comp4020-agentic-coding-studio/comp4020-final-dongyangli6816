@@ -8,7 +8,7 @@ import { clock, distanceKm, kg, km, pace, setLabel, timeOfDay, volume } from "..
 import { roomView, setFinished, setLifting, SLACK_GRACE_S, type State } from "../../lib/presence.ts";
 import { STATE_WORD, stateAt, whatParts } from "../../lib/squad.ts";
 import { broadcast } from "../../lib/realtime.ts";
-import { endRoom, isMember, leaveRoom, touchRoom, wasMember } from "../../lib/rooms.ts";
+import { endRoom, isMember, leaveRoom, ROOM_SIZE, touchRoom, wasMember } from "../../lib/rooms.ts";
 import { roomMembers, rooms, users, workouts } from "../../lib/schema.ts";
 import {
   adjustRest,
@@ -147,7 +147,8 @@ const members = db
   .all();
 const others = members.filter((m) => m.id !== user.id).map((m) => m.name);
 const othersText = others.length > 1 ? `${others.slice(0, -1).join(", ")} and ${others.at(-1)}` : (others[0] ?? "");
-const inviteUrl = new URL(`/join`, Astro.url).href.replace(/^https?:\/\//, "");
+// ROOM-3: the invite link joins whoever opens it, after signing up if need be
+const inviteUrl = `${Astro.url.host}/join/${room.passcode}`;
 
 // LOG-8: ?edit=<id> opens one of your sets in this workout; anything else
 // falls back to the normal sheet
@@ -217,7 +218,6 @@ const values: FieldValues | undefined =
       }
     : fieldsFrom(editing ?? prefill, exercise));
 
-const ROOM_SIZE = 12; // ROOM-4: twelve people, twelve stations
 const groups = Object.entries(EQUIPMENT).map(([key, label]) => ({
   label,
   exercises: EXERCISES.filter((e) => e.equipment === key),
@@ -253,7 +253,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
           <span class="count">{members.length} of {ROOM_SIZE} in</span>
         </p>
       </div>
-      <p class="hint">Send the code to the squad. They join at {inviteUrl}.</p>
+      <p class="hint">Send the code to the squad, or this link: <span class="room-link">{inviteUrl}</span></p>
       <div class="actions room-actions">
         <form method="post">
           <input type="hidden" name="action" value="leave" />
@@ -1354,6 +1354,10 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     color: var(--paper);
     background: var(--night);
     border-color: var(--edge);
+  }
+  .room-link {
+    color: var(--paper);
+    overflow-wrap: anywhere;
   }
   .alone {
     margin: 0.75rem 0 0;

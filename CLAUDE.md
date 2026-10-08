@@ -62,7 +62,7 @@ and the table changes in the same commit.
 | Group | Pages |
 | --- | --- |
 | Auth | `signin`, `signup` |
-| Lobby | `home` (`index`), `join` |
+| Lobby | `home` (`index`), `join`, `avatar` |
 | Logbook | `history`, `summary` |
 | Gym | `room` |
 | About | `readme` |

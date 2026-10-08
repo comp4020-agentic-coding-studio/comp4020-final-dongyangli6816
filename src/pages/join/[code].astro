@@ -1,0 +1,33 @@
+---
+import JoinCard from "../../components/JoinCard.astro";
+import Layout from "../../layouts/Layout.astro";
+import { asPasscode } from "../../lib/passcode.ts";
+import { joinRoom } from "../../lib/rooms.ts";
+
+// ROOM-3: an invite link. Someone signed in is joined and sent straight into
+// the room. Someone signed out is asked to sign up or sign in, and both bring
+// them back here, signed in, to be joined. Nothing about the room is looked
+// up for a signed-out visitor, so this page can't be used to test codes
+// without an account.
+const passcode = asPasscode(Astro.params.code ?? "");
+const user = Astro.locals.user;
+if (!passcode) return Astro.redirect(user ? "/join" : "/signin?next=/join", 303);
+
+let error: "none" | "full" | undefined;
+if (user) {
+  const joined = joinRoom(user.id, passcode);
+  if ("roomId" in joined) return Astro.redirect(`/rooms/${joined.roomId}`, 303);
+  error = joined.error;
+  Astro.response.status = error === "full" ? 409 : 404;
+}
+---
+
+<Layout title={user ? "Join a room" : "You're invited"}>
+  {
+    user ? (
+      <JoinCard mode="join" passcode={passcode} error={error} name={user.displayName} />
+    ) : (
+      <JoinCard mode="invite" passcode={passcode} />
+    )
+  }
+</Layout>

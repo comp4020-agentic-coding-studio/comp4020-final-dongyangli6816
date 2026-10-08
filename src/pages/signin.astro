@@ -27,8 +27,9 @@ if (Astro.request.method === "POST") {
 }
 
 // where signing in takes you, read from next; never look up the room itself,
-// since /signin?next=/rooms/N is open to anyone
-const toRoom = next.startsWith("/rooms/");
+// since /signin?next=/rooms/N is open to anyone; an invite (/join/CODE) is
+// heading to a gym too
+const toRoom = next.startsWith("/rooms/") || next.startsWith("/join/");
 const where = toRoom
   ? "Sign in and you'll walk straight into the gym."
   : next === "/history"
