@@ -1,45 +1,51 @@
 ---
-// One person's avatar as crisp SVG (AV-2): the body, with the hair drawn over
-// the head inside the bobbing group (g.av-top). Each pixel carries its slot as
-// a class (k, s, t, h) rather than a fill, and the look's colours arrive as
-// custom properties, so a palette swap is three variables.
-import { AVATAR_UPPER_ROWS, BODY, HAIR, HAIR_STYLES, lookVars, type HairStyle, type Look } from "../sprites/avatar.ts";
+// One person's avatar as crisp SVG (AV-2): the body in a pose, with the hair
+// drawn over the head inside the bobbing group (g.av-top). Each pixel carries
+// its slot as a class (k, s, t, h; pm, pw, pr for the gym's props) rather
+// than a fill, and the look's colours arrive as custom properties, so a
+// palette swap is three variables.
+import { AVATAR_UPPER_ROWS, HAIR, HAIR_STYLES, lookVars, poseOf, type HairStyle, type Look, type Pose } from "../sprites/avatar.ts";
 
 interface Props {
   // no look draws the body alone, as the invite's empty spot (with class "ghost")
   look?: Look | null;
+  // the gym's poses (GYM-10); standing everywhere else
+  pose?: Pose;
   // the head and shoulders only, for lists
   head?: boolean;
   // every hair style, with the look's chosen by data-hair: for the editor's
-  // live preview and for rows a script redraws
+  // live preview and for avatars a script redraws
   allHair?: boolean;
   // set the look's colours on the svg; off when a parent sets them
   vars?: boolean;
   class?: string;
 }
-const { look, head = false, allHair = false, vars = !!look, class: className } = Astro.props;
+const { look, pose = "stand", head = false, allHair = false, vars = !!look, class: className } = Astro.props;
 
 type Run = { x: number; y: number; w: number; slot: string };
-function runs(grid: readonly string[]): Run[] {
+const PROP: Record<string, string> = { m: "pm", w: "pw", r: "pr" };
+function runs(grid: readonly string[], dy = 0, prop = false): Run[] {
   const out: Run[] = [];
   grid.forEach((row, y) => {
     for (let x = 0; x < row.length; ) {
       const ch = row[x];
       let end = x + 1;
       while (row[end] === ch) end++;
-      if (ch !== ".") out.push({ x, y, w: end - x, slot: ch });
+      if (ch !== ".") out.push({ x, y: y + dy, w: end - x, slot: prop ? (PROP[ch] ?? ch) : ch });
       x = end;
     }
   });
   return out;
 }
-const body = runs(BODY);
+const { body: grid, hairRow, props } = poseOf(pose);
+const body = runs(grid);
 const styles: HairStyle[] = !look ? [] : allHair ? HAIR_STYLES.map((s) => s.id) : [look.hair];
-const hair = styles.map((style) => ({ style, runs: runs(HAIR[style]) }));
+const hair = styles.map((style) => ({ style, runs: runs(HAIR[style], hairRow) }));
+const extra = runs(props, 0, true);
 ---
 
 <svg
-  class:list={["av", className]}
+  class:list={["av", `pose-${pose}`, className]}
   viewBox={head ? "1 0 14 11" : "0 0 16 16"}
   shape-rendering="crispEdges"
   aria-hidden="true"
@@ -57,8 +63,10 @@ const hair = styles.map((style) => ({ style, runs: runs(HAIR[style]) }));
         </g>
       ))
     }
+    {extra.filter((r) => r.y < AVATAR_UPPER_ROWS).map((r) => <rect x={r.x} y={r.y} width={r.w} height="1" class={r.slot} />)}
   </g>
   {!head && body.filter((r) => r.y >= AVATAR_UPPER_ROWS).map((r) => <rect x={r.x} y={r.y} width={r.w} height="1" class={r.slot} />)}
+  {!head && extra.filter((r) => r.y >= AVATAR_UPPER_ROWS).map((r) => <rect x={r.x} y={r.y} width={r.w} height="1" class={r.slot} />)}
 </svg>
 
 <style is:global>
@@ -78,6 +86,16 @@ const hair = styles.map((style) => ({ style, runs: runs(HAIR[style]) }));
   }
   .av .t {
     fill: var(--av-shirt);
+  }
+  /* the gym's props: the bar, the bottle, the phone's glow */
+  .av .pm {
+    fill: var(--dim);
+  }
+  .av .pw {
+    fill: var(--paper);
+  }
+  .av .pr {
+    fill: var(--resting);
   }
   /* every style drawn, the look's shown */
   .av[data-hair] .hair {
