@@ -5,7 +5,7 @@ import { clearPresence } from "./presence.ts";
 import { broadcast } from "./realtime.ts";
 import { releaseStation, seedStations } from "./stations.ts";
 import { roomMembers, rooms, workouts } from "./schema.ts";
-import { finishWorkout } from "./workouts.ts";
+import { finishWorkout, openWorkout } from "./workouts.ts";
 
 export const ROOM_IDLE_MS = 4 * 3_600_000; // ROOM-6
 export const ROOM_SIZE = 12; // ROOM-4: twelve people, one per station
@@ -25,6 +25,7 @@ export function createRoom(hostUserId: number): { id: number; passcode: string }
           .get();
         tx.insert(roomMembers).values({ roomId: room.id, userId: hostUserId, joinedAt: now, lastSeenAt: now }).run();
         seedStations(room.id, now);
+        openWorkout(hostUserId, room.id, now);
         return room;
       });
     } catch (err) {
@@ -61,6 +62,7 @@ export function joinRoom(userId: number, passcode: string): Join {
         .onConflictDoUpdate({ target: [roomMembers.roomId, roomMembers.userId], set: { leftAt: null, lastSeenAt: now } })
         .run();
       tx.update(rooms).set({ lastActiveAt: now }).where(eq(rooms.id, room.id)).run();
+      openWorkout(userId, room.id, now);
       return { roomId: room.id };
     },
     { behavior: "immediate" },
