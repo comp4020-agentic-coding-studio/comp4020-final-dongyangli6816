@@ -1,207 +1,26 @@
 ---
+import JoinCard from "../components/JoinCard.astro";
+import Layout from "../layouts/Layout.astro";
 import { normalisePasscode } from "../lib/passcode.ts";
 import { joinRoom } from "../lib/rooms.ts";
-import Sprite from "../components/Sprite.astro";
-import Layout from "../layouts/Layout.astro";
-import { doorway } from "../sprites/door.ts";
 
 const user = Astro.locals.user;
-if (!user) return Astro.redirect("/signin", 303);
+if (!user) return Astro.redirect("/signin?next=/join", 303);
 
-let error = "";
+let error: "none" | "full" | undefined;
 let passcode = "";
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
   passcode = normalisePasscode(String(form.get("passcode") ?? ""));
-  const roomId = joinRoom(user.id, passcode);
-  if (roomId !== null) return Astro.redirect(`/rooms/${roomId}`, 303);
-  // ROOM-2: one generic message, whatever was wrong with the code
-  error = "No open room has that passcode. Check it with your squad.";
-  Astro.response.status = 404;
+  const joined = joinRoom(user.id, passcode);
+  if ("roomId" in joined) return Astro.redirect(`/rooms/${joined.roomId}`, 303);
+  // ROOM-2: one generic message, whatever was wrong with the code; ROOM-4:
+  // a full room says so, since the code itself was right
+  error = joined.error;
+  Astro.response.status = error === "full" ? 409 : 404;
 }
 ---
 
 <Layout title="Join a room">
-  <div class="card join-card">
-    <div class="join-head">
-      <Sprite sprite={doorway} class="door" scale={4} />
-      <h1>Join your squad</h1>
-    </div>
-    <p>Got the code? Pop it in 📲</p>
-    <form method="post" class="join-form">
-      <label for="passcode">Passcode</label>
-      <p class="hint" id="passcode-hint">6 characters · no 0 O 1 I L</p>
-      <div class:list={["code-input", { invalid: error }]}>
-        <input
-          id="passcode"
-          name="passcode"
-          value={passcode}
-          autocomplete="off"
-          autocapitalize="characters"
-          maxlength="8"
-          required
-          spellcheck="false"
-          autocorrect="off"
-          enterkeyhint="go"
-          autofocus={!!error}
-          aria-describedby={error ? "passcode-hint passcode-error" : "passcode-hint"}
-          aria-invalid={error ? "true" : undefined}
-        />
-      </div>
-      {error && <p class="error" id="passcode-error">{error}</p>}
-      <div class="actions"><button type="submit" class="wide">Join</button></div>
-      <p class="hint join-status" role="status"></p>
-    </form>
-  </div>
-  <div class="join-alt">
-    <p class="hint">Room closed? Start a new one and send the squad the code.</p>
-    <form method="post" action="/rooms"><button type="submit" class="button secondary">New room</button></form>
-  </div>
+  <JoinCard mode="join" passcode={passcode} error={error} name={user.displayName} />
 </Layout>
-
-<script>
-  // Runs on every page load (ADR 0003), so it checks it's on join first.
-  document.addEventListener("astro:page-load", () => {
-    const form = document.querySelector<HTMLFormElement>(".join-form");
-    if (!form) return;
-    const input = form.querySelector("input[name=passcode]") as HTMLInputElement;
-    const button = form.querySelector("button") as HTMLButtonElement;
-    const status = form.querySelector(".join-status")!;
-    // passcodes never use 0 O 1 I L, so drop them as they're typed
-    input.addEventListener("input", () => {
-      const v = input.value.toUpperCase().replace(/[^ABCDEFGHJKMNPQRSTUVWXYZ2-9]/g, "").slice(0, 6);
-      if (v !== input.value) input.value = v;
-    });
-    form.addEventListener("submit", () => {
-      button.disabled = true;
-      input.readOnly = true;
-      status.textContent = "Checking the code…";
-    });
-  });
-  // coming Back from the room must not leave the form stuck as pending
-  addEventListener("pageshow", () => {
-    const form = document.querySelector<HTMLFormElement>(".join-form");
-    if (!form) return;
-    form.querySelector("button")!.disabled = false;
-    form.querySelector<HTMLInputElement>("input[name=passcode]")!.readOnly = false;
-    form.querySelector(".join-status")!.textContent = "";
-  });
-</script>
-
-<style>
-  .join-card,
-  .join-alt {
-    max-width: 30rem;
-    margin-inline: auto;
-  }
-  .join-head {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 0.75rem;
-  }
-  .join-head h1 {
-    margin: 0;
-  }
-  .join-head :global(.door) {
-    flex: none;
-  }
-  .join-form label {
-    margin-top: 1.5rem;
-  }
-  .join-form .hint {
-    margin: 0 0 0.5rem;
-  }
-  .join-status {
-    margin: 0.5rem 0 0;
-  }
-  .join-status:empty {
-    display: none;
-  }
-  /* .code-input: ONE real <input name="passcode">, drawn as six slots.
-     Press Start 2P is monospaced at 1em per glyph, so letter-spacing =
-     cell - glyph drops each character into its own slot with no JavaScript.
-     The input is wider than the frame (room for the 8-character maxlength)
-     and the frame clips it, so the 6th character never scrolls the row. */
-  .code-input {
-    --cell: 44px; /* one slot + one divider */
-    --glyph: 24px;
-    --slot-h: 48px;
-    --pad: calc((var(--cell) - var(--px) - var(--glyph)) / 2);
-    width: calc(6 * var(--cell) + var(--px) * 3);
-    max-width: 100%;
-    height: calc(var(--slot-h) + var(--px) * 4);
-    overflow: hidden;
-    border: var(--px) solid var(--ink);
-    background-color: var(--green);
-    background-image:
-      /* name-entry underline in each slot */
-      repeating-linear-gradient(
-        90deg,
-        transparent 0 calc(var(--px) + var(--pad)),
-        var(--green) 0 calc(var(--px) + var(--pad) + var(--glyph)),
-        transparent 0 var(--cell)
-      ),
-      /* the six ink slots, green dividers between */ repeating-linear-gradient(90deg, transparent 0 var(--px), var(--ink) 0 var(--cell));
-    background-size:
-      100% var(--px),
-      100% var(--slot-h);
-    background-position:
-      0 calc(var(--slot-h) - var(--px)),
-      0 var(--px);
-    background-repeat: no-repeat;
-  }
-  .code-input input {
-    display: block;
-    width: calc(100% + 2 * var(--cell));
-    height: 100%;
-    min-height: 0;
-    margin: 0;
-    padding: 0 0 0 calc(var(--px) + var(--pad));
-    font: var(--glyph) / 1 var(--display);
-    letter-spacing: calc(var(--cell) - var(--glyph));
-    text-transform: uppercase;
-    color: var(--leaf);
-    caret-color: var(--leaf);
-    background: transparent;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-  }
-  .code-input input::selection {
-    color: var(--ink);
-    background: var(--leaf);
-  }
-  /* the ring goes on the frame, because the frame clips the input */
-  .code-input input:focus-visible {
-    outline: none;
-  }
-  .code-input:focus-within {
-    outline: var(--px) solid var(--ink);
-    outline-offset: var(--px);
-  }
-  .code-input.invalid {
-    border-color: var(--error);
-  }
-  .join-alt {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem 1rem;
-  }
-  .join-alt p {
-    flex: 1 1 14rem;
-    margin: 0;
-  }
-  .join-alt form {
-    margin: 0;
-  }
-  @media (min-width: 900px) {
-    .code-input {
-      --cell: 64px;
-      --glyph: 32px;
-      --slot-h: 64px;
-    }
-  }
-</style>

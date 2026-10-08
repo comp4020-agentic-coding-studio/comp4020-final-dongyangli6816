@@ -12,3 +12,10 @@ export function newPasscode(): string {
 
 // What someone typed, uppercased with spaces dropped.
 export const normalisePasscode = (input: string): string => input.replace(/\s+/g, "").toUpperCase();
+
+// A code that could be a passcode (six characters of the alphabet), or "".
+// Only its shape is checked, never whether a room has it.
+export function asPasscode(input: string): string {
+  const v = normalisePasscode(input);
+  return v.length === 6 && [...v].every((c) => PASSCODE_ALPHABET.includes(c)) ? v : "";
+}
