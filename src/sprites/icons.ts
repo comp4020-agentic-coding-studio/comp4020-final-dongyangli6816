@@ -20,3 +20,5 @@ export const claimIcon = icon("cc....cc", "c......c", "........", "........", ".
 // the avatar editor: Randomise, and the chosen swatch's tick
 export const dieIcon = icon("ccccccc.", "c.....c.", "c.c.c.c.", "c..c..c.", "c.c.c.c.", "c.....c.", "ccccccc.", "........");
 export const tickIcon = icon("........", "......cc", ".....cc.", "c...cc..", "cc.cc...", ".ccc....", "..c.....", "........");
+// the workout clock on the sheet's border
+export const clockIcon = icon("..cccc..", ".c.c..c.", "c..c...c", "c..ccc.c", "c......c", ".c....c.", "..cccc..", "........");

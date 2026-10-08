@@ -125,7 +125,7 @@ delivery plan below.
 | --- | --- | --- |
 | LOG-1 | P0 | A workout belongs to one person and, optionally, to the room they did it in. |
 | LOG-2 | P0 | 16 seeded exercises, two per piece of equipment (see The gym). |
-| LOG-3 | P0 | A set records what its exercise's kind measures: weight in kg and reps; reps and any added weight (bodyweight); a hold time (duration); or a distance and time (cardio). Each pre-fills from the person's last set of that exercise. |
+| LOG-3 | P0 | A set records what its exercise's kind measures: weight in kg and reps; reps and any added weight (bodyweight); a hold time (duration); or a distance and time (cardio). Weight and bodyweight sets pre-fill from the person's last set of that exercise; duration and cardio sets start empty, with the last set shown for reference (changed 8 Oct: the stopwatch counts on from the fields). |
 | LOG-4 | P0 | Tapping **Done** logs the set and starts a rest timer from the exercise's default (60 to 180 s; none after cardio), adjustable by ±15 s or skipped. The next set of that exercise starts from the rest last chosen for it. |
 | LOG-5 | P0 | When rest ends, the page plays a sound and flashes, if it is open. |
 | LOG-6 | P0 | Finishing a workout shows a summary: duration, sets, total volume (weight × reps), cardio distance and time spent slacking. |

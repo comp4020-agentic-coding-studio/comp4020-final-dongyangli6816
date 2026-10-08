@@ -40,6 +40,8 @@ import {
   stopIcon,
   trophyIcon,
   claimIcon,
+  clockIcon,
+  tickIcon,
 } from "../../sprites/icons.ts";
 
 const user = Astro.locals.user;
@@ -165,6 +167,15 @@ const prefill = exercise && !editing ? lastSet(user.id, exercise.id) : undefined
 // LOG-4: the rest after your newest set runs until it's skipped or the next
 // set is logged. Past half an hour over it's no longer a rest, just a gap.
 const latest = mySets.at(-1);
+// Done just landed: the GET after a log's redirect, on the lift logged.
+// Not after Start set, which posts to the same URL.
+const justLogged =
+  Astro.request.method === "GET" &&
+  Astro.url.searchParams.has("rested") &&
+  !editing &&
+  !!latest &&
+  latest.exerciseId === exercise?.id;
+const loggedNo = justLogged ? mySets.filter((s) => s.exerciseId === latest!.exerciseId).length : 0;
 const restEnd = latest ? latest.completedAt + latest.restTargetS * 1000 : 0;
 const resting = !!latest && latest.restTargetS > 0 && latest.restEndedAt === null && now < restEnd + 30 * 60_000;
 const over = resting && now >= restEnd;
@@ -217,7 +228,9 @@ const values: FieldValues | undefined =
         seconds: String(submitted.get("seconds") ?? ""),
         distance_km: String(submitted.get("distance_km") ?? ""),
       }
-    : fieldsFrom(editing ?? prefill, exercise));
+    : // timed kinds start empty, so the stopwatch counts from zero; the last
+      // one stays in view as "Last time"
+      fieldsFrom(editing ?? (exercise.kind === "weight" || exercise.kind === "bodyweight" ? prefill : undefined), exercise));
 
 const groups = Object.entries(EQUIPMENT).map(([key, label]) => ({
   label,
@@ -250,6 +263,18 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
         <Sprite sprite={TAB[state].icon} scale={2} />
         {TAB[state].word}
       </span>
+      {/* LOG-6: your session's time, from the moment you walked in */}
+      {
+        startedAt && (
+          <p class="panel-clock">
+            <Sprite sprite={clockIcon} scale={2} />
+            <span class="vh">Workout time </span>
+            <time datetime={`PT${elapsedS}S`} data-start={startedAt}>
+              {clock(elapsedS)}
+            </time>
+          </p>
+        )
+      }
       {
         resting && (
           <>
@@ -264,10 +289,12 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       }
       {!editing && exercise && <h2 class="vh" id="sheet-title">Log a set</h2>}
       {
-        Astro.url.searchParams.get("rested") && latest?.kind === "cardio" && !resting && (
-          <p class="bubble" role="status">
-            Logged! No rest timer after cardio 🏃
-          </p>
+        justLogged && latest!.kind === "cardio" && (
+          <div class="set-done">
+            <Sprite sprite={tickIcon} scale={4} />
+            <p class="set-done-n">Set {loggedNo} logged</p>
+            <p class="set-done-say">No rest timer after cardio. Go again, or change lift 🏃</p>
+          </div>
         )
       }
       {
@@ -490,6 +517,16 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
           is out of view. */}
       <div class="dock">
         {
+          justLogged && (
+            <p class="stamp">
+              <Sprite sprite={tickIcon} scale={2} />
+              <span>
+                Set {loggedNo} logged: <b>{setLabel(latest!)}</b>
+              </span>
+            </p>
+          )
+        }
+        {
           editing && exercise && values ? (
             <button type="submit" form="set-edit" class="wide">
               Save
@@ -567,12 +604,6 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       mySets.length > 0 && startedAt && (
         <section class="panel" aria-labelledby="log-title">
           <h2 class="panel-title" id="log-title">This workout</h2>
-          <p class="panel-clock">
-            <span class="vh">Workout time </span>
-            <time datetime={`PT${elapsedS}S`} data-start={startedAt}>
-              {clock(elapsedS)}
-            </time>
-          </p>
           <p class="tally">
             <b>{mySets.length}</b> set{mySets.length === 1 ? "" : "s"}
             {vol > 0 && (
@@ -682,7 +713,9 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
         {
           members.length === 1
             ? "You're the last one in, so leaving closes the room."
-            : "Leaving finishes your workout. Your sets stay in the book."
+            : mySets.length === 0
+              ? "Nothing logged yet, so there's no workout to save."
+              : "Leaving finishes your workout. Your sets stay in the book."
         }
       </p>
       {
@@ -705,6 +738,8 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       }
     </section>
   </div>
+  {/* outside the room, so an in-place swap keeps it: what Done logged, said once */}
+  <p class="sheet-news" id="sheet-news" role="status"></p>
 </Layout>
 
 <script>
@@ -1276,6 +1311,24 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
 
   const firstField = () => document.querySelector<HTMLElement>(".sheet form input:not([type=hidden]), .sheet select");
 
+  // Done landed (a 400 has no stamp): say what was logged, and on a phone,
+  // if the sheet's top was scrolled away, jump it back to just under the top
+  function afterDone() {
+    const stamp = document.querySelector<HTMLElement>(".dock .stamp");
+    if (!stamp) return;
+    const news = document.querySelector<HTMLElement>("#sheet-news");
+    if (news) {
+      news.textContent = "";
+      setTimeout(() => (news.textContent = stamp.textContent!.replace(/\s+/g, " ").trim()), 50);
+    }
+    const top = document.querySelector<HTMLElement>(".sheet")!.getBoundingClientRect().top;
+    if (matchMedia("(max-width: 899px)").matches && top < 24) scrollBy({ top: top - 24, behavior: "instant" });
+    // a reload shouldn't stamp the same set again
+    const url = new URL(location.href);
+    url.searchParams.delete("rested");
+    history.replaceState(history.state, "", url);
+  }
+
   document.addEventListener(
     "submit",
     (e) => {
@@ -1306,6 +1359,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
           const input = document.querySelector<HTMLInputElement>(`.set-form #${id}`);
           if (input && !input.readOnly) input.value = value;
         }
+        if (action === "log") afterDone();
         return action === "rest"
           ? document.querySelector<HTMLElement>(`.rest-adjust button[value="${delta}"]`)
           : document.querySelector<HTMLElement>(".sheet .wide");
@@ -1357,8 +1411,12 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     color: var(--leaf);
     background: var(--panel);
   }
-  /* the workout clock rides the log panel's top border, on the right */
+  /* the workout clock rides the sheet's top border, on the right, across
+     from your state tab, so it's on screen from the moment you walk in */
   .panel-clock {
+    display: flex;
+    align-items: center;
+    gap: var(--px);
     position: absolute;
     top: calc(var(--px) * -0.5);
     right: 0.75rem;
@@ -1647,6 +1705,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
      fixed to the bottom of the screen, so the map can sit at the top of the
      page and the button is always in the thumb zone, wherever you scroll. */
   .dock {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -1663,6 +1722,65 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   }
   /* a copy of the rest timer, shown only while the big one is out of view
      (the script watches it); screen readers use the big one */
+  /* Done's stamp: what was just logged, on the dock's top border for 4 s,
+     rising out of it in steps and sinking back. Taps pass through it. */
+  .stamp {
+    position: absolute;
+    top: calc(var(--px) * -0.5);
+    left: 0.75rem;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--px);
+    max-width: calc(100% - 1.5rem);
+    margin: 0;
+    padding: 0 0.5rem 0 0.25rem;
+    font: 20px/24px var(--body);
+    color: var(--leaf);
+    background: var(--night);
+    border: 2px solid var(--leaf);
+    box-shadow: 0 0 0 var(--px) var(--panel);
+    transform: translateY(-50%);
+    pointer-events: none;
+    font-variant-numeric: tabular-nums;
+    animation: stamp 4s steps(4) forwards;
+  }
+  .stamp :global(svg) {
+    flex: none;
+  }
+  .stamp span {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .stamp b {
+    font-weight: 400;
+    color: var(--paper);
+  }
+  @keyframes stamp {
+    0% {
+      clip-path: inset(100% -8px -8px -8px);
+    }
+    4%,
+    96% {
+      clip-path: inset(-8px);
+    }
+    100% {
+      clip-path: inset(100% -8px -8px -8px);
+      visibility: hidden;
+    }
+  }
+  @keyframes stamp-still {
+    100% {
+      visibility: hidden;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .stamp {
+      animation-name: stamp-still;
+      animation-timing-function: steps(1);
+    }
+  }
   .dock-timer {
     margin: 0 0 var(--px);
     font-size: 48px;
@@ -1706,8 +1824,41 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       animation: none;
     }
   }
-  .sheet .bubble {
-    margin-bottom: 1.25rem;
+  /* cardio's logged block: where the rest block would be, in leaf */
+  .set-done {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.25rem 0.5rem;
+    margin: 0 0 1rem;
+    padding: 0.5rem;
+    background: var(--night);
+    border: var(--px) solid var(--leaf);
+  }
+  .set-done :global(svg) {
+    color: var(--leaf);
+  }
+  .set-done-n {
+    margin: 0;
+    font-size: 32px;
+    line-height: 1;
+  }
+  .set-done-say {
+    grid-column: 1 / -1;
+    margin: 0;
+  }
+  /* timed fields start empty; the placeholders read 0:00 */
+  :global(.mmss input::placeholder) {
+    color: var(--dim);
+    opacity: 1;
+  }
+  .sheet-news {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   /* the rest block: water blue while resting, slacking red once it's over */
