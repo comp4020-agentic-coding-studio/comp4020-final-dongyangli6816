@@ -1,0 +1,95 @@
+---
+// One workout's sets, drawn the same on history and its summary: one tbody
+// per exercise in the order first done, its name and best set in a row
+// header, then each set written the way a lifter writes it.
+import { bestLabel, byExercise, setLabel, type LoggedSet } from "../lib/logbook.ts";
+
+interface Props {
+  sets: readonly LoggedSet[];
+}
+const { sets } = Astro.props;
+
+// cardio puts its pace on a second line, so "5 km · 25:00" fits a phone
+const cell = (s: LoggedSet) => {
+  const label = setLabel(s);
+  if (s.distanceM === null) return { label, pace: "" };
+  const cut = label.lastIndexOf(" · ");
+  return { label: label.slice(0, cut), pace: label.slice(cut + 3) };
+};
+---
+
+<table class="log">
+  <thead>
+    <tr>
+      <th scope="col">Exercise</th>
+      <th scope="col" class="num">Set</th>
+    </tr>
+  </thead>
+  {
+    byExercise(sets).map((ex) => (
+      <tbody>
+        {ex.sets.map((s, j) => {
+          const { label, pace } = cell(s);
+          return (
+            <tr>
+              {j === 0 && (
+                <th scope="rowgroup" rowspan={ex.sets.length} class="lift">
+                  {ex.name}
+                  {ex.sets.length > 1 && (
+                    <span class="best">
+                      Best <span>{bestLabel(ex.sets)}</span>
+                    </span>
+                  )}
+                </th>
+              )}
+              <td class="set">
+                {label}
+                {pace && <span class="pace">{pace}</span>}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    ))
+  }
+</table>
+
+<style>
+  .log th.lift {
+    font: 24px/1.15 var(--body);
+    text-transform: none;
+    color: var(--ink);
+    vertical-align: top;
+  }
+  .log .best {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 21px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  /* the figure never splits; on a phone the line breaks after "Best" */
+  .log .best span {
+    white-space: nowrap;
+  }
+  .log .set {
+    width: 1%;
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .log .pace {
+    display: block;
+    font-size: 21px;
+    color: var(--muted);
+  }
+  .log tbody tr > * {
+    background: var(--card);
+  }
+  .log tbody:nth-of-type(even) tr > * {
+    background: var(--paper);
+  }
+  .log tbody + tbody tr:first-child > * {
+    border-top-width: var(--px);
+  }
+</style>

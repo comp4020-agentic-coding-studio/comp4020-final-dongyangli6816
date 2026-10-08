@@ -1,0 +1,153 @@
+---
+import Sprite from "../../components/Sprite.astro";
+import WorkoutSets from "../../components/WorkoutSets.astro";
+import WorkoutTally from "../../components/WorkoutTally.astro";
+import Layout from "../../layouts/Layout.astro";
+import { dayLabel, distanceKm, km, timeRange, volume } from "../../lib/logbook.ts";
+import { workoutSummary } from "../../lib/workouts.ts";
+import { avatar } from "../../sprites/avatar.ts";
+import { trophyIcon } from "../../sprites/icons.ts";
+
+// LOG-6: one finished workout, drawn as its history entry at full size.
+const user = Astro.locals.user;
+if (!user) return Astro.redirect(`/signin?next=${encodeURIComponent(Astro.url.pathname)}`, 303);
+
+const id = Number(Astro.params.id);
+const w = Number.isInteger(id) ? workoutSummary(user.id, id) : undefined;
+// someone else's workout looks the same as no workout
+if (!w) return new Response("Not found", { status: 404 });
+if (w.endedAt === null) return Astro.redirect(w.roomId ? `/rooms/${w.roomId}` : "/history", 303);
+
+const now = Date.now();
+const day = dayLabel(w.startedAt, now);
+const [from, to] = timeRange(w.startedAt, w.endedAt);
+const done = Astro.url.searchParams.has("done");
+
+// the celebration, first match wins (docs/design/summary/spec.md)
+const vol = volume(w.sets);
+const dist = distanceKm(w.sets);
+const WORDS = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+const utes = Math.max(1, Math.round(vol / 2000)); // a dual-cab ute is about 2 tonnes
+const cheer =
+  w.sets.length === 0
+    ? ""
+    : vol >= 1000
+      ? `In the book: about ${WORDS[utes - 1] ?? utes} ute${utes === 1 ? "" : "s"} of iron 🛻`
+      : dist > 0
+        ? `In the book: ${km(dist)} km down 🏃`
+        : vol > 0
+          ? "In the book. Every kilo counts 🏆"
+          : "In the book. No plates needed 🤸";
+---
+
+<Layout title={`Workout · ${day}`}>
+  <section class="card trophy" aria-labelledby="day">
+    {done && cheer && <p class="bubble" role="status">{cheer}</p>}
+    <div class="who">
+      <div class="me-box">
+        <Sprite sprite={avatar} class="me" />
+        <span class="chip state-finished"><Sprite sprite={trophyIcon} scale={2} />Finished</span>
+      </div>
+      <div>
+        <h1 id="day">{day}</h1>
+        <p class="when">
+          <time datetime={new Date(w.startedAt).toISOString()}>{from}</time> –{" "}
+          <time datetime={new Date(w.endedAt).toISOString()}>{to}</time>
+        </p>
+      </div>
+    </div>
+    {
+      w.passcode &&
+        (done && w.roomClosedAt ? (
+          <p class="room">
+            Room <span class="passcode">{w.passcode}</span> closed
+          </p>
+        ) : (
+          <p class="room">
+            Trained in <span class="passcode">{w.passcode}</span>
+          </p>
+        ))
+    }
+    <WorkoutTally sets={w.sets} startedAt={w.startedAt} endedAt={w.endedAt} now={now} big />
+  </section>
+
+  <div class="actions after">
+    <a href="/" class="button">Back home</a>
+    <a href="/history" class="button secondary">All history</a>
+  </div>
+
+  <section class="card" aria-labelledby="every-set">
+    <h2 id="every-set">Every set</h2>
+    {
+      w.sets.length > 0 ? (
+        <WorkoutSets sets={w.sets} />
+      ) : (
+        <p class="nothing">No sets this time. The bar's not going anywhere 🏋️</p>
+      )
+    }
+  </section>
+</Layout>
+
+<style>
+  .when {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  /* the trophy card: you, Finished, and the numbers. Sized to fit the
+     first phone screen, so one screenshot carries it to the group chat. */
+  .trophy .bubble {
+    width: fit-content;
+    max-width: 100%;
+    margin-bottom: 1.5rem;
+  }
+  .who {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin: 0 0 1rem;
+  }
+  /* your avatar with its state chip under it, as on the gym floor */
+  .me-box {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .me-box :global(.me) {
+    display: block;
+    width: 64px;
+    height: 64px;
+    image-rendering: pixelated;
+  }
+  /* 4× on phones, 6× from 421 px: whole-number scales only */
+  @media (min-width: 421px) {
+    .me-box :global(.me) {
+      width: 96px;
+      height: 96px;
+    }
+  }
+  .who h1 {
+    margin: 0.5rem 0 0.5rem;
+  }
+  /* the room it happened in; "closed" only on the night it closed */
+  .room {
+    margin: 0 0 1rem;
+    color: var(--muted);
+  }
+  /* the passcode as a key tag, the same as home's room list */
+  .room .passcode {
+    padding: 0.25rem 0.5rem;
+    font-size: 16px;
+  }
+
+  /* the way out, straight under the trophy card, in the thumb zone */
+  .after {
+    margin: 0 0 1.5rem;
+  }
+  .nothing {
+    margin: 0;
+    color: var(--muted);
+  }
+</style>

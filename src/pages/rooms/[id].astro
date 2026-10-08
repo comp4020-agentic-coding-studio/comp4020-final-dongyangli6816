@@ -1,54 +1,162 @@
 ---
 import { and, eq, isNull } from "drizzle-orm";
+import SetFields, { type FieldValues } from "../../components/SetFields.astro";
+import Sprite from "../../components/Sprite.astro";
 import { db } from "../../lib/db.ts";
-import { EXERCISES } from "../../lib/exercises.ts";
-import { isMember } from "../../lib/rooms.ts";
-import { roomMembers, rooms, users } from "../../lib/schema.ts";
-import { kg, volume } from "../../lib/logbook.ts";
-import { DEFAULT_REST_S, finishWorkout, lastSet, logSet, setsInOpenWorkout } from "../../lib/workouts.ts";
+import { EXERCISES, exerciseById, type Exercise } from "../../lib/exercises.ts";
+import { clock, distanceKm, kg, km, pace, setLabel, timeOfDay, volume } from "../../lib/logbook.ts";
+import { endRoom, isMember, leaveRoom, touchRoom, wasMember } from "../../lib/rooms.ts";
+import { roomMembers, rooms, users, workouts } from "../../lib/schema.ts";
+import {
+  adjustRest,
+  deleteSet,
+  editSet,
+  finishWorkout,
+  lastSet,
+  logSet,
+  openWorkoutStart,
+  readSet,
+  setsInOpenWorkout,
+  setToEdit,
+  type SetValues,
+} from "../../lib/workouts.ts";
 import Layout from "../../layouts/Layout.astro";
+import { dropIcon, dumbbellIcon, idleIcon, pencilIcon, phoneIcon, playIcon, stopIcon } from "../../sprites/icons.ts";
 
 const user = Astro.locals.user;
 if (!user) return Astro.redirect(`/signin?next=${encodeURIComponent(Astro.url.pathname)}`, 303);
 
 const roomId = Number(Astro.params.id);
-// someone without the passcode can't see that the room exists
-if (!Number.isInteger(roomId) || !isMember(roomId, user.id)) {
-  return new Response("Not found", { status: 404 });
+const room = Number.isInteger(roomId) ? db.select().from(rooms).where(eq(rooms.id, roomId)).get() : undefined;
+// ROOM-6: someone the room was closed on is told so, on home
+if (room?.closedAt && wasMember(roomId, user.id)) {
+  const hadWorkout = db
+    .select({ id: workouts.id })
+    .from(workouts)
+    .where(and(eq(workouts.roomId, roomId), eq(workouts.userId, user.id)))
+    .get();
+  return Astro.redirect(`/?ended=${room.passcode}${hadWorkout ? "&logged=1" : ""}`, 303);
 }
-const room = db.select().from(rooms).where(eq(rooms.id, roomId)).get()!;
+// someone without the passcode can't see that the room exists
+if (!room || !isMember(roomId, user.id)) return new Response("Not found", { status: 404 });
+touchRoom(roomId, user.id);
+const isHost = room.hostUserId === user.id;
+const here = Astro.url.pathname;
+const summary = (workoutId: number | undefined, otherwise: string) =>
+  Astro.redirect(workoutId ? `/workouts/${workoutId}?done=1` : otherwise, 303);
 
 let error = "";
+let errorField = "";
+let submitted: FormData | undefined;
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
-  if (form.get("action") === "finish") {
-    finishWorkout(user.id, roomId);
-    return Astro.redirect("/history?finished=1", 303);
+  const action = String(form.get("action") ?? "log");
+  const setId = Number(form.get("set_id"));
+
+  if (action === "finish") return summary(finishWorkout(user.id, roomId), "/");
+  if (action === "leave") return summary(leaveRoom(user.id, roomId), `/?left=${room.passcode}`);
+  if (action === "end") {
+    const ended = endRoom(user.id, roomId);
+    if (!ended) return new Response("Only the host can end the room", { status: 403 });
+    return summary(ended.workoutId, "/");
   }
-  const exerciseId = Number(form.get("exercise_id"));
-  const weightKg = Number(form.get("weight_kg"));
-  const reps = Number(form.get("reps"));
-  if (!EXERCISES.some((e) => e.id === exerciseId)) error = "Pick an exercise.";
-  else if (!Number.isFinite(weightKg) || weightKg < 0 || weightKg > 1000) error = "Weight is 0 to 1000 kg.";
-  else if (!Number.isInteger(reps) || reps < 1 || reps > 1000) error = "Reps is a whole number from 1.";
-  else {
-    logSet(user.id, roomId, exerciseId, weightKg, reps);
-    return Astro.redirect(`/rooms/${roomId}?exercise=${exerciseId}&rested=1`, 303);
+  if (action === "rest") {
+    const delta = String(form.get("delta"));
+    if (delta === "-15" || delta === "15" || delta === "skip") adjustRest(user.id, roomId, delta);
+    return Astro.redirect(here + Astro.url.search.replace(/[?&]rested=1/, ""), 303);
   }
+  if (action === "delete") {
+    const own = Number.isInteger(setId) ? setToEdit(user.id, roomId, setId) : undefined;
+    if (!own || !deleteSet(user.id, roomId, setId)) return new Response("Not found", { status: 404 });
+    return Astro.redirect(`${here}?exercise=${own.exerciseId}`, 303);
+  }
+  if (action === "edit") {
+    const own = Number.isInteger(setId) ? setToEdit(user.id, roomId, setId) : undefined;
+    const ex = own && exerciseById(own.exerciseId);
+    if (!own || !ex) return new Response("Not found", { status: 404 });
+    const read = readSet(ex.kind, form);
+    if ("values" in read) {
+      editSet(user.id, roomId, setId, read.values);
+      return Astro.redirect(`${here}?exercise=${ex.id}`, 303);
+    }
+    ({ error, field: errorField } = read);
+  } else {
+    const ex = exerciseById(Number(form.get("exercise_id")));
+    if (!ex) error = "Pick an exercise.";
+    else {
+      const read = readSet(ex.kind, form);
+      if ("values" in read) {
+        logSet(user.id, roomId, ex, read.values);
+        return Astro.redirect(`${here}?exercise=${ex.id}&rested=1`, 303);
+      }
+      ({ error, field: errorField } = read);
+    }
+  }
+  submitted = form;
   Astro.response.status = 400;
 }
 
-const exerciseId = Number(Astro.url.searchParams.get("exercise"));
-const exercise = EXERCISES.find((e) => e.id === exerciseId);
-const prefill = exercise ? lastSet(user.id, exercise.id) : undefined;
+const now = Date.now();
 const mySets = setsInOpenWorkout(user.id, roomId);
+const startedAt = openWorkoutStart(user.id, roomId);
 const members = db
   .select({ id: users.id, name: users.displayName })
   .from(roomMembers)
   .innerJoin(users, eq(users.id, roomMembers.userId))
   .where(and(eq(roomMembers.roomId, roomId), isNull(roomMembers.leftAt)))
   .all();
+const others = members.filter((m) => m.id !== user.id).map((m) => m.name);
+const othersText = others.length > 1 ? `${others.slice(0, -1).join(", ")} and ${others.at(-1)}` : (others[0] ?? "");
 const inviteUrl = new URL(`/join`, Astro.url).href.replace(/^https?:\/\//, "");
+
+// LOG-8: ?edit=<id> opens one of your sets in this workout; anything else
+// falls back to the normal sheet
+const editId = Number(Astro.url.searchParams.get("edit") ?? submitted?.get("set_id"));
+const editing = Number.isInteger(editId) && editId > 0 ? setToEdit(user.id, roomId, editId) : undefined;
+const exercise: Exercise | undefined = exerciseById(
+  editing ? editing.exerciseId : Number(Astro.url.searchParams.get("exercise") ?? submitted?.get("exercise_id")),
+);
+const prefill = exercise && !editing ? lastSet(user.id, exercise.id) : undefined;
+
+// LOG-4: the rest after your newest set runs until it's skipped or the next
+// set is logged. Past half an hour over it's no longer a rest, just a gap.
+const latest = mySets.at(-1);
+const restEnd = latest ? latest.completedAt + latest.restTargetS * 1000 : 0;
+const resting = !!latest && latest.restTargetS > 0 && latest.restEndedAt === null && now < restEnd + 30 * 60_000;
+const over = resting && now >= restEnd;
+const state = over ? "slacking" : resting ? "resting" : exercise ? "lifting" : "idle";
+const baseState = exercise ? "lifting" : "idle";
+const TAB = {
+  idle: { icon: idleIcon, word: "Idle" },
+  lifting: { icon: dumbbellIcon, word: "Lifting" },
+  resting: { icon: dropIcon, word: "Resting" },
+  slacking: { icon: phoneIcon, word: "Slacking" },
+};
+
+// The fields: what was just submitted after an error, the set being edited,
+// or the last set of this exercise (LOG-3).
+const str = (n: number | null | undefined) => (n === null || n === undefined ? "" : String(n));
+function fieldsFrom(v: Partial<SetValues> | undefined, ex: Exercise): FieldValues {
+  const first = !v;
+  return {
+    weight_kg: str(v?.weightKg ?? 0),
+    reps: str(v?.reps ?? (first && ex.kind === "weight" ? 8 : null)),
+    minutes: v?.durationS != null ? String(Math.floor(v.durationS / 60)) : "",
+    seconds: v?.durationS != null ? String(v.durationS % 60) : "",
+    distance_km: v?.distanceM != null ? String(v.distanceM / 1000) : "",
+  };
+}
+const values: FieldValues | undefined =
+  exercise &&
+  (submitted
+    ? {
+        weight_kg: String(submitted.get("weight_kg") ?? ""),
+        reps: String(submitted.get("reps") ?? ""),
+        minutes: String(submitted.get("minutes") ?? ""),
+        seconds: String(submitted.get("seconds") ?? ""),
+        distance_km: String(submitted.get("distance_km") ?? ""),
+      }
+    : fieldsFrom(editing ?? prefill, exercise));
 
 const ROOM_SIZE = 12; // ROOM-4: twelve people, twelve stations
 const EQUIPMENT: Record<string, string> = {
@@ -66,13 +174,25 @@ const groups = Object.entries(EQUIPMENT).map(([key, label]) => ({
   exercises: EXERCISES.filter((e) => e.equipment === key),
 }));
 // lifts already done this session, in first-done order, as one-tap chips
-const recent = [...new Set(mySets.map((s) => s.name))].flatMap((name) => EXERCISES.filter((e) => e.name === name));
-const setNo = exercise ? mySets.filter((s) => s.name === exercise.name).length + 1 : 0;
-const errorField = error.startsWith("Weight") ? "weight_kg" : error.startsWith("Reps") ? "reps" : "";
+const recent = [...new Set(mySets.map((s) => s.exerciseId))].flatMap((id) => exerciseById(id) ?? []);
+const setNo = editing
+  ? mySets.filter((s) => s.exerciseId === editing.exerciseId).findIndex((s) => s.id === editing.id) + 1
+  : exercise
+    ? mySets.filter((s) => s.exerciseId === exercise.id).length + 1
+    : 0;
+const editingLabel = editing && exercise ? setLabel({ ...editing, name: exercise.name, kind: exercise.kind }) : "";
+const showLast = !!exercise && !editing && !(resting && latest?.exerciseId === exercise.id);
+const timed = exercise?.kind === "duration" || exercise?.kind === "cardio";
+
+const vol = volume(mySets);
+const dist = distanceKm(mySets);
+const elapsedS = startedAt ? Math.floor((now - startedAt) / 1000) : 0;
+// a set in the log with its units dimmed: "62.5 kg × 7" splits around " kg"
+const unitSplit = (label: string) => label.split(/( kg| km)/);
 ---
 
 <Layout title={`Room ${room.passcode}`} surface="night">
-  <div class="gym">
+  <div class="gym" data-room={roomId}>
     <section class="panel sign" aria-labelledby="room-title">
       <h1 class="panel-title" id="room-title">Room</h1>
       <div class="passcode-box">
@@ -85,79 +205,261 @@ const errorField = error.startsWith("Weight") ? "weight_kg" : error.startsWith("
         </p>
       </div>
       <p class="hint">Send the code to the squad. They join at {inviteUrl}.</p>
+      <div class="actions room-actions">
+        <form method="post">
+          <input type="hidden" name="action" value="leave" />
+          <button type="submit" class="button secondary quiet" aria-describedby="leave-note">Leave room</button>
+        </form>
+      </div>
+      <p class="hint leave-note" id="leave-note">
+        {
+          members.length === 1
+            ? "You're the last one in, so leaving closes the room."
+            : "Leaving finishes your workout. Your sets stay in the book."
+        }
+      </p>
+      {
+        isHost && others.length > 0 && (
+          <details class="confirm end-room">
+            <summary class="button secondary quiet">
+              <span class="if-closed">End room</span>
+              <span class="if-open">Cancel</span>
+            </summary>
+            <form method="post" class="confirm-box">
+              <input type="hidden" name="action" value="end" />
+              <p>
+                End the room for everyone? {othersText} get{others.length === 1 ? "s" : ""} sent home and{" "}
+                {others.length === 1 ? "their workout finishes" : "their workouts finish"}. Every set is kept.
+              </p>
+              <button type="submit" class="button secondary quiet">End room</button>
+            </form>
+          </details>
+        )
+      }
     </section>
 
     <section class="panel" aria-labelledby="people-title">
       <h2 class="panel-title" id="people-title">Squad</h2>
       <ul class="people">
         {
-          members.map((m) =>
-            m.id === user.id ? (
-              <li class="me">
-                {m.name} <span class="badge">You</span>
-              </li>
-            ) : (
-              <li>{m.name}</li>
-            ),
-          )
+          members.map((m) => (
+            <li class:list={{ me: m.id === user.id }}>
+              {m.name}
+              {m.id === user.id && <span class="badge">You</span>}
+              {m.id === room.hostUserId && <span class="badge host">Host</span>}
+            </li>
+          ))
         }
       </ul>
       {members.length === 1 && <p class="alone">Just you so far. Send the passcode to the squad 📲</p>}
     </section>
 
     {
-      mySets.length > 0 && (
+      mySets.length > 0 && startedAt && (
         <section class="panel" aria-labelledby="log-title">
           <h2 class="panel-title" id="log-title">This workout</h2>
-          <p class="tally">
-            <b>{mySets.length}</b> set{mySets.length === 1 ? "" : "s"} · <b>{kg(volume(mySets))} kg</b> moved so far
+          <p class="panel-clock">
+            <span class="vh">Workout time </span>
+            <time datetime={`PT${elapsedS}S`} data-start={startedAt}>
+              {clock(elapsedS)}
+            </time>
           </p>
-          <table>
+          <p class="tally">
+            <b>{mySets.length}</b> set{mySets.length === 1 ? "" : "s"}
+            {vol > 0 && (
+              <>
+                {" "}
+                · <b>{kg(vol)} kg</b> moved
+              </>
+            )}
+            {dist > 0 && (
+              <>
+                {" "}
+                · <b>{km(dist)} km</b> covered
+              </>
+            )}{" "}
+            so far
+          </p>
+          <table class="log">
             <thead>
               <tr>
                 <th>Exercise</th>
-                <th class="num">kg</th>
-                <th class="num">Reps</th>
+                <th class="num">Set</th>
+                <th class="fix">
+                  <span class="vh">Edit</span>
+                </th>
               </tr>
             </thead>
             <tbody>
-              {mySets.map((s, i) => (
-                <tr>
-                  {i > 0 && mySets[i - 1].name === s.name ? (
-                    <td class="ditto">
-                      <span aria-hidden="true">"</span>
-                      <span class="vh">{s.name}</span>
+              {mySets.map((s, i) => {
+                const label = setLabel(s);
+                const current = editing?.id === s.id;
+                return (
+                  <tr aria-current={current ? "true" : undefined}>
+                    {i > 0 && mySets[i - 1].exerciseId === s.exerciseId ? (
+                      <td class="ditto">
+                        <span aria-hidden="true">"</span>
+                        <span class="vh">{s.name}</span>
+                      </td>
+                    ) : (
+                      <td>{s.name}</td>
+                    )}
+                    <td class="num set">
+                      {s.distanceM !== null && s.durationS !== null ? (
+                        <>
+                          {km(s.distanceM / 1000)} <span class="u">km</span> · {clock(s.durationS)}
+                          <span class="sub">{pace(s.durationS, s.distanceM)} /km</span>
+                        </>
+                      ) : (
+                        unitSplit(label).map((part) =>
+                          part === " kg" || part === " km" ? (
+                            <>
+                              {" "}
+                              <span class="u">{part.trim()}</span>
+                            </>
+                          ) : (
+                            part
+                          ),
+                        )
+                      )}
                     </td>
-                  ) : (
-                    <td>{s.name}</td>
-                  )}
-                  <td class="num">{s.weightKg}</td>
-                  <td class="num">{s.reps}</td>
-                </tr>
-              ))}
+                    <td class="fix">
+                      {current ? (
+                        <a href={`?exercise=${s.exerciseId}`} aria-label="Editing this set. Cancel">
+                          <Sprite sprite={pencilIcon} scale={2} />
+                        </a>
+                      ) : (
+                        <a href={`?edit=${s.id}`}>
+                          <Sprite sprite={pencilIcon} scale={2} />
+                          <span class="vh">
+                            Edit {s.name}, {label}
+                          </span>
+                        </a>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           <form method="post">
             <input type="hidden" name="action" value="finish" />
             <div class="actions">
-              <button type="submit" class="secondary button">Finish workout</button>
+              <button type="submit" class="secondary button quiet">Finish workout</button>
             </div>
           </form>
         </section>
       )
     }
 
-    <section class="panel sheet" aria-labelledby="sheet-title">
-      <h2 class="panel-title" id="sheet-title">{exercise ? "Log a set" : "Pick a lift"}</h2>
+    <section class="panel sheet" aria-labelledby="sheet-title" data-base-state={baseState}>
+      <span class={`chip state-${state} tab`}>
+        <Sprite sprite={TAB[state].icon} scale={2} />
+        {TAB[state].word}
+      </span>
       {
-        Astro.url.searchParams.get("rested") && (
+        resting && (
+          <>
+            {(["resting", "slacking", baseState] as const).map((s) => (
+              <template data-tab={s}>
+                <Sprite sprite={TAB[s].icon} scale={2} />
+                {TAB[s].word}
+              </template>
+            ))}
+          </>
+        )
+      }
+      {!editing && exercise && <h2 class="vh" id="sheet-title">Log a set</h2>}
+      {
+        Astro.url.searchParams.get("rested") && latest?.kind === "cardio" && !resting && (
           <p class="bubble" role="status">
-            Set logged! Rest {DEFAULT_REST_S} s, then go again.
+            Logged! No rest timer after cardio 🏃
           </p>
         )
       }
       {
-        exercise ? (
+        resting && latest && (
+          <div class:list={["rest", { over }]} data-end={restEnd} data-rest-target={latest.restTargetS}>
+            {over && (
+              <p class="rest-say" role="status">
+                {now - restEnd < 30_000 ? "Rest's up. Back under the bar 🔔" : "Your squad can see you 👀"}
+              </p>
+            )}
+            <div class="rest-top">
+              <p class="timer" role="timer" aria-label="Rest left" hidden>
+                {over ? `+${clock((now - restEnd) / 1000)}` : clock((restEnd - now) / 1000)}
+              </p>
+              <p class="rest-what">
+                <span>
+                  {over ? "over a " : "of "}
+                  <b class="rest-of">{clock(latest.restTargetS)}</b> rest
+                </span>
+                <span>
+                  after{" "}
+                  <b>
+                    {latest.exerciseId !== exercise?.id && `${latest.name} `}
+                    {setLabel(latest)}
+                  </b>
+                </span>
+              </p>
+            </div>
+            <p class="rest-static">
+              Rest {clock(latest.restTargetS)} · next set at {timeOfDay(restEnd).toLowerCase()}
+            </p>
+            <form method="post" class="rest-adjust">
+              <input type="hidden" name="action" value="rest" />
+              <button type="submit" name="delta" value="-15" class="button secondary tool" aria-label="15 seconds less rest">
+                -15 s
+              </button>
+              <button type="submit" name="delta" value="15" class="button secondary tool" aria-label="15 seconds more rest">
+                +15 s
+              </button>
+              <button type="submit" name="delta" value="skip" class="button secondary tool">Skip</button>
+            </form>
+          </div>
+        )
+      }
+      {
+        editing && exercise && values ? (
+          <>
+            <div class="lift-row">
+              <h2 class="lift" id="sheet-title">
+                {exercise.name}
+              </h2>
+              <span class="set-no">Set {setNo}</span>
+              <span class="badge">Editing</span>
+              <a href={`?exercise=${exercise.id}`} class="lift-cancel">
+                Cancel
+              </a>
+            </div>
+            <p class="hint logged-at">Logged at {timeOfDay(editing.completedAt).toLowerCase()}</p>
+            <form method="post" id="set-edit" class="set-form">
+              <input type="hidden" name="action" value="edit" />
+              <input type="hidden" name="set_id" value={editing.id} />
+              <SetFields kind={exercise.kind} values={values} invalid={errorField} />
+              {error && (
+                <p class="error" id="set-error" role="alert">
+                  {error}
+                </p>
+              )}
+            </form>
+            <details class="confirm">
+              <summary class="button secondary quiet">
+                <span class="if-closed">Delete</span>
+                <span class="if-open">Keep it</span>
+              </summary>
+              <form method="post" class="confirm-box">
+                <input type="hidden" name="action" value="delete" />
+                <input type="hidden" name="set_id" value={editing.id} />
+                <p>
+                  Delete {exercise.name} set {setNo}, {editingLabel}? It can't be undone.
+                </p>
+                <button type="submit" class="button secondary quiet">Delete set</button>
+              </form>
+            </details>
+            <button type="submit" form="set-edit" class="wide">Save</button>
+          </>
+        ) : exercise && values ? (
           <>
             <details class="switch">
               <summary>
@@ -197,69 +499,48 @@ const errorField = error.startsWith("Weight") ? "weight_kg" : error.startsWith("
                 </div>
               </form>
             </details>
-            <form method="post" class="set-form">
+            <form method="post" class="set-form" data-kind={exercise.kind} data-exercise={exercise.id}>
               <input type="hidden" name="exercise_id" value={exercise.id} />
-              {prefill ? (
-                <p class="last">
-                  Last time <b>{prefill.weightKg} kg × {prefill.reps}</b>
-                </p>
-              ) : (
-                <p class="last">First time on this one. Start light.</p>
-              )}
-              <div class="big-pair">
-                <div class="big">
-                  <label for="weight_kg">Weight</label>
-                  <span class="field">
-                    <input
-                      id="weight_kg"
-                      name="weight_kg"
-                      type="number"
-                      inputmode="decimal"
-                      min="0"
-                      max="1000"
-                      step="0.5"
-                      value={prefill?.weightKg ?? 0}
-                      required
-                      aria-invalid={errorField === "weight_kg" ? "true" : undefined}
-                      aria-describedby={errorField === "weight_kg" ? "set-error" : undefined}
-                    />
-                    <span class="unit" aria-hidden="true">
-                      kg
-                    </span>
-                  </span>
-                </div>
-                <span class="times" aria-hidden="true">
-                  ×
-                </span>
-                <div class="big">
-                  <label for="reps">Reps</label>
-                  <span class="field">
-                    <input
-                      id="reps"
-                      name="reps"
-                      type="number"
-                      inputmode="numeric"
-                      min="1"
-                      max="1000"
-                      step="1"
-                      value={prefill?.reps ?? 8}
-                      required
-                      aria-invalid={errorField === "reps" ? "true" : undefined}
-                      aria-describedby={errorField === "reps" ? "set-error" : undefined}
-                    />
-                  </span>
-                </div>
-              </div>
+              {showLast &&
+                (prefill ? (
+                  <p class="last">
+                    Last time <b>{setLabel({ ...prefill, name: exercise.name, kind: exercise.kind })}</b>
+                  </p>
+                ) : (
+                  <p class="last">First time on this one. Ease into it.</p>
+                ))}
+              <SetFields kind={exercise.kind} values={values} invalid={errorField} />
               {error && (
                 <p class="error" id="set-error" role="alert">
                   {error}
                 </p>
               )}
+              {timed && (
+                <div class="stopwatch">
+                  <button type="button" class="button secondary tool sw-toggle" hidden>
+                    <span class="sw-start">
+                      <Sprite sprite={playIcon} scale={2} />
+                      Start
+                    </span>
+                    <span class="sw-stop" hidden>
+                      <Sprite sprite={stopIcon} scale={2} />
+                      Stop
+                    </span>
+                  </button>
+                  <button type="button" class="button secondary tool sw-reset" hidden>
+                    Reset
+                  </button>
+                  <p class="say" hidden>
+                    {exercise.kind === "duration" ? "Start, hold, Stop." : "Pace shows once there's a distance."}
+                  </p>
+                </div>
+              )}
               <button type="submit" class="wide">Done</button>
             </form>
           </>
         ) : (
-          <form method="get">
+          <form method="get" class="pick">
+            <h2 class="lift lift-row" id="sheet-title">Pick a lift</h2>
             {recent.length > 0 && (
               <>
                 <p class="recent-label">From this workout</p>
@@ -282,6 +563,11 @@ const errorField = error.startsWith("Weight") ? "weight_kg" : error.startsWith("
                 </optgroup>
               ))}
             </select>
+            {error && (
+              <p class="error" id="set-error" role="alert">
+                {error}
+              </p>
+            )}
             <button type="submit" class="wide">Choose</button>
           </form>
         )
@@ -291,25 +577,290 @@ const errorField = error.startsWith("Weight") ? "weight_kg" : error.startsWith("
 </Layout>
 
 <script>
-  // pending: Done keeps its label and the numbers stay put while the post is out
-  const form = document.querySelector<HTMLFormElement>(".set-form");
-  form?.addEventListener("submit", () => {
-    form.querySelector("button")!.disabled = true;
-    for (const input of form.querySelectorAll("input")) input.readOnly = true;
-    form.closest(".sheet")!.setAttribute("aria-busy", "true");
-  });
+  // Every timer here is worked out from Date.now() on each tick, never
+  // counted, so a phone that slept wakes up showing the right time (GYM-12).
+  const clock = (totalS: number) => {
+    const s = Math.max(0, Math.floor(totalS));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const ss = String(s % 60).padStart(2, "0");
+    return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${ss}` : `${m}:${ss}`;
+  };
+
+  let audio: AudioContext | undefined;
+  addEventListener("pointerdown", () => (audio ??= new AudioContext()).resume(), { once: true });
+  function beep() {
+    try {
+      audio ??= new AudioContext();
+      for (const at of [0, 0.25]) {
+        const osc = audio.createOscillator();
+        const gain = audio.createGain();
+        osc.type = "square";
+        osc.frequency.value = 880;
+        gain.gain.value = 0.08;
+        osc.connect(gain).connect(audio.destination);
+        osc.start(audio.currentTime + at);
+        osc.stop(audio.currentTime + at + 0.15);
+      }
+    } catch {
+      // no sound available; the flash and the red still say it
+    }
+  }
+
+  // Binds the timers, the stopwatch and the pending state to the room as it
+  // is in the page, and returns what to run each second. Runs again after
+  // each in-place update (below), on the new content.
+  function init(): () => void {
+    const roomId = document.querySelector<HTMLElement>(".gym")!.dataset.room;
+    const sheet = document.querySelector<HTMLElement>(".sheet")!;
+
+    // ---------- the workout clock ----------
+    const workoutClock = document.querySelector<HTMLTimeElement>("time[data-start]");
+    const tickClock = () => {
+      if (workoutClock) workoutClock.textContent = clock((Date.now() - Number(workoutClock.dataset.start)) / 1000);
+    };
+
+    // ---------- the rest timer (LOG-4, LOG-5) ----------
+    const rest = document.querySelector<HTMLElement>(".rest");
+    const timer = rest?.querySelector<HTMLElement>(".timer");
+    rest?.querySelector(".rest-static")?.remove();
+    if (timer) timer.hidden = false;
+    const tab = sheet.querySelector<HTMLElement>(".tab")!;
+    const setTab = (state: string) => {
+      const t = sheet.querySelector<HTMLTemplateElement>(`template[data-tab="${state}"]`);
+      if (!t || tab.classList.contains(`state-${state}`)) return;
+      tab.className = `chip state-${state} tab`;
+      tab.replaceChildren(t.content.cloneNode(true));
+    };
+    // the page was open when rest ran out, so this one gets the beep and flash
+    let wasOver = rest?.classList.contains("over") ?? true;
+    function say(text: string) {
+      let line = rest!.querySelector<HTMLElement>(".rest-say");
+      if (!line) {
+        line = document.createElement("p");
+        line.className = "rest-say";
+        line.setAttribute("role", "status");
+        rest!.prepend(line);
+      }
+      if (line.textContent !== text) line.textContent = text;
+    }
+    const tickRest = () => {
+      if (!rest || !timer || !rest.isConnected) return;
+      const left = (Number(rest.dataset.end) - Date.now()) / 1000;
+      const over = left <= 0;
+      rest.classList.toggle("over", over);
+      rest.querySelector(".rest-what span")!.firstChild!.textContent = over ? "over a " : "of ";
+      if (!over) {
+        timer.textContent = clock(Math.ceil(left));
+        rest.querySelector(".rest-say")?.remove();
+        setTab("resting");
+        wasOver = false;
+        return;
+      }
+      timer.textContent = `+${clock(-left)}`;
+      setTab("slacking");
+      say(-left < 30 ? "Rest's up. Back under the bar 🔔" : "Your squad can see you 👀");
+      if (!wasOver) {
+        wasOver = true;
+        beep();
+        sheet.classList.remove("flash");
+        void sheet.offsetWidth;
+        sheet.classList.add("flash");
+      }
+    };
+
+    // ---------- the stopwatch, for holds and cardio ----------
+    const setForm = document.querySelector<HTMLFormElement>("form.set-form[data-exercise]");
+    const watch = setForm?.querySelector<HTMLElement>(".stopwatch");
+    const minutes = setForm?.querySelector<HTMLInputElement>("#minutes");
+    const seconds = setForm?.querySelector<HTMLInputElement>("#seconds");
+    const distance = setForm?.querySelector<HTMLInputElement>("#distance_km");
+    const key = `spotter:stopwatch:${roomId}:${setForm?.dataset.exercise}`;
+    const store = {
+      get: () => {
+        try {
+          return Number(sessionStorage.getItem(key)) || 0;
+        } catch {
+          return 0;
+        }
+      },
+      set: (v: number) => {
+        try {
+          if (v) sessionStorage.setItem(key, String(v));
+          else sessionStorage.removeItem(key);
+        } catch {
+          // private mode: the stopwatch just won't survive a reload
+        }
+      },
+    };
+    let startedAt = 0;
+    const fieldSeconds = () => Number(minutes!.value || 0) * 60 + Number(seconds!.value || 0);
+    const writeTime = (s: number) => {
+      minutes!.value = String(Math.floor(s / 60));
+      seconds!.value = String(Math.floor(s % 60));
+    };
+    const sayLine = watch?.querySelector<HTMLElement>(".say");
+    function sayPace() {
+      if (!sayLine || startedAt) return;
+      if (setForm!.dataset.kind === "duration") return (sayLine.textContent = "Start, hold, Stop.");
+      const km = Number(distance!.value);
+      const s = fieldSeconds();
+      // rounded, as the server's pace() is, so both lines agree
+      if (km >= 0.01 && s > 0) sayLine.innerHTML = `Pace <b>${clock(Math.round(s / km))} /km</b>`;
+      else sayLine.textContent = "Pace shows once there's a distance.";
+    }
+    function showRunning(on: boolean) {
+      const toggle = watch!.querySelector<HTMLButtonElement>(".sw-toggle")!;
+      toggle.querySelector<HTMLElement>(".sw-start")!.hidden = on;
+      toggle.querySelector<HTMLElement>(".sw-stop")!.hidden = !on;
+      toggle.setAttribute("aria-pressed", String(on));
+      minutes!.readOnly = seconds!.readOnly = on;
+      minutes!.closest(".big-time")!.classList.toggle("running", on);
+      if (on) sayLine!.textContent = "Clock's running. Stop fills the time.";
+      else sayPace();
+    }
+    function stopWatch() {
+      if (!startedAt) return;
+      writeTime((Date.now() - startedAt) / 1000);
+      startedAt = 0;
+      store.set(0);
+      showRunning(false);
+    }
+    if (watch && minutes && seconds) {
+      for (const el of watch.querySelectorAll<HTMLElement>("[hidden]:not(.sw-stop)")) el.hidden = false;
+      watch.querySelector(".sw-toggle")!.addEventListener("click", () => {
+        if (startedAt) return stopWatch();
+        // carries on from whatever time is already in the fields
+        startedAt = Date.now() - fieldSeconds() * 1000;
+        store.set(startedAt);
+        showRunning(true);
+      });
+      watch.querySelector(".sw-reset")!.addEventListener("click", () => {
+        startedAt = 0;
+        store.set(0);
+        writeTime(0);
+        showRunning(false);
+      });
+      for (const input of [minutes, seconds, distance]) input?.addEventListener("input", sayPace);
+      startedAt = store.get();
+      showRunning(!!startedAt);
+    }
+    const tickWatch = () => {
+      if (startedAt) writeTime((Date.now() - startedAt) / 1000);
+    };
+
+    // ---------- pending: Done and Save keep their label while the post is out ----------
+    const editForm = document.querySelector<HTMLFormElement>("#set-edit");
+    for (const form of [setForm, editForm]) {
+      form?.addEventListener("submit", () => {
+        if (form === setForm) {
+          stopWatch();
+          store.set(0);
+        }
+        submitButton(form)!.disabled = true;
+        for (const input of form.querySelectorAll("input")) input.readOnly = true;
+        sheet.setAttribute("aria-busy", "true");
+      });
+    }
+    unbusy = () => {
+      for (const form of [setForm, editForm]) {
+        if (!form) continue;
+        submitButton(form)!.disabled = false;
+        for (const input of form.querySelectorAll("input")) {
+          input.readOnly = form === setForm && !!startedAt && input.closest(".mmss") !== null;
+        }
+      }
+      sheet.removeAttribute("aria-busy");
+    };
+
+    return () => {
+      tickClock();
+      tickRest();
+      tickWatch();
+    };
+  }
+
+  const submitButton = (form: HTMLFormElement) =>
+    form.querySelector<HTMLButtonElement>("button[type=submit]") ??
+    document.querySelector<HTMLButtonElement>(`button[form="${form.id}"]`);
+  let unbusy = () => {};
   // Back restores the page from cache, button and all
-  addEventListener("pageshow", () => {
-    if (!form) return;
-    form.querySelector("button")!.disabled = false;
-    for (const input of form.querySelectorAll("input")) input.readOnly = false;
-    form.closest(".sheet")!.removeAttribute("aria-busy");
-  });
+  addEventListener("pageshow", () => unbusy());
+
+  let tick = init();
+  tick();
+  setInterval(() => tick(), 1000);
+
+  // ---------- staying in place ----------
+  // Logging, editing, deleting and the rest buttons post as plain forms and
+  // redirect back here, which works without JS but reloads the page and
+  // jumps to the top. With JS they post in the background instead and only
+  // the room is swapped for the new one, so the scroll, the focus and
+  // anything typed but not yet logged stay where they were. Finish, Leave and
+  // End room go to another page, so they navigate as usual.
+  const STAY = new Set(["log", "edit", "delete", "rest"]);
+  document.addEventListener(
+    "submit",
+    async (e) => {
+      const form = e.target as HTMLFormElement;
+      if (form.method !== "post" || !form.closest(".gym")) return;
+      const data = new FormData(form, e.submitter);
+      const action = String(data.get("action") ?? "log");
+      if (!STAY.has(action)) return;
+      e.preventDefault(); // the form's own listeners still run: pending, the stopwatch
+
+      // what was typed and not logged, to put back after a rest button
+      const typed = new Map<string, string>();
+      if (action === "rest") {
+        for (const input of document.querySelectorAll<HTMLInputElement>(".set-form input:not([type=hidden])")) {
+          typed.set(input.id, input.value);
+        }
+      }
+      const focused = document.activeElement?.closest(".gym") ? (document.activeElement as HTMLElement) : null;
+      const delta = (e.submitter as HTMLButtonElement | null)?.value;
+
+      let res: Response;
+      try {
+        // not form.action: these forms have a field named "action", which shadows it
+        res = await fetch(new URL(form.getAttribute("action") ?? "", location.href), {
+          method: "POST",
+          body: new URLSearchParams([...data] as [string, string][]),
+        });
+      } catch {
+        return form.submit(); // offline or dropped: let the browser try
+      }
+      // the room closed under us, or anything unexpected: go where it says
+      if (new URL(res.url).pathname !== location.pathname || (res.status !== 200 && res.status !== 400)) {
+        return location.assign(res.url);
+      }
+      const next = new DOMParser().parseFromString(await res.text(), "text/html");
+      const gym = next.querySelector(".gym");
+      if (!gym) return location.assign(res.url);
+      document.querySelector(".gym")!.replaceWith(document.adoptNode(gym));
+      document.title = next.title;
+      if (res.redirected) history.replaceState(null, "", res.url);
+      for (const [id, value] of typed) {
+        const input = document.querySelector<HTMLInputElement>(`.set-form #${id}`);
+        if (input && !input.readOnly) input.value = value;
+      }
+      tick = init();
+      tick();
+      // keyboard and screen-reader users carry on from the same control
+      if (focused) {
+        const again =
+          (action === "rest" && document.querySelector<HTMLElement>(`.rest-adjust button[value="${delta}"]`)) ||
+          document.querySelector<HTMLElement>(".set-form [aria-invalid]") ||
+          document.querySelector<HTMLElement>(".sheet .wide");
+        again?.focus({ preventScroll: true });
+      }
+    },
+    true,
+  );
 </script>
 
 <style>
-  /* .panel: the Night card (system 9). Lives here until the summary
-     page needs it too, then moves to the layout. */
+  /* .panel: the Night card (system 9). Lives here until another Night page
+     needs it, then moves to the layout. */
   .panel {
     position: relative;
     margin: 0 0 2rem;
@@ -334,8 +885,30 @@ const errorField = error.startsWith("Weight") ? "weight_kg" : error.startsWith("
     color: var(--leaf);
     background: var(--panel);
   }
+  /* the workout clock rides the log panel's top border, on the right */
+  .panel-clock {
+    position: absolute;
+    top: calc(var(--px) * -0.5);
+    right: 0.75rem;
+    transform: translateY(-50%);
+    margin: 0;
+    padding: 0 0.5rem;
+    font-size: 24px;
+    line-height: 1;
+    color: var(--leaf);
+    background: var(--panel);
+    font-variant-numeric: tabular-nums;
+  }
+  .vh {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 
-  /* two columns on a laptop: the logbook left, the set panel right */
+  /* two columns on a laptop: room, squad and log left, the sheet right */
   .gym {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -354,7 +927,7 @@ const errorField = error.startsWith("Weight") ? "weight_kg" : error.startsWith("
     }
   }
 
-  /* ---------- the gym sign: passcode and how full the room is ---------- */
+  /* ---------- the gym sign: passcode, spots, room actions ---------- */
   .sign .passcode-box {
     margin-bottom: 0.75rem;
   }
@@ -379,8 +952,53 @@ const errorField = error.startsWith("Weight") ? "weight_kg" : error.startsWith("
     background: var(--leaf);
     box-shadow: none;
   }
+  .room-actions {
+    margin-top: 0.75rem;
+  }
+  .room-actions form {
+    margin: 0;
+  }
+  .sign .leave-note {
+    margin: 0.25rem 0 0;
+  }
+  /* room and logbook actions: secondary, and quieter than anything in the
+     sheet, so they never compete with Done (system 8) */
+  .button.quiet {
+    padding: 0.75rem 1rem;
+    font-size: 8px;
+  }
 
-  /* ---------- people list (GYM-15 later adds state and equipment) ---------- */
+  /* ---------- one confirm pattern: End room, Delete set ----------
+     The summary is the first tap; it turns into Cancel in place, so a
+     second tap on the same spot backs out. Works without JS. */
+  .confirm > summary {
+    list-style: none;
+  }
+  .confirm > summary::-webkit-details-marker {
+    display: none;
+  }
+  .confirm .if-open,
+  .confirm[open] .if-closed {
+    display: none;
+  }
+  .confirm[open] .if-open {
+    display: inline;
+  }
+  /* a confirm always sits alone on its row, so opening it moves nothing */
+  .confirm {
+    margin: 0.75rem 0 0;
+  }
+  .confirm-box {
+    margin: 0.75rem 0 0;
+    padding: 1rem;
+    background: var(--night);
+    border: var(--px) solid var(--paper);
+  }
+  .confirm-box p {
+    margin: 0 0 0.75rem;
+  }
+
+  /* ---------- people list ---------- */
   .people {
     margin: 0;
     padding: 0;
@@ -388,8 +1006,9 @@ const errorField = error.startsWith("Weight") ? "weight_kg" : error.startsWith("
   }
   .people li {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.5rem 0.75rem;
     min-height: 44px;
     border-bottom: var(--px) solid var(--night);
   }
@@ -407,6 +1026,11 @@ const errorField = error.startsWith("Weight") ? "weight_kg" : error.startsWith("
   }
   .people .badge {
     margin-left: 0;
+  }
+  .badge.host {
+    color: var(--paper);
+    background: var(--night);
+    border-color: var(--edge);
   }
   .alone {
     margin: 0.75rem 0 0;
@@ -427,22 +1051,57 @@ const errorField = error.startsWith("Weight") ? "weight_kg" : error.startsWith("
     padding-left: 1.5rem;
     color: var(--dim);
   }
-  .vh {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
+  /* one column per set, written the way a lifter writes it */
+  .log td.set {
     white-space: nowrap;
   }
+  .log .u {
+    color: var(--dim);
+  }
+  .log .sub {
+    display: block;
+    font-size: 20px;
+    line-height: 1.1;
+    color: var(--dim);
+  }
+  .log th.fix,
+  .log td.fix {
+    width: 44px;
+    padding: 0;
+  }
+  /* :global(.night): <body> carries it, outside this page's scope; the
+     prefix out-ranks the layout's Night link and heading colours */
+  :global(.night) .log .fix a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    color: var(--leaf);
+  }
+  .log tr[aria-current="true"] td {
+    background: var(--night);
+  }
+  .log tr[aria-current="true"] td:first-child {
+    box-shadow: inset var(--px) 0 0 var(--leaf);
+  }
+  :global(.night) .log tr[aria-current="true"] .fix a {
+    color: var(--ink);
+    background: var(--leaf);
+  }
 
-  /* ---------- the set panel (.sheet) ---------- */
+  /* ---------- the sheet: your state, your next set ---------- */
   .sheet {
     border-color: var(--leaf);
   }
-  .sheet .panel-title {
-    font-size: 8px;
-    color: var(--dim);
+  /* your state chip is the sheet's name tab */
+  .sheet > .tab {
+    position: absolute;
+    top: calc(var(--px) * -0.5);
+    left: 0.75rem;
+    transform: translateY(-50%);
+    margin: 0;
+    box-shadow: 0 0 0 var(--px) var(--panel);
   }
   @media (max-width: 899px) {
     /* pinned to the bottom of the phone, edge to edge, in the thumb zone */
@@ -456,37 +1115,156 @@ const errorField = error.startsWith("Weight") ? "weight_kg" : error.startsWith("
       box-shadow: 0 calc(var(--px) * -1) 0 #000;
     }
   }
-  .sheet .bubble {
-    margin-bottom: 1.5rem;
+  /* LOG-5: rest over flashes the sheet's border, at most 2 a second, 3 times */
+  .sheet.flash {
+    animation: rest-flash 500ms steps(1) 3;
   }
+  @keyframes rest-flash {
+    0% {
+      border-color: var(--night);
+    }
+    50% {
+      border-color: var(--leaf);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sheet.flash {
+      animation: none;
+    }
+  }
+  .sheet .bubble {
+    margin-bottom: 1.25rem;
+  }
+
+  /* the rest block: water blue while resting, slacking red once it's over */
+  .rest {
+    margin: 0 0 1rem;
+    padding: 0.5rem 0.5rem 0.25rem;
+    background: var(--night);
+    border: var(--px) solid var(--resting);
+  }
+  .rest.over {
+    border-color: var(--slacking);
+  }
+  .rest-say {
+    margin: 0.25rem 0 0;
+  }
+  /* the timer, and beside it (or under it, on a narrow phone) what it's for */
+  .rest-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 0.75rem;
+  }
+  .timer {
+    margin: 0;
+    font-size: 80px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .rest.over .timer {
+    color: var(--slacking);
+  }
+  .rest-what {
+    margin: 0;
+    line-height: 1.2;
+    color: var(--dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .rest-what span {
+    display: block;
+    white-space: nowrap;
+  }
+  .rest-what b {
+    font-weight: 400;
+    color: var(--paper);
+  }
+  /* without JS: the end time, as text, instead of a frozen timer */
+  .rest-static {
+    margin: 0.25rem 0;
+    font-size: 32px;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+  .rest-adjust {
+    display: flex;
+    gap: 0 0.5rem;
+    margin: 0.5rem 0 0;
+  }
+  .rest-adjust .tool {
+    flex: 1;
+  }
+  /* small tool buttons inside the sheet (rest ±15 s, Skip, stopwatch):
+     VT323 because they carry numbers, and secondary so Done stays loudest */
+  .sheet .tool {
+    min-width: 48px;
+    min-height: 48px;
+    padding: 0 0.75rem;
+    font: 24px/1 var(--body);
+    text-transform: none;
+  }
+  .sw-toggle span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .sw-toggle span[hidden] {
+    display: none;
+  }
+
   /* the lift name is the button that opens the exercise picker */
   .switch {
     margin: 0 0 0.75rem;
   }
-  .switch summary {
+  .switch summary,
+  .lift-row {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.5rem 0.75rem;
+    gap: 0.5rem;
     min-height: 48px;
+    margin: 0 0 0.75rem;
+  }
+  .switch summary {
+    margin: 0;
     cursor: pointer;
     list-style: none;
   }
   .switch summary::-webkit-details-marker {
     display: none;
   }
-  .lift {
+  .lift,
+  :global(.night) h2.lift {
     font: 16px/1.5 var(--display);
     text-transform: uppercase;
     color: var(--paper);
   }
   .set-no {
     padding: 0 0.5rem;
-    font-size: 24px;
-    line-height: 1.25;
+    font: 24px/1.25 var(--body);
     color: var(--ink);
     background: var(--leaf);
     font-variant-numeric: tabular-nums;
+  }
+  .lift-row .badge {
+    margin: 0;
+  }
+  .lift-row h2 {
+    margin: 0;
+  }
+  /* while editing, Cancel stands where Change stands */
+  :global(.night) .lift-cancel {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-left: auto;
+    padding: 0 0.75rem;
+    color: var(--paper);
+    text-decoration: none;
+    border: var(--px) solid var(--edge);
+  }
+  :global(.night) .lift-cancel:hover {
+    background: var(--night);
   }
   .change {
     margin-left: auto;
@@ -506,7 +1284,7 @@ const errorField = error.startsWith("Weight") ? "weight_kg" : error.startsWith("
     border: var(--px) solid var(--edge);
   }
   .picker label:first-child,
-  .sheet > form > label:first-child {
+  .pick label:first-child {
     margin-top: 0;
   }
   .recent-label {
@@ -521,7 +1299,7 @@ const errorField = error.startsWith("Weight") ? "weight_kg" : error.startsWith("
     padding: 0;
     list-style: none;
   }
-  .night .recent a {
+  :global(.night) .recent a {
     display: inline-flex;
     align-items: center;
     min-height: 44px;
@@ -531,7 +1309,7 @@ const errorField = error.startsWith("Weight") ? "weight_kg" : error.startsWith("
     background: var(--panel);
     border: var(--px) solid var(--edge);
   }
-  .night .recent a[aria-current] {
+  :global(.night) .recent a[aria-current] {
     color: var(--ink);
     background: var(--leaf);
     border-color: var(--leaf);
@@ -545,55 +1323,30 @@ const errorField = error.startsWith("Weight") ? "weight_kg" : error.startsWith("
     font-weight: 400;
     color: var(--paper);
   }
-  /* the two numbers you are about to lift, at arm's length */
-  .big-pair {
-    display: grid;
-    grid-template-columns: minmax(0, 3fr) auto minmax(0, 2fr);
-    align-items: end;
+
+  .stopwatch {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 0 0.5rem;
+    margin: 0.75rem 0 0;
   }
-  .big label {
-    margin: 0 0 0.25rem;
+  .stopwatch .say {
+    flex: 1 1 8rem;
+    margin: 0 0 0 0.25rem;
     color: var(--dim);
-  }
-  .big .field {
-    position: relative;
-    display: block;
-  }
-  .big input {
-    min-height: 72px;
-    padding: 0.25rem 0.75rem;
-    font-size: 48px;
-    line-height: 1;
     font-variant-numeric: tabular-nums;
-    -moz-appearance: textfield;
-    appearance: textfield;
   }
-  .big input::-webkit-inner-spin-button,
-  .big input::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+  .stopwatch .say :global(b) {
+    font-weight: 400;
+    color: var(--paper);
   }
-  .big .unit {
-    position: absolute;
-    right: 0.75rem;
-    bottom: 0.75rem;
-    font-size: 24px;
-    line-height: 1;
-    color: var(--dim);
-    pointer-events: none;
-  }
-  .big .field:has(.unit) input {
-    padding-right: 2.75rem;
-  }
-  .times {
-    padding-bottom: 1rem;
-    font-size: 32px;
-    line-height: 1;
-    color: var(--dim);
-  }
+
   .sheet .error {
     margin-top: 0.75rem;
+  }
+  .logged-at {
+    margin: -0.5rem 0 0.75rem;
   }
   .sheet .wide {
     min-height: 64px;

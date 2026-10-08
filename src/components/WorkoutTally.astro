@@ -1,0 +1,109 @@
+---
+// One workout's boxed figures, drawn the same on history and its summary
+// (docs/design/history/spec.md, "Shared"). Time and Sets always; Volume and
+// Distance only when above zero, so a run day reads in km and a push day in kg.
+import { distanceKm, kg, km, minutes, volume, type LoggedSet } from "../lib/logbook.ts";
+
+interface Props {
+  sets: readonly LoggedSet[];
+  startedAt: number;
+  endedAt: number | null;
+  now: number;
+  // the summary's 48 px figures
+  big?: boolean;
+}
+const { sets, startedAt, endedAt, now, big = false } = Astro.props;
+const vol = volume(sets);
+const dist = distanceKm(sets);
+---
+
+<dl class:list={["tally", { big }]}>
+  <div>
+    <dt>{endedAt ? "Time" : "So far"}</dt>
+    <dd>{minutes(startedAt, endedAt ?? now)}<span class="unit"> min</span></dd>
+  </div>
+  <div>
+    <dt>Sets</dt>
+    <dd>{sets.length}</dd>
+  </div>
+  {
+    vol > 0 && (
+      <div>
+        <dt>Volume</dt>
+        <dd>
+          {kg(vol)}
+          <span class="unit"> kg</span>
+        </dd>
+      </div>
+    )
+  }
+  {
+    dist > 0 && (
+      <div>
+        <dt>Distance</dt>
+        <dd>
+          {km(dist)}
+          <span class="unit"> km</span>
+        </dd>
+      </div>
+    )
+  }
+</dl>
+
+<style>
+  /* 2 px ink lines come from the gaps, so any count of boxes, in any
+     arrangement, is ruled the same way */
+  .tally {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: auto;
+    gap: 2px;
+    margin: 0 0 1rem;
+    background: var(--ink);
+    border: 2px solid var(--ink);
+  }
+  .tally div {
+    padding: 0.25rem 0.5rem;
+    background: var(--paper);
+  }
+  .tally dt {
+    font: 8px/1.4 var(--display);
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .tally dd {
+    margin: 0;
+    font-size: 28px;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  @media (max-width: 420px) {
+    /* four boxes don't fit a 360 px card in one row: 2 × 2 */
+    .tally:has(> :nth-child(4)) {
+      grid-auto-flow: row;
+      grid-template-columns: auto auto;
+    }
+  }
+
+  /* the summary's size: 48 px figures, 24 px units */
+  .tally.big dd {
+    font-size: 48px;
+    line-height: 1;
+  }
+  .tally.big .unit {
+    font-size: 24px;
+  }
+  .tally.big div {
+    padding: 0.5rem 0.75rem;
+  }
+  @media (max-width: 420px) {
+    .tally.big {
+      grid-auto-flow: row;
+      grid-template-columns: auto auto;
+    }
+    .tally.big > :last-child:nth-child(odd) {
+      grid-column: 1 / -1;
+    }
+  }
+</style>

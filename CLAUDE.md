@@ -63,7 +63,7 @@ and the table changes in the same commit.
 | --- | --- |
 | Auth | `signin`, `signup` |
 | Lobby | `home` (`index`), `join` |
-| Logbook | `history` |
+| Logbook | `history`, `summary` |
 | Gym | `room` |
 | About | `readme` |
 

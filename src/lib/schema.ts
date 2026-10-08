@@ -51,6 +51,9 @@ export const exercises = sqliteTable("exercises", {
   id: integer("id").primaryKey(),
   name: text("name").notNull(),
   equipment: text("equipment").notNull(),
+  // which numbers a set of it records; see EXERCISES in exercises.ts
+  kind: text("kind", { enum: ["weight", "bodyweight", "duration", "cardio"] }).notNull().default("weight"),
+  defaultRestS: integer("default_rest_s").notNull().default(90),
 });
 
 export const workouts = sqliteTable(
@@ -71,10 +74,18 @@ export const sets = sqliteTable(
     id: integer("id").primaryKey({ autoIncrement: true }),
     workoutId: integer("workout_id").notNull().references(() => workouts.id),
     exerciseId: integer("exercise_id").notNull().references(() => exercises.id),
-    weightKg: real("weight_kg").notNull(),
-    reps: integer("reps").notNull(),
+    // the exercise's kind decides which of these four are filled: weight and
+    // reps (weight added to bodyweight for a bodyweight lift), a duration, or
+    // a distance and a duration
+    weightKg: real("weight_kg"),
+    reps: integer("reps"),
+    durationS: integer("duration_s"),
+    distanceM: integer("distance_m"),
     completedAt: integer("completed_at").notNull(),
     restTargetS: integer("rest_target_s").notNull(),
+    // set when the rest after this set was skipped; the target stays as the
+    // rest to start with next time
+    restEndedAt: integer("rest_ended_at"),
     slackS: integer("slack_s"),
   },
   (t) => [index("sets_workout").on(t.workoutId)],

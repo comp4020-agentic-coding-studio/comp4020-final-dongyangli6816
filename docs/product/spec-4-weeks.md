@@ -58,7 +58,8 @@ Two situations are designed for:
 - Sign up and sign in with email and password.
 - A pixel-art avatar each person builds from a few choices.
 - Start a group workout, which gives a passcode, or join one with a passcode.
-- Log sets: exercise, weight and reps, with a rest timer between sets.
+- Log sets in the way each exercise is measured (weight and reps, reps, a
+  hold, or distance and time), with a rest timer between sets.
 - Your avatar walks to the matching equipment and does that exercise while you
   lift, and goes to the water cooler while you rest.
 - If the equipment you need isn't on the floor, a gym worker carries it in.
@@ -75,7 +76,7 @@ Two situations are designed for:
 | Report, block, mute, kick, admin page, text filtering pipeline, moderation API | Only needed with strangers; a passcode room is a closed group |
 | Email verification, password reset, Google or Apple sign-in, 18+ age gate | No email service in the setup; no strangers |
 | PWA install, web push notifications, offline logging and sync, wake lock | Large effort, and iPhone push needs home-screen install; in-page sound and visual alerts instead |
-| 80 seeded exercises, custom exercises, four tracking types, warm-up sets, personal records, units switching | 16 exercises on 8 pieces of equipment, weight and reps only, kg only |
+| 80 seeded exercises, custom exercises, warm-up sets, personal records, units switching | 16 exercises on 8 pieces of equipment, kg only. Four tracking kinds came back in on 8 Oct (ADR 0002) |
 | Tiled map editor, sprite sheets drawn per avatar layer, ~20 animations, free walking and A* pathfinding | Sprites are drawn in code with two-frame animations; avatars walk along fixed aisles |
 | Layered avatar creator with thousands of combinations | A handful of choices, done by palette swaps |
 | Success metrics, retention targets, running-cost planning, scaling path | Product-launch concerns, not course concerns |
@@ -115,7 +116,7 @@ delivery plan below.
 | ROOM-3 | P0 | Invite links of the form `/join/K7M2QX` work, and survive signing up first. |
 | ROOM-4 | P0 | A room holds at most 12 people, matching its 12 stations. The 13th gets a clear "room is full" message. |
 | ROOM-5 | P0 | People can join at any time and leave at any time. Leaving a room does not delete anything they logged. |
-| ROOM-6 | P0 | A room stays open while anyone is in it, and closes 4 hours after it was last active. A closed room's passcode can be reused. |
+| ROOM-6 | P0 | A room stays open while anyone is in it, and closes 4 hours after it was last active. The host can also end it for everyone. Closing finishes everyone's open workout there, keeping every set. A closed room's passcode can be reused. |
 | ROOM-7 | P1 | Join attempts are limited (for example 10 per minute per account), so passcodes can't be guessed by brute force. |
 
 ### Workout logging
@@ -124,10 +125,10 @@ delivery plan below.
 | --- | --- | --- |
 | LOG-1 | P0 | A workout belongs to one person and, optionally, to the room they did it in. |
 | LOG-2 | P0 | 16 seeded exercises, two per piece of equipment (see The gym). |
-| LOG-3 | P0 | A set records exercise, weight in kg and reps. Weight and reps pre-fill from the person's last set of that exercise. |
-| LOG-4 | P0 | Tapping **Done** logs the set and starts a rest timer (default 90 s), adjustable by ±15 s. |
+| LOG-3 | P0 | A set records what its exercise's kind measures: weight in kg and reps; reps and any added weight (bodyweight); a hold time (duration); or a distance and time (cardio). Each pre-fills from the person's last set of that exercise. |
+| LOG-4 | P0 | Tapping **Done** logs the set and starts a rest timer from the exercise's default (60 to 180 s; none after cardio), adjustable by ±15 s or skipped. The next set of that exercise starts from the rest last chosen for it. |
 | LOG-5 | P0 | When rest ends, the page plays a sound and flashes, if it is open. |
-| LOG-6 | P0 | Finishing a workout shows a summary: duration, sets, total volume (weight × reps) and time spent slacking. |
+| LOG-6 | P0 | Finishing a workout shows a summary: duration, sets, total volume (weight × reps), cardio distance and time spent slacking. |
 | LOG-7 | P0 | History lists the person's past workouts, newest first, with their sets. |
 | LOG-8 | P1 | Edit or delete a set after logging it. |
 | LOG-9 | P1 | Sets carry a client-generated ID, so a retried request on a slow connection never logs the same set twice. |
