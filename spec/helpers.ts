@@ -59,6 +59,7 @@ export type RoomEvent = {
   members: {
     id: number;
     name: string;
+    look: { skin: string; hair: string; hairColour: string; shirt: string };
     host: boolean;
     state: string;
     away: boolean;

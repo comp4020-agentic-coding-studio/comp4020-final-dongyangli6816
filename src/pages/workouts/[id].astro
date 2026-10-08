@@ -4,8 +4,9 @@ import WorkoutSets from "../../components/WorkoutSets.astro";
 import WorkoutTally from "../../components/WorkoutTally.astro";
 import Layout from "../../layouts/Layout.astro";
 import { dayLabel, distanceKm, km, timeRange, volume } from "../../lib/logbook.ts";
+import Avatar from "../../components/Avatar.astro";
+import { lookOf } from "../../lib/avatars.ts";
 import { workoutSummary } from "../../lib/workouts.ts";
-import { avatar } from "../../sprites/avatar.ts";
 import { trophyIcon } from "../../sprites/icons.ts";
 
 // LOG-6: one finished workout, drawn as its history entry at full size.
@@ -45,7 +46,7 @@ const cheer =
     {done && cheer && <p class="bubble" role="status">{cheer}</p>}
     <div class="who">
       <div class="me-box">
-        <Sprite sprite={avatar} class="me" />
+        <Avatar look={lookOf(user.id)} class="me" />
         <span class="chip state-finished"><Sprite sprite={trophyIcon} scale={2} />Finished</span>
       </div>
       <div>

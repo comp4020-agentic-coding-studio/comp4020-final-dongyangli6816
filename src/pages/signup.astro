@@ -3,18 +3,22 @@ import { eq } from "drizzle-orm";
 import { hashPassword, isHttps, startSession } from "../lib/auth.ts";
 import { db } from "../lib/db.ts";
 import { users } from "../lib/schema.ts";
+import Avatar from "../components/Avatar.astro";
 import Sprite from "../components/Sprite.astro";
 import Layout from "../layouts/Layout.astro";
-import { AVATAR_UPPER_ROWS, avatar } from "../sprites/avatar.ts";
+import { parseLook, randomLook } from "../sprites/avatar.ts";
 import { dumbbell, kettlebell } from "../sprites/props.ts";
 
 const next = Astro.url.searchParams.get("next") ?? "/";
 const errors: Record<string, string> = {};
 let email = "";
 let displayName = "";
+// AV-3: the random look the preview shows is the one the account gets
+let look = randomLook();
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
+  look = parseLook(String(form.get("look") ?? "")) ?? look;
   email = String(form.get("email") ?? "").trim().toLowerCase();
   displayName = String(form.get("display_name") ?? "").trim();
   const password = String(form.get("password") ?? "");
@@ -30,11 +34,20 @@ if (Astro.request.method === "POST") {
   if (Object.keys(errors).length === 0) {
     const user = db
       .insert(users)
-      .values({ email, passwordHash: await hashPassword(password), displayName, createdAt: Date.now() })
+      .values({
+        email,
+        passwordHash: await hashPassword(password),
+        displayName,
+        avatar: JSON.stringify(look),
+        createdAt: Date.now(),
+      })
       .returning({ id: users.id })
       .get();
     startSession(Astro.cookies, user.id, isHttps(Astro.request));
-    return Astro.redirect(next.startsWith("/") ? next : "/", 303);
+    // AV-3: a new account can edit its look straight away; an invite goes
+    // straight on to its room instead
+    const to = next.startsWith("/") ? next : "/";
+    return Astro.redirect(to === "/" ? "/avatar?new=1&next=/" : to, 303);
   }
   Astro.response.status = 400;
 }
@@ -52,11 +65,12 @@ const describedBy = (field: string, hint: string) => [hint, errors[field] && `${
     <h1>Sign up</h1>
     <p class="lead">This is you in the gym.</p>
     <form method="post" novalidate>
+      <input type="hidden" name="look" value={JSON.stringify(look)} />
       <div class="tag-field">
         <div class="floor" aria-hidden="true">
           <Sprite sprite={kettlebell} class="floor-prop kettlebell" />
           <span class:list={["nametag", { "is-empty": !displayName }]} data-nametag>{displayName || "Your name"}</span>
-          <Sprite sprite={avatar} class="sprite" split={AVATAR_UPPER_ROWS} />
+          <Avatar look={look} class="sprite" />
           <Sprite sprite={dumbbell} class="floor-prop dumbbell" />
         </div>
         <div>
@@ -210,7 +224,7 @@ const describedBy = (field: string, hint: string) => [hint, errors[field] && `${
     width: 64px; /* 16 px sprite at 4x, whole numbers only */
     height: 64px;
   }
-  .floor :global(.sprite-top) {
+  .floor :global(.av-top) {
     animation: idle 800ms steps(1) infinite;
   }
   @keyframes idle {
@@ -249,7 +263,7 @@ const describedBy = (field: string, hint: string) => [hint, errors[field] && `${
     min-height: 44px;
   }
   @media (prefers-reduced-motion: reduce) {
-    .floor :global(.sprite-top) {
+    .floor :global(.av-top) {
       animation: none;
     }
   }

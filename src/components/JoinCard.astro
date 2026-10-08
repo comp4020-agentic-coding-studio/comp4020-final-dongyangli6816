@@ -2,7 +2,8 @@
 // The join card (docs/design/join/), shared by /join and /join/CODE: the
 // passcode form for someone signed in, or the invite for someone who isn't.
 import Sprite from "./Sprite.astro";
-import { avatar, AVATAR_UPPER_ROWS, ghostAvatar } from "../sprites/avatar.ts";
+import Avatar from "./Avatar.astro";
+import type { Look } from "../sprites/avatar.ts";
 import { doorway } from "../sprites/door.ts";
 
 interface Props {
@@ -12,8 +13,9 @@ interface Props {
   // ROOM-2's one generic error, or ROOM-4's full room
   error?: "none" | "full";
   name?: string;
+  look?: Look;
 }
-const { mode, passcode = "", error, name = "" } = Astro.props;
+const { mode, passcode = "", error, name = "", look } = Astro.props;
 const invalid = error === "none";
 const next = encodeURIComponent(`/join/${passcode}`);
 ---
@@ -28,7 +30,7 @@ const next = encodeURIComponent(`/join/${passcode}`);
           <Sprite sprite={doorway} class="doorway" />
           <div class="stand">
             <span class="nametag is-empty">You?</span>
-            <Sprite sprite={ghostAvatar} class="av" split={AVATAR_UPPER_ROWS} />
+            <Avatar class="ghost" />
           </div>
         </div>
         <p class="code-label" id="invite-code-label">
@@ -59,7 +61,7 @@ const next = encodeURIComponent(`/join/${passcode}`);
           <Sprite sprite={doorway} class="doorway" />
           <div class="stand">
             <span class="nametag">{name}</span>
-            <Sprite sprite={avatar} class="av" split={AVATAR_UPPER_ROWS} />
+            <Avatar look={look} />
           </div>
         </div>
         <form method="post" action="/join" class="join-form">
@@ -207,7 +209,7 @@ const next = encodeURIComponent(`/join/${passcode}`);
     width: calc(var(--s) * 16);
     height: calc(var(--s) * 16);
   }
-  .floor :global(.sprite-top) {
+  .floor :global(.av-top) {
     animation: idle 800ms steps(1) infinite;
   }
   @keyframes idle {
@@ -329,7 +331,7 @@ const next = encodeURIComponent(`/join/${passcode}`);
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .floor :global(.sprite-top) {
+    .floor :global(.av-top) {
       animation: none;
     }
   }

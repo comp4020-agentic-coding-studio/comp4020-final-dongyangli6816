@@ -24,7 +24,9 @@ import {
   type SetValues,
 } from "../../lib/workouts.ts";
 import Layout from "../../layouts/Layout.astro";
-import { head } from "../../sprites/avatar.ts";
+import Avatar from "../../components/Avatar.astro";
+import { lookOf } from "../../lib/avatars.ts";
+import { lookKey } from "../../sprites/avatar.ts";
 import {
   dropIcon,
   dumbbellIcon,
@@ -188,8 +190,6 @@ const TAB = {
 // the order they came in; the script keeps it live from the event stream
 const view = roomView(roomId, now);
 const squad = [...view.members].sort((a, b) => Number(b.id === user.id) - Number(a.id === user.id));
-// a stand-in head for everyone until avatars arrive (AV-1)
-const memberHead = head("#3b2219", "#c68642");
 // GYM-4: the station you claimed, shown in the sheet while you're on a lift
 const myStation = !editing && exercise ? view.members.find((m) => m.id === user.id)?.station : undefined;
 
@@ -293,8 +293,8 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       <ul class="people" data-me={user.id}>
         {
           squad.map((m) => (
-            <li class:list={{ me: m.id === user.id, away: m.away }} data-id={m.id}>
-              <Sprite sprite={memberHead} scale={4} class="av" />
+            <li class:list={{ me: m.id === user.id, away: m.away }} data-id={m.id} data-look={lookKey(m.look)}>
+              <Avatar look={m.look} head />
               <span class="who">
                 {m.name}
                 {m.id === user.id && <span class="badge">You</span>}
@@ -321,7 +321,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       </ul>
       <p class="alone" hidden={members.length > 1}>Just you so far. Send the passcode to the squad 📲</p>
       {/* what the script builds rows and the connection badge from */}
-      <template data-part="head"><Sprite sprite={memberHead} scale={4} class="av" /></template>
+      <template data-part="head"><Avatar look={lookOf(user.id)} head allHair vars={false} /></template>
       {
         (Object.keys(STATE_WORD) as State[]).map((s) => (
           <template data-part={s}>
@@ -692,6 +692,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   import { navigate } from "astro:transitions/client";
   import type { RoomView } from "../../lib/presence.ts";
   import { STATE_WORD, stateAt, whatParts } from "../../lib/squad.ts";
+  import { lookKey, lookVars } from "../../sprites/avatar.ts";
 
   // Every timer here is worked out from Date.now() on each tick, never
   // counted, so a phone that slept wakes up showing the right time (GYM-12).
@@ -1001,12 +1002,31 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       return node;
     };
     const members = [...view.members].sort((a, b) => Number(b.id === me) - Number(a.id === me));
-    list.replaceChildren(
-      ...members.map((m) => {
-        const li = el("li", [m.id === me && "me", m.away && "away"].filter(Boolean).join(" "));
-        li.dataset.id = String(m.id);
-        const state = stateAt(m, now);
-        const what = el("span", "what", ...whatParts(m, now).map(([text, keep]) => (keep ? el("span", "n", text) : text)));
+    // Rows are patched in place, not rebuilt: a head is only redrawn when
+    // that person's look changes, and the words and chips only when they
+    // read differently, so nothing repaints every second (a freshly inserted
+    // svg can flash black for a frame before its colours apply).
+    const rows = new Map([...list.querySelectorAll<HTMLLIElement>(":scope > li")].map((li) => [li.dataset.id, li]));
+    const ordered = members.map((m) => {
+      const li = rows.get(String(m.id)) ?? el("li", "");
+      li.dataset.id = String(m.id);
+      li.className = [m.id === me && "me", m.away && "away"].filter(Boolean).join(" ");
+      const look = lookKey(m.look);
+      if (li.dataset.look !== look || !li.querySelector(".av")) {
+        // the head is drawn with every hair style; the look picks one and its colours
+        const head = part("head") as DocumentFragment;
+        const svg = head.querySelector("svg")!;
+        svg.setAttribute("style", lookVars(m.look));
+        svg.dataset.hair = m.look.hair;
+        li.querySelector(".av")?.remove();
+        li.prepend(head);
+        li.dataset.look = look;
+      }
+      const state = stateAt(m, now);
+      const parts = whatParts(m, now);
+      const words = [m.name, m.id === me, m.host, ...parts.flat()].join("|");
+      if (li.dataset.words !== words || !li.querySelector(".who")) {
+        const what = el("span", "what", ...parts.map(([text, keep]) => (keep ? el("span", "n", text) : text)));
         const who = el(
           "span",
           "who",
@@ -1015,12 +1035,23 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
           ...(m.host ? [" ", el("span", "badge host", "Host")] : []),
           what,
         );
+        li.querySelector(".who")?.remove();
+        li.querySelector(".av")!.after(who);
+        li.dataset.words = words;
+      }
+      const flags = `${state}|${m.away}`;
+      if (li.dataset.flags !== flags || !li.querySelector(".chips")) {
         const chips = el("span", "chips", el("span", `chip state-${state}`, part(state), STATE_WORD[state]));
         if (m.away) chips.append(el("span", "chip away", part("away"), "Away"));
-        li.append(part("head"), who, chips);
-        return li;
-      }),
-    );
+        li.querySelector(".chips")?.remove();
+        li.append(chips);
+        li.dataset.flags = flags;
+      }
+      return li;
+    });
+    // only reorder (which moves nodes) when the order or the people changed
+    const current = [...list.children];
+    if (current.length !== ordered.length || ordered.some((li, i) => current[i] !== li)) list.replaceChildren(...ordered);
     const alone = document.querySelector<HTMLElement>(".alone");
     if (alone) alone.hidden = members.length > 1;
     const count = document.querySelector<HTMLElement>(".spots .count");
@@ -1303,7 +1334,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   }
   .people :global(li) {
     display: grid;
-    grid-template-columns: 32px minmax(0, 1fr) auto;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
     align-items: center;
     gap: 0 0.75rem;
     min-height: 44px;
@@ -1317,9 +1348,10 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   .people :global(li:last-child) {
     padding-bottom: 0;
   }
+  /* the head crop of the avatar, as on home: 14 x 11 sprite pixels at 3x */
   .people :global(.av) {
-    width: 32px;
-    height: 32px;
+    width: 42px;
+    height: 33px;
   }
   .people :global(li.away .av) {
     opacity: 0.5;

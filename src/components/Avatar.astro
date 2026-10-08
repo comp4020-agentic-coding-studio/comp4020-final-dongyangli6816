@@ -1,0 +1,100 @@
+---
+// One person's avatar as crisp SVG (AV-2): the body, with the hair drawn over
+// the head inside the bobbing group (g.av-top). Each pixel carries its slot as
+// a class (k, s, t, h) rather than a fill, and the look's colours arrive as
+// custom properties, so a palette swap is three variables.
+import { AVATAR_UPPER_ROWS, BODY, HAIR, HAIR_STYLES, lookVars, type HairStyle, type Look } from "../sprites/avatar.ts";
+
+interface Props {
+  // no look draws the body alone, as the invite's empty spot (with class "ghost")
+  look?: Look | null;
+  // the head and shoulders only, for lists
+  head?: boolean;
+  // every hair style, with the look's chosen by data-hair: for the editor's
+  // live preview and for rows a script redraws
+  allHair?: boolean;
+  // set the look's colours on the svg; off when a parent sets them
+  vars?: boolean;
+  class?: string;
+}
+const { look, head = false, allHair = false, vars = !!look, class: className } = Astro.props;
+
+type Run = { x: number; y: number; w: number; slot: string };
+function runs(grid: readonly string[]): Run[] {
+  const out: Run[] = [];
+  grid.forEach((row, y) => {
+    for (let x = 0; x < row.length; ) {
+      const ch = row[x];
+      let end = x + 1;
+      while (row[end] === ch) end++;
+      if (ch !== ".") out.push({ x, y, w: end - x, slot: ch });
+      x = end;
+    }
+  });
+  return out;
+}
+const body = runs(BODY);
+const styles: HairStyle[] = !look ? [] : allHair ? HAIR_STYLES.map((s) => s.id) : [look.hair];
+const hair = styles.map((style) => ({ style, runs: runs(HAIR[style]) }));
+---
+
+<svg
+  class:list={["av", className]}
+  viewBox={head ? "1 0 14 11" : "0 0 16 16"}
+  shape-rendering="crispEdges"
+  aria-hidden="true"
+  data-hair={allHair && look ? look.hair : undefined}
+  style={vars && look ? lookVars(look) : undefined}
+>
+  <g class="av-top">
+    {body.filter((r) => r.y < AVATAR_UPPER_ROWS).map((r) => <rect x={r.x} y={r.y} width={r.w} height="1" class={r.slot} />)}
+    {
+      hair.map((h) => (
+        <g class={`hair hair-${h.style}`}>
+          {h.runs.map((r) => (
+            <rect x={r.x} y={r.y} width={r.w} height="1" class={r.slot} />
+          ))}
+        </g>
+      ))
+    }
+  </g>
+  {!head && body.filter((r) => r.y >= AVATAR_UPPER_ROWS).map((r) => <rect x={r.x} y={r.y} width={r.w} height="1" class={r.slot} />)}
+</svg>
+
+<style is:global>
+  /* the avatar's palette slots (docs/design/avatar/spec.md) */
+  .av {
+    display: block;
+    flex: none;
+  }
+  .av .k {
+    fill: var(--ink);
+  }
+  .av .s {
+    fill: var(--av-skin);
+  }
+  .av .h {
+    fill: var(--av-hair);
+  }
+  .av .t {
+    fill: var(--av-shirt);
+  }
+  /* every style drawn, the look's shown */
+  .av[data-hair] .hair {
+    display: none;
+  }
+  .av[data-hair="crop"] .hair-crop,
+  .av[data-hair="curls"] .hair-curls,
+  .av[data-hair="long"] .hair-long,
+  .av[data-hair="ponytail"] .hair-ponytail {
+    display: inline;
+  }
+  /* the invite's empty spot: the body as an outline in the muted ink */
+  .av.ghost {
+    --av-skin: var(--card);
+    --av-shirt: var(--card);
+  }
+  .av.ghost .k {
+    fill: var(--muted);
+  }
+</style>

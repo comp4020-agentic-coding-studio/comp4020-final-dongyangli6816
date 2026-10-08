@@ -1,6 +1,8 @@
 import { and, count, desc, eq, isNotNull, isNull } from "drizzle-orm";
 import { db } from "./db.ts";
 import { EQUIPMENT, exerciseById, type Equipment } from "./exercises.ts";
+import { parseLook, type Look } from "../sprites/avatar.ts";
+import { lookOf } from "./avatars.ts";
 import { presence, roomMembers, rooms, sets, users, workouts } from "./schema.ts";
 import { claimStation, releaseStation, roomStations } from "./stations.ts";
 
@@ -14,6 +16,7 @@ export type State = "idle" | "lifting" | "resting" | "slacking" | "finished";
 export type MemberView = {
   id: number;
   name: string;
+  look: Look;
   host: boolean;
   state: State;
   away: boolean;
@@ -78,6 +81,7 @@ export function roomView(roomId: number, now = Date.now()): RoomView {
     .select({
       id: users.id,
       name: users.displayName,
+      avatar: users.avatar,
       lastSeenAt: roomMembers.lastSeenAt,
       state: presence.state,
       exerciseId: presence.exerciseId,
@@ -132,6 +136,8 @@ export function roomView(roomId: number, now = Date.now()): RoomView {
       return {
         id: m.id,
         name: m.name,
+        // an account from before avatars gets one rolled and kept (avatars.ts)
+        look: parseLook(m.avatar) ?? lookOf(m.id),
         host: m.id === room.hostUserId,
         state,
         away: now - m.lastSeenAt > AWAY_MS,
