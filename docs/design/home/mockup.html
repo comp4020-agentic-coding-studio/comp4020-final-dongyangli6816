@@ -20,6 +20,22 @@
     --muted: #3d5a45;
     --error: #a3241b;
     --focus: #f2c94c;
+    --green-hover: #1a5c32;
+    --leaf-hover: #d6ef86;
+    --tile: #dbe7c6;
+    --row: #eef5e1;
+    /* person states (GYM-9): always a fill under ink text, with an icon and a word */
+    --idle: #e8f0d8;
+    --lifting: #c8e66b;
+    --resting: #7cc6e8;
+    --slacking: #ff6b5e;
+    --finished: #f2c94c;
+    /* Night: the gym after hours */
+    --night: #081a10;
+    --floor: #0f2a1a;
+    --panel: #143822;
+    --edge: #3f8f5a;
+    --dim: #8fa896;
     --px: 4px;
     --display: "Press Start 2P", ui-monospace, monospace;
     --body: "VT323", ui-monospace, monospace;
@@ -42,7 +58,7 @@
     font-synthesis: none;
     /* a faint 16 px checker, like gym floor tiles */
     background-color: var(--paper);
-    background-image: conic-gradient(#dbe7c6 25%, transparent 0 50%, #dbe7c6 0 75%, transparent 0);
+    background-image: conic-gradient(var(--tile) 25%, transparent 0 50%, var(--tile) 0 75%, transparent 0);
     background-size: 32px 32px;
   }
 
@@ -87,6 +103,12 @@
   .topbar .linklike:hover {
     color: var(--leaf);
   }
+  .topbar nav a[aria-current="page"] {
+    color: var(--leaf);
+    text-decoration: underline;
+    text-decoration-thickness: var(--px);
+    text-underline-offset: 6px;
+  }
   .topbar form {
     margin: 0;
   }
@@ -108,6 +130,18 @@
   footer a {
     color: var(--leaf);
   }
+  footer a[aria-current="page"] {
+    text-decoration: none;
+  }
+  footer a[aria-current="page"]::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 0.5rem;
+    background: var(--leaf);
+    vertical-align: middle;
+  }
   h1,
   h2,
   h3 {
@@ -116,15 +150,16 @@
     line-height: 1.4;
     margin: 0 0 1rem;
   }
+  /* Press Start 2P is drawn on an 8 px grid: crisp only at 8, 16, 24, 32 */
   h1 {
-    font-size: clamp(18px, 5vw, 26px);
+    font-size: 24px;
   }
   h2 {
-    font-size: 14px;
+    font-size: 16px;
     color: var(--green);
   }
   h3 {
-    font-size: 12px;
+    font-size: 16px;
   }
   p {
     margin: 0 0 1rem;
@@ -164,7 +199,7 @@
     background: #fff;
     border: var(--px) solid var(--ink);
     border-radius: 0;
-    box-shadow: inset var(--px) var(--px) 0 #dbe7c6;
+    box-shadow: inset var(--px) var(--px) 0 var(--tile);
   }
   select {
     appearance: none;
@@ -183,7 +218,7 @@
     gap: 0.5rem;
     min-height: 48px;
     padding: 0.75rem 1.25rem;
-    font: 12px/1.4 var(--display);
+    font: 16px/1.4 var(--display);
     text-transform: uppercase;
     text-decoration: none;
     color: var(--paper);
@@ -203,7 +238,7 @@
   }
   button:hover,
   .button:hover {
-    background: #26804a;
+    background: var(--green-hover);
   }
   button:active,
   .button:active {
@@ -219,7 +254,20 @@
     background: var(--leaf);
   }
   .button.secondary:hover {
-    background: #d6ef86;
+    background: var(--leaf-hover);
+  }
+  /* pending: held down, label kept, never a spinner */
+  button:disabled,
+  button:disabled:hover {
+    cursor: progress;
+    color: var(--paper);
+    background: var(--muted);
+    transform: translateY(var(--px));
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--ink),
+      0 var(--px) 0 var(--ink),
+      calc(var(--px) * -1) 0 0 var(--ink),
+      var(--px) 0 0 var(--ink);
   }
   .wide {
     width: calc(100% - var(--px) * 2);
@@ -231,16 +279,30 @@
     padding: 0;
     text-transform: none;
   }
+  /* ink ring on Paper; the yellow one fails contrast there (1.4:1) and is
+     kept for the dark bars and Night */
   :focus-visible {
-    outline: var(--px) solid var(--focus);
+    outline: var(--px) solid var(--ink);
     outline-offset: var(--px);
   }
+  .topbar :focus-visible,
+  footer :focus-visible,
+  body.night :focus-visible {
+    outline-color: var(--focus);
+  }
+  input[aria-invalid="true"] {
+    box-shadow: inset var(--px) var(--px) 0 var(--error);
+  }
+  /* the ring reaches 8 px past a field, so the error sits 12 px below it */
   .error {
-    margin: 0.5rem 0 0;
+    margin: 0.75rem 0 0;
     padding: 0.4rem 0.6rem;
     color: #fff;
     background: var(--error);
     border-left: calc(var(--px) * 2) solid var(--ink);
+  }
+  .error a {
+    color: #fff;
   }
   .hint {
     color: var(--muted);
@@ -251,6 +313,87 @@
     gap: 0.75rem 1rem;
     align-items: center;
     margin-top: 1.25rem;
+  }
+
+  /* ---------- Night: same components, surface colours swapped ---------- */
+  body.night {
+    color: var(--paper);
+    color-scheme: dark;
+    background-color: var(--night);
+    background-image: conic-gradient(var(--floor) 25%, transparent 0 50%, var(--floor) 0 75%, transparent 0);
+  }
+  /* the gym needs room for two columns at 900 px and up */
+  body.night main {
+    max-width: 64rem;
+  }
+  .night h2 {
+    color: var(--leaf);
+  }
+  .night label {
+    color: var(--paper);
+  }
+  .night .bubble {
+    color: var(--ink);
+  }
+  .night .hint {
+    color: var(--dim);
+  }
+  .night main a {
+    color: var(--leaf);
+  }
+  /* --green disappears on the dark floor, so primary is leaf with ink */
+  .night button,
+  .night .button {
+    color: var(--ink);
+    background: var(--leaf);
+  }
+  .night button:hover,
+  .night .button:hover {
+    background: var(--leaf-hover);
+  }
+  /* secondary on Night: night fill, paper label, the notch in --edge */
+  .night .button.secondary {
+    color: var(--paper);
+    background: var(--night);
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--edge),
+      0 var(--px) 0 var(--edge),
+      calc(var(--px) * -1) 0 0 var(--edge),
+      var(--px) 0 0 var(--edge),
+      0 calc(var(--px) * 2) 0 #000;
+  }
+  .night .button.secondary:hover {
+    background: var(--floor);
+  }
+  .night .button.secondary:active {
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--edge),
+      0 var(--px) 0 var(--edge),
+      calc(var(--px) * -1) 0 0 var(--edge),
+      var(--px) 0 0 var(--edge);
+  }
+  .night button:disabled {
+    color: var(--ink);
+    background: var(--dim);
+  }
+  .night input,
+  .night select {
+    color: var(--paper);
+    background-color: var(--night);
+    border-color: var(--edge);
+    box-shadow: inset var(--px) var(--px) 0 #000;
+  }
+  .night select {
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--paper) 50%),
+      linear-gradient(135deg, var(--paper) 50%, transparent 50%);
+  }
+  .night th,
+  .night td {
+    border-color: var(--edge);
+  }
+  .night tbody tr:nth-child(even) td {
+    background: var(--floor);
   }
 
   /* ---------- bits ---------- */
@@ -317,7 +460,7 @@
     font-size: 24px;
   }
   th {
-    font: 10px/1.4 var(--display);
+    font: 8px/2 var(--display);
     text-transform: uppercase;
     color: var(--paper);
     background: var(--deep);
@@ -334,41 +477,59 @@
     font-variant-numeric: tabular-nums;
   }
   tbody tr:nth-child(even) td {
-    background: #eef5e1;
+    background: var(--row);
   }
   .stat {
     font-family: var(--display);
-    font-size: 12px;
+    font-size: 8px;
     color: var(--muted);
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    font: 8px/1 var(--display);
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--ink);
+    border: 2px solid var(--ink);
+  }
+  .chip svg {
+    flex: none;
+  }
+  .state-idle {
+    background: var(--idle);
+  }
+  .state-lifting {
+    background: var(--lifting);
+  }
+  .state-resting {
+    background: var(--resting);
+  }
+  .state-slacking {
+    background: var(--slacking);
+  }
+  .state-finished {
+    background: var(--finished);
   }
   .badge {
     display: inline-block;
     margin-left: 0.5rem;
     padding: 0.15rem 0.4rem;
-    font: 9px/1.4 var(--display);
+    font: 8px/1.4 var(--display);
     vertical-align: middle;
     color: var(--ink);
     background: var(--leaf);
     border: 2px solid var(--ink);
   }
 
-  /* ---------- /readme/ ---------- */
-  .prose h1 {
-    font-size: clamp(18px, 5vw, 24px);
-  }
-  .prose h2 {
-    margin-top: 2rem;
-  }
-  .prose li {
-    margin-bottom: 0.4rem;
-  }
-
   @media (max-width: 420px) {
     body {
       font-size: 21px;
     }
-    .brand {
-      font-size: 13px;
+    h1 {
+      font-size: 16px;
     }
     .card {
       padding: 1rem;
@@ -386,93 +547,8 @@
     </style>
     <style id="page">
       /* ==================================================================
-         LAYOUT CHANGES. Not part of the home page block: these belong in
-         Layout.astro and are listed under "Layout changes" in spec.md so the
-         main agent can reconcile them with the other six pages once.
-         ================================================================== */
-
-      /* layout change: state tokens (system 5, known gap 4) and names for the
-         hard-coded hexes in the layout (known gaps 2 and 5) */
-      :root {
-        --idle: #e8f0d8;
-        --lifting: #c8e66b;
-        --resting: #7cc6e8;
-        --slacking: #ff6b5e;
-        --finished: #f2c94c;
-        --hover: #1a5c32;
-        --leaf-hover: #d6ef86;
-        --tile: #dbe7c6;
-        --stripe: #eef5e1;
-      }
-      /* layout change: ink focus ring on Paper (known gap 1) */
-      :focus-visible {
-        outline-color: var(--ink);
-      }
-      /* layout change: darker hover that passes contrast (known gap 2) */
-      button:hover,
-      .button:hover {
-        background: var(--hover);
-      }
-      .button.secondary:hover {
-        background: var(--leaf-hover);
-      }
-      /* layout change: display sizes on the 8 px grid (known gap 3) */
-      h1 {
-        font-size: 16px;
-      }
-      h2,
-      h3,
-      button,
-      .button {
-        font-size: 16px;
-      }
-      th,
-      .badge {
-        font-size: 8px;
-      }
-      @media (min-width: 421px) {
-        h1 {
-          font-size: 24px;
-        }
-      }
-      /* layout change: pending state for every form button (system 13) */
-      button:disabled,
-      button:disabled:hover {
-        color: var(--paper);
-        background: var(--muted);
-        cursor: progress;
-        transform: translateY(var(--px));
-        box-shadow:
-          0 calc(var(--px) * -1) 0 var(--ink),
-          0 var(--px) 0 var(--ink),
-          calc(var(--px) * -1) 0 0 var(--ink),
-          var(--px) 0 0 var(--ink);
-      }
-      /* layout change: the state chip from system 9, shared with the gym */
-      .chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.25rem;
-        padding: 0.25rem 0.5rem;
-        font: 8px/1 var(--display);
-        text-transform: uppercase;
-        white-space: nowrap;
-        color: var(--ink);
-        border: 2px solid var(--ink);
-      }
-      .chip svg,
-      .px {
-        flex: none;
-        shape-rendering: crispEdges;
-      }
-      .state-idle { background: var(--idle); }
-      .state-lifting { background: var(--lifting); }
-      .state-resting { background: var(--resting); }
-      .state-slacking { background: var(--slacking); }
-      .state-finished { background: var(--finished); }
-
-      /* ==================================================================
-         HOME PAGE BLOCK. This is what goes in index.astro's <style>.
+         HOME PAGE BLOCK. index.astro's <style> as built today, plus the
+         rules marked "new" for the room notices and the set kinds.
          ================================================================== */
 
       /* signed out: the pitch */
@@ -507,9 +583,6 @@
       }
       .squad li:first-child {
         border-top: 0;
-      }
-      .squad .sprite {
-        image-rendering: pixelated;
       }
       .squad .what {
         display: block;
@@ -557,6 +630,21 @@
       }
       .howto p {
         margin: 0;
+      }
+
+      /* new: signed in, a room you left or that closed. The passcode is the
+         same key tag as Your rooms; a closed room's key is dimmed, because
+         it no longer opens anything (the words say so too). */
+      .notice .passcode {
+        vertical-align: 2px;
+      }
+      .notice .passcode.closed {
+        color: var(--paper);
+        background: var(--muted);
+        border-color: var(--ink);
+      }
+      .notice a {
+        color: var(--ink);
       }
 
       /* signed in: the door into the gym */
@@ -614,7 +702,9 @@
       .room-keys a:hover {
         background: var(--leaf);
       }
-      .room-keys .passcode {
+      /* changed: shared with .notice, so a key tag is drawn one way */
+      .room-keys .passcode,
+      .notice .passcode {
         padding: 0.25rem 0.5rem;
         font-size: 16px;
       }
@@ -629,7 +719,8 @@
       .totals {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.5rem 2rem;
+        /* changed: 2rem → 1.5rem, so three figures fit one row on a 360 px phone */
+        gap: 0.5rem 1.5rem;
         margin: 0 0 1rem;
       }
       .totals dt {
@@ -649,6 +740,9 @@
         padding: 1rem 0.6rem;
         color: var(--muted);
       }
+      .logbook .actions {
+        margin-top: 0;
+      }
 
       @media (max-width: 420px) {
         .pitch h1 {
@@ -661,7 +755,13 @@
 
       /* ==================================================================
          MOCKUP ONLY. State labels and frames; do not build these.
+         (Sprite.astro already draws crisp edges in the build.)
          ================================================================== */
+      .chip svg,
+      .px,
+      .sprite {
+        shape-rendering: crispEdges;
+      }
       .mock-state {
         margin: 0;
         padding: 0.75rem 1rem;
@@ -775,9 +875,10 @@
       </footer>
     </div>
 
+
     <!-- ============================================================ -->
     <!-- state: signed-in-default -->
-    <p class="mock-state">State: signed in · Mia, 3 rooms, last workout yesterday</p>
+    <p class="mock-state">State: signed in · Mia, 3 open rooms, last workout yesterday with all four kinds of set</p>
     <div class="mock-frame">
       <header class="topbar">
         <a href="/" class="brand" aria-label="Spotter home">
@@ -798,24 +899,24 @@
       <main>
         <h1>Hi, Mia</h1>
 
-        <section class="card door" aria-labelledby="door-h">
-          <h2 id="door-h">Train with the squad</h2>
+        <section class="card door" aria-labelledby="door-h1">
+          <h2 id="door-h1">Train with the squad</h2>
           <form method="post" action="/rooms" class="door-create">
             <button type="submit" class="button secondary">Create room</button>
             <p class="hint">You get a passcode to send them.</p>
           </form>
           <p class="or">or join one</p>
           <form method="post" action="/join">
-            <label for="passcode">Passcode</label>
-            <input id="passcode" name="passcode" class="passcode-input" autocomplete="off" autocapitalize="characters" maxlength="8" required aria-describedby="passcode-hint" />
-            <p id="passcode-hint" class="hint">Six letters and numbers, from your squad.</p>
+            <label for="passcode1">Passcode</label>
+            <input id="passcode1" name="passcode" class="passcode-input" autocomplete="off" autocapitalize="characters" maxlength="8" required aria-describedby="passcode-hint1" />
+            <p id="passcode-hint1" class="hint">Six letters and numbers, from your squad.</p>
             <div class="actions"><button type="submit" class="wide">Join</button></div>
           </form>
         </section>
 
-        <section class="card" aria-labelledby="rooms-h">
-          <h2 id="rooms-h">Your rooms</h2>
-          <p class="hint">Last active, newest first.</p>
+        <section class="card" aria-labelledby="rooms-h1">
+          <h2 id="rooms-h1">Your rooms</h2>
+          <p class="hint">Still open, newest first.</p>
           <ul class="room-keys">
             <li><a href="/rooms/42"><span class="passcode">K7M2QX</span><span class="when">12 min ago</span><svg class="px" width="16" height="16" aria-hidden="true"><use href="#i-arrow" /></svg></a></li>
             <li><a href="/rooms/37"><span class="passcode">HR4TWP</span><span class="when">Yesterday</span><svg class="px" width="16" height="16" aria-hidden="true"><use href="#i-arrow" /></svg></a></li>
@@ -823,8 +924,88 @@
           </ul>
         </section>
 
-        <section class="card logbook" aria-labelledby="last-h">
-          <h2 id="last-h">Last workout</h2>
+        <section class="card logbook" aria-labelledby="last-h1">
+          <h2 id="last-h1">Last workout</h2>
+          <p class="hint">Wed 7 Oct, 6:05 pm · 85 min</p>
+          <dl class="totals">
+            <div><dt>Sets</dt><dd>16</dd></div>
+            <div><dt>Volume</dt><dd>2,207.5 <span class="unit">kg</span></dd></div>
+            <div><dt>Distance</dt><dd>6.2 <span class="unit">km</span></dd></div>
+          </dl>
+          <table>
+            <thead>
+              <tr><th scope="col">Lift</th><th scope="col" class="num">Sets</th><th scope="col" class="num">Best</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Run</td><td class="num">1</td><td class="num">5 km · 25:00</td></tr>
+              <tr><td>Bench press</td><td class="num">4</td><td class="num">62.5 kg × 8</td></tr>
+              <tr><td>Pull-up</td><td class="num">4</td><td class="num">BW + 10 kg × 8</td></tr>
+              <tr><td>Push-ups</td><td class="num">3</td><td class="num">BW × 20</td></tr>
+              <tr><td>Plank</td><td class="num">3</td><td class="num">1:30</td></tr>
+              <tr><td>Incline walk</td><td class="num">1</td><td class="num">1.2 km · 15:00</td></tr>
+            </tbody>
+          </table>
+          <div class="actions">
+            <a href="/workouts/118" class="button secondary">See summary</a>
+            <a href="/history" class="button secondary">All history</a>
+          </div>
+        </section>
+      </main>
+      <footer>
+        <a href="/readme/">What Spotter is for</a>
+      </footer>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- state: left (success) -->
+    <p class="mock-state">State: left · /?left=K7M2QX · Tom left a room without logging; it drops out of his rooms</p>
+    <div class="mock-frame">
+      <header class="topbar">
+        <a href="/" class="brand" aria-label="Spotter home">
+          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges">
+            <rect x="0" y="2" width="2" height="4" fill="#c8e66b" />
+            <rect x="2" y="0" width="2" height="8" fill="#c8e66b" />
+            <rect x="4" y="3" width="8" height="2" fill="#e8f0d8" />
+            <rect x="12" y="0" width="2" height="8" fill="#c8e66b" />
+            <rect x="14" y="2" width="2" height="4" fill="#c8e66b" />
+          </svg>
+          <span>Spotter</span>
+        </a>
+        <nav>
+          <a href="/history">History</a>
+          <form method="post" action="/signout"><button type="submit" class="linklike">Sign out</button></form>
+        </nav>
+      </header>
+      <main>
+        <h1>Hi, Tom</h1>
+        <p class="bubble notice" role="status">You left room <span class="passcode">K7M2QX</span>. See you next session 👋</p>
+
+        <section class="card door" aria-labelledby="door-h2">
+          <h2 id="door-h2">Train with the squad</h2>
+          <form method="post" action="/rooms" class="door-create">
+            <button type="submit" class="button secondary">Create room</button>
+            <p class="hint">You get a passcode to send them.</p>
+          </form>
+          <p class="or">or join one</p>
+          <form method="post" action="/join">
+            <label for="passcode2">Passcode</label>
+            <input id="passcode2" name="passcode" class="passcode-input" autocomplete="off" autocapitalize="characters" maxlength="8" required aria-describedby="passcode-hint2" />
+            <p id="passcode-hint2" class="hint">Six letters and numbers, from your squad.</p>
+            <div class="actions"><button type="submit" class="wide">Join</button></div>
+          </form>
+        </section>
+
+        <section class="card" aria-labelledby="rooms-h2">
+          <h2 id="rooms-h2">Your rooms</h2>
+          <p class="hint">Still open, newest first.</p>
+          <ul class="room-keys">
+            <li><a href="/rooms/37"><span class="passcode">HR4TWP</span><span class="when">Yesterday</span><svg class="px" width="16" height="16" aria-hidden="true"><use href="#i-arrow" /></svg></a></li>
+            <li><a href="/rooms/31"><span class="passcode">9BDMXE</span><span class="when">3 Oct</span><svg class="px" width="16" height="16" aria-hidden="true"><use href="#i-arrow" /></svg></a></li>
+          </ul>
+        </section>
+
+        <section class="card logbook" aria-labelledby="last-h2">
+          <h2 id="last-h2">Last workout</h2>
           <p class="hint">Tue 6 Oct, 6:12 pm · 52 min</p>
           <dl class="totals">
             <div><dt>Sets</dt><dd>14</dd></div>
@@ -841,12 +1022,123 @@
               <tr><td>Lat pulldown</td><td class="num">3</td><td class="num">55 kg × 10</td></tr>
             </tbody>
           </table>
-          <a href="/history" class="button secondary">All history</a>
+          <div class="actions">
+            <a href="/workouts/112" class="button secondary">See summary</a>
+            <a href="/history" class="button secondary">All history</a>
+          </div>
         </section>
       </main>
       <footer>
         <a href="/readme/">What Spotter is for</a>
       </footer>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- state: ended (with a workout) -->
+    <p class="mock-state">State: ended · /?ended=9BDMXE · Ji-woo's room closed; her open workout was finished for her. No open rooms left, so Your rooms is hidden</p>
+    <div class="mock-frame">
+      <header class="topbar">
+        <a href="/" class="brand" aria-label="Spotter home">
+          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges">
+            <rect x="0" y="2" width="2" height="4" fill="#c8e66b" />
+            <rect x="2" y="0" width="2" height="8" fill="#c8e66b" />
+            <rect x="4" y="3" width="8" height="2" fill="#e8f0d8" />
+            <rect x="12" y="0" width="2" height="8" fill="#c8e66b" />
+            <rect x="14" y="2" width="2" height="4" fill="#c8e66b" />
+          </svg>
+          <span>Spotter</span>
+        </a>
+        <nav>
+          <a href="/history">History</a>
+          <form method="post" action="/signout"><button type="submit" class="linklike">Sign out</button></form>
+        </nav>
+      </header>
+      <main>
+        <h1>Hi, Ji-woo</h1>
+        <p class="bubble notice" role="status">Room <span class="passcode closed">9BDMXE</span> has closed, so we wrapped up your workout. Every set is safe in <a href="/history">your history</a> 📒</p>
+
+        <section class="card door" aria-labelledby="door-h3">
+          <h2 id="door-h3">Train with the squad</h2>
+          <form method="post" action="/rooms" class="door-create">
+            <button type="submit" class="button secondary">Create room</button>
+            <p class="hint">You get a passcode to send them.</p>
+          </form>
+          <p class="or">or join one</p>
+          <form method="post" action="/join">
+            <label for="passcode3">Passcode</label>
+            <input id="passcode3" name="passcode" class="passcode-input" autocomplete="off" autocapitalize="characters" maxlength="8" required aria-describedby="passcode-hint3" />
+            <p id="passcode-hint3" class="hint">Six letters and numbers, from your squad.</p>
+            <div class="actions"><button type="submit" class="wide">Join</button></div>
+          </form>
+        </section>
+
+        <section class="card logbook" aria-labelledby="last-h3">
+          <h2 id="last-h3">Last workout</h2>
+          <p class="hint">Thu 8 Oct, 7:40 am · 46 min</p>
+          <dl class="totals">
+            <div><dt>Sets</dt><dd>7</dd></div>
+            <div><dt>Distance</dt><dd>2.4 <span class="unit">km</span></dd></div>
+          </dl>
+          <table>
+            <thead>
+              <tr><th scope="col">Lift</th><th scope="col" class="num">Sets</th><th scope="col" class="num">Best</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Incline walk</td><td class="num">1</td><td class="num">2.4 km · 30:00</td></tr>
+              <tr><td>Hanging leg raise</td><td class="num">3</td><td class="num">BW × 12</td></tr>
+              <tr><td>Plank</td><td class="num">3</td><td class="num">1:15</td></tr>
+            </tbody>
+          </table>
+          <div class="actions">
+            <a href="/workouts/121" class="button secondary">See summary</a>
+            <a href="/history" class="button secondary">All history</a>
+          </div>
+        </section>
+      </main>
+      <footer>
+        <a href="/readme/">What Spotter is for</a>
+      </footer>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- state: ended (nothing logged) -->
+    <p class="mock-state">State: ended, nothing logged there · /?ended=9BDMXE · Priya never logged in that room (rest of the page as usual)</p>
+    <div class="mock-frame">
+      <header class="topbar">
+        <a href="/" class="brand" aria-label="Spotter home">
+          <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges">
+            <rect x="0" y="2" width="2" height="4" fill="#c8e66b" />
+            <rect x="2" y="0" width="2" height="8" fill="#c8e66b" />
+            <rect x="4" y="3" width="8" height="2" fill="#e8f0d8" />
+            <rect x="12" y="0" width="2" height="8" fill="#c8e66b" />
+            <rect x="14" y="2" width="2" height="4" fill="#c8e66b" />
+          </svg>
+          <span>Spotter</span>
+        </a>
+        <nav>
+          <a href="/history">History</a>
+          <form method="post" action="/signout"><button type="submit" class="linklike">Sign out</button></form>
+        </nav>
+      </header>
+      <main>
+        <h1>Hi, Priya</h1>
+        <p class="bubble notice" role="status">Room <span class="passcode closed">9BDMXE</span> has closed. Start a new one below and send the squad the code 📲</p>
+
+        <section class="card door" aria-labelledby="door-h4">
+          <h2 id="door-h4">Train with the squad</h2>
+          <form method="post" action="/rooms" class="door-create">
+            <button type="submit" class="button secondary">Create room</button>
+            <p class="hint">You get a passcode to send them.</p>
+          </form>
+          <p class="or">or join one</p>
+          <form method="post" action="/join">
+            <label for="passcode4">Passcode</label>
+            <input id="passcode4" name="passcode" class="passcode-input" autocomplete="off" autocapitalize="characters" maxlength="8" required aria-describedby="passcode-hint4" />
+            <p id="passcode-hint4" class="hint">Six letters and numbers, from your squad.</p>
+            <div class="actions"><button type="submit" class="wide">Join</button></div>
+          </form>
+        </section>
+      </main>
     </div>
 
     <!-- ============================================================ -->
@@ -873,23 +1165,23 @@
         <h1>Hi, Priya</h1>
         <p class="bubble">New here? Join your squad's room, or start one and send the code 📲</p>
 
-        <section class="card door" aria-labelledby="door-h2">
-          <h2 id="door-h2">Train with the squad</h2>
+        <section class="card door" aria-labelledby="door-h5">
+          <h2 id="door-h5">Train with the squad</h2>
           <form method="post" action="/rooms" class="door-create">
             <button type="submit" class="button secondary">Create room</button>
             <p class="hint">You get a passcode to send them.</p>
           </form>
           <p class="or">or join one</p>
           <form method="post" action="/join">
-            <label for="passcode2">Passcode</label>
-            <input id="passcode2" name="passcode" class="passcode-input" autocomplete="off" autocapitalize="characters" maxlength="8" required aria-describedby="passcode-hint2" />
-            <p id="passcode-hint2" class="hint">Six letters and numbers, from your squad.</p>
+            <label for="passcode5">Passcode</label>
+            <input id="passcode5" name="passcode" class="passcode-input" autocomplete="off" autocapitalize="characters" maxlength="8" required aria-describedby="passcode-hint5" />
+            <p id="passcode-hint5" class="hint">Six letters and numbers, from your squad.</p>
             <div class="actions"><button type="submit" class="wide">Join</button></div>
           </form>
         </section>
 
-        <section class="card logbook" aria-labelledby="last-h2">
-          <h2 id="last-h2">Last workout</h2>
+        <section class="card logbook" aria-labelledby="last-h5">
+          <h2 id="last-h5">Last workout</h2>
           <table>
             <thead>
               <tr><th scope="col">Lift</th><th scope="col" class="num">Sets</th><th scope="col" class="num">Best</th></tr>
@@ -928,17 +1220,17 @@
       </header>
       <main>
         <h1>Hi, Mia</h1>
-        <section class="card door" aria-labelledby="door-h3">
-          <h2 id="door-h3">Train with the squad</h2>
+        <section class="card door" aria-labelledby="door-h6">
+          <h2 id="door-h6">Train with the squad</h2>
           <form method="post" action="/rooms" class="door-create">
             <button type="submit" class="button secondary">Create room</button>
             <p class="hint">You get a passcode to send them.</p>
           </form>
           <p class="or">or join one</p>
           <form method="post" action="/join" aria-busy="true">
-            <label for="passcode3">Passcode</label>
-            <input id="passcode3" name="passcode" class="passcode-input" value="K7M2QX" autocomplete="off" autocapitalize="characters" maxlength="8" required readonly aria-describedby="passcode-hint3" />
-            <p id="passcode-hint3" class="hint">Six letters and numbers, from your squad.</p>
+            <label for="passcode6">Passcode</label>
+            <input id="passcode6" name="passcode" class="passcode-input" value="K7M2QX" autocomplete="off" autocapitalize="characters" maxlength="8" required readonly aria-describedby="passcode-hint6" />
+            <p id="passcode-hint6" class="hint">Six letters and numbers, from your squad.</p>
             <div class="actions"><button type="submit" class="wide" disabled>Join</button></div>
           </form>
         </section>
@@ -949,7 +1241,7 @@
     <!-- state: error -->
     <p class="mock-state">State: error · not rendered on home</p>
     <div class="mock-note">
-      <p>Home renders no errors of its own. An empty passcode is stopped by the field's "required". A wrong passcode posts to /join, which shows "No open room has that passcode. Check it with whoever shared it." under its own field (the join page's design). Create room has no user error.</p>
+      <p>Home renders no errors of its own. An empty passcode is stopped by the field's "required". A wrong passcode posts to /join, which shows "No open room has that passcode. Check it with your squad." under its own slots (the join page's design). Create room has no user error. A ?left or ?ended value that isn't a well-formed passcode is ignored: no bubble.</p>
     </div>
   </body>
 </html>

@@ -1,237 +1,249 @@
 # History: design spec
 
-Mockup: `docs/design/history/mockup.html`. Screenshots: `node scripts/shot.mjs docs/design/history/mockup.html .shots/history/mockup`
+Mockup: `docs/design/history/mockup.html`.
+Screenshots: `node scripts/shot.mjs docs/design/history/mockup.html .shots/history/mockup`
 (not kept in git).
+
+This redesign works with the four set kinds, links each entry to its new
+summary page, and hands the "just finished" bubble over to that page. The
+week grouping, day strip, folding older weeks, the Live badge and the Resume
+strip are unchanged from the previous history design.
 
 ## 1. Plan
 
+### Shared: the Logbook group (`history`, `summary`)
+
+Identical in `docs/design/history/spec.md` and `docs/design/summary/spec.md`.
+
+**The rule:** a workout is drawn the same way wherever it appears. The summary
+page is a history entry blown up to full size, plus you and the moment. Same
+names, same figures, same table, same wording. Only the size of the tally
+figures changes.
+
+- **Surface.** Both pages are Paper. This departs from system.md section 4,
+  which puts the summary on Night; see Departures in `summary/spec.md`.
+- **How a workout is named.** By its **day label**: `Today`, `Yesterday`, or
+  `Tue 6 Oct` (with the year if it isn't this year). Then `p.when` gives the time
+  range, `6:42 – 7:46 pm`, dropping the first am/pm when both match. Both
+  pages use the same formatter, which history already has (`dayLabel`,
+  `timeRange`). History shows the day as an `h3`; the summary shows it as
+  the `h1`.
+- **The tally (`dl.tally`).** Boxed figures ruled by 2 px ink lines, in this
+  order:
+  - **Time** (`So far` while live) and **Sets**: always shown.
+  - **Volume**: only when it is above 0.
+  - **Distance**: only when it is above 0.
+
+  So weights-only and mixed-without-cardio workouts get Time · Sets · Volume.
+  Mixed with cardio gets all four. Cardio-only gets Time · Sets · Distance.
+  Bodyweight-only or plank-only gets Time · Sets. The unit sits in
+  `span.unit`, with its leading space inside the span. On phones (≤ 420 px)
+  four boxes go 2 × 2. History's figures are 28 px; the summary's are
+  `.tally.big`, 48 px with 24 px units, always 2 columns on phones.
+- **The set table (`table.log`).**
+  - Columns: `Exercise` | `Set`.
+  - **One `tbody` per exercise**: each exercise appears once, in the order it
+    was first done, with its sets in logged order (`byExercise` in
+    `src/lib/logbook.ts`).
+  - The row header `th.lift` holds the exercise name. When the exercise has
+    2 or more sets, it also holds `span.best`: `Best <span>{bestLabel}</span>`.
+    The inner span never wraps, so on a phone the line breaks after "Best".
+  - Each row is one `td.set`, right-aligned, holding the set written the way
+    a lifter writes it:
+
+    | Kind | Set cell | Best line |
+    | --- | --- | --- |
+    | weight | `82.5 kg × 8` | `Best 82.5 kg × 8` (heaviest, then most reps) |
+    | bodyweight | `BW × 12`, `BW + 10 kg × 6` | `Best BW × 12` (most reps, then added weight) |
+    | duration | `1:30` | `Best 1:30` (longest hold) |
+    | cardio | `5 km · 25:00`, then `span.pace` `5:00 /km` on its own line | `Best 5 km · 25:00` (longest distance, no pace) |
+
+    These are `setLabel` and `bestLabel` from `logbook.ts`. The one
+    difference: a cardio cell splits `setLabel`'s last ` · ` part into
+    `span.pace`, so the cell stays 14 characters wide and fits a 360 px phone.
+- **Links between the pages.**
+  - History → summary: the day label of every finished entry is the link
+    (`h3 > a`, with a pixel arrow, at least 44 px tall).
+  - Summary → `/` (**Back home**, primary) and `/history` (**All history**,
+    secondary).
+  - Live entries have no summary link. Their way on is **Resume**.
+- **Fields, errors and pending.** Neither page has a form. Every action is a
+  plain link, so there is no pending or error state to draw. Server failures
+  get the framework's error page, as everywhere else.
+- **Success.** The success moment lives only on the summary: a `.bubble`
+  with `role="status"` when it is reached with `?done=1`. History no longer
+  shows a bubble.
+- **Voice.** Logbook language: "in the book", "Every set", "Best". The jokes
+  stay in the bubble and the empty lines; figures and labels stay plain.
+- **Icons.** The 8 × 8 arrow and trophy from `src/sprites/icons.ts`, drawn at
+  2× with `Sprite.astro`.
+- **Shared CSS.** The rules marked `/* shared: logbook */` in both mockups'
+  `<style id="page">` are written the same way in both:
+  - `.when`;
+  - `.tally` and its phone rule;
+  - the `.log` rules (`th.lift`, `.best`, `.set`, `.pace`, run fills);
+  - `.vh`.
+
+  Build them once, as a `src/components/WorkoutLog.astro` (the tally plus the
+  table) with scoped styles, used by both pages. Scoping matters: the room
+  mockup also has a `.tally` (a `p` on Night) with a different meaning, so
+  this `.tally` must not go global under that name.
+
+### This page
+
 **Who and when.** Three moments, in this order of weight:
 
-1. **Between sets, mid-workout.** You tap History in the top bar to check what
-   you benched last week before loading the bar. You have one hand free, about
-   90 seconds, and you only glance. Then you need to get back to the gym.
-2. **Straight after Finish.** The room's Finish button redirects here, so the
-   newest entry is the workout you just did. This moment is the payoff.
-3. **On the couch, or at the showcase.** You scroll back through the weeks and
-   show a mate your logbook.
+1. **Between sets, mid-workout.** You tap History to check Tuesday's
+   pull-ups before you jump on the bar. You have one hand, about 90 seconds,
+   and you only glance. The Resume strip gets you back.
+2. **Planning the next session**, at home or on the walk in: what did I
+   squat last week, how far did I run?
+3. **Showing a mate**, on the couch or at the showcase. One tap on a day opens
+   its summary for a screenshot.
 
-**The one job.** Answering "what did I lift last time?" in one glance. The page
-is for reading, so it has no form. Its one primary action depends on the case:
+(Straight after Finish used to be a history moment. It now belongs to the
+summary page.)
 
-- if a workout is still open, it's **Resume**, which goes back to the gym;
-- if there are no workouts, it's **Start one**, which goes to `/`;
-- otherwise there is no primary button, and the page is the logbook itself.
+**The one job.** Answer "what did I do last time?" at a glance, whatever the
+kind of exercise. The page is for reading. Its one primary action is
+**Resume** when a workout is live, **Start one** when the logbook is empty, and
+otherwise there is none: the entries' day links are ordinary links.
 
 **Hierarchy.**
 
-1. **When:** the week, then the day ("Today", "Mon 5 Oct"). Lifters remember
-   their sessions by day.
-2. **The lifts:** each exercise name once, with its top set under it
-   (`Top 82.5 kg × 8`). This is the number the between-sets glance is after.
-3. **The sets:** kg and reps for every set, right-aligned and tabular, in VT323
-   at 24 px. These must read correctly at a glance.
-4. **The tally:** time, sets and volume for the session, in boxed VT323 figures
-   at 28 px.
+1. **When:** the week, then the day (the link).
+2. **The best set** under each exercise name (`Best 82.5 kg × 8`,
+   `Best BW × 12`, `Best 1:30`, `Best 5 km · 25:00`). These must read
+   correctly at a glance.
+3. **The sets**, right-aligned in VT323 at 24 px.
+4. **The tally:** time, sets, volume and/or distance.
 
-**Reuse.** Each workout is a `.card`. The sets use the global `table` with
-`.num`. The Live badge is `.badge`, the success message is `.bubble`, and the
-buttons are `.button`. New, all in the page block:
+**Reuse.** `.card`, the global `table` with the `.log` rules, `.badge`,
+`.button`, and `h2` / `h3`. The arrow comes from `icons.ts`. Kept from the
+previous history design: `.week`, `.days`, `details.week`, `.toggle`,
+`.resume`, `.empty`. Nothing new except the shared logbook rules and the
+link style on `.entry-head h3 a`.
 
-- `.week` with a day strip (`.days`);
-- `.tally`;
-- `.log` modifiers for grouped lifts;
-- the pinned `.resume` strip;
-- the `.empty` layout.
+**Template check.** With the colours swapped, "date, stat boxes, table" would
+still fit any app. What keeps it Spotter's logbook:
 
-**Template check.** The first draft was "date heading + stat boxes + table". With
-the colours changed, it would fit any expense or fitness app. What I changed to
-make it Spotter's logbook:
-
-- **Weeks ruled off like logbook pages.** Each week gets a thick ink rule and a
-  pixel day strip (M T W T F S S). Trained days are ink squares with leaf
-  letters. The strip only records days you trained: empty weeks are never
-  shown, and nothing counts misses. So it reads as a training log, not a
-  streak to lose.
-- **Lifts written the way lifters write them.** The exercise name appears once
-  per run of sets, not on every row. Its top set sits under it. The same
-  change fills what was a wide empty column on desktop.
-- **"Still on the floor · Resume".** A pinned strip that mirrors the gym's own
-  pinned bottom panel, so checking history between sets is never a dead end.
-- **"In the book" copy.** The lede (`8 workouts · 26,821 kg in the book`) and
-  the success bubble (`Workout's in the book. Nice one 🏆`) use logbook
-  language.
-- **Older weeks fold away** behind a tap. The page stays a short logbook, not an
-  infinite feed (section 14).
+- **The ruled weeks and the M T W T F S S day strip** stay.
+- **The sets are written in lifters' shorthand**, not in generic columns:
+  `BW + 10 kg × 6`, `1:30`, `5 km · 25:00 · 5:00 /km`. The old `kg | Reps`
+  columns would have shown "0" for a pull-up and nothing at all for a plank.
+- **The tally changes shape with the workout**: a run day reads in
+  kilometres, a push day in kilograms. There are no empty "0 kg" boxes.
+- **The day label is the door to that day's summary**, where your avatar
+  holds the Finished chip. History stays the quiet list, and the summary is
+  the screenshot.
 
 ## 2. Requirements covered
 
 | Requirement (source) | Element that meets it |
 | --- | --- |
-| "History lists the person's past workouts, newest first, with their sets" (LOG-7, `spec-4-weeks.md`) | `.week` sections newest first; inside each, `article.card.entry` newest first; the `table.log` lists every set |
-| "Past workouts with their sets" (Screens table, `spec-4-weeks.md`) | Same as above |
-| Start time and a Live badge if not finished (task brief; current page) | `.entry-head`: `h3` day label plus `.when` time range; `.badge` "Live" when `endedAt` is null |
-| Table of sets: exercise, kg, reps (task brief; current page) | `table.log`, columns `Exercise` / `kg` / `Reps`, kg as a plain number (so `62.5` stays in the HTML for `spec/core-loop.test.ts`) |
-| "A set logged by a person is in their history after signing out and back in" (`spec-4-weeks.md`, README) | Unchanged data path (`history(user.id)`); exercise names and kg are plain text |
-| Signed out goes to sign in (`spec/core-loop.test.ts` line 18; design system section 13) | Keep `Astro.redirect("/signin?next=/history", 303)` unchanged |
-| Empty state: copy bank line plus the one action that fixes it (design system sections 3 and 13) | `.card.empty`: `No workouts yet. Your future self is waiting 🏋️` plus `.button` "Start one" → `/` (same link as today) |
-| Success shown in place with `.bubble` (design system section 13) | `.bubble role="status"` after Finish (needs `?finished=1`, see States) |
-| Numbers in VT323, tabular, right-aligned, always with a unit (design system section 6) | `.num` cells under a `kg` / `Reps` header; tally figures `56 min`, `4,190 kg`; top set `82.5 kg × 8` |
-| One primary button; in the thumb zone on phones (design system section 8) | `.resume` is `position: sticky; bottom: 0` |
-| No infinite feeds (design system section 14) | Only the two newest weeks with workouts are open; older weeks are closed `<details>` |
-| Workout detail and per-exercise history (LOG-11, MVP spec) | Out of scope per the brief (no new routes). The top-set line covers the "last time" need inside the list |
+| "History lists the person's past workouts, newest first, with their sets" (LOG-7, `spec-4-weeks.md`) | `.week` sections newest first; `article.card.entry` newest first; `table.log` lists every set |
+| "A set records what its exercise's kind measures: weight in kg and reps; reps and any added weight (bodyweight); a hold time (duration); or a distance and time (cardio)" (LOG-3, `spec-4-weeks.md`) | `td.set` written per kind (see the Shared table) |
+| Sets written per kind; the tally handles distance (task brief) | `td.set` and `.best`; `dl.tally` shows Distance when > 0 and Volume only when > 0 |
+| "Each entry links to its summary" (task brief) | `.entry-head h3 > a[href=/workouts/{id}]` on finished entries |
+| "The `?finished=1` bubble moves to the summary page; drop it from history" (task brief) | Bubble and the `finished` query read removed |
+| "Keep the week grouping, day strip, folding older weeks, the Live badge and the Resume bar" (task brief) | Unchanged: `.week`, `.days`, `details.week`, `.badge`, `.resume` |
+| `spec/core-loop.test.ts`: `/history` contains `Bench press` and `62.5`; 303 when signed out | Exercise name in `th.lift`; `62.5 kg × 7` in `td.set`; redirect unchanged |
+| Empty state: copy bank line plus the one action that fixes it (system 3, 13) | `.card.empty`, unchanged |
+| Numbers in VT323, tabular, with a unit (system 6) | Every set cell carries its unit (`kg`, `BW`, `m:ss`, `km`, `/km`); tally figures `64 min`, `3,520 kg`, `1.2 km` |
+| Tap targets ≥ 44 px (system 12) | Day link `min-height: 44px`; the live entry's `h3` keeps the same 44 px line |
+| No infinite feeds (system 14) | Only the two newest weeks open; older weeks are closed `details` |
 
 ## 3. Structure
 
-Top to bottom, inside the layout's `<main>`. The top bar and footer are unchanged.
+Top to bottom inside the layout's `main`. The top bar and footer are
+unchanged. **Bold** marks what changed from today's `src/pages/history.astro`.
 
-1. **`h1` "History"**: global `h1`.
-2. **`p.lede`** (new): `{n} workouts · {total} kg in the book`. Hidden when there
-   are no workouts.
-3. **`p.bubble[role=status]`** (existing, success state only):
-   `Workout's in the book. Nice one 🏆`.
-4. **One block per calendar week that has workouts**, newest first:
-   - The two newest: `section.week[aria-labelledby]`.
-   - Older: `details.week` (closed) whose `summary.week-head` holds the same head.
-   - **`.week-head`** contains:
-     - `h2`: "This week", "Last week", or a range such as `21 – 27 Sep`;
-     - `.week-row` containing:
-       - `span.days[role=img][aria-label="Trained Monday and Wednesday"]`, which
-         holds seven `span`s M T W T F S S, with `.on` on the trained days;
-       - `span.count`: `2 workouts` or `1 workout`;
-       - `span.toggle`, in `details` only. CSS writes "Show" or "Hide" into it.
-   - **`article.card.entry`**, one per workout, newest first:
-     - `header.entry-head` containing:
-       - `h3`: the day label, plus `span.badge` "Live" if `endedAt` is null;
-       - `p.when`: `<time>6:42</time> – <time>7:38 pm</time>`, or
-         `Started <time>6:42 pm</time>` when live.
-     - `dl.tally` (new): three `div`s, each a `dt` and a `dd`:
-       - Time / `56 min`; the first `dt` reads "So far" when live;
-       - Sets / `11`;
-       - Volume / `4,190 kg`.
-     - `table.log` (global `table`, plus the `.log` modifiers):
-       - `thead`: `th` Exercise, `th.num` kg, `th.num` Reps.
-       - **One `tbody` per run of consecutive sets of the same exercise.** Its
-         first row starts with
-         `th.lift[scope=rowgroup][rowspan=n]`, which holds the exercise name and,
-         when n ≥ 2, `span.top`. Each row then has `td.num` kg and `td.num`
-         reps.
-       - Runs alternate `--card` and `--paper` fills.
-       - A `--px` ink rule separates one run from the next.
-5. **`div.resume`** (new, live state only). It must be the **last child of
-   `main`'s content**: sticky positioning only pins an element that comes after
-   the content it pins over. It contains:
-   - `p`: `Still on the floor`, plus `small` `3 sets in, 21 min`;
-   - `a.button` "Resume" → `/rooms/{roomId}`.
-6. **`div.card.empty`** (empty state only), instead of 2 to 5. It contains:
-   - a 16 × 8 pixel dumbbell `svg`, drawn at 4×;
-   - `p` with the copy bank line;
-   - `a.button` "Start one" → `/`.
+1. `h1` "History".
+2. `p.lede`: `{n} workouts · {kg} kg · {km} km in the book`. **The `· {km} km`
+   part appears only when the total distance is above 0.**
+3. **No bubble.** Remove the `finished` constant and its `.bubble`.
+4. One block per week with workouts, newest first (`section.week` for the two
+   newest, `details.week` for older ones), with `.week-head` → `h2`, then
+   `.week-row` → `.days`, `.count` and (in `details`) `.toggle`. All of this
+   is unchanged.
+5. `article.card.entry` per workout:
+   - `header.entry-head`:
+     - **Finished:** `h3 > a[href=/workouts/{id}]`, holding the day label,
+       `span.vh` ", summary", and the arrow `svg.go` (16 × 16,
+       `aria-hidden`).
+     - **Live:** `h3` with the day label and `span.badge` "Live", with no link.
+     - `p.when`: the time range, or `Started 6:42 pm` while live.
+   - **`dl.tally`**: the `div > dt + dd` pairs listed under Shared. Units go in
+     `span.unit`, e.g. `64<span class="unit"> min</span>`.
+   - **`table.log`**:
+     - `thead`: `th[scope=col]` "Exercise" and `th.num[scope=col]` "Set".
+     - Then one `tbody` per exercise (`byExercise`, not `runs`). Its first
+       row holds `th.lift[scope=rowgroup][rowspan=n]` (the name, plus
+       `span.best` when n ≥ 2). Every row holds `td.set`.
+6. `div.resume` (live only), last in `main`, unchanged.
+7. `div.card.empty` (no workouts), unchanged.
 
-### How each number is computed
+**Page block** (`<style id="page">`, below the shared rules):
 
-All from `history(user.id)` as it is today: `startedAt`, `endedAt`, `roomId` and
-`sets[]` with `name`, `weightKg`, `reps`, in logged order. Dates and times use
-`en-AU` in one display time zone (see open question 1).
+- `.entry-head` now has `align-items: center` and a `-0.5rem` top margin, so
+  the 44 px link line doesn't add height.
+- New `.entry-head h3 a` and `.entry-head h3:not(:has(a))` rules.
+- Everything else is the previous history block, minus the rules that moved
+  to the shared block (`.tally`, `.log`, `.when`).
 
-- **Day label.** Compare the calendar date of `startedAt` with today:
-  - same date: "Today";
-  - the day before: "Yesterday";
-  - otherwise `Wed 7 Oct` (`weekday: "short", day: "numeric", month: "short"`),
-    adding the year if it isn't the current year.
-- **Time range.** `startedAt` – `endedAt` with `hour: "numeric", minute:
-  "2-digit"`.
-  - Drop the first am/pm when both match (`6:42 – 7:38 pm`).
-  - Keep both when they differ (`11:40 am – 12:35 pm`).
-  - Live: `Started 6:42 pm`.
-- **Time (duration).** `Math.max(1, Math.round((endedAt − startedAt) / 60000))`
-  followed by ` min`. Always minutes, never hours, so `65 min` fits its box on a
-  390 px phone.
-  - Live: `Date.now() − startedAt` at render time, labelled "So far".
-  - Caveat: `openWorkout` sets `startedAt` when the first set is logged, so the
-    duration leaves out the first set and any warm-up before it.
-- **Sets.** `sets.length`.
-- **Volume.** `Σ weightKg × reps` over all sets, `Math.round`, then
-  `toLocaleString("en-AU")`, followed by ` kg`. Bodyweight sets (0 kg) add 0.
-  This matches LOG-6's definition, so it agrees with the future summary.
-- **Runs (grouping).** Walk `sets` in order and start a new run whenever `name`
-  differs from the previous set's. If an exercise comes back after a different
-  one, it starts a new run, which stays true to the order things were done.
-- **Top set** (runs of 2 or more only):
-  - the set with the highest `weightKg`; on a tie, the most `reps`; on a tie
-    again, the first one;
-  - shown as `Top {kg} kg × {reps}`;
-  - if the highest weight is 0 (pull-ups, leg raises), show `Best {max reps} reps`
-    instead.
-- **Weeks.** Monday to Sunday, in the display time zone.
-  - Labels: the current week is "This week" and the previous one is "Last
-    week". Any other week shows its range: `21 – 27 Sep`, or `28 Sep – 4 Oct`
-    when it spans two months.
-  - Day strip: `.on` for each weekday with at least one workout `startedAt`.
-  - Count: the number of workouts in that week.
-  - Weeks with no workouts are skipped.
-- **Open or folded.** The two newest weeks that contain workouts render open.
-  Every older week renders as a closed `details`.
-- **Lede.** The total workout count and the total volume across all workouts.
-- **Resume.** Take the newest workout with `endedAt === null` and a non-null
-  `roomId`. Its set count and its so-far minutes fill the `small` line, and the
-  button links to `/rooms/{roomId}`. `history()` already returns `roomId`
-  through `...w`, so no query change is needed.
+### Numbers
+
+These come from `history(user.id)`, which already returns `kind`,
+`weightKg`, `reps`, `durationS` and `distanceM` per set, and from
+`src/lib/logbook.ts`:
+
+- **Time:** `minutes(startedAt, endedAt ?? now)`.
+- **Sets:** `sets.length`.
+- **Volume:** `kg(volume(sets))`.
+- **Distance:** `km(distanceKm(sets))`.
+- **Lede totals:** the same functions over every workout's sets.
+- **Set cell:** `setLabel(s)`. For cardio, split off the last ` · ` part into
+  `span.pace`.
+- **Best line:** `bestLabel(sets)`, only when the exercise has 2 or more sets.
 
 ## 4. States
 
 | State | Trigger | What changes |
 | --- | --- | --- |
-| **Default** | At least one workout, all finished | Lede, open weeks, folded older weeks. No primary button |
-| **Live** | Any workout has `endedAt === null` | That card gets the `Live` badge, `Started …` and "So far". `.resume` appears at the end of `main`, pinned to the bottom of the viewport while you scroll |
-| **Success** | `?finished=1` in the URL and the newest workout has `endedAt` | `.bubble[role=status]` under the lede. Needs a one-line change outside this page: the Finish redirect in `src/pages/rooms/[id].astro` becomes `/history?finished=1` (no spec test checks that target) |
-| **Empty** | `history()` returns `[]` | Only `h1` and `.card.empty`. No lede, no weeks |
-| **Signed out** | No `Astro.locals.user` | 303 to `/signin?next=/history`, as today |
-| **Pending** | n/a | No form on the page. Resume and Start one are plain links |
-| **Error** | n/a | No user input on the page. A server failure is the framework's error page, as on every page |
-| **Narrow / wide** | 390 / 1280 | At 390, lift names wrap inside `th.lift` (`Incline bench / press`), and the tally keeps three columns. At 1280, the `main` width is 44 rem, so nothing new is needed |
+| **Default** | At least one workout, all finished | The mockup shows a mixed day (4 tally boxes), a weights and bodyweight day (3 boxes), a cardio-only day (Time · Sets · Distance), last week open, and two folded weeks. No primary button |
+| **Live** | A workout has `endedAt === null` | That entry: `Live` badge, no link, `So far`, `Started …`. `.resume` is pinned at the bottom |
+| **Empty** | `history()` returns `[]` | `h1` and `.card.empty` only |
+| **Signed out** | No user | 303 to `/signin?next=/history`, unchanged |
+| **Success** | none | Moved to the summary page. A stale `?finished=1` is ignored |
+| **Pending / error** | n/a | No form; all actions are links |
+| **Narrow / wide** | 360–390 / 1280 | Checked at 360, 390 and 1280. At 360, long names wrap inside `th.lift` (`Overhead / press`), the best line breaks after "Best", and four tally boxes go 2 × 2. The widest set cell (`BW + 10 kg × 6`) still fits |
 
 ## 5. Departures
 
-- **The empty state's button isn't in the bottom third** on a phone. It sits
-  about 40% of the way down, because the page has nothing above it. Pushing it
-  lower with empty space would look broken. It is `.button` (not `.wide`), as on
-  other Paper pages.
-- **`th.lift` overrides the global `th` style.** It uses body font at 24 px, ink
-  on the row fill, and no uppercase. It is a row header (`scope=rowgroup`), not
-  a column header, so it reads as data while keeping table semantics.
-- **The `.toggle` label uses CSS generated text** ("Show" / "Hide"). The
-  `details` element already announces expanded or collapsed. If the main agent
-  prefers real text, two spans toggled with `details[open]` work just as well.
-- **The raw hex in the empty-state dumbbell `svg`** falls under the sprite
-  palette exemption (section 10), the same as the logo.
+- **Grouping changes from runs to exercises.** The previous design started a
+  new group whenever an exercise came back after another one. Grouping by
+  exercise gives each exercise one block and one best, which is what "what
+  did I bench last time?" needs. It also matches the summary's "each
+  exercise with all its sets". If you alternate two lifts in a superset, you
+  lose the visible order; the order inside each exercise is kept.
+- **"Top" becomes "Best"** for every kind, since a plank or a run has no "top
+  set".
+- **`th.lift` overrides the global `th`** (body font, ink, no uppercase), as
+  before.
+- **Edge case at exactly 360 px:** if a bodyweight lift's *best* set carries
+  added weight (`Best BW + 10 kg × 10`, 17 characters), the unbreakable figure
+  can push the table about 6 px into the card's padding. It never goes past
+  the card's border. Accepted rather than letting the figure split.
 
-Otherwise none. Every colour is a token, every display size is 8 or 16 px,
-VT323 is never below 21 px, and borders and shadows sit on the `--px` grid.
+Otherwise none.
 
 ## Layout changes
 
-These are shown in the mockup's page block as `/* layout change: … */`. They are
-not part of the history page block; the main agent should merge them once,
-together with the other designers' lists.
-
-1. **`h2` 14 px → 16 px** (known gap 3).
-2. **`h3` 12 px → 16 px** (known gap 3). The mockup sets 16 px on
-   `.entry-head h3` only; once the global rule moves, delete that line.
-3. **`th` 10 px → 8 px and `.badge` 9 px → 8 px** (known gap 3).
-4. **Ink focus ring on Paper** (known gap 1): `:focus-visible { outline-color:
-   var(--ink) }` on Paper pages. The yellow ring stays for `body.night`.
-5. **New tokens** (known gaps 2 and 5): `--hover: #1a5c32` used by
-   `button:hover, .button:hover`, and `--row: #eef5e1` for the global zebra
-   rows. History doesn't use `--row` (it stripes runs with `--card` / `--paper`),
-   but the global rule should stop hard-coding the hex.
+None needed in `Layout.astro`. `.vh` is in the shared block; the room mockup
+defines the same rule, so it could become a global utility. That is the main
+agent's call.
 
 ## Open questions
 
-1. **Time zone.** The server formats dates in its own zone, and Fly runs in UTC
-   unless `TZ` is set. Today's page already shows a 10:50 pm workout at the
-   wrong hour for anyone in Australia. "Today", "This week" and the day strip
-   would inherit the error. The options are: pass `timeZone:
-   "Australia/Sydney"` to every `Intl` call, set `TZ` in `fly.toml`, or keep a
-   per-user zone later. This is the user's decision.
-2. **Bodyweight sets** show `0` in the kg column, which is what's stored. `BW`
-   would read better to lifters but means interpreting the data. Kept as `0`.
+1. **Time zone** (carried over): dates and "Today" use the server's zone, which
+   is UTC on Fly unless `TZ` is set. This is the user's decision.

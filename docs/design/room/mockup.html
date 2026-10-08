@@ -20,6 +20,22 @@
     --muted: #3d5a45;
     --error: #a3241b;
     --focus: #f2c94c;
+    --green-hover: #1a5c32;
+    --leaf-hover: #d6ef86;
+    --tile: #dbe7c6;
+    --row: #eef5e1;
+    /* person states (GYM-9): always a fill under ink text, with an icon and a word */
+    --idle: #e8f0d8;
+    --lifting: #c8e66b;
+    --resting: #7cc6e8;
+    --slacking: #ff6b5e;
+    --finished: #f2c94c;
+    /* Night: the gym after hours */
+    --night: #081a10;
+    --floor: #0f2a1a;
+    --panel: #143822;
+    --edge: #3f8f5a;
+    --dim: #8fa896;
     --px: 4px;
     --display: "Press Start 2P", ui-monospace, monospace;
     --body: "VT323", ui-monospace, monospace;
@@ -42,7 +58,7 @@
     font-synthesis: none;
     /* a faint 16 px checker, like gym floor tiles */
     background-color: var(--paper);
-    background-image: conic-gradient(#dbe7c6 25%, transparent 0 50%, #dbe7c6 0 75%, transparent 0);
+    background-image: conic-gradient(var(--tile) 25%, transparent 0 50%, var(--tile) 0 75%, transparent 0);
     background-size: 32px 32px;
   }
 
@@ -87,6 +103,12 @@
   .topbar .linklike:hover {
     color: var(--leaf);
   }
+  .topbar nav a[aria-current="page"] {
+    color: var(--leaf);
+    text-decoration: underline;
+    text-decoration-thickness: var(--px);
+    text-underline-offset: 6px;
+  }
   .topbar form {
     margin: 0;
   }
@@ -108,6 +130,18 @@
   footer a {
     color: var(--leaf);
   }
+  footer a[aria-current="page"] {
+    text-decoration: none;
+  }
+  footer a[aria-current="page"]::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 0.5rem;
+    background: var(--leaf);
+    vertical-align: middle;
+  }
   h1,
   h2,
   h3 {
@@ -116,15 +150,16 @@
     line-height: 1.4;
     margin: 0 0 1rem;
   }
+  /* Press Start 2P is drawn on an 8 px grid: crisp only at 8, 16, 24, 32 */
   h1 {
-    font-size: clamp(18px, 5vw, 26px);
+    font-size: 24px;
   }
   h2 {
-    font-size: 14px;
+    font-size: 16px;
     color: var(--green);
   }
   h3 {
-    font-size: 12px;
+    font-size: 16px;
   }
   p {
     margin: 0 0 1rem;
@@ -164,7 +199,7 @@
     background: #fff;
     border: var(--px) solid var(--ink);
     border-radius: 0;
-    box-shadow: inset var(--px) var(--px) 0 #dbe7c6;
+    box-shadow: inset var(--px) var(--px) 0 var(--tile);
   }
   select {
     appearance: none;
@@ -183,7 +218,7 @@
     gap: 0.5rem;
     min-height: 48px;
     padding: 0.75rem 1.25rem;
-    font: 12px/1.4 var(--display);
+    font: 16px/1.4 var(--display);
     text-transform: uppercase;
     text-decoration: none;
     color: var(--paper);
@@ -203,7 +238,7 @@
   }
   button:hover,
   .button:hover {
-    background: #26804a;
+    background: var(--green-hover);
   }
   button:active,
   .button:active {
@@ -219,7 +254,20 @@
     background: var(--leaf);
   }
   .button.secondary:hover {
-    background: #d6ef86;
+    background: var(--leaf-hover);
+  }
+  /* pending: held down, label kept, never a spinner */
+  button:disabled,
+  button:disabled:hover {
+    cursor: progress;
+    color: var(--paper);
+    background: var(--muted);
+    transform: translateY(var(--px));
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--ink),
+      0 var(--px) 0 var(--ink),
+      calc(var(--px) * -1) 0 0 var(--ink),
+      var(--px) 0 0 var(--ink);
   }
   .wide {
     width: calc(100% - var(--px) * 2);
@@ -231,16 +279,30 @@
     padding: 0;
     text-transform: none;
   }
+  /* ink ring on Paper; the yellow one fails contrast there (1.4:1) and is
+     kept for the dark bars and Night */
   :focus-visible {
-    outline: var(--px) solid var(--focus);
+    outline: var(--px) solid var(--ink);
     outline-offset: var(--px);
   }
+  .topbar :focus-visible,
+  footer :focus-visible,
+  body.night :focus-visible {
+    outline-color: var(--focus);
+  }
+  input[aria-invalid="true"] {
+    box-shadow: inset var(--px) var(--px) 0 var(--error);
+  }
+  /* the ring reaches 8 px past a field, so the error sits 12 px below it */
   .error {
-    margin: 0.5rem 0 0;
+    margin: 0.75rem 0 0;
     padding: 0.4rem 0.6rem;
     color: #fff;
     background: var(--error);
     border-left: calc(var(--px) * 2) solid var(--ink);
+  }
+  .error a {
+    color: #fff;
   }
   .hint {
     color: var(--muted);
@@ -251,6 +313,87 @@
     gap: 0.75rem 1rem;
     align-items: center;
     margin-top: 1.25rem;
+  }
+
+  /* ---------- Night: same components, surface colours swapped ---------- */
+  body.night {
+    color: var(--paper);
+    color-scheme: dark;
+    background-color: var(--night);
+    background-image: conic-gradient(var(--floor) 25%, transparent 0 50%, var(--floor) 0 75%, transparent 0);
+  }
+  /* the gym needs room for two columns at 900 px and up */
+  body.night main {
+    max-width: 64rem;
+  }
+  .night h2 {
+    color: var(--leaf);
+  }
+  .night label {
+    color: var(--paper);
+  }
+  .night .bubble {
+    color: var(--ink);
+  }
+  .night .hint {
+    color: var(--dim);
+  }
+  .night main a {
+    color: var(--leaf);
+  }
+  /* --green disappears on the dark floor, so primary is leaf with ink */
+  .night button,
+  .night .button {
+    color: var(--ink);
+    background: var(--leaf);
+  }
+  .night button:hover,
+  .night .button:hover {
+    background: var(--leaf-hover);
+  }
+  /* secondary on Night: night fill, paper label, the notch in --edge */
+  .night .button.secondary {
+    color: var(--paper);
+    background: var(--night);
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--edge),
+      0 var(--px) 0 var(--edge),
+      calc(var(--px) * -1) 0 0 var(--edge),
+      var(--px) 0 0 var(--edge),
+      0 calc(var(--px) * 2) 0 #000;
+  }
+  .night .button.secondary:hover {
+    background: var(--floor);
+  }
+  .night .button.secondary:active {
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--edge),
+      0 var(--px) 0 var(--edge),
+      calc(var(--px) * -1) 0 0 var(--edge),
+      var(--px) 0 0 var(--edge);
+  }
+  .night button:disabled {
+    color: var(--ink);
+    background: var(--dim);
+  }
+  .night input,
+  .night select {
+    color: var(--paper);
+    background-color: var(--night);
+    border-color: var(--edge);
+    box-shadow: inset var(--px) var(--px) 0 #000;
+  }
+  .night select {
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--paper) 50%),
+      linear-gradient(135deg, var(--paper) 50%, transparent 50%);
+  }
+  .night th,
+  .night td {
+    border-color: var(--edge);
+  }
+  .night tbody tr:nth-child(even) td {
+    background: var(--floor);
   }
 
   /* ---------- bits ---------- */
@@ -317,7 +460,7 @@
     font-size: 24px;
   }
   th {
-    font: 10px/1.4 var(--display);
+    font: 8px/2 var(--display);
     text-transform: uppercase;
     color: var(--paper);
     background: var(--deep);
@@ -334,41 +477,59 @@
     font-variant-numeric: tabular-nums;
   }
   tbody tr:nth-child(even) td {
-    background: #eef5e1;
+    background: var(--row);
   }
   .stat {
     font-family: var(--display);
-    font-size: 12px;
+    font-size: 8px;
     color: var(--muted);
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    font: 8px/1 var(--display);
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--ink);
+    border: 2px solid var(--ink);
+  }
+  .chip svg {
+    flex: none;
+  }
+  .state-idle {
+    background: var(--idle);
+  }
+  .state-lifting {
+    background: var(--lifting);
+  }
+  .state-resting {
+    background: var(--resting);
+  }
+  .state-slacking {
+    background: var(--slacking);
+  }
+  .state-finished {
+    background: var(--finished);
   }
   .badge {
     display: inline-block;
     margin-left: 0.5rem;
     padding: 0.15rem 0.4rem;
-    font: 9px/1.4 var(--display);
+    font: 8px/1.4 var(--display);
     vertical-align: middle;
     color: var(--ink);
     background: var(--leaf);
     border: 2px solid var(--ink);
   }
 
-  /* ---------- /readme/ ---------- */
-  .prose h1 {
-    font-size: clamp(18px, 5vw, 24px);
-  }
-  .prose h2 {
-    margin-top: 2rem;
-  }
-  .prose li {
-    margin-bottom: 0.4rem;
-  }
-
   @media (max-width: 420px) {
     body {
       font-size: 21px;
     }
-    .brand {
-      font-size: 13px;
+    h1 {
+      font-size: 16px;
     }
     .card {
       padding: 1rem;
@@ -385,124 +546,10 @@
   }
     </style>
     <style id="page">
-      /* ======================================================================
-         LAYOUT CHANGES. Shown here so the mockup renders; they belong in
-         Layout.astro, not in the page. See "Layout changes" in spec.md.
-         ====================================================================== */
+      /* ===== room page (src/pages/rooms/[id].astro) ===== */
 
-      /* layout change: Night and state tokens on :root (system 5, gap 4) */
-      :root {
-        --night: #081a10;
-        --floor: #0f2a1a;
-        --panel: #143822;
-        --edge: #3f8f5a;
-        --dim: #8fa896;
-        --idle: #e8f0d8;
-        --lifting: #c8e66b;
-        --resting: #7cc6e8;
-        --slacking: #ff6b5e;
-        --finished: #f2c94c;
-      }
-
-      /* layout change: the Night surface, a `night` class on <body> set by a
-         Layout prop (surface="night"). Swaps surface colours only. */
-      body.night {
-        color: var(--paper);
-        color-scheme: dark;
-        background-color: var(--night);
-        background-image: conic-gradient(var(--floor) 25%, transparent 0 50%, var(--floor) 0 75%, transparent 0);
-      }
-      /* layout change: the gym needs room for two columns at >= 900 px */
-      body.night main {
-        max-width: 64rem;
-      }
-      .night h2 {
-        color: var(--leaf);
-      }
-      .night label {
-        color: var(--paper);
-      }
-      /* layout change: the bubble keeps its ink text on Night */
-      .night .bubble {
-        color: var(--ink);
-      }
-      .night .hint {
-        color: var(--dim);
-      }
-      .night main a {
-        color: var(--leaf);
-      }
-      /* layout change: primary on Night is leaf with an ink label (system 5) */
-      .night button,
-      .night .button {
-        color: var(--ink);
-        background: var(--leaf);
-      }
-      .night button:hover,
-      .night .button:hover {
-        background: #d6ef86; /* existing hex; tokenise per gap 5 */
-      }
-      /* layout change: secondary on Night (not yet in the system): night
-         fill, paper label, the notch drawn in --edge instead of --ink */
-      .night .button.secondary {
-        color: var(--paper);
-        background: var(--night);
-        box-shadow:
-          0 calc(var(--px) * -1) 0 var(--edge),
-          0 var(--px) 0 var(--edge),
-          calc(var(--px) * -1) 0 0 var(--edge),
-          var(--px) 0 0 var(--edge),
-          0 calc(var(--px) * 2) 0 #000;
-      }
-      .night .button.secondary:hover {
-        background: var(--floor);
-      }
-      .night .button.secondary:active {
-        box-shadow:
-          0 calc(var(--px) * -1) 0 var(--edge),
-          0 var(--px) 0 var(--edge),
-          calc(var(--px) * -1) 0 0 var(--edge),
-          var(--px) 0 0 var(--edge);
-      }
-      /* layout change: pending (system 13). Label kept, fill dimmed. */
-      button:disabled,
-      .night button:disabled {
-        color: var(--ink);
-        background: var(--dim);
-        cursor: progress;
-        transform: none;
-      }
-      /* layout change: fields on Night */
-      .night input,
-      .night select {
-        color: var(--paper);
-        background-color: var(--night);
-        border-color: var(--edge);
-        box-shadow: inset var(--px) var(--px) 0 #000;
-      }
-      .night select {
-        background-image: linear-gradient(45deg, transparent 50%, var(--paper) 50%),
-          linear-gradient(135deg, var(--paper) 50%, transparent 50%);
-      }
-      /* layout change: tables on Night */
-      .night th,
-      .night td {
-        border-color: var(--edge);
-      }
-      .night tbody tr:nth-child(even) td {
-        background: var(--floor);
-      }
-      /* layout change: badge onto the 8 px grid (gap 3) */
-      .badge {
-        font-size: 8px;
-      }
-
-      /* ======================================================================
-         PAGE BLOCK. What src/pages/rooms/[id].astro adds.
-         ====================================================================== */
-
-      /* .panel: the Night card (system 9). Lives here until the summary
-         page needs it too, then moves to the layout. */
+      /* .panel: the Night card (system 9). Moves to the layout once the
+         workout summary page uses it too. */
       .panel {
         position: relative;
         margin: 0 0 2rem;
@@ -527,8 +574,30 @@
         color: var(--leaf);
         background: var(--panel);
       }
+      /* the workout clock rides the log panel's top border, on the right */
+      .panel-clock {
+        position: absolute;
+        top: calc(var(--px) * -0.5);
+        right: 0.75rem;
+        transform: translateY(-50%);
+        margin: 0;
+        padding: 0 0.5rem;
+        font-size: 24px;
+        line-height: 1;
+        color: var(--leaf);
+        background: var(--panel);
+        font-variant-numeric: tabular-nums;
+      }
+      .vh {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
 
-      /* two columns on a laptop: the logbook left, the set panel right */
+      /* two columns on a laptop: room, squad and log left, the sheet right */
       .gym {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
@@ -547,7 +616,7 @@
         }
       }
 
-      /* ---------- the gym sign: passcode and how full the room is ---------- */
+      /* ---------- the gym sign: passcode, spots, room actions ---------- */
       .sign .passcode-box {
         margin-bottom: 0.75rem;
       }
@@ -572,8 +641,53 @@
         background: var(--leaf);
         box-shadow: none;
       }
+      .room-actions {
+        margin-top: 0.75rem;
+      }
+      .room-actions form {
+        margin: 0;
+      }
+      .sign .leave-note {
+        margin: 0.25rem 0 0;
+      }
+      /* room and logbook actions: secondary, and quieter than anything in the
+         sheet, so they never compete with Done (system 8) */
+      .button.quiet {
+        padding: 0.75rem 1rem;
+        font-size: 8px;
+      }
 
-      /* ---------- people list (GYM-15 later adds state and equipment) ---------- */
+      /* ---------- one confirm pattern: End room, Delete set ----------
+         The summary is the first tap; it turns into Cancel in place, so a
+         second tap on the same spot backs out. Works without JS. */
+      .confirm > summary {
+        list-style: none;
+      }
+      .confirm > summary::-webkit-details-marker {
+        display: none;
+      }
+      .confirm .if-open,
+      .confirm[open] .if-closed {
+        display: none;
+      }
+      .confirm[open] .if-open {
+        display: inline;
+      }
+      /* a confirm always sits alone on its row, so opening it moves nothing */
+      .confirm {
+        margin: 0.75rem 0 0;
+      }
+      .confirm-box {
+        margin: 0.75rem 0 0;
+        padding: 1rem;
+        background: var(--night);
+        border: var(--px) solid var(--paper);
+      }
+      .confirm-box p {
+        margin: 0 0 0.75rem;
+      }
+
+      /* ---------- people list ---------- */
       .people {
         margin: 0;
         padding: 0;
@@ -581,8 +695,9 @@
       }
       .people li {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
-        gap: 0.75rem;
+        gap: 0.5rem 0.75rem;
         min-height: 44px;
         border-bottom: var(--px) solid var(--night);
       }
@@ -600,6 +715,11 @@
       }
       .people .badge {
         margin-left: 0;
+      }
+      .badge.host {
+        color: var(--paper);
+        background: var(--night);
+        border-color: var(--edge);
       }
       .alone {
         margin: 0.75rem 0 0;
@@ -620,22 +740,55 @@
         padding-left: 1.5rem;
         color: var(--dim);
       }
-      .vh {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        clip-path: inset(50%);
+      /* one column per set, written the way a lifter writes it */
+      .log td.set {
         white-space: nowrap;
       }
+      .log .u {
+        color: var(--dim);
+      }
+      .log .sub {
+        display: block;
+        font-size: 20px;
+        line-height: 1.1;
+        color: var(--dim);
+      }
+      .log th.fix,
+      .log td.fix {
+        width: 44px;
+        padding: 0;
+      }
+      .night .log .fix a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 44px;
+        min-height: 44px;
+        color: var(--leaf);
+      }
+      .log tr[aria-current="true"] td {
+        background: var(--night);
+      }
+      .log tr[aria-current="true"] td:first-child {
+        box-shadow: inset var(--px) 0 0 var(--leaf);
+      }
+      .night .log tr[aria-current="true"] .fix a {
+        color: var(--ink);
+        background: var(--leaf);
+      }
 
-      /* ---------- the set panel (.sheet) ---------- */
+      /* ---------- the sheet: your state, your next set ---------- */
       .sheet {
         border-color: var(--leaf);
       }
-      .sheet .panel-title {
-        font-size: 8px;
-        color: var(--dim);
+      /* your state chip is the sheet's name tab */
+      .sheet > .tab {
+        position: absolute;
+        top: calc(var(--px) * -0.5);
+        left: 0.75rem;
+        transform: translateY(-50%);
+        margin: 0;
+        box-shadow: 0 0 0 var(--px) var(--panel);
       }
       @media (max-width: 899px) {
         /* pinned to the bottom of the phone, edge to edge, in the thumb zone */
@@ -649,37 +802,148 @@
           box-shadow: 0 calc(var(--px) * -1) 0 #000;
         }
       }
-      .sheet .bubble {
-        margin-bottom: 1.5rem;
+      /* LOG-5: rest over flashes the sheet's border, at most 2 a second, 3 times */
+      .sheet.flash {
+        animation: rest-flash 500ms steps(1) 3;
       }
+      @keyframes rest-flash {
+        0% {
+          border-color: var(--night);
+        }
+        50% {
+          border-color: var(--leaf);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .sheet.flash {
+          animation: none;
+        }
+      }
+      .sheet .bubble {
+        margin-bottom: 1.25rem;
+      }
+
+      /* the rest block: water blue while resting, slacking red once it's over */
+      .rest {
+        margin: 0 0 1rem;
+        padding: 0.5rem 0.5rem 0.25rem;
+        background: var(--night);
+        border: var(--px) solid var(--resting);
+      }
+      .rest.over {
+        border-color: var(--slacking);
+      }
+      .rest-say {
+        margin: 0.25rem 0 0;
+      }
+      /* the timer, and beside it (or under it, on a narrow phone) what it's for */
+      .rest-top {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0 0.75rem;
+      }
+      .timer {
+        margin: 0;
+        font-size: 80px;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+      }
+      .rest.over .timer {
+        color: var(--slacking);
+      }
+      .rest-what {
+        margin: 0;
+        line-height: 1.2;
+        color: var(--dim);
+        font-variant-numeric: tabular-nums;
+      }
+      .rest-what span {
+        display: block;
+        white-space: nowrap;
+      }
+      .rest-what b {
+        font-weight: 400;
+        color: var(--paper);
+      }
+      /* without JS: the end time, as text, instead of a frozen timer */
+      .rest-static {
+        margin: 0.25rem 0;
+        font-size: 32px;
+        line-height: 1.1;
+        font-variant-numeric: tabular-nums;
+      }
+      .rest-adjust {
+        display: flex;
+        gap: 0 0.5rem;
+        margin: 0.5rem 0 0;
+      }
+      .rest-adjust .tool {
+        flex: 1;
+      }
+      /* small tool buttons inside the sheet (rest ±15 s, Skip, stopwatch):
+         VT323 because they carry numbers, and secondary so Done stays loudest */
+      .sheet .tool {
+        min-width: 48px;
+        min-height: 48px;
+        padding: 0 0.75rem;
+        font: 24px/1 var(--body);
+        text-transform: none;
+      }
+
       /* the lift name is the button that opens the exercise picker */
       .switch {
         margin: 0 0 0.75rem;
       }
-      .switch summary {
+      .switch summary,
+      .lift-row {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 0.5rem 0.75rem;
+        gap: 0.5rem;
         min-height: 48px;
+        margin: 0 0 0.75rem;
+      }
+      .switch summary {
+        margin: 0;
         cursor: pointer;
         list-style: none;
       }
       .switch summary::-webkit-details-marker {
         display: none;
       }
-      .lift {
+      .lift,
+      .night h2.lift {
         font: 16px/1.5 var(--display);
         text-transform: uppercase;
         color: var(--paper);
       }
       .set-no {
         padding: 0 0.5rem;
-        font-size: 24px;
-        line-height: 1.25;
+        font: 24px/1.25 var(--body);
         color: var(--ink);
         background: var(--leaf);
         font-variant-numeric: tabular-nums;
+      }
+      .lift-row .badge {
+        margin: 0;
+      }
+      .lift-row h2 {
+        margin: 0;
+      }
+      /* while editing, Cancel stands where Change stands */
+      .night .lift-cancel {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        margin-left: auto;
+        padding: 0 0.75rem;
+        color: var(--paper);
+        text-decoration: none;
+        border: var(--px) solid var(--edge);
+      }
+      .night .lift-cancel:hover {
+        background: var(--night);
       }
       .change {
         margin-left: auto;
@@ -699,7 +963,7 @@
         border: var(--px) solid var(--edge);
       }
       .picker label:first-child,
-      .sheet > form > label:first-child {
+      .pick label:first-child {
         margin-top: 0;
       }
       .recent-label {
@@ -738,22 +1002,33 @@
         font-weight: 400;
         color: var(--paper);
       }
-      /* the two numbers you are about to lift, at arm's length */
+
+      /* the numbers you are about to log, at arm's length */
       .big-pair {
         display: grid;
         grid-template-columns: minmax(0, 3fr) auto minmax(0, 2fr);
         align-items: end;
         gap: 0 0.5rem;
       }
-      .big label {
+      .big-pair.even {
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      }
+      .big-pair.cardio {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+        gap: 0 0.75rem;
+      }
+      .big label,
+      .big-time legend {
         margin: 0 0 0.25rem;
+        padding: 0;
         color: var(--dim);
       }
       .big .field {
         position: relative;
         display: block;
       }
-      .big input {
+      .big input,
+      .big-time input {
         min-height: 72px;
         padding: 0.25rem 0.75rem;
         font-size: 48px;
@@ -763,7 +1038,9 @@
         appearance: textfield;
       }
       .big input::-webkit-inner-spin-button,
-      .big input::-webkit-outer-spin-button {
+      .big input::-webkit-outer-spin-button,
+      .big-time input::-webkit-inner-spin-button,
+      .big-time input::-webkit-outer-spin-button {
         -webkit-appearance: none;
         margin: 0;
       }
@@ -785,8 +1062,56 @@
         line-height: 1;
         color: var(--dim);
       }
+      /* a time as m:ss, two fields; plank and cardio share it */
+      .big-time {
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+      }
+      .mmss {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        align-items: center;
+        gap: 0 0.25rem;
+      }
+      .mmss input {
+        padding: 0.25rem 0.5rem;
+        text-align: center;
+      }
+      .colon {
+        font-size: 48px;
+        line-height: 1;
+        color: var(--dim);
+      }
+      /* stopwatch running: the time fields tick in place, in leaf */
+      .big-time.running input {
+        color: var(--leaf);
+        border-color: var(--leaf);
+      }
+      .stopwatch {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0 0.5rem;
+        margin: 0.75rem 0 0;
+      }
+      .stopwatch .say {
+        flex: 1 1 8rem;
+        margin: 0 0 0 0.25rem;
+        color: var(--dim);
+        font-variant-numeric: tabular-nums;
+      }
+      .stopwatch .say b {
+        font-weight: 400;
+        color: var(--paper);
+      }
+
       .sheet .error {
         margin-top: 0.75rem;
+      }
+      .logged-at {
+        margin: -0.5rem 0 0.75rem;
       }
       .sheet .wide {
         min-height: 64px;
@@ -797,15 +1122,15 @@
     <style id="mockup">
       /* mockup scaffolding only; not part of the design */
       .state-label {
+        display: inline-block;
         margin: 3rem 0 2rem;
         padding: 0.25rem 0.5rem;
         font: 8px/1.6 var(--display);
         text-transform: uppercase;
         color: var(--ink);
         background: var(--finished);
-        display: inline-block;
       }
-      .state:first-child .state-label {
+      main > .state:first-child .state-label {
         margin-top: 0;
       }
       .state {
@@ -813,8 +1138,11 @@
         border-bottom: var(--px) dashed var(--edge);
         margin-bottom: 1rem;
       }
-      .state.solo {
-        max-width: 24rem;
+      .solos {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr));
+        column-gap: 2rem;
+        align-items: start;
       }
       .state.solo .sheet {
         position: relative;
@@ -822,10 +1150,22 @@
         bottom: auto;
         margin: 1rem 0 0;
         border-width: var(--px);
+        box-shadow: var(--px) var(--px) 0 #000;
       }
     </style>
   </head>
   <body class="night">
+    <!-- pixel icons, 8 × 8, drawn at 2× in currentColor (src/sprites/icons.ts) -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true" shape-rendering="crispEdges">
+      <symbol id="i-idle" viewBox="0 0 8 8"><rect x="3" y="0" width="2" height="2" fill="currentColor"/><rect x="1" y="2" width="6" height="1" fill="currentColor"/><rect x="3" y="3" width="2" height="2" fill="currentColor"/><rect x="2" y="5" width="1" height="2" fill="currentColor"/><rect x="5" y="5" width="1" height="2" fill="currentColor"/></symbol>
+      <symbol id="i-dumbbell" viewBox="0 0 8 8"><rect x="1" y="1" width="1" height="1" fill="currentColor"/><rect x="6" y="1" width="1" height="1" fill="currentColor"/><rect x="0" y="2" width="2" height="1" fill="currentColor"/><rect x="6" y="2" width="2" height="1" fill="currentColor"/><rect x="0" y="3" width="8" height="1" fill="currentColor"/><rect x="0" y="4" width="2" height="1" fill="currentColor"/><rect x="6" y="4" width="2" height="1" fill="currentColor"/><rect x="1" y="5" width="1" height="1" fill="currentColor"/><rect x="6" y="5" width="1" height="1" fill="currentColor"/></symbol>
+      <symbol id="i-drop" viewBox="0 0 8 8"><rect x="3" y="0" width="2" height="2" fill="currentColor"/><rect x="2" y="2" width="4" height="1" fill="currentColor"/><rect x="1" y="3" width="2" height="1" fill="currentColor"/><rect x="4" y="3" width="3" height="1" fill="currentColor"/><rect x="1" y="4" width="1" height="1" fill="currentColor"/><rect x="3" y="4" width="4" height="1" fill="currentColor"/><rect x="1" y="5" width="6" height="1" fill="currentColor"/><rect x="2" y="6" width="4" height="1" fill="currentColor"/></symbol>
+      <symbol id="i-phone" viewBox="0 0 8 8"><rect x="1" y="0" width="5" height="1" fill="currentColor"/><rect x="1" y="1" width="1" height="4" fill="currentColor"/><rect x="5" y="1" width="1" height="4" fill="currentColor"/><rect x="1" y="5" width="5" height="1" fill="currentColor"/><rect x="1" y="6" width="2" height="1" fill="currentColor"/><rect x="4" y="6" width="2" height="1" fill="currentColor"/><rect x="1" y="7" width="5" height="1" fill="currentColor"/></symbol>
+      <symbol id="i-play" viewBox="0 0 8 8"><rect x="2" y="0" width="1" height="8" fill="currentColor"/><rect x="3" y="1" width="1" height="6" fill="currentColor"/><rect x="4" y="2" width="1" height="4" fill="currentColor"/><rect x="5" y="3" width="1" height="2" fill="currentColor"/></symbol>
+      <symbol id="i-stop" viewBox="0 0 8 8"><rect x="1" y="1" width="6" height="6" fill="currentColor"/></symbol>
+      <symbol id="i-pencil" viewBox="0 0 8 8"><rect x="6" y="0" width="1" height="1" fill="currentColor"/><rect x="5" y="1" width="3" height="1" fill="currentColor"/><rect x="4" y="2" width="3" height="1" fill="currentColor"/><rect x="3" y="3" width="3" height="1" fill="currentColor"/><rect x="2" y="4" width="3" height="1" fill="currentColor"/><rect x="1" y="5" width="3" height="1" fill="currentColor"/><rect x="1" y="6" width="2" height="1" fill="currentColor"/><rect x="0" y="7" width="1" height="1" fill="currentColor"/></symbol>
+    </svg>
+
     <header class="topbar">
       <a href="/" class="brand" aria-label="Spotter home">
         <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges">
@@ -846,9 +1186,9 @@
     </header>
     <main>
 
-      <!-- state: lifting -->
+      <!-- state: resting (default, host) -->
       <section class="state">
-        <p class="state-label">Lifting: exercise chosen, numbers pre-filled (?exercise=9)</p>
+        <p class="state-label">Resting · host view · Priya, Deadlift set 2 logged, 1:24 of 3:00 left (?exercise=9&amp;rested=1)</p>
         <div class="gym">
           <section class="panel sign" aria-labelledby="room-title-1">
             <h1 class="panel-title" id="room-title-1">Room</h1>
@@ -860,12 +1200,27 @@
               </p>
             </div>
             <p class="hint">Send the code to the squad. They join at spotter.fly.dev/join.</p>
+            <div class="actions room-actions">
+              <form method="post">
+                <input type="hidden" name="action" value="leave" />
+                <button type="submit" class="button secondary quiet" aria-describedby="leave-note-1">Leave room</button>
+              </form>
+            </div>
+            <p class="hint leave-note" id="leave-note-1">Leaving finishes your workout. Your sets stay in the book.</p>
+            <details class="confirm end-room">
+              <summary class="button secondary quiet"><span class="if-closed">End room</span><span class="if-open">Cancel</span></summary>
+              <form method="post" class="confirm-box">
+                <input type="hidden" name="action" value="end" />
+                <p>End the room for everyone? Mia, Ji-woo and Tom get sent home and their workouts finish. Every set is kept.</p>
+                <button type="submit" class="button secondary quiet">End room</button>
+              </form>
+            </details>
           </section>
 
           <section class="panel" aria-labelledby="people-title-1">
             <h2 class="panel-title" id="people-title-1">Squad</h2>
             <ul class="people">
-              <li class="me">Priya <span class="badge">You</span></li>
+              <li class="me">Priya <span class="badge">You</span> <span class="badge host">Host</span></li>
               <li>Mia</li>
               <li>Ji-woo</li>
               <li>Tom</li>
@@ -874,26 +1229,41 @@
 
           <section class="panel" aria-labelledby="log-title-1">
             <h2 class="panel-title" id="log-title-1">This workout</h2>
-            <p class="tally"><b>4</b> sets · <b>2,212.5 kg</b> moved so far</p>
-            <table>
-              <thead><tr><th>Exercise</th><th class="num">kg</th><th class="num">Reps</th></tr></thead>
+            <p class="panel-clock"><span class="vh">Workout time </span><time datetime="PT31M42S">31:42</time></p>
+            <p class="tally"><b>5</b> sets · <b>2,913 kg</b> moved so far</p>
+            <table class="log">
+              <thead><tr><th>Exercise</th><th class="num">Set</th><th class="fix"><span class="vh">Edit</span></th></tr></thead>
               <tbody>
-                <tr><td>Back squat</td><td class="num">100</td><td class="num">5</td></tr>
-                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Back squat</span></td><td class="num">100</td><td class="num">5</td></tr>
-                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Back squat</span></td><td class="num">102.5</td><td class="num">5</td></tr>
-                <tr><td>Deadlift</td><td class="num">140</td><td class="num">5</td></tr>
+                <tr><td>Back squat</td><td class="num set">100 <span class="u">kg</span> × 5</td><td class="fix"><a href="?edit=41"><svg width="16" height="16" aria-hidden="true"><use href="#i-pencil" /></svg><span class="vh">Edit Back squat, 100 kg × 5</span></a></td></tr>
+                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Back squat</span></td><td class="num set">100 <span class="u">kg</span> × 5</td><td class="fix"><a href="?edit=42"><svg width="16" height="16" aria-hidden="true"><use href="#i-pencil" /></svg><span class="vh">Edit Back squat, 100 kg × 5</span></a></td></tr>
+                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Back squat</span></td><td class="num set">102.5 <span class="u">kg</span> × 5</td><td class="fix"><a href="?edit=43"><svg width="16" height="16" aria-hidden="true"><use href="#i-pencil" /></svg><span class="vh">Edit Back squat, 102.5 kg × 5</span></a></td></tr>
+                <tr><td>Deadlift</td><td class="num set">140 <span class="u">kg</span> × 5</td><td class="fix"><a href="?edit=44"><svg width="16" height="16" aria-hidden="true"><use href="#i-pencil" /></svg><span class="vh">Edit Deadlift, 140 kg × 5</span></a></td></tr>
+                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Deadlift</span></td><td class="num set">140 <span class="u">kg</span> × 5</td><td class="fix"><a href="?edit=45"><svg width="16" height="16" aria-hidden="true"><use href="#i-pencil" /></svg><span class="vh">Edit Deadlift, 140 kg × 5</span></a></td></tr>
               </tbody>
             </table>
             <form method="post">
               <input type="hidden" name="action" value="finish" />
-              <div class="actions"><button type="submit" class="secondary button">Finish workout</button></div>
+              <div class="actions"><button type="submit" class="secondary button quiet">Finish workout</button></div>
             </form>
           </section>
 
           <section class="panel sheet" aria-labelledby="sheet-title-1">
-            <h2 class="panel-title" id="sheet-title-1">Log a set</h2>
+            <span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="#i-drop" /></svg>Resting</span>
+            <h2 class="vh" id="sheet-title-1">Log a set</h2>
+            <div class="rest">
+              <div class="rest-top">
+                <p class="timer" role="timer" aria-label="Rest left">1:24</p>
+                <p class="rest-what"><span>of <b>3:00</b> rest</span><span>after <b>140 kg × 5</b></span></p>
+              </div>
+              <form method="post" class="rest-adjust">
+                <input type="hidden" name="action" value="rest" />
+                <button type="submit" name="delta" value="-15" class="button secondary tool" aria-label="15 seconds less rest">-15 s</button>
+                <button type="submit" name="delta" value="15" class="button secondary tool" aria-label="15 seconds more rest">+15 s</button>
+                <button type="submit" name="delta" value="skip" class="button secondary tool">Skip</button>
+              </form>
+            </div>
             <details class="switch">
-              <summary><span class="lift">Deadlift</span><span class="set-no">Set 2</span><span class="change">Change</span></summary>
+              <summary><span class="lift">Deadlift</span><span class="set-no">Set 3</span><span class="change">Change</span></summary>
               <form method="get" class="picker">
                 <p class="recent-label">From this workout</p>
                 <ul class="recent">
@@ -909,7 +1279,6 @@
             </details>
             <form method="post" class="set-form">
               <input type="hidden" name="exercise_id" value="9" />
-              <p class="last">Last time <b>140 kg × 5</b></p>
               <div class="big-pair">
                 <div class="big">
                   <label for="weight_kg-1">Weight</label>
@@ -927,9 +1296,9 @@
         </div>
       </section>
 
-      <!-- state: rested (success) -->
+      <!-- state: idle (non-host, mixed kinds in the log) -->
       <section class="state">
-        <p class="state-label">Success: set just logged (?exercise=9&amp;rested=1)</p>
+        <p class="state-label">Idle · non-host view (no End room) · Tom, rest skipped, no ?exercise</p>
         <div class="gym">
           <section class="panel sign" aria-labelledby="room-title-2">
             <h1 class="panel-title" id="room-title-2">Room</h1>
@@ -941,114 +1310,59 @@
               </p>
             </div>
             <p class="hint">Send the code to the squad. They join at spotter.fly.dev/join.</p>
+            <div class="actions room-actions">
+              <form method="post">
+                <input type="hidden" name="action" value="leave" />
+                <button type="submit" class="button secondary quiet" aria-describedby="leave-note-2">Leave room</button>
+              </form>
+            </div>
+            <p class="hint leave-note" id="leave-note-2">Leaving finishes your workout. Your sets stay in the book.</p>
           </section>
 
           <section class="panel" aria-labelledby="people-title-2">
             <h2 class="panel-title" id="people-title-2">Squad</h2>
             <ul class="people">
-              <li class="me">Priya <span class="badge">You</span></li>
+              <li>Priya <span class="badge host">Host</span></li>
               <li>Mia</li>
               <li>Ji-woo</li>
-              <li>Tom</li>
+              <li class="me">Tom <span class="badge">You</span></li>
             </ul>
           </section>
 
           <section class="panel" aria-labelledby="log-title-2">
             <h2 class="panel-title" id="log-title-2">This workout</h2>
-            <p class="tally"><b>5</b> sets · <b>2,912.5 kg</b> moved so far</p>
-            <table>
-              <thead><tr><th>Exercise</th><th class="num">kg</th><th class="num">Reps</th></tr></thead>
+            <p class="panel-clock"><span class="vh">Workout time </span><time datetime="PT38M5S">38:05</time></p>
+            <p class="tally"><b>6</b> sets · <b>610 kg</b> moved · <b>5 km</b> covered so far</p>
+            <table class="log">
+              <thead><tr><th>Exercise</th><th class="num">Set</th><th class="fix"><span class="vh">Edit</span></th></tr></thead>
               <tbody>
-                <tr><td>Back squat</td><td class="num">100</td><td class="num">5</td></tr>
-                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Back squat</span></td><td class="num">100</td><td class="num">5</td></tr>
-                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Back squat</span></td><td class="num">102.5</td><td class="num">5</td></tr>
-                <tr><td>Deadlift</td><td class="num">140</td><td class="num">5</td></tr>
-                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Deadlift</span></td><td class="num">140</td><td class="num">5</td></tr>
+                <tr><td>Run</td><td class="num set">5 <span class="u">km</span> · 25:00<span class="sub">5:00 /km</span></td><td class="fix"><a href="?edit=61"><svg width="16" height="16" aria-hidden="true"><use href="#i-pencil" /></svg><span class="vh">Edit Run, 5 km in 25:00</span></a></td></tr>
+                <tr><td>Pull-up</td><td class="num set">BW + 10 <span class="u">kg</span> × 6</td><td class="fix"><a href="?edit=62"><svg width="16" height="16" aria-hidden="true"><use href="#i-pencil" /></svg><span class="vh">Edit Pull-up, bodyweight plus 10 kg × 6</span></a></td></tr>
+                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Pull-up</span></td><td class="num set">BW × 10</td><td class="fix"><a href="?edit=63"><svg width="16" height="16" aria-hidden="true"><use href="#i-pencil" /></svg><span class="vh">Edit Pull-up, bodyweight × 10</span></a></td></tr>
+                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Pull-up</span></td><td class="num set">BW × 8</td><td class="fix"><a href="?edit=64"><svg width="16" height="16" aria-hidden="true"><use href="#i-pencil" /></svg><span class="vh">Edit Pull-up, bodyweight × 8</span></a></td></tr>
+                <tr><td>Lat pulldown</td><td class="num set">55 <span class="u">kg</span> × 10</td><td class="fix"><a href="?edit=65"><svg width="16" height="16" aria-hidden="true"><use href="#i-pencil" /></svg><span class="vh">Edit Lat pulldown, 55 kg × 10</span></a></td></tr>
+                <tr><td>Plank</td><td class="num set">1:30</td><td class="fix"><a href="?edit=66"><svg width="16" height="16" aria-hidden="true"><use href="#i-pencil" /></svg><span class="vh">Edit Plank, 1:30</span></a></td></tr>
               </tbody>
             </table>
             <form method="post">
               <input type="hidden" name="action" value="finish" />
-              <div class="actions"><button type="submit" class="secondary button">Finish workout</button></div>
+              <div class="actions"><button type="submit" class="secondary button quiet">Finish workout</button></div>
             </form>
           </section>
 
           <section class="panel sheet" aria-labelledby="sheet-title-2">
-            <h2 class="panel-title" id="sheet-title-2">Log a set</h2>
-            <p class="bubble" role="status">Set logged! Rest 90 s, then go again.</p>
-            <details class="switch">
-              <summary><span class="lift">Deadlift</span><span class="set-no">Set 3</span><span class="change">Change</span></summary>
-            </details>
-            <form method="post" class="set-form">
-              <input type="hidden" name="exercise_id" value="9" />
-              <p class="last">Last time <b>140 kg × 5</b></p>
-              <div class="big-pair">
-                <div class="big">
-                  <label for="weight_kg-2">Weight</label>
-                  <span class="field"><input id="weight_kg-2" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="140" required /><span class="unit" aria-hidden="true">kg</span></span>
-                </div>
-                <span class="times" aria-hidden="true">×</span>
-                <div class="big">
-                  <label for="reps-2">Reps</label>
-                  <span class="field"><input id="reps-2" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="5" required /></span>
-                </div>
-              </div>
-              <button type="submit" class="wide">Done</button>
-            </form>
-          </section>
-        </div>
-      </section>
-
-      <!-- state: idle -->
-      <section class="state">
-        <p class="state-label">Idle: no exercise chosen yet, some sets logged (no ?exercise)</p>
-        <div class="gym">
-          <section class="panel sign" aria-labelledby="room-title-3">
-            <h1 class="panel-title" id="room-title-3">Room</h1>
-            <div class="passcode-box">
-              <span class="passcode">SB64FR</span>
-              <p class="spots">
-                <span class="pips" aria-hidden="true"><i class="in"></i><i class="in"></i><i class="in"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-                <span>3 of 12 in</span>
-              </p>
-            </div>
-            <p class="hint">Send the code to the squad. They join at spotter.fly.dev/join.</p>
-          </section>
-
-          <section class="panel" aria-labelledby="people-title-3">
-            <h2 class="panel-title" id="people-title-3">Squad</h2>
-            <ul class="people">
-              <li class="me">Priya <span class="badge">You</span></li>
-              <li>Mia</li>
-              <li>Ji-woo</li>
-            </ul>
-          </section>
-
-          <section class="panel" aria-labelledby="log-title-3">
-            <h2 class="panel-title" id="log-title-3">This workout</h2>
-            <p class="tally"><b>3</b> sets · <b>1,512.5 kg</b> moved so far</p>
-            <table>
-              <thead><tr><th>Exercise</th><th class="num">kg</th><th class="num">Reps</th></tr></thead>
-              <tbody>
-                <tr><td>Back squat</td><td class="num">100</td><td class="num">5</td></tr>
-                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Back squat</span></td><td class="num">100</td><td class="num">5</td></tr>
-                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Back squat</span></td><td class="num">102.5</td><td class="num">5</td></tr>
-              </tbody>
-            </table>
-            <form method="post">
-              <input type="hidden" name="action" value="finish" />
-              <div class="actions"><button type="submit" class="secondary button">Finish workout</button></div>
-            </form>
-          </section>
-
-          <section class="panel sheet" aria-labelledby="sheet-title-3">
-            <h2 class="panel-title" id="sheet-title-3">Pick a lift</h2>
-            <form method="get">
+            <span class="chip state-idle tab"><svg width="16" height="16" aria-hidden="true"><use href="#i-idle" /></svg>Idle</span>
+            <form method="get" class="pick">
+              <h2 class="lift lift-row" id="sheet-title-2">Pick a lift</h2>
               <p class="recent-label">From this workout</p>
               <ul class="recent">
-                <li><a href="?exercise=5">Back squat</a></li>
+                <li><a href="?exercise=1">Run</a></li>
+                <li><a href="?exercise=11">Pull-up</a></li>
+                <li><a href="?exercise=13">Lat pulldown</a></li>
+                <li><a href="?exercise=16">Plank</a></li>
               </ul>
-              <label for="exercise-3">Exercise</label>
-              <select id="exercise-3" name="exercise">
+              <label for="exercise-2">Exercise</label>
+              <select id="exercise-2" name="exercise">
                 <optgroup label="Treadmill"><option value="1">Run</option><option value="2">Incline walk</option></optgroup>
                 <optgroup label="Flat bench"><option value="3">Bench press</option><option value="4">Incline bench press</option></optgroup>
                 <optgroup label="Squat rack"><option value="5">Back squat</option><option value="6">Overhead press</option></optgroup>
@@ -1064,12 +1378,12 @@
         </div>
       </section>
 
-      <!-- state: empty -->
+      <!-- state: empty (alone, host, no sets) -->
       <section class="state">
-        <p class="state-label">Empty: alone in a new room, no sets</p>
+        <p class="state-label">Empty · Ji-woo just opened a room, alone, no sets (End room hidden: Leave already closes it)</p>
         <div class="gym">
-          <section class="panel sign" aria-labelledby="room-title-4">
-            <h1 class="panel-title" id="room-title-4">Room</h1>
+          <section class="panel sign" aria-labelledby="room-title-3">
+            <h1 class="panel-title" id="room-title-3">Room</h1>
             <div class="passcode-box">
               <span class="passcode">C8A7CQ</span>
               <p class="spots">
@@ -1078,22 +1392,30 @@
               </p>
             </div>
             <p class="hint">Send the code to the squad. They join at spotter.fly.dev/join.</p>
+            <div class="actions room-actions">
+              <form method="post">
+                <input type="hidden" name="action" value="leave" />
+                <button type="submit" class="button secondary quiet" aria-describedby="leave-note-3">Leave room</button>
+              </form>
+            </div>
+            <p class="hint leave-note" id="leave-note-3">You're the last one in, so leaving closes the room.</p>
           </section>
 
-          <section class="panel" aria-labelledby="people-title-4">
-            <h2 class="panel-title" id="people-title-4">Squad</h2>
+          <section class="panel" aria-labelledby="people-title-3">
+            <h2 class="panel-title" id="people-title-3">Squad</h2>
             <ul class="people">
-              <li class="me">Priya <span class="badge">You</span></li>
+              <li class="me">Ji-woo <span class="badge">You</span> <span class="badge host">Host</span></li>
             </ul>
             <p class="alone">Just you so far. Send the passcode to the squad 📲</p>
           </section>
 
-          <section class="panel sheet" aria-labelledby="sheet-title-4">
-            <h2 class="panel-title" id="sheet-title-4">Pick a lift</h2>
-            <form method="get">
-              <label for="exercise-4">Exercise</label>
-              <select id="exercise-4" name="exercise">
-                <optgroup label="Treadmill"><option value="1" selected>Run</option><option value="2">Incline walk</option></optgroup>
+          <section class="panel sheet" aria-labelledby="sheet-title-3">
+            <span class="chip state-idle tab"><svg width="16" height="16" aria-hidden="true"><use href="#i-idle" /></svg>Idle</span>
+            <form method="get" class="pick">
+              <h2 class="lift lift-row" id="sheet-title-3">Pick a lift</h2>
+              <label for="exercise-3">Exercise</label>
+              <select id="exercise-3" name="exercise">
+                <optgroup label="Treadmill"><option value="1">Run</option><option value="2">Incline walk</option></optgroup>
                 <optgroup label="Flat bench"><option value="3">Bench press</option><option value="4">Incline bench press</option></optgroup>
               </select>
               <button type="submit" class="wide">Choose</button>
@@ -1102,127 +1424,486 @@
         </div>
       </section>
 
-      <!-- state: change lift open -->
-      <section class="state solo">
-        <p class="state-label">Lifting, lift name tapped: picker open</p>
-        <section class="panel sheet" aria-labelledby="sheet-title-5">
-          <h2 class="panel-title" id="sheet-title-5">Log a set</h2>
-          <details class="switch" open>
-            <summary><span class="lift">Deadlift</span><span class="set-no">Set 2</span><span class="change">Change</span></summary>
-            <form method="get" class="picker">
-              <p class="recent-label">From this workout</p>
-              <ul class="recent">
-                <li><a href="?exercise=5">Back squat</a></li>
-                <li><a href="?exercise=9" aria-current="true">Deadlift</a></li>
-              </ul>
-              <label for="exercise-5">Exercise</label>
-              <select id="exercise-5" name="exercise">
-                <optgroup label="Lifting platform"><option value="9" selected>Deadlift</option><option value="10">Romanian deadlift</option></optgroup>
-              </select>
-              <div class="actions"><button type="submit" class="secondary button">Choose</button></div>
+      <!-- state: edit set (log row marked, sheet in edit mode, rest still running) -->
+      <section class="state">
+        <p class="state-label">Edit set · Priya tapped the pencil on Deadlift set 2 (?edit=45); her rest keeps running</p>
+        <div class="gym">
+          <section class="panel" aria-labelledby="log-title-4">
+            <h2 class="panel-title" id="log-title-4">This workout</h2>
+            <p class="panel-clock"><span class="vh">Workout time </span><time datetime="PT31M54S">31:54</time></p>
+            <p class="tally"><b>5</b> sets · <b>2,913 kg</b> moved so far</p>
+            <table class="log">
+              <thead><tr><th>Exercise</th><th class="num">Set</th><th class="fix"><span class="vh">Edit</span></th></tr></thead>
+              <tbody>
+                <tr><td>Back squat</td><td class="num set">100 <span class="u">kg</span> × 5</td><td class="fix"><a href="?edit=41"><svg width="16" height="16" aria-hidden="true"><use href="#i-pencil" /></svg><span class="vh">Edit Back squat, 100 kg × 5</span></a></td></tr>
+                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Back squat</span></td><td class="num set">100 <span class="u">kg</span> × 5</td><td class="fix"><a href="?edit=42"><svg width="16" height="16" aria-hidden="true"><use href="#i-pencil" /></svg><span class="vh">Edit Back squat, 100 kg × 5</span></a></td></tr>
+                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Back squat</span></td><td class="num set">102.5 <span class="u">kg</span> × 5</td><td class="fix"><a href="?edit=43"><svg width="16" height="16" aria-hidden="true"><use href="#i-pencil" /></svg><span class="vh">Edit Back squat, 102.5 kg × 5</span></a></td></tr>
+                <tr><td>Deadlift</td><td class="num set">140 <span class="u">kg</span> × 5</td><td class="fix"><a href="?edit=44"><svg width="16" height="16" aria-hidden="true"><use href="#i-pencil" /></svg><span class="vh">Edit Deadlift, 140 kg × 5</span></a></td></tr>
+                <tr aria-current="true"><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Deadlift</span></td><td class="num set">140 <span class="u">kg</span> × 5</td><td class="fix"><a href="?exercise=9" aria-label="Editing this set. Cancel"><svg width="16" height="16" aria-hidden="true"><use href="#i-pencil" /></svg></a></td></tr>
+              </tbody>
+            </table>
+            <form method="post">
+              <input type="hidden" name="action" value="finish" />
+              <div class="actions"><button type="submit" class="secondary button quiet">Finish workout</button></div>
             </form>
-          </details>
-          <form method="post" class="set-form">
-            <input type="hidden" name="exercise_id" value="9" />
-            <p class="last">Last time <b>140 kg × 5</b></p>
-            <div class="big-pair">
-              <div class="big">
-                <label for="weight_kg-5">Weight</label>
-                <span class="field"><input id="weight_kg-5" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="140" required /><span class="unit" aria-hidden="true">kg</span></span>
+          </section>
+
+          <section class="panel sheet" aria-labelledby="sheet-title-4">
+            <span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="#i-drop" /></svg>Resting</span>
+            <div class="rest">
+              <div class="rest-top">
+                <p class="timer" role="timer" aria-label="Rest left">1:12</p>
+                <p class="rest-what"><span>of <b>3:00</b> rest</span><span>after <b>140 kg × 5</b></span></p>
               </div>
-              <span class="times" aria-hidden="true">×</span>
-              <div class="big">
-                <label for="reps-5">Reps</label>
-                <span class="field"><input id="reps-5" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="5" required /></span>
-              </div>
+              <form method="post" class="rest-adjust">
+                <input type="hidden" name="action" value="rest" />
+                <button type="submit" name="delta" value="-15" class="button secondary tool" aria-label="15 seconds less rest">-15 s</button>
+                <button type="submit" name="delta" value="15" class="button secondary tool" aria-label="15 seconds more rest">+15 s</button>
+                <button type="submit" name="delta" value="skip" class="button secondary tool">Skip</button>
+              </form>
             </div>
-            <button type="submit" class="wide">Done</button>
-          </form>
-        </section>
+            <div class="lift-row"><h2 class="lift" id="sheet-title-4">Deadlift</h2><span class="set-no">Set 2</span><span class="badge">Editing</span><a href="?exercise=9" class="lift-cancel">Cancel</a></div>
+            <p class="hint logged-at">Logged at 6:38 pm</p>
+            <form method="post" id="set-edit-4" class="set-form">
+              <input type="hidden" name="action" value="edit" />
+              <input type="hidden" name="set_id" value="45" />
+              <div class="big-pair">
+                <div class="big">
+                  <label for="weight_kg-4">Weight</label>
+                  <span class="field"><input id="weight_kg-4" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="140" required /><span class="unit" aria-hidden="true">kg</span></span>
+                </div>
+                <span class="times" aria-hidden="true">×</span>
+                <div class="big">
+                  <label for="reps-4">Reps</label>
+                  <span class="field"><input id="reps-4" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="4" required /></span>
+                </div>
+              </div>
+            </form>
+            <details class="confirm">
+              <summary class="button secondary quiet"><span class="if-closed">Delete</span><span class="if-open">Keep it</span></summary>
+              <form method="post" class="confirm-box">
+                <input type="hidden" name="action" value="delete" />
+                <input type="hidden" name="set_id" value="45" />
+                <p>Delete Deadlift set 2, 140 kg × 5? It can't be undone.</p>
+                <button type="submit" class="button secondary quiet">Delete set</button>
+              </form>
+            </details>
+            <button type="submit" form="set-edit-4" class="wide">Save</button>
+          </section>
+        </div>
       </section>
 
-      <!-- state: first time on this lift -->
-      <section class="state solo">
-        <p class="state-label">Lifting, first time on this lift (no last set)</p>
-        <section class="panel sheet" aria-labelledby="sheet-title-6">
-          <h2 class="panel-title" id="sheet-title-6">Log a set</h2>
-          <details class="switch">
-            <summary><span class="lift">Romanian deadlift</span><span class="set-no">Set 1</span><span class="change">Change</span></summary>
-          </details>
-          <form method="post" class="set-form">
-            <input type="hidden" name="exercise_id" value="10" />
-            <p class="last">First time on this one. Start light.</p>
-            <div class="big-pair">
-              <div class="big">
-                <label for="weight_kg-6">Weight</label>
-                <span class="field"><input id="weight_kg-6" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="0" required /><span class="unit" aria-hidden="true">kg</span></span>
-              </div>
-              <span class="times" aria-hidden="true">×</span>
-              <div class="big">
-                <label for="reps-6">Reps</label>
-                <span class="field"><input id="reps-6" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="8" required /></span>
-              </div>
-            </div>
-            <button type="submit" class="wide">Done</button>
-          </form>
-        </section>
-      </section>
+      <div class="solos">
 
-      <!-- state: error -->
-      <section class="state solo">
-        <p class="state-label">Error: server rejected the set (400)</p>
-        <section class="panel sheet" aria-labelledby="sheet-title-7">
-          <h2 class="panel-title" id="sheet-title-7">Log a set</h2>
-          <details class="switch">
-            <summary><span class="lift">Deadlift</span><span class="set-no">Set 2</span><span class="change">Change</span></summary>
-          </details>
-          <form method="post" class="set-form">
-            <input type="hidden" name="exercise_id" value="9" />
-            <p class="last">Last time <b>140 kg × 5</b></p>
-            <div class="big-pair">
-              <div class="big">
-                <label for="weight_kg-7">Weight</label>
-                <span class="field"><input id="weight_kg-7" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="140" required aria-describedby="set-error-7" aria-invalid="true" /><span class="unit" aria-hidden="true">kg</span></span>
+        <!-- state: rest over (slacking) -->
+        <section class="state solo">
+          <p class="state-label">Rest over · counting up in slacking red (after the beep and 3 flashes)</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-5">
+            <span class="chip state-slacking tab"><svg width="16" height="16" aria-hidden="true"><use href="#i-phone" /></svg>Slacking</span>
+            <h2 class="vh" id="sheet-title-5">Log a set</h2>
+            <div class="rest over">
+              <p class="rest-say" role="status">Your squad can see you 👀</p>
+              <div class="rest-top">
+                <p class="timer" role="timer" aria-label="Over your rest by">+0:42</p>
+                <p class="rest-what"><span>over a <b>3:00</b> rest</span><span>after <b>140 kg × 5</b></span></p>
               </div>
-              <span class="times" aria-hidden="true">×</span>
-              <div class="big">
-                <label for="reps-7">Reps</label>
-                <span class="field"><input id="reps-7" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="5" required /></span>
-              </div>
+              <form method="post" class="rest-adjust">
+                <input type="hidden" name="action" value="rest" />
+                <button type="submit" name="delta" value="-15" class="button secondary tool" aria-label="15 seconds less rest">-15 s</button>
+                <button type="submit" name="delta" value="15" class="button secondary tool" aria-label="15 seconds more rest">+15 s</button>
+                <button type="submit" name="delta" value="skip" class="button secondary tool">Skip</button>
+              </form>
             </div>
-            <p class="error" id="set-error-7" role="alert">Weight is 0 to 1000 kg.</p>
-            <button type="submit" class="wide">Done</button>
-          </form>
+            <details class="switch">
+              <summary><span class="lift">Deadlift</span><span class="set-no">Set 3</span><span class="change">Change</span></summary>
+            </details>
+            <form method="post" class="set-form">
+              <input type="hidden" name="exercise_id" value="9" />
+              <div class="big-pair">
+                <div class="big">
+                  <label for="weight_kg-5">Weight</label>
+                  <span class="field"><input id="weight_kg-5" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="140" required /><span class="unit" aria-hidden="true">kg</span></span>
+                </div>
+                <span class="times" aria-hidden="true">×</span>
+                <div class="big">
+                  <label for="reps-5">Reps</label>
+                  <span class="field"><input id="reps-5" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="5" required /></span>
+                </div>
+              </div>
+              <button type="submit" class="wide">Done</button>
+            </form>
+          </section>
         </section>
-      </section>
 
-      <!-- state: pending -->
-      <section class="state solo">
-        <p class="state-label">Pending: Done tapped, slow connection (later: needs a script)</p>
-        <section class="panel sheet" aria-labelledby="sheet-title-8" aria-busy="true">
-          <h2 class="panel-title" id="sheet-title-8">Log a set</h2>
-          <details class="switch">
-            <summary><span class="lift">Deadlift</span><span class="set-no">Set 2</span><span class="change">Change</span></summary>
-          </details>
-          <form method="post" class="set-form">
-            <input type="hidden" name="exercise_id" value="9" />
-            <p class="last">Last time <b>140 kg × 5</b></p>
-            <div class="big-pair">
-              <div class="big">
-                <label for="weight_kg-8">Weight</label>
-                <span class="field"><input id="weight_kg-8" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="140" readonly /><span class="unit" aria-hidden="true">kg</span></span>
+        <!-- state: pending -->
+        <section class="state solo">
+          <p class="state-label">Pending · Done tapped on a slow connection: label kept, fields read-only</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-6" aria-busy="true">
+            <span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="#i-drop" /></svg>Resting</span>
+            <h2 class="vh" id="sheet-title-6">Log a set</h2>
+            <div class="rest">
+              <div class="rest-top">
+                <p class="timer" role="timer" aria-label="Rest left">0:06</p>
+                <p class="rest-what"><span>of <b>3:00</b> rest</span><span>after <b>140 kg × 5</b></span></p>
               </div>
-              <span class="times" aria-hidden="true">×</span>
-              <div class="big">
-                <label for="reps-8">Reps</label>
-                <span class="field"><input id="reps-8" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="5" readonly /></span>
-              </div>
+              <form method="post" class="rest-adjust">
+                <input type="hidden" name="action" value="rest" />
+                <button type="submit" name="delta" value="-15" class="button secondary tool" aria-label="15 seconds less rest">-15 s</button>
+                <button type="submit" name="delta" value="15" class="button secondary tool" aria-label="15 seconds more rest">+15 s</button>
+                <button type="submit" name="delta" value="skip" class="button secondary tool">Skip</button>
+              </form>
             </div>
-            <button type="submit" class="wide" disabled>Done</button>
-          </form>
+            <details class="switch">
+              <summary><span class="lift">Deadlift</span><span class="set-no">Set 3</span><span class="change">Change</span></summary>
+            </details>
+            <form method="post" class="set-form">
+              <input type="hidden" name="exercise_id" value="9" />
+              <div class="big-pair">
+                <div class="big">
+                  <label for="weight_kg-6">Weight</label>
+                  <span class="field"><input id="weight_kg-6" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="140" required readonly /><span class="unit" aria-hidden="true">kg</span></span>
+                </div>
+                <span class="times" aria-hidden="true">×</span>
+                <div class="big">
+                  <label for="reps-6">Reps</label>
+                  <span class="field"><input id="reps-6" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="5" required readonly /></span>
+                </div>
+              </div>
+              <button type="submit" class="wide" disabled>Done</button>
+            </form>
+          </section>
         </section>
-      </section>
 
+        <!-- state: without JS -->
+        <section class="state solo">
+          <p class="state-label">Without JS · the rest end as plain text; ±15 s and Skip still post</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-7">
+            <span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="#i-drop" /></svg>Resting</span>
+            <h2 class="vh" id="sheet-title-7">Log a set</h2>
+            <div class="rest">
+              <p class="rest-static">Rest 3:00 · next set at 6:42 pm</p>
+              <form method="post" class="rest-adjust">
+                <input type="hidden" name="action" value="rest" />
+                <button type="submit" name="delta" value="-15" class="button secondary tool" aria-label="15 seconds less rest">-15 s</button>
+                <button type="submit" name="delta" value="15" class="button secondary tool" aria-label="15 seconds more rest">+15 s</button>
+                <button type="submit" name="delta" value="skip" class="button secondary tool">Skip</button>
+              </form>
+            </div>
+            <details class="switch">
+              <summary><span class="lift">Deadlift</span><span class="set-no">Set 3</span><span class="change">Change</span></summary>
+            </details>
+            <form method="post" class="set-form">
+              <input type="hidden" name="exercise_id" value="9" />
+              <div class="big-pair">
+                <div class="big">
+                  <label for="weight_kg-7">Weight</label>
+                  <span class="field"><input id="weight_kg-7" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="140" required /><span class="unit" aria-hidden="true">kg</span></span>
+                </div>
+                <span class="times" aria-hidden="true">×</span>
+                <div class="big">
+                  <label for="reps-7">Reps</label>
+                  <span class="field"><input id="reps-7" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="5" required /></span>
+                </div>
+              </div>
+              <button type="submit" class="wide">Done</button>
+            </form>
+          </section>
+        </section>
+
+        <!-- state: first time on a lift -->
+        <section class="state solo">
+          <p class="state-label">First time on a lift · nothing to pre-fill (weight kind)</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-8">
+            <span class="chip state-lifting tab"><svg width="16" height="16" aria-hidden="true"><use href="#i-dumbbell" /></svg>Lifting</span>
+            <h2 class="vh" id="sheet-title-8">Log a set</h2>
+            <details class="switch">
+              <summary><span class="lift">Romanian deadlift</span><span class="set-no">Set 1</span><span class="change">Change</span></summary>
+            </details>
+            <form method="post" class="set-form">
+              <input type="hidden" name="exercise_id" value="10" />
+              <p class="last">First time on this one. Ease into it.</p>
+              <div class="big-pair">
+                <div class="big">
+                  <label for="weight_kg-8">Weight</label>
+                  <span class="field"><input id="weight_kg-8" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="0" required /><span class="unit" aria-hidden="true">kg</span></span>
+                </div>
+                <span class="times" aria-hidden="true">×</span>
+                <div class="big">
+                  <label for="reps-8">Reps</label>
+                  <span class="field"><input id="reps-8" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="8" required /></span>
+                </div>
+              </div>
+              <button type="submit" class="wide">Done</button>
+            </form>
+          </section>
+        </section>
+
+        <!-- state: bodyweight -->
+        <section class="state solo">
+          <p class="state-label">Bodyweight · Pull-up, added weight optional (blank or 0 = BW)</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-9">
+            <span class="chip state-lifting tab"><svg width="16" height="16" aria-hidden="true"><use href="#i-dumbbell" /></svg>Lifting</span>
+            <h2 class="vh" id="sheet-title-9">Log a set</h2>
+            <details class="switch">
+              <summary><span class="lift">Pull-up</span><span class="set-no">Set 2</span><span class="change">Change</span></summary>
+            </details>
+            <form method="post" class="set-form">
+              <input type="hidden" name="exercise_id" value="11" />
+              <p class="last">Last time <b>BW + 10 kg × 6</b></p>
+              <div class="big-pair even">
+                <div class="big">
+                  <label for="weight_kg-9">BW + <span class="vh">added weight</span></label>
+                  <span class="field"><input id="weight_kg-9" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="10" /><span class="unit" aria-hidden="true">kg</span></span>
+                </div>
+                <span class="times" aria-hidden="true">×</span>
+                <div class="big">
+                  <label for="reps-9">Reps</label>
+                  <span class="field"><input id="reps-9" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="6" required /></span>
+                </div>
+              </div>
+              <button type="submit" class="wide">Done</button>
+            </form>
+          </section>
+        </section>
+
+        <!-- state: duration (plank), rest running from set 1 -->
+        <section class="state solo">
+          <p class="state-label">Duration · Plank set 2 while resting from set 1; stopwatch ready</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-10">
+            <span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="#i-drop" /></svg>Resting</span>
+            <h2 class="vh" id="sheet-title-10">Log a set</h2>
+            <div class="rest">
+              <div class="rest-top">
+                <p class="timer" role="timer" aria-label="Rest left">0:38</p>
+                <p class="rest-what"><span>of <b>1:00</b> rest</span><span>after <b>1:30</b></span></p>
+              </div>
+              <form method="post" class="rest-adjust">
+                <input type="hidden" name="action" value="rest" />
+                <button type="submit" name="delta" value="-15" class="button secondary tool" aria-label="15 seconds less rest">-15 s</button>
+                <button type="submit" name="delta" value="15" class="button secondary tool" aria-label="15 seconds more rest">+15 s</button>
+                <button type="submit" name="delta" value="skip" class="button secondary tool">Skip</button>
+              </form>
+            </div>
+            <details class="switch">
+              <summary><span class="lift">Plank</span><span class="set-no">Set 2</span><span class="change">Change</span></summary>
+            </details>
+            <form method="post" class="set-form">
+              <input type="hidden" name="exercise_id" value="16" />
+              <fieldset class="big-time">
+                <legend>Hold</legend>
+                <div class="mmss">
+                  <label class="vh" for="minutes-10">Minutes</label>
+                  <input id="minutes-10" name="minutes" type="number" inputmode="numeric" min="0" max="600" step="1" value="1" />
+                  <span class="colon" aria-hidden="true">:</span>
+                  <label class="vh" for="seconds-10">Seconds</label>
+                  <input id="seconds-10" name="seconds" type="number" inputmode="numeric" min="0" max="59" step="1" value="30" />
+                </div>
+              </fieldset>
+              <div class="stopwatch">
+                <button type="button" class="button secondary tool"><svg width="16" height="16" aria-hidden="true"><use href="#i-play" /></svg>Start</button>
+                <button type="button" class="button secondary tool">Reset</button>
+                <p class="say">Start, hold, Stop.</p>
+              </div>
+              <button type="submit" class="wide">Done</button>
+            </form>
+          </section>
+        </section>
+
+        <!-- state: cardio, stopwatch idle (+ success: cardio has no rest) -->
+        <section class="state solo">
+          <p class="state-label">Cardio · stopwatch idle · just logged 1 km rep 1, so no rest timer, just a bubble</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-11">
+            <span class="chip state-lifting tab"><svg width="16" height="16" aria-hidden="true"><use href="#i-dumbbell" /></svg>Lifting</span>
+            <h2 class="vh" id="sheet-title-11">Log a set</h2>
+            <p class="bubble" role="status">Logged! No rest timer after cardio 🏃</p>
+            <details class="switch">
+              <summary><span class="lift">Run</span><span class="set-no">Set 2</span><span class="change">Change</span></summary>
+            </details>
+            <form method="post" class="set-form">
+              <input type="hidden" name="exercise_id" value="1" />
+              <p class="last">Last time <b>1 km · 4:52 · 4:52 /km</b></p>
+              <div class="big-pair cardio">
+                <div class="big">
+                  <label for="distance_km-11">Distance</label>
+                  <span class="field"><input id="distance_km-11" name="distance_km" type="number" inputmode="decimal" min="0.01" max="1000" step="0.01" value="1" required /><span class="unit" aria-hidden="true">km</span></span>
+                </div>
+                <fieldset class="big-time">
+                  <legend>Time</legend>
+                  <div class="mmss">
+                    <label class="vh" for="minutes-11">Minutes</label>
+                    <input id="minutes-11" name="minutes" type="number" inputmode="numeric" min="0" max="600" step="1" value="4" />
+                    <span class="colon" aria-hidden="true">:</span>
+                    <label class="vh" for="seconds-11">Seconds</label>
+                    <input id="seconds-11" name="seconds" type="number" inputmode="numeric" min="0" max="59" step="1" value="52" />
+                  </div>
+                </fieldset>
+              </div>
+              <div class="stopwatch">
+                <button type="button" class="button secondary tool"><svg width="16" height="16" aria-hidden="true"><use href="#i-play" /></svg>Start</button>
+                <button type="button" class="button secondary tool">Reset</button>
+                <p class="say">Pace <b>4:52 /km</b></p>
+              </div>
+              <button type="submit" class="wide">Done</button>
+            </form>
+          </section>
+        </section>
+
+        <!-- state: cardio, stopwatch running -->
+        <section class="state solo">
+          <p class="state-label">Cardio · stopwatch running: the time fields tick, Stop fills them</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-12">
+            <span class="chip state-lifting tab"><svg width="16" height="16" aria-hidden="true"><use href="#i-dumbbell" /></svg>Lifting</span>
+            <h2 class="vh" id="sheet-title-12">Log a set</h2>
+            <details class="switch">
+              <summary><span class="lift">Run</span><span class="set-no">Set 1</span><span class="change">Change</span></summary>
+            </details>
+            <form method="post" class="set-form">
+              <input type="hidden" name="exercise_id" value="1" />
+              <p class="last">Last time <b>5 km · 25:00 · 5:00 /km</b></p>
+              <div class="big-pair cardio">
+                <div class="big">
+                  <label for="distance_km-12">Distance</label>
+                  <span class="field"><input id="distance_km-12" name="distance_km" type="number" inputmode="decimal" min="0.01" max="1000" step="0.01" value="5" required /><span class="unit" aria-hidden="true">km</span></span>
+                </div>
+                <fieldset class="big-time running">
+                  <legend>Time</legend>
+                  <div class="mmss">
+                    <label class="vh" for="minutes-12">Minutes</label>
+                    <input id="minutes-12" name="minutes" type="number" inputmode="numeric" min="0" max="600" step="1" value="12" readonly />
+                    <span class="colon" aria-hidden="true">:</span>
+                    <label class="vh" for="seconds-12">Seconds</label>
+                    <input id="seconds-12" name="seconds" type="number" inputmode="numeric" min="0" max="59" step="1" value="47" readonly />
+                  </div>
+                </fieldset>
+              </div>
+              <div class="stopwatch">
+                <button type="button" class="button secondary tool" aria-pressed="true"><svg width="16" height="16" aria-hidden="true"><use href="#i-stop" /></svg>Stop</button>
+                <button type="button" class="button secondary tool">Reset</button>
+                <p class="say">Clock's running. Stop fills the time.</p>
+              </div>
+              <button type="submit" class="wide">Done</button>
+            </form>
+          </section>
+        </section>
+
+        <!-- state: error -->
+        <section class="state solo">
+          <p class="state-label">Error · server rejected the set (400), message under the fields</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-13">
+            <span class="chip state-lifting tab"><svg width="16" height="16" aria-hidden="true"><use href="#i-dumbbell" /></svg>Lifting</span>
+            <h2 class="vh" id="sheet-title-13">Log a set</h2>
+            <details class="switch">
+              <summary><span class="lift">Run</span><span class="set-no">Set 2</span><span class="change">Change</span></summary>
+            </details>
+            <form method="post" class="set-form">
+              <input type="hidden" name="exercise_id" value="1" />
+              <p class="last">Last time <b>1 km · 4:52 · 4:52 /km</b></p>
+              <div class="big-pair cardio">
+                <div class="big">
+                  <label for="distance_km-13">Distance</label>
+                  <span class="field"><input id="distance_km-13" name="distance_km" type="number" inputmode="decimal" min="0.01" max="1000" step="0.01" value="0" required aria-invalid="true" aria-describedby="set-error-13" /><span class="unit" aria-hidden="true">km</span></span>
+                </div>
+                <fieldset class="big-time">
+                  <legend>Time</legend>
+                  <div class="mmss">
+                    <label class="vh" for="minutes-13">Minutes</label>
+                    <input id="minutes-13" name="minutes" type="number" inputmode="numeric" min="0" max="600" step="1" value="4" />
+                    <span class="colon" aria-hidden="true">:</span>
+                    <label class="vh" for="seconds-13">Seconds</label>
+                    <input id="seconds-13" name="seconds" type="number" inputmode="numeric" min="0" max="59" step="1" value="47" />
+                  </div>
+                </fieldset>
+              </div>
+              <p class="error" id="set-error-13" role="alert">Distance is 0.01 to 1000 km.</p>
+              <div class="stopwatch">
+                <button type="button" class="button secondary tool"><svg width="16" height="16" aria-hidden="true"><use href="#i-play" /></svg>Start</button>
+                <button type="button" class="button secondary tool">Reset</button>
+                <p class="say">Pace shows once there's a distance.</p>
+              </div>
+              <button type="submit" class="wide">Done</button>
+            </form>
+          </section>
+        </section>
+
+        <!-- state: delete confirm -->
+        <section class="state solo">
+          <p class="state-label">Delete confirm · Delete tapped once while editing; it turned into Keep it</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-14">
+            <span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="#i-drop" /></svg>Resting</span>
+            <div class="rest">
+              <div class="rest-top">
+                <p class="timer" role="timer" aria-label="Rest left">1:05</p>
+                <p class="rest-what"><span>of <b>3:00</b> rest</span><span>after <b>140 kg × 5</b></span></p>
+              </div>
+              <form method="post" class="rest-adjust">
+                <input type="hidden" name="action" value="rest" />
+                <button type="submit" name="delta" value="-15" class="button secondary tool" aria-label="15 seconds less rest">-15 s</button>
+                <button type="submit" name="delta" value="15" class="button secondary tool" aria-label="15 seconds more rest">+15 s</button>
+                <button type="submit" name="delta" value="skip" class="button secondary tool">Skip</button>
+              </form>
+            </div>
+            <div class="lift-row"><h2 class="lift" id="sheet-title-14">Deadlift</h2><span class="set-no">Set 2</span><span class="badge">Editing</span><a href="?exercise=9" class="lift-cancel">Cancel</a></div>
+            <p class="hint logged-at">Logged at 6:38 pm</p>
+            <form method="post" id="set-edit-14" class="set-form">
+              <input type="hidden" name="action" value="edit" />
+              <input type="hidden" name="set_id" value="45" />
+              <div class="big-pair">
+                <div class="big">
+                  <label for="weight_kg-14">Weight</label>
+                  <span class="field"><input id="weight_kg-14" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="140" required /><span class="unit" aria-hidden="true">kg</span></span>
+                </div>
+                <span class="times" aria-hidden="true">×</span>
+                <div class="big">
+                  <label for="reps-14">Reps</label>
+                  <span class="field"><input id="reps-14" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="5" required /></span>
+                </div>
+              </div>
+            </form>
+            <details class="confirm" open>
+              <summary class="button secondary quiet"><span class="if-closed">Delete</span><span class="if-open">Keep it</span></summary>
+              <form method="post" class="confirm-box">
+                <input type="hidden" name="action" value="delete" />
+                <input type="hidden" name="set_id" value="45" />
+                <p>Delete Deadlift set 2, 140 kg × 5? It can't be undone.</p>
+                <button type="submit" class="button secondary quiet">Delete set</button>
+              </form>
+            </details>
+            <button type="submit" form="set-edit-14" class="wide">Save</button>
+          </section>
+        </section>
+
+        <!-- state: end-room confirm (host) -->
+        <section class="state solo">
+          <p class="state-label">End room confirm · host only; End room tapped once, it turned into Cancel</p>
+          <section class="panel sign" aria-labelledby="room-title-15">
+            <h1 class="panel-title" id="room-title-15">Room</h1>
+            <div class="passcode-box">
+              <span class="passcode">SB64FR</span>
+              <p class="spots">
+                <span class="pips" aria-hidden="true"><i class="in"></i><i class="in"></i><i class="in"></i><i class="in"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                <span>4 of 12 in</span>
+              </p>
+            </div>
+            <p class="hint">Send the code to the squad. They join at spotter.fly.dev/join.</p>
+            <div class="actions room-actions">
+              <form method="post">
+                <input type="hidden" name="action" value="leave" />
+                <button type="submit" class="button secondary quiet" aria-describedby="leave-note-15">Leave room</button>
+              </form>
+            </div>
+            <p class="hint leave-note" id="leave-note-15">Leaving finishes your workout. Your sets stay in the book.</p>
+            <details class="confirm end-room" open>
+              <summary class="button secondary quiet"><span class="if-closed">End room</span><span class="if-open">Cancel</span></summary>
+              <form method="post" class="confirm-box">
+                <input type="hidden" name="action" value="end" />
+                <p>End the room for everyone? Mia, Ji-woo and Tom get sent home and their workouts finish. Every set is kept.</p>
+                <button type="submit" class="button secondary quiet">End room</button>
+              </form>
+            </details>
+          </section>
+        </section>
+
+      </div>
     </main>
     <footer>
       <a href="/readme/">What Spotter is for</a>
