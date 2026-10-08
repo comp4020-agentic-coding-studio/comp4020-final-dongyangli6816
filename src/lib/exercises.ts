@@ -12,6 +12,21 @@
 // person's own last choice for it wins (LOG-4). Cardio starts no rest timer.
 export type Kind = "weight" | "bodyweight" | "duration" | "cardio";
 
+// The eight pieces of equipment, in the order the exercise picker groups
+// them, with the four a room opens with first (GYM-2).
+export const EQUIPMENT = {
+  treadmill: "Treadmill",
+  "flat-bench": "Flat bench",
+  "squat-rack": "Squat rack",
+  "dumbbell-rack": "Dumbbell rack",
+  "lifting-platform": "Lifting platform",
+  "pull-up-bar": "Pull-up bar",
+  "cable-machine": "Cable machine",
+  "exercise-mat": "Exercise mat",
+} as const;
+export type Equipment = keyof typeof EQUIPMENT;
+export const OPENING_EQUIPMENT: readonly Equipment[] = ["treadmill", "flat-bench", "squat-rack", "dumbbell-rack"];
+
 export const EXERCISES = [
   { id: 1, name: "Run", equipment: "treadmill", kind: "cardio", defaultRestS: 0 },
   { id: 2, name: "Incline walk", equipment: "treadmill", kind: "cardio", defaultRestS: 0 },
@@ -29,7 +44,7 @@ export const EXERCISES = [
   { id: 14, name: "Seated cable row", equipment: "cable-machine", kind: "weight", defaultRestS: 90 },
   { id: 15, name: "Push-ups", equipment: "exercise-mat", kind: "bodyweight", defaultRestS: 60 },
   { id: 16, name: "Plank", equipment: "exercise-mat", kind: "duration", defaultRestS: 60 },
-] as const satisfies readonly { id: number; name: string; equipment: string; kind: Kind; defaultRestS: number }[];
+] as const satisfies readonly { id: number; name: string; equipment: Equipment; kind: Kind; defaultRestS: number }[];
 
 export type Exercise = (typeof EXERCISES)[number];
 

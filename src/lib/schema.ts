@@ -103,3 +103,24 @@ export const presence = sqliteTable("presence", {
   exerciseId: integer("exercise_id").references(() => exercises.id),
   stateStartedAt: integer("state_started_at").notNull(),
 });
+
+// GYM-3, GYM-8: the room's twelve stations, each holding at most one piece of
+// equipment and at most one person. Seeded when the room is created, so a
+// station is always a row and claiming one is an update (stations.ts).
+export const stations = sqliteTable(
+  "stations",
+  {
+    roomId: integer("room_id").notNull().references(() => rooms.id),
+    slot: integer("slot").notNull(),
+    equipment: text("equipment"),
+    placedAt: integer("placed_at"),
+    lastUsedAt: integer("last_used_at"),
+    userId: integer("user_id").references(() => users.id),
+  },
+  (t) => [
+    uniqueIndex("stations_pk").on(t.roomId, t.slot),
+    // a person holds at most one station in a room: the database refuses a
+    // second, whatever the code above it does (ADR 0004)
+    uniqueIndex("stations_one_each").on(t.roomId, t.userId).where(sql`user_id is not null`),
+  ],
+);

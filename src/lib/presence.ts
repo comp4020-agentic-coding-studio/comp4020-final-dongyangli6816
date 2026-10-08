@@ -1,7 +1,8 @@
 import { and, count, desc, eq, isNotNull, isNull } from "drizzle-orm";
 import { db } from "./db.ts";
-import { exerciseById } from "./exercises.ts";
+import { EQUIPMENT, exerciseById, type Equipment } from "./exercises.ts";
 import { presence, roomMembers, rooms, sets, users, workouts } from "./schema.ts";
+import { claimStation, releaseStation, roomStations } from "./stations.ts";
 
 export const SLACK_GRACE_S = 30; // GYM-11
 export const AWAY_MS = 60_000; // GYM-14
@@ -17,6 +18,8 @@ export type MemberView = {
   state: State;
   away: boolean;
   exercise: string | null;
+  // the station they hold (GYM-3), kept while resting, slacking or Away
+  station: { slot: number; equipment: string } | null;
   // when this person's rest runs out, and when they turn Slacking, if
   // they're resting: lets a screen tick and flip them over on time without
   // asking the server again
@@ -27,10 +30,19 @@ export type MemberView = {
   done: { sets: number; startedAt: number; endedAt: number } | null;
 };
 
-export type RoomView = { now: number; closed: boolean; members: MemberView[] };
+export type RoomView = {
+  now: number;
+  closed: boolean;
+  members: MemberView[];
+  // GYM-8: what is on each of the twelve stations
+  stations: { slot: number; equipment: Equipment | null }[];
+};
 
-// Choosing a lift (or logging a set of it) puts the person on it.
+// Choosing a lift (or logging a set of it) puts the person on it, on a
+// station with its equipment (GYM-4).
 export function setLifting(userId: number, roomId: number, exerciseId: number): void {
+  const exercise = exerciseById(exerciseId);
+  if (exercise) claimStation(userId, roomId, exercise.equipment);
   const row = { roomId, state: "lifting" as const, exerciseId, stateStartedAt: Date.now() };
   db.insert(presence)
     .values({ userId, ...row })
@@ -39,6 +51,7 @@ export function setLifting(userId: number, roomId: number, exerciseId: number): 
 }
 
 export function setFinished(userId: number, roomId: number): void {
+  releaseStation(roomId, userId);
   const row = { roomId, state: "finished" as const, exerciseId: null, stateStartedAt: Date.now() };
   db.insert(presence)
     .values({ userId, ...row })
@@ -58,7 +71,8 @@ export function clearPresence(roomId: number, userId?: number): void {
 // for someone whose phone is locked.
 export function roomView(roomId: number, now = Date.now()): RoomView {
   const room = db.select({ hostUserId: rooms.hostUserId, closedAt: rooms.closedAt }).from(rooms).where(eq(rooms.id, roomId)).get();
-  if (!room || room.closedAt) return { now, closed: true, members: [] };
+  if (!room || room.closedAt) return { now, closed: true, members: [], stations: [] };
+  const floor = roomStations(roomId);
 
   const members = db
     .select({
@@ -96,6 +110,7 @@ export function roomView(roomId: number, now = Date.now()): RoomView {
   return {
     now,
     closed: false,
+    stations: floor.map(({ slot, equipment }) => ({ slot, equipment })),
     members: members.map((m) => {
       const set = latest.get(m.id);
       const restEnd = set ? set.completedAt + set.restTargetS * 1000 : 0;
@@ -121,6 +136,7 @@ export function roomView(roomId: number, now = Date.now()): RoomView {
         state,
         away: now - m.lastSeenAt > AWAY_MS,
         exercise: (exerciseId && exerciseById(exerciseId)?.name) || null,
+        station: held(floor, m.id),
         restEnd: resting ? restEnd : null,
         slackAt,
         seenAt: m.lastSeenAt,
@@ -141,4 +157,9 @@ function lastFinished(userId: number, roomId: number): MemberView["done"] {
   if (!w?.endedAt) return null;
   const n = db.select({ n: count() }).from(sets).where(eq(sets.workoutId, w.id)).get()?.n ?? 0;
   return { sets: n, startedAt: w.startedAt, endedAt: w.endedAt };
+}
+
+function held(floor: { slot: number; equipment: Equipment | null; userId: number | null }[], userId: number) {
+  const s = floor.find((f) => f.userId === userId);
+  return s?.equipment ? { slot: s.slot, equipment: EQUIPMENT[s.equipment] } : null;
 }
