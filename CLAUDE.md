@@ -22,7 +22,8 @@ put it where its kind already goes.
 CLAUDE.md  PROCESS.md        course-fixed, root: the harness; how I worked
 README.md  research-note.md  course-fixed, root: the app's case; the note
 reflections/crit-N.md        course-fixed names, one per crit (8, 9, 10)
-spec/                        course-fixed: checks run against the live app
+spec/                        course-fixed: checks run against the live app;
+                             browser/ holds the Playwright ones (the page's script)
 src/pages/                   routes; one .astro (or .ts endpoint) per URL
 src/layouts/Layout.astro     page shell and every global style and token
 src/components/              shared .astro components

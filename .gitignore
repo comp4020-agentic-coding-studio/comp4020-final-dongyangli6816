@@ -34,3 +34,7 @@ data/
 # working screenshots from scripts/shot.mjs; they can be regenerated, and the
 # ones kept as evidence are copied into docs/evidence/
 .shots/
+
+# what a failed browser check leaves behind (spec/browser)
+test-results/
+playwright-report/
