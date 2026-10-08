@@ -16,7 +16,7 @@ import { join, relative } from "node:path";
 const root = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 
 // src/pages/<file> -> docs/design/<page>/
-const PAGES = { index: "home", "rooms/[id]": "room", "workouts/[id]": "summary" };
+const PAGES = { index: "home", "join/[code]": "join", "rooms/[id]": "room", "workouts/[id]": "summary" };
 
 function main() {
   const input = JSON.parse(readFileSync(0, "utf8"));
