@@ -1,6 +1,8 @@
 import { and, eq, isNull, lt } from "drizzle-orm";
 import { db } from "./db.ts";
 import { newPasscode } from "./passcode.ts";
+import { clearPresence } from "./presence.ts";
+import { broadcast } from "./realtime.ts";
 import { roomMembers, rooms, workouts } from "./schema.ts";
 import { finishWorkout } from "./workouts.ts";
 
@@ -44,6 +46,7 @@ export function joinRoom(userId: number, passcode: string): number | null {
     .onConflictDoUpdate({ target: [roomMembers.roomId, roomMembers.userId], set: { leftAt: null, lastSeenAt: now } })
     .run();
   db.update(rooms).set({ lastActiveAt: now }).where(eq(rooms.id, room.id)).run();
+  broadcast(room.id);
   return room.id;
 }
 
@@ -59,8 +62,9 @@ export function isMember(roomId: number, userId: number): boolean {
 // The last one out closes the room (ROOM-6), which frees its passcode.
 // Returns the finished workout, if it had any sets.
 export function leaveRoom(userId: number, roomId: number): number | undefined {
-  return db.transaction(() => {
+  const workoutId = db.transaction(() => {
     const workoutId = finishWorkout(userId, roomId);
+    clearPresence(roomId, userId);
     db.update(roomMembers)
       .set({ leftAt: Date.now() })
       .where(and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)))
@@ -73,18 +77,23 @@ export function leaveRoom(userId: number, roomId: number): number | undefined {
     if (!anyoneLeft) closeRoom(roomId);
     return workoutId;
   });
+  broadcast(roomId);
+  return workoutId;
 }
 
 // The host can end the room for everyone. Returns undefined, and does
 // nothing, for anyone else; otherwise the host's finished workout, if any.
 export function endRoom(userId: number, roomId: number): { workoutId: number | undefined } | undefined {
-  return db.transaction(() => {
+  const ended = db.transaction(() => {
     const room = db.select({ hostUserId: rooms.hostUserId }).from(rooms).where(eq(rooms.id, roomId)).get();
     if (room?.hostUserId !== userId) return undefined;
     const workoutId = finishWorkout(userId, roomId);
     closeRoom(roomId);
     return { workoutId };
   });
+  // everyone still watching is told the room closed, and goes home
+  if (ended) broadcast(roomId);
+  return ended;
 }
 
 // Closing marks everyone still in as left and finishes their workouts there,
@@ -102,6 +111,7 @@ function closeRoom(roomId: number): void {
       .set({ leftAt: now })
       .where(and(eq(roomMembers.roomId, roomId), isNull(roomMembers.leftAt)))
       .run();
+    clearPresence(roomId);
     db.update(rooms).set({ closedAt: now }).where(and(eq(rooms.id, roomId), isNull(rooms.closedAt))).run();
   });
 }
@@ -119,7 +129,10 @@ export function sweepIdleRooms(now = Date.now()): void {
     .from(rooms)
     .where(and(isNull(rooms.closedAt), lt(rooms.lastActiveAt, now - ROOM_IDLE_MS)))
     .all();
-  for (const r of idle) closeRoom(r.id);
+  for (const r of idle) {
+    closeRoom(r.id);
+    broadcast(r.id);
+  }
 }
 
 // A member's visit or action counts as activity in the room.

@@ -5,6 +5,9 @@ import Sprite from "../../components/Sprite.astro";
 import { db } from "../../lib/db.ts";
 import { EXERCISES, exerciseById, type Exercise } from "../../lib/exercises.ts";
 import { clock, distanceKm, kg, km, pace, setLabel, timeOfDay, volume } from "../../lib/logbook.ts";
+import { roomView, setFinished, setLifting, SLACK_GRACE_S, type State } from "../../lib/presence.ts";
+import { STATE_WORD, stateAt, whatParts } from "../../lib/squad.ts";
+import { broadcast } from "../../lib/realtime.ts";
 import { endRoom, isMember, leaveRoom, touchRoom, wasMember } from "../../lib/rooms.ts";
 import { roomMembers, rooms, users, workouts } from "../../lib/schema.ts";
 import {
@@ -21,7 +24,19 @@ import {
   type SetValues,
 } from "../../lib/workouts.ts";
 import Layout from "../../layouts/Layout.astro";
-import { dropIcon, dumbbellIcon, idleIcon, pencilIcon, phoneIcon, playIcon, stopIcon } from "../../sprites/icons.ts";
+import { head } from "../../sprites/avatar.ts";
+import {
+  dropIcon,
+  dumbbellIcon,
+  idleIcon,
+  pencilIcon,
+  phoneIcon,
+  phoneOffIcon,
+  playIcon,
+  signalIcon,
+  stopIcon,
+  trophyIcon,
+} from "../../sprites/icons.ts";
 
 const user = Astro.locals.user;
 if (!user) return Astro.redirect(`/signin?next=${encodeURIComponent(Astro.url.pathname)}`, 303);
@@ -53,7 +68,20 @@ if (Astro.request.method === "POST") {
   const action = String(form.get("action") ?? "log");
   const setId = Number(form.get("set_id"));
 
-  if (action === "finish") return summary(finishWorkout(user.id, roomId), "/");
+  // GYM-13: whatever this request changes, everyone watching the room sees it
+  const changed = <T,>(result: T): T => (broadcast(roomId), result);
+
+  if (action === "finish") {
+    const workoutId = finishWorkout(user.id, roomId);
+    setFinished(user.id, roomId);
+    return changed(summary(workoutId, "/"));
+  }
+  if (action === "choose") {
+    const ex = exerciseById(Number(form.get("exercise")));
+    if (!ex) return Astro.redirect(here, 303);
+    setLifting(user.id, roomId, ex.id);
+    return changed(Astro.redirect(`${here}?exercise=${ex.id}`, 303));
+  }
   if (action === "leave") return summary(leaveRoom(user.id, roomId), `/?left=${room.passcode}`);
   if (action === "end") {
     const ended = endRoom(user.id, roomId);
@@ -63,21 +91,29 @@ if (Astro.request.method === "POST") {
   if (action === "rest") {
     const delta = String(form.get("delta"));
     if (delta === "-15" || delta === "15" || delta === "skip") adjustRest(user.id, roomId, delta);
-    return Astro.redirect(here + Astro.url.search.replace(/[?&]rested=1/, ""), 303);
+    return changed(Astro.redirect(here + Astro.url.search.replace(/[?&]rested=1/, ""), 303));
   }
   if (action === "delete") {
     const own = Number.isInteger(setId) ? setToEdit(user.id, roomId, setId) : undefined;
     if (!own || !deleteSet(user.id, roomId, setId)) return new Response("Not found", { status: 404 });
-    return Astro.redirect(`${here}?exercise=${own.exerciseId}`, 303);
+    return changed(Astro.redirect(`${here}?exercise=${own.exerciseId}`, 303));
   }
-  if (action === "edit") {
+  // GYM-10: Start set ends the rest and puts you on the lift. The page comes
+  // back as Lifting with whatever was typed still in the fields, ready for Done.
+  if (action === "start") {
+    const ex = exerciseById(Number(form.get("exercise_id")));
+    adjustRest(user.id, roomId, "skip");
+    if (ex) setLifting(user.id, roomId, ex.id);
+    broadcast(roomId);
+    submitted = form;
+  } else if (action === "edit") {
     const own = Number.isInteger(setId) ? setToEdit(user.id, roomId, setId) : undefined;
     const ex = own && exerciseById(own.exerciseId);
     if (!own || !ex) return new Response("Not found", { status: 404 });
     const read = readSet(ex.kind, form);
     if ("values" in read) {
       editSet(user.id, roomId, setId, read.values);
-      return Astro.redirect(`${here}?exercise=${ex.id}`, 303);
+      return changed(Astro.redirect(`${here}?exercise=${ex.id}`, 303));
     }
     ({ error, field: errorField } = read);
   } else {
@@ -87,13 +123,16 @@ if (Astro.request.method === "POST") {
       const read = readSet(ex.kind, form);
       if ("values" in read) {
         logSet(user.id, roomId, ex, read.values);
-        return Astro.redirect(`${here}?exercise=${ex.id}&rested=1`, 303);
+        setLifting(user.id, roomId, ex.id);
+        return changed(Astro.redirect(`${here}?exercise=${ex.id}&rested=1`, 303));
       }
       ({ error, field: errorField } = read);
     }
   }
-  submitted = form;
-  Astro.response.status = 400;
+  if (action !== "start") {
+    submitted = form;
+    Astro.response.status = 400;
+  }
 }
 
 const now = Date.now();
@@ -124,14 +163,31 @@ const latest = mySets.at(-1);
 const restEnd = latest ? latest.completedAt + latest.restTargetS * 1000 : 0;
 const resting = !!latest && latest.restTargetS > 0 && latest.restEndedAt === null && now < restEnd + 30 * 60_000;
 const over = resting && now >= restEnd;
-const state = over ? "slacking" : resting ? "resting" : exercise ? "lifting" : "idle";
+// GYM-11: red only once the server would call it Slacking, so your screen and
+// your squad's turn at the same moment
+const slacking = over && now >= restEnd + SLACK_GRACE_S * 1000;
+const state = slacking ? "slacking" : resting ? "resting" : exercise ? "lifting" : "idle";
 const baseState = exercise ? "lifting" : "idle";
+const STATE_ICON: Record<State, typeof idleIcon> = {
+  idle: idleIcon,
+  lifting: dumbbellIcon,
+  resting: dropIcon,
+  slacking: phoneIcon,
+  finished: trophyIcon,
+};
 const TAB = {
   idle: { icon: idleIcon, word: "Idle" },
   lifting: { icon: dumbbellIcon, word: "Lifting" },
   resting: { icon: dropIcon, word: "Resting" },
   slacking: { icon: phoneIcon, word: "Slacking" },
 };
+
+// GYM-15: everyone in the room as the server sees them, you first, then in
+// the order they came in; the script keeps it live from the event stream
+const view = roomView(roomId, now);
+const squad = [...view.members].sort((a, b) => Number(b.id === user.id) - Number(a.id === user.id));
+// a stand-in head for everyone until avatars arrive (AV-1)
+const memberHead = head("#3b2219", "#c68642");
 
 // The fields: what was just submitted after an error, the set being edited,
 // or the last set of this exercise (LOG-3).
@@ -201,7 +257,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
           <span class="pips" aria-hidden="true">
             {Array.from({ length: ROOM_SIZE }, (_, i) => <i class:list={{ in: i < members.length }} />)}
           </span>
-          <span>{members.length} of {ROOM_SIZE} in</span>
+          <span class="count">{members.length} of {ROOM_SIZE} in</span>
         </p>
       </div>
       <p class="hint">Send the code to the squad. They join at {inviteUrl}.</p>
@@ -238,20 +294,52 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       }
     </section>
 
-    <section class="panel" aria-labelledby="people-title">
+    <section class="panel squad" aria-labelledby="people-title">
       <h2 class="panel-title" id="people-title">Squad</h2>
-      <ul class="people">
+      <p class="conn" role="status"><span class="badge">Live</span></p>
+      <ul class="people" data-me={user.id}>
         {
-          members.map((m) => (
-            <li class:list={{ me: m.id === user.id }}>
-              {m.name}
-              {m.id === user.id && <span class="badge">You</span>}
-              {m.id === room.hostUserId && <span class="badge host">Host</span>}
+          squad.map((m) => (
+            <li class:list={{ me: m.id === user.id, away: m.away }} data-id={m.id}>
+              <Sprite sprite={memberHead} scale={4} class="av" />
+              <span class="who">
+                {m.name}
+                {m.id === user.id && <span class="badge">You</span>}
+                {m.host && <span class="badge host">Host</span>}
+                <span class="what">
+                  {whatParts(m, now).map(([text, keep]) => (keep ? <span class="n">{text}</span> : text))}
+                </span>
+              </span>
+              <span class="chips">
+                <span class={`chip state-${stateAt(m, now)}`}>
+                  <Sprite sprite={STATE_ICON[stateAt(m, now)]} scale={2} />
+                  {STATE_WORD[stateAt(m, now)]}
+                </span>
+                {m.away && (
+                  <span class="chip away">
+                    <Sprite sprite={phoneOffIcon} scale={2} />
+                    Away
+                  </span>
+                )}
+              </span>
             </li>
           ))
         }
       </ul>
-      {members.length === 1 && <p class="alone">Just you so far. Send the passcode to the squad 📲</p>}
+      <p class="alone" hidden={members.length > 1}>Just you so far. Send the passcode to the squad 📲</p>
+      {/* what the script builds rows and the connection badge from */}
+      <template data-part="head"><Sprite sprite={memberHead} scale={4} class="av" /></template>
+      {
+        (Object.keys(STATE_WORD) as State[]).map((s) => (
+          <template data-part={s}>
+            <Sprite sprite={STATE_ICON[s]} scale={2} />
+          </template>
+        ))
+      }
+      <template data-part="away"><Sprite sprite={phoneOffIcon} scale={2} /></template>
+      <template data-part="lost">
+        <span class="lost"><Sprite sprite={signalIcon} scale={2} />Reconnecting…</span>
+      </template>
     </section>
 
     {
@@ -379,10 +467,10 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       }
       {
         resting && latest && (
-          <div class:list={["rest", { over }]} data-end={restEnd} data-rest-target={latest.restTargetS}>
+          <div class:list={["rest", { over, slacking }]} data-end={restEnd} data-rest-target={latest.restTargetS}>
             {over && (
               <p class="rest-say" role="status">
-                {now - restEnd < 30_000 ? "Rest's up. Back under the bar 🔔" : "Your squad can see you 👀"}
+                {slacking ? "Your squad can see you 👀" : "Rest's up. Back under the bar 🔔"}
               </p>
             )}
             <div class="rest-top">
@@ -414,7 +502,6 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
               <button type="submit" name="delta" value="15" class="button secondary tool" aria-label="15 seconds more rest">
                 +15 s
               </button>
-              <button type="submit" name="delta" value="skip" class="button secondary tool">Skip</button>
             </form>
           </div>
         )
@@ -467,16 +554,22 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
                 <span class="set-no">Set {setNo}</span>
                 <span class="change">Change</span>
               </summary>
-              <form method="get" class="picker">
+              <form method="post" class="picker">
+                <input type="hidden" name="action" value="choose" />
                 {recent.length > 0 && (
                   <>
                     <p class="recent-label">From this workout</p>
                     <ul class="recent">
                       {recent.map((e) => (
                         <li>
-                          <a href={`?exercise=${e.id}`} aria-current={e.id === exercise.id ? "true" : undefined}>
+                          <button
+                            type="submit"
+                            name="exercise"
+                            value={e.id}
+                            aria-current={e.id === exercise.id ? "true" : undefined}
+                          >
                             {e.name}
-                          </a>
+                          </button>
                         </li>
                       ))}
                     </ul>
@@ -535,11 +628,21 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
                   </p>
                 </div>
               )}
-              <button type="submit" class="wide">Done</button>
+              {/* a set is Start set, then Done (GYM-10) */}
+              {resting ? (
+                <button type="submit" name="action" value="start" class="wide">
+                  Start set
+                </button>
+              ) : (
+                <button type="submit" class="wide">
+                  Done
+                </button>
+              )}
             </form>
           </>
         ) : (
-          <form method="get" class="pick">
+          <form method="post" class="pick">
+            <input type="hidden" name="action" value="choose" />
             <h2 class="lift lift-row" id="sheet-title">Pick a lift</h2>
             {recent.length > 0 && (
               <>
@@ -547,7 +650,9 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
                 <ul class="recent">
                   {recent.map((e) => (
                     <li>
-                      <a href={`?exercise=${e.id}`}>{e.name}</a>
+                      <button type="submit" name="exercise" value={e.id}>
+                        {e.name}
+                      </button>
                     </li>
                   ))}
                 </ul>
@@ -578,6 +683,8 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
 
 <script>
   import { navigate } from "astro:transitions/client";
+  import type { RoomView } from "../../lib/presence.ts";
+  import { STATE_WORD, stateAt, whatParts } from "../../lib/squad.ts";
 
   // Every timer here is worked out from Date.now() on each tick, never
   // counted, so a phone that slept wakes up showing the right time (GYM-12).
@@ -660,8 +767,11 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
         return;
       }
       timer.textContent = `+${clock(-left)}`;
-      setTab("slacking");
-      say(-left < 30 ? "Rest's up. Back under the bar 🔔" : "Your squad can see you 👀");
+      // GYM-11: blue for the first 30 s over, red once the squad sees Slacking
+      const slacking = -left >= 30;
+      rest.classList.toggle("slacking", slacking);
+      setTab(slacking ? "slacking" : "resting");
+      say(slacking ? "Your squad can see you 👀" : "Rest's up. Back under the bar 🔔");
       if (!wasOver) {
         wasOver = true;
         beep();
@@ -794,20 +904,132 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   // after every swap.
   let tick = () => {};
   document.addEventListener("astro:page-load", () => {
-    tick = document.querySelector(".gym") ? init() : () => {};
+    const gym = document.querySelector<HTMLElement>(".gym");
+    tick = gym ? init() : () => {};
+    if (gym) connect(gym.dataset.room!);
+    else disconnect();
     tick();
+    liveTick();
   });
-  setInterval(() => tick(), 1000);
+  setInterval(() => {
+    tick();
+    liveTick();
+  }, 1000);
+
+  // ---------- the room, live (GYM-13, GYM-15) ----------
+  // One stream per room on screen. Each message is the whole room, so the
+  // squad list is redrawn from it rather than patched; a stream that
+  // reconnects is right again with its first message. The server's clock
+  // decides when someone turns Slacking, so its offset from this one is kept.
+  let live: { roomId: string; source: EventSource } | undefined;
+  let view: RoomView | undefined;
+  let offset = 0;
+  let connected = true;
+  let lostTimer: ReturnType<typeof setTimeout> | undefined;
+
+  function connect(roomId: string) {
+    if (live?.roomId === roomId) return;
+    disconnect();
+    const source = new EventSource(`/rooms/${roomId}/events`);
+    live = { roomId, source };
+    source.addEventListener("room", (e) => {
+      view = JSON.parse((e as MessageEvent<string>).data) as RoomView;
+      offset = view.now - Date.now();
+      // the host ended it, or it closed: the room page says where to go
+      if (view.closed) {
+        disconnect();
+        return navigate(location.pathname);
+      }
+      liveTick();
+    });
+    source.addEventListener("open", () => {
+      clearTimeout(lostTimer);
+      lostTimer = undefined;
+      connected = true;
+      liveTick();
+    });
+    source.addEventListener("error", () => {
+      // refused outright (no longer a member): the room page says why
+      if (source.readyState === EventSource.CLOSED) {
+        disconnect();
+        return navigate(location.pathname);
+      }
+      // a blip isn't worth a word; a stream down for 3 s is
+      lostTimer ??= setTimeout(() => {
+        connected = false;
+        liveTick();
+      }, 3000);
+    });
+  }
+
+  function disconnect() {
+    live?.source.close();
+    live = undefined;
+    view = undefined;
+    clearTimeout(lostTimer);
+    lostTimer = undefined;
+    connected = true;
+  }
+
+  // Draws the connection badge, the headcount and the squad list from the
+  // newest message, at this second.
+  function liveTick() {
+    const conn = document.querySelector<HTMLElement>(".conn");
+    if (conn && conn.dataset.connected !== String(connected)) {
+      conn.dataset.connected = String(connected);
+      const lost = document.querySelector<HTMLTemplateElement>('template[data-part="lost"]')!;
+      if (connected) conn.innerHTML = '<span class="badge">Live</span>';
+      else conn.replaceChildren(lost.content.cloneNode(true));
+    }
+    const list = document.querySelector<HTMLUListElement>(".people");
+    if (!view || !list) return;
+    const now = Date.now() + offset;
+    const me = Number(list.dataset.me);
+    const part = (name: string) =>
+      document.querySelector<HTMLTemplateElement>(`template[data-part="${name}"]`)!.content.cloneNode(true);
+    const el = (tag: string, className: string, ...children: (Node | string)[]) => {
+      const node = document.createElement(tag);
+      node.className = className;
+      node.append(...children);
+      return node;
+    };
+    const members = [...view.members].sort((a, b) => Number(b.id === me) - Number(a.id === me));
+    list.replaceChildren(
+      ...members.map((m) => {
+        const li = el("li", [m.id === me && "me", m.away && "away"].filter(Boolean).join(" "));
+        li.dataset.id = String(m.id);
+        const state = stateAt(m, now);
+        const what = el("span", "what", ...whatParts(m, now).map(([text, keep]) => (keep ? el("span", "n", text) : text)));
+        const who = el(
+          "span",
+          "who",
+          m.name,
+          ...(m.id === me ? [" ", el("span", "badge", "You")] : []),
+          ...(m.host ? [" ", el("span", "badge host", "Host")] : []),
+          what,
+        );
+        const chips = el("span", "chips", el("span", `chip state-${state}`, part(state), STATE_WORD[state]));
+        if (m.away) chips.append(el("span", "chip away", part("away"), "Away"));
+        li.append(part("head"), who, chips);
+        return li;
+      }),
+    );
+    const alone = document.querySelector<HTMLElement>(".alone");
+    if (alone) alone.hidden = members.length > 1;
+    const count = document.querySelector<HTMLElement>(".spots .count");
+    if (count) count.textContent = `${members.length} of 12 in`;
+    document.querySelectorAll(".spots .pips i").forEach((pip, i) => pip.classList.toggle("in", i < members.length));
+  }
 
   // ---------- staying in place ----------
   // Everything that stays in this room swaps only the room, in place, so the
   // scroll, the focus and anything typed but not yet logged stay where they
-  // were: logging, editing, deleting and the rest buttons (POSTs), and the
-  // pencil, the lift chips, Change and Cancel (GETs). The client router would
+  // were: logging, editing, deleting, the rest buttons, choosing a lift and
+  // Start set (POSTs), and the pencil and Cancel (GETs). The client router would
   // load them as a new page and scroll to the top. Finish, Leave and End room
   // go to another page, so the router takes them. Without JS all of these
   // are plain forms and links.
-  const STAY = new Set(["log", "edit", "delete", "rest"]);
+  const STAY = new Set(["log", "edit", "delete", "rest", "choose", "start"]);
 
   // after() runs once the new room is in, and names the control to focus
   async function swap(url: URL, init: RequestInit, fallback: () => void, after: () => HTMLElement | null) {
@@ -831,6 +1053,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     if (res.url !== location.href) history.replaceState(history.state, "", res.url);
     tick = init();
     tick();
+    liveTick();
     const target = after();
     // keyboard and screen-reader users carry on from where they were
     if (focused) (document.querySelector<HTMLElement>(".sheet [aria-invalid]") ?? target)?.focus({ preventScroll: true });
@@ -1031,34 +1254,93 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     margin: 0 0 0.75rem;
   }
 
-  /* ---------- people list ---------- */
+  /* ---------- the connection (GYM-13): Live, or Reconnecting ----------
+     On the Squad panel's border until the map arrives, then on the map's. */
+  .conn {
+    position: absolute;
+    top: calc(var(--px) * -0.5);
+    right: 0.75rem;
+    z-index: 20;
+    transform: translateY(-50%);
+    margin: 0;
+    line-height: 1;
+  }
+  .conn .badge {
+    margin: 0;
+    padding: 0.25rem 0.5rem;
+    box-shadow: 0 0 0 var(--px) var(--panel);
+  }
+  .conn :global(.lost) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0 0.5rem;
+    font: 20px/28px var(--body);
+    color: var(--paper);
+    background: var(--night);
+    border: 2px dashed var(--dim);
+    box-shadow: 0 0 0 var(--px) var(--panel);
+  }
+  .conn :global(.lost svg) {
+    color: var(--dim);
+  }
+
+  /* ---------- people list (GYM-15): the room, in words ----------
+     Same row as home's "What your squad sees": head, name over what
+     they're doing, state chip on the right. */
   .people {
     margin: 0;
     padding: 0;
     list-style: none;
   }
-  .people li {
-    display: flex;
-    flex-wrap: wrap;
+  .people :global(li) {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) auto;
     align-items: center;
-    gap: 0.5rem 0.75rem;
+    gap: 0 0.75rem;
     min-height: 44px;
-    border-bottom: var(--px) solid var(--night);
+    padding: 0.5rem 0;
+    border-top: var(--px) solid var(--night);
   }
-  .people li:last-child {
-    border-bottom: 0;
+  .people :global(li:first-child) {
+    border-top: 0;
+    padding-top: 0;
   }
-  .people li::before {
-    content: "";
-    width: calc(var(--px) * 2);
-    height: calc(var(--px) * 2);
-    background: var(--paper);
+  .people :global(li:last-child) {
+    padding-bottom: 0;
   }
-  .people li.me::before {
-    background: var(--leaf);
+  .people :global(.av) {
+    width: 32px;
+    height: 32px;
   }
-  .people .badge {
-    margin-left: 0;
+  .people :global(li.away .av) {
+    opacity: 0.5;
+  }
+  .people :global(.who) {
+    line-height: 1.2;
+  }
+  .people :global(.what) {
+    display: block;
+    color: var(--dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .people :global(.n) {
+    white-space: nowrap;
+  }
+  .people :global(.badge) {
+    margin: 0 0 0 0.25rem;
+  }
+  .people :global(.chips) {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--px);
+  }
+  /* Away isn't a colour: a dashed chip with the phone-off icon */
+  .people :global(.chip.away) {
+    color: var(--paper);
+    background: var(--night);
+    border: 2px dashed var(--dim);
   }
   .badge.host {
     color: var(--paper);
@@ -1176,7 +1458,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     background: var(--night);
     border: var(--px) solid var(--resting);
   }
-  .rest.over {
+  .rest.slacking {
     border-color: var(--slacking);
   }
   .rest-say {
@@ -1195,7 +1477,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     line-height: 1;
     font-variant-numeric: tabular-nums;
   }
-  .rest.over .timer {
+  .rest.slacking .timer {
     color: var(--slacking);
   }
   .rest-what {
@@ -1332,17 +1614,24 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     padding: 0;
     list-style: none;
   }
-  :global(.night) .recent a {
+  /* choosing posts now, so the chips are buttons, drawn as the chips they were */
+  :global(.night) .recent button {
     display: inline-flex;
     align-items: center;
     min-height: 44px;
     padding: 0 0.75rem;
+    font: inherit;
+    text-transform: none;
     color: var(--paper);
     text-decoration: none;
     background: var(--panel);
     border: var(--px) solid var(--edge);
+    box-shadow: none;
   }
-  :global(.night) .recent a[aria-current] {
+  :global(.night) .recent button:active {
+    transform: none;
+  }
+  :global(.night) .recent button[aria-current] {
     color: var(--ink);
     background: var(--leaf);
     border-color: var(--leaf);
