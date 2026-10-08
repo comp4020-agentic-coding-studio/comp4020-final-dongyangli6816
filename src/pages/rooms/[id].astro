@@ -577,6 +577,8 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
 </Layout>
 
 <script>
+  import { navigate } from "astro:transitions/client";
+
   // Every timer here is worked out from Date.now() on each tick, never
   // counted, so a phone that slept wakes up showing the right time (GYM-12).
   const clock = (totalS: number) => {
@@ -787,24 +789,68 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   // Back restores the page from cache, button and all
   addEventListener("pageshow", () => unbusy());
 
-  let tick = init();
-  tick();
+  // This script runs once, however many times the room is shown; the client
+  // router (ADR 0003) says when a room is on screen, after the first load and
+  // after every swap.
+  let tick = () => {};
+  document.addEventListener("astro:page-load", () => {
+    tick = document.querySelector(".gym") ? init() : () => {};
+    tick();
+  });
   setInterval(() => tick(), 1000);
 
   // ---------- staying in place ----------
-  // Logging, editing, deleting and the rest buttons post as plain forms and
-  // redirect back here, which works without JS but reloads the page and
-  // jumps to the top. With JS they post in the background instead and only
-  // the room is swapped for the new one, so the scroll, the focus and
-  // anything typed but not yet logged stay where they were. Finish, Leave and
-  // End room go to another page, so they navigate as usual.
+  // Everything that stays in this room swaps only the room, in place, so the
+  // scroll, the focus and anything typed but not yet logged stay where they
+  // were: logging, editing, deleting and the rest buttons (POSTs), and the
+  // pencil, the lift chips, Change and Cancel (GETs). The client router would
+  // load them as a new page and scroll to the top. Finish, Leave and End room
+  // go to another page, so the router takes them. Without JS all of these
+  // are plain forms and links.
   const STAY = new Set(["log", "edit", "delete", "rest"]);
+
+  // after() runs once the new room is in, and names the control to focus
+  async function swap(url: URL, init: RequestInit, fallback: () => void, after: () => HTMLElement | null) {
+    const focused = !!document.activeElement?.closest(".gym");
+    let res: Response;
+    try {
+      res = await fetch(url, init);
+    } catch {
+      return fallback(); // offline or dropped: let the browser try
+    }
+    // the room closed under us, or anything unexpected: go where it says
+    if (new URL(res.url).pathname !== location.pathname || (res.status !== 200 && res.status !== 400)) {
+      return navigate(res.url);
+    }
+    const next = new DOMParser().parseFromString(await res.text(), "text/html");
+    const gym = next.querySelector(".gym");
+    if (!gym) return navigate(res.url);
+    document.querySelector(".gym")!.replaceWith(document.adoptNode(gym));
+    document.title = next.title;
+    // keep the router's own history state, so Back still works
+    if (res.url !== location.href) history.replaceState(history.state, "", res.url);
+    tick = init();
+    tick();
+    const target = after();
+    // keyboard and screen-reader users carry on from where they were
+    if (focused) (document.querySelector<HTMLElement>(".sheet [aria-invalid]") ?? target)?.focus({ preventScroll: true });
+  }
+
+  const firstField = () => document.querySelector<HTMLElement>(".sheet form input:not([type=hidden]), .sheet select");
+
   document.addEventListener(
     "submit",
-    async (e) => {
+    (e) => {
       const form = e.target as HTMLFormElement;
-      if (form.method !== "post" || !form.closest(".gym")) return;
+      if (!form.closest(".gym")) return;
+      // not form.action or form.method: these forms have a field named "action", which shadows it
+      const url = new URL(form.getAttribute("action") ?? "", location.href);
       const data = new FormData(form, e.submitter);
+      if ((form.getAttribute("method") ?? "get").toLowerCase() === "get") {
+        url.search = new URLSearchParams([...data] as [string, string][]).toString();
+        e.preventDefault();
+        return swap(url, {}, () => location.assign(url), firstField);
+      }
       const action = String(data.get("action") ?? "log");
       if (!STAY.has(action)) return;
       e.preventDefault(); // the form's own listeners still run: pending, the stopwatch
@@ -816,43 +862,30 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
           typed.set(input.id, input.value);
         }
       }
-      const focused = document.activeElement?.closest(".gym") ? (document.activeElement as HTMLElement) : null;
       const delta = (e.submitter as HTMLButtonElement | null)?.value;
+      swap(url, { method: "POST", body: new URLSearchParams([...data] as [string, string][]) }, () => form.submit(), () => {
+        for (const [id, value] of typed) {
+          const input = document.querySelector<HTMLInputElement>(`.set-form #${id}`);
+          if (input && !input.readOnly) input.value = value;
+        }
+        return action === "rest"
+          ? document.querySelector<HTMLElement>(`.rest-adjust button[value="${delta}"]`)
+          : document.querySelector<HTMLElement>(".sheet .wide");
+      });
+    },
+    true,
+  );
 
-      let res: Response;
-      try {
-        // not form.action: these forms have a field named "action", which shadows it
-        res = await fetch(new URL(form.getAttribute("action") ?? "", location.href), {
-          method: "POST",
-          body: new URLSearchParams([...data] as [string, string][]),
-        });
-      } catch {
-        return form.submit(); // offline or dropped: let the browser try
-      }
-      // the room closed under us, or anything unexpected: go where it says
-      if (new URL(res.url).pathname !== location.pathname || (res.status !== 200 && res.status !== 400)) {
-        return location.assign(res.url);
-      }
-      const next = new DOMParser().parseFromString(await res.text(), "text/html");
-      const gym = next.querySelector(".gym");
-      if (!gym) return location.assign(res.url);
-      document.querySelector(".gym")!.replaceWith(document.adoptNode(gym));
-      document.title = next.title;
-      if (res.redirected) history.replaceState(null, "", res.url);
-      for (const [id, value] of typed) {
-        const input = document.querySelector<HTMLInputElement>(`.set-form #${id}`);
-        if (input && !input.readOnly) input.value = value;
-      }
-      tick = init();
-      tick();
-      // keyboard and screen-reader users carry on from the same control
-      if (focused) {
-        const again =
-          (action === "rest" && document.querySelector<HTMLElement>(`.rest-adjust button[value="${delta}"]`)) ||
-          document.querySelector<HTMLElement>(".set-form [aria-invalid]") ||
-          document.querySelector<HTMLElement>(".sheet .wide");
-        again?.focus({ preventScroll: true });
-      }
+  document.addEventListener(
+    "click",
+    (e) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const link = (e.target as Element).closest?.<HTMLAnchorElement>("a[href]");
+      if (!link?.closest(".gym")) return;
+      const url = new URL(link.href);
+      if (url.origin !== location.origin || url.pathname !== location.pathname) return;
+      e.preventDefault();
+      swap(url, {}, () => location.assign(url), firstField);
     },
     true,
   );

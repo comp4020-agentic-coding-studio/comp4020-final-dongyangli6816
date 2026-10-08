@@ -80,18 +80,23 @@ const where = toRoom
 </Layout>
 
 <script>
-  // pending: the button keeps its label and stays pressed while the post is out
-  const form = document.querySelector("main form")!;
-  const button = form.querySelector("button[type=submit]") as HTMLButtonElement;
-  const status = form.querySelector(".entry-status")!;
-  form.addEventListener("submit", () => {
-    button.disabled = true;
-    status.textContent = "Checking you in…";
+  // pending: the button keeps its label and stays pressed while the post is out.
+  // Runs on every page load (ADR 0003), so it checks it's on sign in first.
+  document.addEventListener("astro:page-load", () => {
+    if (location.pathname !== "/signin") return;
+    const form = document.querySelector("main form")!;
+    const button = form.querySelector("button[type=submit]") as HTMLButtonElement;
+    const status = form.querySelector(".entry-status")!;
+    form.addEventListener("submit", () => {
+      button.disabled = true;
+      status.textContent = "Checking you in…";
+    });
   });
   // Back restores the page from cache, button and all
   addEventListener("pageshow", () => {
-    button.disabled = false;
-    status.textContent = "";
+    if (location.pathname !== "/signin") return;
+    document.querySelector<HTMLButtonElement>("main form button[type=submit]")!.disabled = false;
+    document.querySelector("main form .entry-status")!.textContent = "";
   });
 </script>
 

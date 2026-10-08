@@ -123,24 +123,29 @@ const describedBy = (field: string, hint: string) => [hint, errors[field] && `${
 </Layout>
 
 <script>
-  const form = document.querySelector("main form")!;
-  const input = form.querySelector('[name="display_name"]') as HTMLInputElement;
-  const tag = form.querySelector("[data-nametag]")!;
-  const button = form.querySelector('button[type="submit"]') as HTMLButtonElement;
-  // the tag above the avatar follows the display name as it's typed
-  input.addEventListener("input", () => {
-    const v = input.value.trim();
-    tag.textContent = v || "Your name";
-    tag.classList.toggle("is-empty", !v);
-  });
-  form.addEventListener("submit", () => {
-    button.disabled = true;
-    form.setAttribute("aria-busy", "true");
+  // Runs on every page load (ADR 0003), so it checks it's on sign up first.
+  document.addEventListener("astro:page-load", () => {
+    if (location.pathname !== "/signup") return;
+    const form = document.querySelector("main form")!;
+    const input = form.querySelector('[name="display_name"]') as HTMLInputElement;
+    const tag = form.querySelector("[data-nametag]")!;
+    const button = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+    // the tag above the avatar follows the display name as it's typed
+    input.addEventListener("input", () => {
+      const v = input.value.trim();
+      tag.textContent = v || "Your name";
+      tag.classList.toggle("is-empty", !v);
+    });
+    form.addEventListener("submit", () => {
+      button.disabled = true;
+      form.setAttribute("aria-busy", "true");
+    });
   });
   // Back restores the page from cache with the button still disabled
   addEventListener("pageshow", () => {
-    button.disabled = false;
-    form.removeAttribute("aria-busy");
+    if (location.pathname !== "/signup") return;
+    document.querySelector<HTMLButtonElement>('main form button[type="submit"]')!.disabled = false;
+    document.querySelector("main form")!.removeAttribute("aria-busy");
   });
 </script>
 
