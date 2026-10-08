@@ -262,16 +262,21 @@ const steps = [
 </Layout>
 
 <script>
-  // pending: the tapped button keeps its label and stays pressed while the post is out
-  for (const form of document.querySelectorAll("main form")) {
-    form.addEventListener("submit", (e) => {
-      const button = (e as SubmitEvent).submitter as HTMLButtonElement | null;
-      if (button) button.disabled = true;
-      form.setAttribute("aria-busy", "true");
-    });
-  }
+  // pending: the tapped button keeps its label and stays pressed while the post is out.
+  // Runs on every page load (ADR 0003), so it checks it's on home first.
+  document.addEventListener("astro:page-load", () => {
+    if (location.pathname !== "/") return;
+    for (const form of document.querySelectorAll("main form")) {
+      form.addEventListener("submit", (e) => {
+        const button = (e as SubmitEvent).submitter as HTMLButtonElement | null;
+        if (button) button.disabled = true;
+        form.setAttribute("aria-busy", "true");
+      });
+    }
+  });
   // Back restores the page from cache, buttons and all
   addEventListener("pageshow", () => {
+    if (location.pathname !== "/") return;
     for (const b of document.querySelectorAll<HTMLButtonElement>("main button:disabled")) b.disabled = false;
     for (const f of document.querySelectorAll("main form")) f.removeAttribute("aria-busy");
   });

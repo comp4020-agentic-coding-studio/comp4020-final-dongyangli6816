@@ -60,25 +60,31 @@ if (Astro.request.method === "POST") {
 </Layout>
 
 <script>
-  const form = document.querySelector(".join-form") as HTMLFormElement;
-  const input = form.querySelector("input[name=passcode]") as HTMLInputElement;
-  const button = form.querySelector("button") as HTMLButtonElement;
-  const status = form.querySelector(".join-status")!;
-  // passcodes never use 0 O 1 I L, so drop them as they're typed
-  input.addEventListener("input", () => {
-    const v = input.value.toUpperCase().replace(/[^ABCDEFGHJKMNPQRSTUVWXYZ2-9]/g, "").slice(0, 6);
-    if (v !== input.value) input.value = v;
-  });
-  form.addEventListener("submit", () => {
-    button.disabled = true;
-    input.readOnly = true;
-    status.textContent = "Checking the code…";
+  // Runs on every page load (ADR 0003), so it checks it's on join first.
+  document.addEventListener("astro:page-load", () => {
+    const form = document.querySelector<HTMLFormElement>(".join-form");
+    if (!form) return;
+    const input = form.querySelector("input[name=passcode]") as HTMLInputElement;
+    const button = form.querySelector("button") as HTMLButtonElement;
+    const status = form.querySelector(".join-status")!;
+    // passcodes never use 0 O 1 I L, so drop them as they're typed
+    input.addEventListener("input", () => {
+      const v = input.value.toUpperCase().replace(/[^ABCDEFGHJKMNPQRSTUVWXYZ2-9]/g, "").slice(0, 6);
+      if (v !== input.value) input.value = v;
+    });
+    form.addEventListener("submit", () => {
+      button.disabled = true;
+      input.readOnly = true;
+      status.textContent = "Checking the code…";
+    });
   });
   // coming Back from the room must not leave the form stuck as pending
   addEventListener("pageshow", () => {
-    button.disabled = false;
-    input.readOnly = false;
-    status.textContent = "";
+    const form = document.querySelector<HTMLFormElement>(".join-form");
+    if (!form) return;
+    form.querySelector("button")!.disabled = false;
+    form.querySelector<HTMLInputElement>("input[name=passcode]")!.readOnly = false;
+    form.querySelector(".join-status")!.textContent = "";
   });
 </script>
 

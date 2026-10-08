@@ -4,6 +4,10 @@
 // when the text is a weight you're about to lift. No third-party requests.
 import "@fontsource/press-start-2p/400.css";
 import "@fontsource/vt323/400.css";
+// Links and forms load in the background and swap the page in place, so
+// moving around doesn't flash a reload (ADR 0003). Without JS they're plain
+// links and forms again. Page scripts run on "astro:page-load", not once.
+import { ClientRouter } from "astro:transitions";
 
 interface Props {
   title: string;
@@ -17,12 +21,14 @@ const here = (href: string) => (Astro.url.pathname.replace(/\/$/, "") === href ?
 ---
 
 <!doctype html>
-<html lang="en-AU">
+<!-- no fade between pages: a pixel screen cuts, it doesn't dissolve -->
+<html lang="en-AU" transition:animate="none">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#0f3d22" />
     <title>{title} · Spotter</title>
+    <ClientRouter fallback="swap" />
   </head>
   <body class:list={{ night: surface === "night" }}>
     <header class="topbar">
