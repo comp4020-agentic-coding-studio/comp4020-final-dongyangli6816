@@ -66,6 +66,41 @@ export const HAIR = {
 } as const;
 export type HairStyle = keyof typeof HAIR;
 
+// The gym's poses (GYM-10, docs/design/room/spec.md, appendix), all built on
+// BODY: the body grid, the row the hair overlay starts at, and props drawn
+// over both in m dim, w paper or r resting blue (classes pm, pw, pr).
+export type Pose = "stand" | "lift" | "rest" | "sit";
+const blank = "................";
+const put = (grid: string[], x: number, y: number, rows: readonly string[]) =>
+  rows.forEach((row, dy) => {
+    const line = grid[y + dy].split("");
+    [...row].forEach((ch, dx) => ch !== "." && (line[x + dx] = ch));
+    grid[y + dy] = line.join("");
+  });
+export function poseOf(pose: Pose): { body: string[]; hairRow: number; props: string[] } {
+  const props = Array<string>(16).fill(blank);
+  if (pose === "lift") {
+    // arms up at columns 1-2 and 13-14, the shoulders wide, a bar overhead
+    const body = [...BODY];
+    put(body, 1, 1, ["kk..........kk"]);
+    for (let y = 2; y <= 8; y++) put(body, 1, y, ["ks..........sk"]);
+    body.splice(9, 4, ".kskttttttttksk.", "..kttttttttttk..", "..kttttttttttk..", "...kttttttttk...");
+    put(props, 0, 0, ["mmwwwwwwwwwwwwmm"]);
+    return { body, hairRow: 0, props };
+  }
+  if (pose === "rest") {
+    put(props, 12, 8, [".k.", "kwk", "krk", "krk", "krk", "kkk"]);
+    return { body: [...BODY], hairRow: 0, props };
+  }
+  if (pose === "sit") {
+    const body = [blank, blank, ...BODY.slice(0, 9)];
+    body.push("...kkttttttkk...", "..ktttkkkktttk..", "..ktskkkkkkstk..", ".kkkkkkkkkkkkkk.", ".kssk......kssk.");
+    put(props, 7, 12, ["ww"]);
+    return { body, hairRow: 2, props };
+  }
+  return { body: [...BODY], hairRow: 0, props };
+}
+
 // The choices, in the order the editor shows them. The id is what's stored.
 export const SKINS = [
   { id: "1", name: "Skin tone 1, lightest", hex: "#f6d7bd" },

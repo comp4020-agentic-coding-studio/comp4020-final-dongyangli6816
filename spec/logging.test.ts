@@ -46,13 +46,20 @@ describe("each exercise asks for what it measures", () => {
     expect(await res.text()).toContain("Distance is 0.01 to 1000 km.");
   });
 
-  it("pre-fills a run from the last one", async () => {
+  it("starts a run empty, so the stopwatch counts from zero, and shows the last one", async () => {
     const { b, path } = await inRoom();
     await b.post(path, { exercise_id: RUN, distance_km: "3.2", minutes: "18", seconds: "5" });
     const form = await (await b.get(`${path}?exercise=${RUN}`)).text();
-    expect(form).toMatch(/name="distance_km"[^>]*value="3.2"/);
-    expect(form).toMatch(/name="minutes"[^>]*value="18"/);
-    expect(form).toMatch(/name="seconds"[^>]*value="5"/);
+    expect(form).toMatch(/name="distance_km"[^>]*value(="")?[ >]/);
+    expect(form).toMatch(/name="minutes"[^>]*value(="")?[ >]/);
+    expect(form).toMatch(/name="seconds"[^>]*value(="")?[ >]/);
+    expect(form).toMatch(/Last time <b[^>]*>3\.2 km · 18:05/);
+  });
+
+  it("says what Done logged", async () => {
+    const { b, path } = await inRoom();
+    const logged = await b.follow(await b.post(path, { exercise_id: BENCH, weight_kg: "60", reps: "8" }));
+    expect(await logged.text()).toMatch(/class="stamp"[\s\S]*Set 1 logged: <b[^>]*>60 kg × 8/);
   });
 });
 

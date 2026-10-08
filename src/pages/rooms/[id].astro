@@ -25,6 +25,7 @@ import {
 } from "../../lib/workouts.ts";
 import Layout from "../../layouts/Layout.astro";
 import Avatar from "../../components/Avatar.astro";
+import GymMap from "../../components/GymMap.astro";
 import { lookOf } from "../../lib/avatars.ts";
 import { lookKey } from "../../sprites/avatar.ts";
 import {
@@ -39,6 +40,8 @@ import {
   stopIcon,
   trophyIcon,
   claimIcon,
+  clockIcon,
+  tickIcon,
 } from "../../sprites/icons.ts";
 
 const user = Astro.locals.user;
@@ -164,6 +167,15 @@ const prefill = exercise && !editing ? lastSet(user.id, exercise.id) : undefined
 // LOG-4: the rest after your newest set runs until it's skipped or the next
 // set is logged. Past half an hour over it's no longer a rest, just a gap.
 const latest = mySets.at(-1);
+// Done just landed: the GET after a log's redirect, on the lift logged.
+// Not after Start set, which posts to the same URL.
+const justLogged =
+  Astro.request.method === "GET" &&
+  Astro.url.searchParams.has("rested") &&
+  !editing &&
+  !!latest &&
+  latest.exerciseId === exercise?.id;
+const loggedNo = justLogged ? mySets.filter((s) => s.exerciseId === latest!.exerciseId).length : 0;
 const restEnd = latest ? latest.completedAt + latest.restTargetS * 1000 : 0;
 const resting = !!latest && latest.restTargetS > 0 && latest.restEndedAt === null && now < restEnd + 30 * 60_000;
 const over = resting && now >= restEnd;
@@ -216,7 +228,9 @@ const values: FieldValues | undefined =
         seconds: String(submitted.get("seconds") ?? ""),
         distance_km: String(submitted.get("distance_km") ?? ""),
       }
-    : fieldsFrom(editing ?? prefill, exercise));
+    : // timed kinds start empty, so the stopwatch counts from zero; the last
+      // one stays in view as "Last time"
+      fieldsFrom(editing ?? (exercise.kind === "weight" || exercise.kind === "bodyweight" ? prefill : undefined), exercise));
 
 const groups = Object.entries(EQUIPMENT).map(([key, label]) => ({
   label,
@@ -242,54 +256,305 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
 
 <Layout title={`Room ${room.passcode}`} surface="night">
   <div class="gym" data-room={roomId}>
-    <section class="panel sign" aria-labelledby="room-title">
-      <h1 class="panel-title" id="room-title">Room</h1>
-      <div class="passcode-box">
-        <span class="passcode">{room.passcode}</span>
-        <p class="spots">
-          <span class="pips" aria-hidden="true">
-            {Array.from({ length: ROOM_SIZE }, (_, i) => <i class:list={{ in: i < members.length }} />)}
-          </span>
-          <span class="count">{members.length} of {ROOM_SIZE} in</span>
-        </p>
-      </div>
-      <p class="hint">Send the code to the squad, or this link: <span class="room-link">{inviteUrl}</span></p>
-      <div class="actions room-actions">
-        <form method="post">
-          <input type="hidden" name="action" value="leave" />
-          <button type="submit" class="button secondary quiet" aria-describedby="leave-note">Leave room</button>
-        </form>
-      </div>
-      <p class="hint leave-note" id="leave-note">
-        {
-          members.length === 1
-            ? "You're the last one in, so leaving closes the room."
-            : "Leaving finishes your workout. Your sets stay in the book."
-        }
-      </p>
+    <GymMap view={view} me={user.id} passcode={room.passcode} />
+
+    <section class="panel sheet" aria-labelledby="sheet-title" data-base-state={baseState}>
+      <span class={`chip state-${state} tab`}>
+        <Sprite sprite={TAB[state].icon} scale={2} />
+        {TAB[state].word}
+      </span>
+      {/* LOG-6: your session's time, from the moment you walked in */}
       {
-        isHost && others.length > 0 && (
-          <details class="confirm end-room">
-            <summary class="button secondary quiet">
-              <span class="if-closed">End room</span>
-              <span class="if-open">Cancel</span>
-            </summary>
-            <form method="post" class="confirm-box">
-              <input type="hidden" name="action" value="end" />
-              <p>
-                End the room for everyone? {othersText} get{others.length === 1 ? "s" : ""} sent home and{" "}
-                {others.length === 1 ? "their workout finishes" : "their workouts finish"}. Every set is kept.
-              </p>
-              <button type="submit" class="button secondary quiet">End room</button>
-            </form>
-          </details>
+        startedAt && (
+          <p class="panel-clock">
+            <Sprite sprite={clockIcon} scale={2} />
+            <span class="vh">Workout time </span>
+            <time datetime={`PT${elapsedS}S`} data-start={startedAt}>
+              {clock(elapsedS)}
+            </time>
+          </p>
         )
       }
+      {
+        resting && (
+          <>
+            {(["resting", "slacking", baseState] as const).map((s) => (
+              <template data-tab={s}>
+                <Sprite sprite={TAB[s].icon} scale={2} />
+                {TAB[s].word}
+              </template>
+            ))}
+          </>
+        )
+      }
+      {!editing && exercise && <h2 class="vh" id="sheet-title">Log a set</h2>}
+      {
+        justLogged && latest!.kind === "cardio" && (
+          <div class="set-done">
+            <Sprite sprite={tickIcon} scale={4} />
+            <p class="set-done-n">Set {loggedNo} logged</p>
+            <p class="set-done-say">No rest timer after cardio. Go again, or change lift 🏃</p>
+          </div>
+        )
+      }
+      {
+        resting && latest && (
+          <div class:list={["rest", { over, slacking }]} data-end={restEnd} data-rest-target={latest.restTargetS}>
+            {over && (
+              <p class="rest-say" role="status">
+                {slacking ? "Your squad can see you 👀" : "Rest's up. Back under the bar 🔔"}
+              </p>
+            )}
+            <div class="rest-top">
+              <p class="timer" role="timer" aria-label="Rest left" hidden>
+                {over ? `+${clock((now - restEnd) / 1000)}` : clock((restEnd - now) / 1000)}
+              </p>
+              <p class="rest-what">
+                <span>
+                  {over ? "over a " : "of "}
+                  <b class="rest-of">{clock(latest.restTargetS)}</b> rest
+                </span>
+                <span>
+                  after{" "}
+                  <b>
+                    {latest.exerciseId !== exercise?.id && `${latest.name} `}
+                    {setLabel(latest)}
+                  </b>
+                </span>
+              </p>
+            </div>
+            <p class="rest-static">
+              Rest {clock(latest.restTargetS)} · next set at {timeOfDay(restEnd).toLowerCase()}
+            </p>
+            <form method="post" class="rest-adjust">
+              <input type="hidden" name="action" value="rest" />
+              <button type="submit" name="delta" value="-15" class="button secondary tool" aria-label="15 seconds less rest">
+                -15 s
+              </button>
+              <button type="submit" name="delta" value="15" class="button secondary tool" aria-label="15 seconds more rest">
+                +15 s
+              </button>
+            </form>
+          </div>
+        )
+      }
+      {
+        editing && exercise && values ? (
+          <>
+            <div class="lift-row">
+              <h2 class="lift" id="sheet-title">
+                {exercise.name}
+              </h2>
+              <span class="set-no">Set {setNo}</span>
+              <span class="badge">Editing</span>
+              <a href={`?exercise=${exercise.id}`} class="lift-cancel">
+                Cancel
+              </a>
+            </div>
+            <p class="hint logged-at">Logged at {timeOfDay(editing.completedAt).toLowerCase()}</p>
+            <form method="post" id="set-edit" class="set-form">
+              <input type="hidden" name="action" value="edit" />
+              <input type="hidden" name="set_id" value={editing.id} />
+              <SetFields kind={exercise.kind} values={values} invalid={errorField} />
+              {error && (
+                <p class="error" id="set-error" role="alert">
+                  {error}
+                </p>
+              )}
+            </form>
+            <details class="confirm">
+              <summary class="button secondary quiet">
+                <span class="if-closed">Delete</span>
+                <span class="if-open">Keep it</span>
+              </summary>
+              <form method="post" class="confirm-box">
+                <input type="hidden" name="action" value="delete" />
+                <input type="hidden" name="set_id" value={editing.id} />
+                <p>
+                  Delete {exercise.name} set {setNo}, {editingLabel}? It can't be undone.
+                </p>
+                <button type="submit" class="button secondary quiet">Delete set</button>
+              </form>
+            </details>
+          </>
+        ) : exercise && values ? (
+          <>
+            <details class="switch">
+              <summary>
+                <span class="lift">{exercise.name}</span>
+                <span class="set-no">Set {setNo}</span>
+                <span class="change">Change</span>
+              </summary>
+              <form method="post" class="picker">
+                <input type="hidden" name="action" value="choose" />
+                {recent.length > 0 && (
+                  <>
+                    <p class="recent-label">From this workout</p>
+                    <ul class="recent">
+                      {recent.map((e) => (
+                        <li>
+                          <button
+                            type="submit"
+                            name="exercise"
+                            value={e.id}
+                            aria-current={e.id === exercise.id ? "true" : undefined}
+                          >
+                            {e.name}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+                <label for="exercise">Exercise</label>
+                <select id="exercise" name="exercise">
+                  {groups.map((g) => (
+                    <optgroup label={g.label}>
+                      {g.exercises.map((e) => (
+                        <option value={e.id} selected={e.id === exercise.id}>
+                          {e.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+                <div class="actions">
+                  <button type="submit" class="secondary button">Choose</button>
+                </div>
+              </form>
+            </details>
+            {myStation && (
+              <p class="spot">
+                <Sprite sprite={claimIcon} scale={2} />
+                <span>
+                  Your spot:{" "}
+                  <b>
+                    {myStation.equipment} {myStation.slot}
+                  </b>
+                </span>
+              </p>
+            )}
+            <form method="post" class="set-form" id="set-log" data-kind={exercise.kind} data-exercise={exercise.id}>
+              <input type="hidden" name="exercise_id" value={exercise.id} />
+              {showLast &&
+                (prefill ? (
+                  <p class="last">
+                    Last time <b>{setLabel({ ...prefill, name: exercise.name, kind: exercise.kind })}</b>
+                  </p>
+                ) : (
+                  <p class="last">First time on this one. Ease into it.</p>
+                ))}
+              <SetFields kind={exercise.kind} values={values} invalid={errorField} />
+              {error && (
+                <p class="error" id="set-error" role="alert">
+                  {error}
+                </p>
+              )}
+              {timed && (
+                <div class="stopwatch">
+                  <button type="button" class="button secondary tool sw-toggle" hidden>
+                    <span class="sw-start">
+                      <Sprite sprite={playIcon} scale={2} />
+                      Start
+                    </span>
+                    <span class="sw-stop" hidden>
+                      <Sprite sprite={stopIcon} scale={2} />
+                      Stop
+                    </span>
+                  </button>
+                  <button type="button" class="button secondary tool sw-reset" hidden>
+                    Reset
+                  </button>
+                  <p class="say" hidden>
+                    {exercise.kind === "duration" ? "Start, hold, Stop." : "Pace shows once there's a distance."}
+                  </p>
+                </div>
+              )}
+            </form>
+          </>
+        ) : (
+          <form method="post" class="pick" id="pick">
+            <input type="hidden" name="action" value="choose" />
+            <h2 class="lift lift-row" id="sheet-title">Pick a lift</h2>
+            {recent.length > 0 && (
+              <>
+                <p class="recent-label">From this workout</p>
+                <ul class="recent">
+                  {recent.map((e) => (
+                    <li>
+                      <button type="submit" name="exercise" value={e.id}>
+                        {e.name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            <label for="exercise">Exercise</label>
+            <select id="exercise" name="exercise" aria-describedby="pick-hint">
+              {groups.map((g) => (
+                <optgroup label={g.label}>
+                  {g.exercises.map((e) => (
+                    <option value={e.id}>{e.name}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+            <p class="hint" id="pick-hint">
+              Choosing one claims a station in the gym.
+            </p>
+            {error && (
+              <p class="error" id="set-error" role="alert">
+                {error}
+              </p>
+            )}
+          </form>
+        )
+      }
+      {/* the dock: the sheet's one primary button, pointing back at its form.
+          A set is Start set, then Done (GYM-10). On a phone it's pinned to the
+          bottom of the screen, with a copy of the rest timer once the big one
+          is out of view. */}
+      <div class="dock">
+        {
+          justLogged && (
+            <p class="stamp">
+              <Sprite sprite={tickIcon} scale={2} />
+              <span>
+                Set {loggedNo} logged: <b>{setLabel(latest!)}</b>
+              </span>
+            </p>
+          )
+        }
+        {
+          editing && exercise && values ? (
+            <button type="submit" form="set-edit" class="wide">
+              Save
+            </button>
+          ) : exercise && values ? (
+            <>
+              {resting && <p class:list={["dock-timer", { slacking }]} aria-hidden="true" hidden />}
+              {resting ? (
+                <button type="submit" form="set-log" name="action" value="start" class="wide">
+                  Start set
+                </button>
+              ) : (
+                <button type="submit" form="set-log" class="wide">
+                  Done
+                </button>
+              )}
+            </>
+          ) : (
+            <button type="submit" form="pick" class="wide">
+              Choose
+            </button>
+          )
+        }
+      </div>
     </section>
 
     <section class="panel squad" aria-labelledby="people-title">
       <h2 class="panel-title" id="people-title">Squad</h2>
-      <p class="conn" role="status"><span class="badge">Live</span></p>
       <ul class="people" data-me={user.id}>
         {
           squad.map((m) => (
@@ -339,12 +604,6 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       mySets.length > 0 && startedAt && (
         <section class="panel" aria-labelledby="log-title">
           <h2 class="panel-title" id="log-title">This workout</h2>
-          <p class="panel-clock">
-            <span class="vh">Workout time </span>
-            <time datetime={`PT${elapsedS}S`} data-start={startedAt}>
-              {clock(elapsedS)}
-            </time>
-          </p>
           <p class="tally">
             <b>{mySets.length}</b> set{mySets.length === 1 ? "" : "s"}
             {vol > 0 && (
@@ -433,265 +692,61 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       )
     }
 
-    <section class="panel sheet" aria-labelledby="sheet-title" data-base-state={baseState}>
-      <span class={`chip state-${state} tab`}>
-        <Sprite sprite={TAB[state].icon} scale={2} />
-        {TAB[state].word}
-      </span>
+    <section class="panel sign" aria-labelledby="room-panel-title">
+      <h2 class="panel-title" id="room-panel-title">Room</h2>
+      <div class="passcode-box">
+        <p class="spots">
+          <span class="pips" aria-hidden="true">
+            {Array.from({ length: ROOM_SIZE }, (_, i) => <i class:list={{ in: i < members.length }} />)}
+          </span>
+          <span class="count">{members.length} of {ROOM_SIZE} in</span>
+        </p>
+      </div>
+      <p class="hint">Send the code to the squad, or this link: <span class="room-link">{inviteUrl}</span></p>
+      <div class="actions room-actions">
+        <form method="post">
+          <input type="hidden" name="action" value="leave" />
+          <button type="submit" class="button secondary quiet" aria-describedby="leave-note">Leave room</button>
+        </form>
+      </div>
+      <p class="hint leave-note" id="leave-note">
+        {
+          members.length === 1
+            ? "You're the last one in, so leaving closes the room."
+            : mySets.length === 0
+              ? "Nothing logged yet, so there's no workout to save."
+              : "Leaving finishes your workout. Your sets stay in the book."
+        }
+      </p>
       {
-        resting && (
-          <>
-            {(["resting", "slacking", baseState] as const).map((s) => (
-              <template data-tab={s}>
-                <Sprite sprite={TAB[s].icon} scale={2} />
-                {TAB[s].word}
-              </template>
-            ))}
-          </>
-        )
-      }
-      {!editing && exercise && <h2 class="vh" id="sheet-title">Log a set</h2>}
-      {
-        Astro.url.searchParams.get("rested") && latest?.kind === "cardio" && !resting && (
-          <p class="bubble" role="status">
-            Logged! No rest timer after cardio 🏃
-          </p>
-        )
-      }
-      {
-        resting && latest && (
-          <div class:list={["rest", { over, slacking }]} data-end={restEnd} data-rest-target={latest.restTargetS}>
-            {over && (
-              <p class="rest-say" role="status">
-                {slacking ? "Your squad can see you 👀" : "Rest's up. Back under the bar 🔔"}
+        isHost && others.length > 0 && (
+          <details class="confirm end-room">
+            <summary class="button secondary quiet">
+              <span class="if-closed">End room</span>
+              <span class="if-open">Cancel</span>
+            </summary>
+            <form method="post" class="confirm-box">
+              <input type="hidden" name="action" value="end" />
+              <p>
+                End the room for everyone? {othersText} get{others.length === 1 ? "s" : ""} sent home and{" "}
+                {others.length === 1 ? "their workout finishes" : "their workouts finish"}. Every set is kept.
               </p>
-            )}
-            <div class="rest-top">
-              <p class="timer" role="timer" aria-label="Rest left" hidden>
-                {over ? `+${clock((now - restEnd) / 1000)}` : clock((restEnd - now) / 1000)}
-              </p>
-              <p class="rest-what">
-                <span>
-                  {over ? "over a " : "of "}
-                  <b class="rest-of">{clock(latest.restTargetS)}</b> rest
-                </span>
-                <span>
-                  after{" "}
-                  <b>
-                    {latest.exerciseId !== exercise?.id && `${latest.name} `}
-                    {setLabel(latest)}
-                  </b>
-                </span>
-              </p>
-            </div>
-            <p class="rest-static">
-              Rest {clock(latest.restTargetS)} · next set at {timeOfDay(restEnd).toLowerCase()}
-            </p>
-            <form method="post" class="rest-adjust">
-              <input type="hidden" name="action" value="rest" />
-              <button type="submit" name="delta" value="-15" class="button secondary tool" aria-label="15 seconds less rest">
-                -15 s
-              </button>
-              <button type="submit" name="delta" value="15" class="button secondary tool" aria-label="15 seconds more rest">
-                +15 s
-              </button>
+              <button type="submit" class="button secondary quiet">End room</button>
             </form>
-          </div>
-        )
-      }
-      {
-        editing && exercise && values ? (
-          <>
-            <div class="lift-row">
-              <h2 class="lift" id="sheet-title">
-                {exercise.name}
-              </h2>
-              <span class="set-no">Set {setNo}</span>
-              <span class="badge">Editing</span>
-              <a href={`?exercise=${exercise.id}`} class="lift-cancel">
-                Cancel
-              </a>
-            </div>
-            <p class="hint logged-at">Logged at {timeOfDay(editing.completedAt).toLowerCase()}</p>
-            <form method="post" id="set-edit" class="set-form">
-              <input type="hidden" name="action" value="edit" />
-              <input type="hidden" name="set_id" value={editing.id} />
-              <SetFields kind={exercise.kind} values={values} invalid={errorField} />
-              {error && (
-                <p class="error" id="set-error" role="alert">
-                  {error}
-                </p>
-              )}
-            </form>
-            <details class="confirm">
-              <summary class="button secondary quiet">
-                <span class="if-closed">Delete</span>
-                <span class="if-open">Keep it</span>
-              </summary>
-              <form method="post" class="confirm-box">
-                <input type="hidden" name="action" value="delete" />
-                <input type="hidden" name="set_id" value={editing.id} />
-                <p>
-                  Delete {exercise.name} set {setNo}, {editingLabel}? It can't be undone.
-                </p>
-                <button type="submit" class="button secondary quiet">Delete set</button>
-              </form>
-            </details>
-            <button type="submit" form="set-edit" class="wide">Save</button>
-          </>
-        ) : exercise && values ? (
-          <>
-            <details class="switch">
-              <summary>
-                <span class="lift">{exercise.name}</span>
-                <span class="set-no">Set {setNo}</span>
-                <span class="change">Change</span>
-              </summary>
-              <form method="post" class="picker">
-                <input type="hidden" name="action" value="choose" />
-                {recent.length > 0 && (
-                  <>
-                    <p class="recent-label">From this workout</p>
-                    <ul class="recent">
-                      {recent.map((e) => (
-                        <li>
-                          <button
-                            type="submit"
-                            name="exercise"
-                            value={e.id}
-                            aria-current={e.id === exercise.id ? "true" : undefined}
-                          >
-                            {e.name}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-                <label for="exercise">Exercise</label>
-                <select id="exercise" name="exercise">
-                  {groups.map((g) => (
-                    <optgroup label={g.label}>
-                      {g.exercises.map((e) => (
-                        <option value={e.id} selected={e.id === exercise.id}>
-                          {e.name}
-                        </option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
-                <div class="actions">
-                  <button type="submit" class="secondary button">Choose</button>
-                </div>
-              </form>
-            </details>
-            {myStation && (
-              <p class="spot">
-                <Sprite sprite={claimIcon} scale={2} />
-                <span>
-                  Your spot:{" "}
-                  <b>
-                    {myStation.equipment} {myStation.slot}
-                  </b>
-                </span>
-              </p>
-            )}
-            <form method="post" class="set-form" data-kind={exercise.kind} data-exercise={exercise.id}>
-              <input type="hidden" name="exercise_id" value={exercise.id} />
-              {showLast &&
-                (prefill ? (
-                  <p class="last">
-                    Last time <b>{setLabel({ ...prefill, name: exercise.name, kind: exercise.kind })}</b>
-                  </p>
-                ) : (
-                  <p class="last">First time on this one. Ease into it.</p>
-                ))}
-              <SetFields kind={exercise.kind} values={values} invalid={errorField} />
-              {error && (
-                <p class="error" id="set-error" role="alert">
-                  {error}
-                </p>
-              )}
-              {timed && (
-                <div class="stopwatch">
-                  <button type="button" class="button secondary tool sw-toggle" hidden>
-                    <span class="sw-start">
-                      <Sprite sprite={playIcon} scale={2} />
-                      Start
-                    </span>
-                    <span class="sw-stop" hidden>
-                      <Sprite sprite={stopIcon} scale={2} />
-                      Stop
-                    </span>
-                  </button>
-                  <button type="button" class="button secondary tool sw-reset" hidden>
-                    Reset
-                  </button>
-                  <p class="say" hidden>
-                    {exercise.kind === "duration" ? "Start, hold, Stop." : "Pace shows once there's a distance."}
-                  </p>
-                </div>
-              )}
-              {/* a set is Start set, then Done (GYM-10) */}
-              {resting ? (
-                <button type="submit" name="action" value="start" class="wide">
-                  Start set
-                </button>
-              ) : (
-                <button type="submit" class="wide">
-                  Done
-                </button>
-              )}
-            </form>
-          </>
-        ) : (
-          <form method="post" class="pick">
-            <input type="hidden" name="action" value="choose" />
-            <h2 class="lift lift-row" id="sheet-title">Pick a lift</h2>
-            {recent.length > 0 && (
-              <>
-                <p class="recent-label">From this workout</p>
-                <ul class="recent">
-                  {recent.map((e) => (
-                    <li>
-                      <button type="submit" name="exercise" value={e.id}>
-                        {e.name}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-            <label for="exercise">Exercise</label>
-            <select id="exercise" name="exercise" aria-describedby="pick-hint">
-              {groups.map((g) => (
-                <optgroup label={g.label}>
-                  {g.exercises.map((e) => (
-                    <option value={e.id}>{e.name}</option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-            <p class="hint" id="pick-hint">
-              Choosing one claims a station in the gym.
-            </p>
-            {error && (
-              <p class="error" id="set-error" role="alert">
-                {error}
-              </p>
-            )}
-            <button type="submit" class="wide">Choose</button>
-          </form>
+          </details>
         )
       }
     </section>
   </div>
+  {/* outside the room, so an in-place swap keeps it: what Done logged, said once */}
+  <p class="sheet-news" id="sheet-news" role="status"></p>
 </Layout>
 
 <script>
   import { navigate } from "astro:transitions/client";
   import type { RoomView } from "../../lib/presence.ts";
   import { STATE_WORD, stateAt, whatParts } from "../../lib/squad.ts";
+  import { avatarLabel, DOOR, floorLine, route, spots, type Tile } from "../../lib/floor.ts";
   import { lookKey, lookVars } from "../../sprites/avatar.ts";
 
   // Every timer here is worked out from Date.now() on each tick, never
@@ -761,6 +816,26 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       }
       if (line.textContent !== text) line.textContent = text;
     }
+    // the dock's copy of the timer, shown on a phone only while the big one
+    // isn't fully in view (above the pinned dock)
+    const dockTimer = document.querySelector<HTMLElement>(".dock-timer");
+    const copy = (red: boolean) => {
+      if (!dockTimer || !timer) return;
+      dockTimer.textContent = timer.textContent;
+      dockTimer.classList.toggle("slacking", red);
+    };
+    dockWatch?.disconnect();
+    if (dockTimer && timer && "IntersectionObserver" in window) {
+      const dock = dockTimer.closest<HTMLElement>(".dock")!;
+      const phone = matchMedia("(max-width: 899px)");
+      dockWatch = new IntersectionObserver(
+        ([e]) => {
+          dockTimer.hidden = !phone.matches || e.intersectionRatio >= 1;
+        },
+        { rootMargin: `0px 0px -${dock.offsetHeight}px 0px`, threshold: 1 },
+      );
+      dockWatch.observe(timer);
+    }
     const tickRest = () => {
       if (!rest || !timer || !rest.isConnected) return;
       const left = (Number(rest.dataset.end) - Date.now()) / 1000;
@@ -769,6 +844,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       rest.querySelector(".rest-what span")!.firstChild!.textContent = over ? "over a " : "of ";
       if (!over) {
         timer.textContent = clock(Math.ceil(left));
+        copy(false);
         rest.querySelector(".rest-say")?.remove();
         setTab("resting");
         wasOver = false;
@@ -780,6 +856,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       rest.classList.toggle("slacking", slacking);
       setTab(slacking ? "slacking" : "resting");
       say(slacking ? "Your squad can see you 👀" : "Rest's up. Back under the bar 🔔");
+      copy(slacking);
       if (!wasOver) {
         wasOver = true;
         beep();
@@ -904,6 +981,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     form.querySelector<HTMLButtonElement>("button[type=submit]") ??
     document.querySelector<HTMLButtonElement>(`button[form="${form.id}"]`);
   let unbusy = () => {};
+  let dockWatch: IntersectionObserver | undefined;
   // Back restores the page from cache, button and all
   addEventListener("pageshow", () => unbusy());
 
@@ -1057,7 +1135,140 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     const count = document.querySelector<HTMLElement>(".spots .count");
     if (count) count.textContent = `${members.length} of 12 in`;
     document.querySelectorAll(".spots .pips i").forEach((pip, i) => pip.classList.toggle("in", i < members.length));
+    drawMap(now);
   }
+
+  // ---------- the map (GYM-1, GYM-9, GYM-10) ----------
+  // Stations and avatars are patched from the newest message, like the list:
+  // equipment is swapped when a station's changes, an avatar's sprite when
+  // its pose or look does, and an avatar whose tile changes walks there.
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+  const STEP_MS = 125; // about 8 tiles a second
+
+  function drawMap(now: number) {
+    const map = document.querySelector<HTMLElement>(".map-panel .map");
+    if (!map || !view) return;
+    const me = Number(map.dataset.me);
+    const panel = map.closest(".map-panel")!;
+    const copy = (attr: string) =>
+      panel.querySelector<HTMLTemplateElement>(`template[${attr}]`)!.content.cloneNode(true) as DocumentFragment;
+
+    const mine = view.members.find((m) => m.id === me)?.station?.slot;
+    for (const s of view.stations) {
+      const div = map.querySelector<HTMLElement>(`.station[data-slot="${s.slot}"]`);
+      if (!div) continue;
+      const equipment = s.equipment ?? "";
+      if ((div.dataset.equipment ?? "") !== equipment) {
+        // new equipment simply appears this week; the worker carries it in next
+        div.replaceChildren(copy(equipment ? `data-gear="${equipment}"` : `data-bay="${s.slot}"`));
+        if (equipment) div.dataset.equipment = equipment;
+        else delete div.dataset.equipment;
+        div.classList.remove("mine");
+      }
+      if (div.classList.contains("mine") !== (s.slot === mine)) {
+        div.classList.toggle("mine", s.slot === mine);
+        div.querySelector(".claim")?.remove();
+        if (s.slot === mine) div.append(copy("data-claim"));
+      }
+    }
+    const floor = document.querySelector<HTMLElement>("#floor");
+    if (floor) floor.textContent = floorLine(view.stations);
+
+    const left = new Map([...map.querySelectorAll<HTMLButtonElement>(".avatar")].map((b) => [b.dataset.id!, b]));
+    for (const p of spots(view, now)) {
+      const m = view.members.find((x) => x.id === p.id)!;
+      let b = left.get(String(p.id));
+      left.delete(String(p.id));
+      if (!b) {
+        // someone new walks in from the door
+        b = document.createElement("button");
+        b.type = "button";
+        b.className = "avatar";
+        b.dataset.id = String(p.id);
+        b.append(Object.assign(document.createElement("span"), { className: "tag" }));
+        place(b, DOOR);
+        map.append(b);
+      }
+      b.classList.toggle("me", m.id === me);
+      b.classList.toggle("away", m.away);
+      b.dataset.state = p.state;
+      b.setAttribute("aria-label", avatarLabel(m, p.state, m.id === me));
+      const tag = b.querySelector<HTMLElement>(".tag")!;
+      const tagKey = `${p.state}|${m.name}|${m.away}`;
+      if (tag.dataset.key !== tagKey) {
+        tag.className = `tag state-${p.state}`;
+        tag.replaceChildren(Object.assign(document.createElement("span"), { className: "nm", textContent: m.name }));
+        if (m.away) tag.append(copy("data-tag-away"));
+        tag.dataset.key = tagKey;
+      }
+      const look = lookKey(m.look);
+      if (b.dataset.pose !== p.pose || b.dataset.look !== look || !b.querySelector(".av")) {
+        const sprite = copy(`data-pose="${p.pose}"`);
+        const svg = sprite.querySelector("svg")!;
+        svg.setAttribute("style", lookVars(m.look));
+        svg.dataset.hair = m.look.hair;
+        b.querySelector(".av")?.remove();
+        b.append(sprite);
+        b.dataset.pose = p.pose;
+        b.dataset.look = look;
+      }
+      walk(b, p.tile, p.onStation);
+    }
+    for (const b of left.values()) b.remove();
+  }
+
+  const tileOf = (b: HTMLElement): Tile => [Number(b.style.getPropertyValue("--x")), Number(b.style.getPropertyValue("--y"))];
+  function place(b: HTMLElement, [x, y]: Tile) {
+    b.style.setProperty("--x", String(x));
+    b.style.setProperty("--y", String(y));
+  }
+  // Steps an avatar along the aisles to its tile, one tile a step; a new
+  // target mid-walk sets off again from wherever it has got to.
+  const walks = new WeakMap<HTMLElement, { to: string; timer: ReturnType<typeof setInterval> }>();
+  function walk(b: HTMLElement, to: Tile, onStation: boolean) {
+    const key = to.join(",");
+    const going = walks.get(b);
+    if (going?.to === key) return;
+    if (going) clearInterval(going.timer);
+    const arrive = () => {
+      place(b, to);
+      b.classList.toggle("on-station", onStation);
+      walks.delete(b);
+    };
+    const path = route(tileOf(b), to);
+    if (path.length === 0 || reducedMotion.matches) return arrive();
+    b.classList.remove("on-station");
+    const timer = setInterval(() => {
+      const next = path.shift();
+      if (next) place(b, next);
+      if (path.length === 0) {
+        clearInterval(timer);
+        arrive();
+      }
+    }, STEP_MS);
+    walks.set(b, { to: key, timer });
+  }
+
+  // GYM-1: the map at the largest whole-number scale that fits the panel and
+  // the screen, so its pixels stay square
+  function fitMap() {
+    const map = document.querySelector<HTMLElement>(".map-panel .map");
+    if (!map) return;
+    const panel = map.closest<HTMLElement>(".map-panel")!;
+    const style = getComputedStyle(panel);
+    const width = panel.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    const bar = document.querySelector<HTMLElement>(".topbar")?.offsetHeight ?? 0;
+    const s = Math.max(1, Math.floor(Math.min(width / 160, (innerHeight - bar - 48) / 160)));
+    map.style.setProperty("--s", String(s));
+  }
+  addEventListener("resize", fitMap);
+  document.addEventListener("astro:page-load", fitMap);
+
+  // your own avatar is a shortcut to the sheet's button (Done, Start set…)
+  document.addEventListener("click", (e) => {
+    const b = (e.target as Element).closest?.(".map-panel .avatar.me");
+    if (b) document.querySelector<HTMLElement>(".dock button")?.focus();
+  });
 
   // ---------- staying in place ----------
   // Everything that stays in this room swaps only the room, in place, so the
@@ -1100,6 +1311,24 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
 
   const firstField = () => document.querySelector<HTMLElement>(".sheet form input:not([type=hidden]), .sheet select");
 
+  // Done landed (a 400 has no stamp): say what was logged, and on a phone,
+  // if the sheet's top was scrolled away, jump it back to just under the top
+  function afterDone() {
+    const stamp = document.querySelector<HTMLElement>(".dock .stamp");
+    if (!stamp) return;
+    const news = document.querySelector<HTMLElement>("#sheet-news");
+    if (news) {
+      news.textContent = "";
+      setTimeout(() => (news.textContent = stamp.textContent!.replace(/\s+/g, " ").trim()), 50);
+    }
+    const top = document.querySelector<HTMLElement>(".sheet")!.getBoundingClientRect().top;
+    if (matchMedia("(max-width: 899px)").matches && top < 24) scrollBy({ top: top - 24, behavior: "instant" });
+    // a reload shouldn't stamp the same set again
+    const url = new URL(location.href);
+    url.searchParams.delete("rested");
+    history.replaceState(history.state, "", url);
+  }
+
   document.addEventListener(
     "submit",
     (e) => {
@@ -1130,6 +1359,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
           const input = document.querySelector<HTMLInputElement>(`.set-form #${id}`);
           if (input && !input.readOnly) input.value = value;
         }
+        if (action === "log") afterDone();
         return action === "rest"
           ? document.querySelector<HTMLElement>(`.rest-adjust button[value="${delta}"]`)
           : document.querySelector<HTMLElement>(".sheet .wide");
@@ -1155,8 +1385,9 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
 
 <style>
   /* .panel: the Night card (system 9). Lives here until another Night page
-     needs it, then moves to the layout. */
-  .panel {
+     needs it, then moves to the layout. Global, so the map's panel
+     (GymMap.astro) is one too. */
+  :global(.gym .panel) {
     position: relative;
     margin: 0 0 2rem;
     padding: 1.5rem 1.25rem 1.25rem;
@@ -1164,7 +1395,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     border: var(--px) solid var(--edge);
     box-shadow: var(--px) var(--px) 0 #000;
   }
-  .panel > :last-child {
+  :global(.gym .panel > :last-child) {
     margin-bottom: 0;
   }
   /* the panel's name sits on its top border, like an RPG menu box */
@@ -1180,8 +1411,12 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     color: var(--leaf);
     background: var(--panel);
   }
-  /* the workout clock rides the log panel's top border, on the right */
+  /* the workout clock rides the sheet's top border, on the right, across
+     from your state tab, so it's on screen from the moment you walk in */
   .panel-clock {
+    display: flex;
+    align-items: center;
+    gap: var(--px);
     position: absolute;
     top: calc(var(--px) * -0.5);
     right: 0.75rem;
@@ -1194,7 +1429,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     background: var(--panel);
     font-variant-numeric: tabular-nums;
   }
-  .vh {
+  :global(.gym .vh) {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -1203,7 +1438,9 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     white-space: nowrap;
   }
 
-  /* two columns on a laptop: room, squad and log left, the sheet right */
+  /* Phones: map, sheet, squad, log, room, top to bottom; only the sheet's
+     dock (its primary button) is pinned. Laptops: two columns, the sheet
+     alone on the right. */
   .gym {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -1216,7 +1453,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     }
     .gym > .sheet {
       grid-column: 2;
-      grid-row: 1 / span 3;
+      grid-row: 1 / span 4;
       position: sticky;
       top: 2rem;
     }
@@ -1294,8 +1531,9 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   }
 
   /* ---------- the connection (GYM-13): Live, or Reconnecting ----------
-     On the Squad panel's border until the map arrives, then on the map's. */
-  .conn {
+     On the map's top border, opposite its sign (GymMap draws it, the script
+     swaps it, so these reach it globally). */
+  :global(.map-panel .conn) {
     position: absolute;
     top: calc(var(--px) * -0.5);
     right: 0.75rem;
@@ -1304,12 +1542,12 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     margin: 0;
     line-height: 1;
   }
-  .conn .badge {
+  :global(.map-panel .conn .badge) {
     margin: 0;
     padding: 0.25rem 0.5rem;
     box-shadow: 0 0 0 var(--px) var(--panel);
   }
-  .conn :global(.lost) {
+  :global(.conn .lost) {
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
@@ -1320,7 +1558,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     border: 2px dashed var(--dim);
     box-shadow: 0 0 0 var(--px) var(--panel);
   }
-  .conn :global(.lost svg) {
+  :global(.conn .lost svg) {
     color: var(--dim);
   }
 
@@ -1462,16 +1700,111 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     margin: 0;
     box-shadow: 0 0 0 var(--px) var(--panel);
   }
+  /* the dock: the sheet's one primary button (Done, Start set, Save,
+     Choose). On a laptop it is the foot of the sheet. On a phone it is a bar
+     fixed to the bottom of the screen, so the map can sit at the top of the
+     page and the button is always in the thumb zone, wherever you scroll. */
+  .dock {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1.25rem -1.25rem -1.25rem;
+    padding: 0.75rem 1.25rem 0.5rem;
+    background: var(--panel);
+    border-top: var(--px) solid var(--night);
+  }
+  .sheet .dock .wide {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+    margin: 0;
+  }
+  /* a copy of the rest timer, shown only while the big one is out of view
+     (the script watches it); screen readers use the big one */
+  /* Done's stamp: what was just logged, on the dock's top border for 4 s,
+     rising out of it in steps and sinking back. Taps pass through it. */
+  .stamp {
+    position: absolute;
+    top: calc(var(--px) * -0.5);
+    left: 0.75rem;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--px);
+    max-width: calc(100% - 1.5rem);
+    margin: 0;
+    padding: 0 0.5rem 0 0.25rem;
+    font: 20px/24px var(--body);
+    color: var(--leaf);
+    background: var(--night);
+    border: 2px solid var(--leaf);
+    box-shadow: 0 0 0 var(--px) var(--panel);
+    transform: translateY(-50%);
+    pointer-events: none;
+    font-variant-numeric: tabular-nums;
+    animation: stamp 4s steps(4) forwards;
+  }
+  .stamp :global(svg) {
+    flex: none;
+  }
+  .stamp span {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .stamp b {
+    font-weight: 400;
+    color: var(--paper);
+  }
+  @keyframes stamp {
+    0% {
+      clip-path: inset(100% -8px -8px -8px);
+    }
+    4%,
+    96% {
+      clip-path: inset(-8px);
+    }
+    100% {
+      clip-path: inset(100% -8px -8px -8px);
+      visibility: hidden;
+    }
+  }
+  @keyframes stamp-still {
+    100% {
+      visibility: hidden;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .stamp {
+      animation-name: stamp-still;
+      animation-timing-function: steps(1);
+    }
+  }
+  .dock-timer {
+    margin: 0 0 var(--px);
+    font-size: 48px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .dock-timer.slacking {
+    color: var(--slacking);
+  }
   @media (max-width: 899px) {
-    /* pinned to the bottom of the phone, edge to edge, in the thumb zone */
-    .sheet {
-      position: sticky;
+    .dock {
+      position: fixed;
+      right: 0;
       bottom: 0;
-      z-index: 1;
-      margin: 2rem -1rem -2rem;
-      padding-bottom: 1rem;
-      border-width: var(--px) 0 0;
+      left: 0;
+      z-index: 30;
+      margin: 0;
+      padding: 0.5rem 1rem max(0.5rem, env(safe-area-inset-bottom));
+      border-top-color: var(--leaf);
       box-shadow: 0 calc(var(--px) * -1) 0 #000;
+    }
+    /* room under the bar for the last thing on the page */
+    :global(body:has(.dock) footer) {
+      padding-bottom: 7rem;
     }
   }
   /* LOG-5: rest over flashes the sheet's border, at most 2 a second, 3 times */
@@ -1491,8 +1824,41 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       animation: none;
     }
   }
-  .sheet .bubble {
-    margin-bottom: 1.25rem;
+  /* cardio's logged block: where the rest block would be, in leaf */
+  .set-done {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.25rem 0.5rem;
+    margin: 0 0 1rem;
+    padding: 0.5rem;
+    background: var(--night);
+    border: var(--px) solid var(--leaf);
+  }
+  .set-done :global(svg) {
+    color: var(--leaf);
+  }
+  .set-done-n {
+    margin: 0;
+    font-size: 32px;
+    line-height: 1;
+  }
+  .set-done-say {
+    grid-column: 1 / -1;
+    margin: 0;
+  }
+  /* timed fields start empty; the placeholders read 0:00 */
+  :global(.mmss input::placeholder) {
+    color: var(--dim);
+    opacity: 1;
+  }
+  .sheet-news {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   /* the rest block: water blue while resting, slacking red once it's over */
