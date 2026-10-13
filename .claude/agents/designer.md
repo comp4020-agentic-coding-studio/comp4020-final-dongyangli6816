@@ -79,6 +79,13 @@ A standalone static page that opens in a browser by double-clicking:
   from the tokens. A rule the whole group uses is written the same in each
   page's block and marked `/* shared: <group> */`, so the main agent can move
   it into one place.
+- Keep the pixel art light, since the whole file has to be read to be
+  edited. Draw each sprite once, inside a hidden `<svg>` at the top of
+  `<body>`, as a `<symbol>` or `<g id>`, with one `<path>` per colour
+  (`d="M3 0h2v1h-2z…"`), never one `<rect>` per pixel. Every place the
+  sprite appears is then a `<use href="#id">`. An avatar's slot colours
+  (`var(--av-skin)` and the rest) go in an inline `style` on its paths, so
+  each `<use>` takes the colours set on its own `<svg>`.
 - Use realistic Australian data: kilograms, real lift names, a plausible
   history. No lorem ipsum.
 - Show every state the page needs (see "Every page designs these states" in
