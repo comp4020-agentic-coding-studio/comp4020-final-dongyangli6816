@@ -40,6 +40,39 @@ sheet's top, Done scrolls it back into view. New states: "Just logged ·
 weight", "Just logged · cardio", "Just logged · plank", and two phone frames.
 No field name or `action` value changes.
 
+**Revision, 14 Oct 2026 (Dony, BOT-1 to BOT-5 in
+`docs/product/spec-4-weeks.md`).** The back wall's poster tile (`P`, between
+the mirrors) becomes **Dony's "Member of the month" poster**, and it is a
+button on the map: tap the full poster and Dony, the user's own likeness,
+steps out of it and trains like anyone; tap the empty poster and he goes back
+in. It is the only control for him, never in the sheet or the dock. He is
+drawn with his own 16 × 16 sprite (appendix), appears on the map and as the
+last row of the squad list exactly like a person, with **no bot marker
+anywhere**, and doesn't count in "N of 12 in". The alone line no longer says
+"just you" while he's out. No banner when he arrives or leaves: the poster and
+the walk are the news. New states: the poster's six looks (full, focused,
+pressed, empty, resting, error), the summon and send-back storyboards, Dony
+in Idle, Lifting, Resting and Slacking, a busy room with him in it, sent
+back, summoned again, a tap that did nothing, and reduced motion. Nothing in
+the sheet, the log or the Room panel changes, and no existing field name or
+`action` value changes; `action=dony` is new.
+
+**Revision, 14 Oct 2026 (the poster's bulbs, and the new rest rule).** The
+user: "add a hint that guides the user to tap the poster, a ring of light or
+something like that." **Until anyone in the room has called Dony out once
+(`rooms.dony_summoned_at` is null), a ring of marquee bulbs lights up round
+his poster**: two sets of bulbs swap lit and unlit every 500 ms for the
+page's first minute, then stay lit and still. They go out at the first
+summon, on every screen, and never come back in that room. No words, no new
+storage, nothing near the dock. And two BOT-4 changes from the user, drawn
+here: Dony's warm-up after a summon is 3 s (was 5 to 20 s), and **sending him
+back never waits**: the empty poster can be tapped at any moment, and the
+30 s rest only follows a send back, so only the full poster ever rests. New
+state: "Poster hint". Changed: "Poster states" (one resting frame, not two),
+"Room alone", "Poster error" and the summon's first two frames (bulbs lit),
+"Dony just in", the summon's hop and walk, "Summoned again", "A tap that did
+nothing" and "Reduced motion" (the empty poster no longer dimmed).
+
 The mockup suffixes ids (`weight_kg-1`, `set-log-5`, `pick-2`) only because
 it shows many states on one page. The real ids are `weight_kg`, `reps`,
 `minutes`, `seconds`, `distance_km`, `exercise`, `set-error`, `set-edit`,
@@ -83,12 +116,23 @@ The Gym group is this page alone. It sits beside Lobby (`home`, `join`,
   Idle people in it.
 - **Arriving alone** with a passcode to send. **Fixing a typo** during
   rest. **Leaving**, or for the host, closing up.
+- **(14 Oct) Alone, with nobody answering the group chat**: the first one in,
+  hands free, looking at an empty map; or the Drifter between sets with
+  nobody coming, phone in one hand, 60 to 180 s to fill. This is when the
+  poster gets tapped. **The friend who joins later** finds Mia and someone
+  called Dony training, and an empty frame on the wall. **The showcase
+  crowd** pokes the poster and calls each other over.
 
 ### The one job
 
 **Log the next set**, as before: read the timer, check the numbers, press
 **Done**. The map is the second job, **being seen**: it never sits between
 the person and Done (system principle 1).
+
+**Dony doesn't change the one job.** Summoning him is a map interaction like
+tapping an avatar: it lives on the back wall, at the far end of the screen
+from the dock, and nothing he does touches anyone's sheet, dock, rest timer
+or log.
 
 ### Hierarchy
 
@@ -103,6 +147,13 @@ the person and Done (system principle 1).
 
 Numbers that must read at a glance: the timer, weight and reps, the times in
 the squad list (`1:24 left`, `2:40 over`), and the bay numbers on the map.
+
+**The poster** (14 Oct) sits inside item 3, in the map's top row: one of ten
+wall tiles, louder than the mirrors only because it is violet and has a face.
+It never outranks a state tag (the tags are filled boxes; the poster is a
+16 px picture), and it carries no number: the 30 s rest is shown as a dim,
+never as a countdown. Dony himself ranks exactly as any person on the map
+and in the list.
 
 **The workout clock** (24 px, leaf, on the sheet's top border) is a quiet
 number, below all of these: you check it when you arrive, now and then, and
@@ -147,6 +198,30 @@ New, all in `<style id="page">`:
 Four 8 × 8 icons are new (`phone-off`, `signal`, `claim`, `clock`); the gym's tiles,
 scenery and equipment are new sprites (appendix). The stamp and the cardio
 block reuse the avatar editor's existing `tickIcon`.
+
+**Dony (14 Oct)** reuses nearly everything: his map button is `.avatar`
+with `.tag.state-*` and `svg.av`; his row is `.people li` with `.who`,
+`.what` and `.chip.state-*`; the error under the map is the layout's
+`.error`; the alone line is `p.alone` with new words. His sprite uses the
+same slot classes (`k s h t`, props `pm pw pr`), with his own colours set as
+`--av-skin`, `--av-hair`, `--av-shirt` on the svg, so the `.av` rules paint
+him unchanged. New, in `<style id="page">`:
+
+| Piece | What it is |
+| --- | --- |
+| `.map .poster` | The poster button on the back wall: a 48 px tap area centred on tile (5,0), the 16 × 16 poster inside at the map's scale |
+| `.poster.pending` | Pressed while the tap is on its way: sunk one sprite pixel, `aria-disabled` |
+| `.poster.resting` | The 30 s after a send back (full poster only): the art at 50%, `aria-disabled`, no countdown |
+| `.poster .bulbs`, `.bulbs.alt`, `@keyframes poster-bulbs` (14 Oct) | The hint: marquee bulbs round the full poster while the room has never had a summon; two sets swap lit and unlit for the first minute, then stay lit |
+| `.poster .glint`, `@keyframes poster-glint` | One frame every 8 s where his lenses catch the light (full poster only) |
+| `.poster.shake`, `@keyframes poster-shake` | The summon's and send back's two-frame shake |
+| `.map .avatar.hop` | The hop between wall and walkway: the sprite one frame half a tile up |
+| `.map-panel .poster-error` | Spacing for the `.error` line under the map |
+
+Five new sprite grids (the poster's full, glint and empty frames, and its two bulb sets) and Dony's
+eight body frames go in a new `src/sprites/dony.ts` (appendix). The `P` tile
+in `TILES` is no longer drawn: the map's `P` cell draws the wall tile `W`,
+and the poster button draws over it.
 
 ### Template check, and what it changed
 
@@ -303,6 +378,159 @@ and the larger change is the gym's own: you walk to the cooler and the rest
 starts, or, after a run, the box where the rest would be tells you there
 isn't one and to go again.
 
+#### Dony, and why it looks like this (14 Oct)
+
+**Template check.** The generic version is an "Add a bot" button in a
+panel, a robot badge on the new row, and a toast saying "Dony joined". Swap
+the colours and that's any chat app's bot. What makes this Spotter's:
+
+- **The control is a thing on the gym's wall.** Real gyms hang a member of
+  the month by the desk; this one's poster has a face, and you can tap it.
+  It is drawn in the same tiles and outline as the mirrors and the clock, so
+  it reads as part of the room, not as UI laid over it.
+- **The empty frame is the explanation.** While Dony is out, the poster
+  hangs empty: a charcoal frame with his violet outline. A newcomer who
+  wonders who Dony is sees where he came from, without a label (BOT-5 forbids
+  one).
+- **He arrives the way the gym moves.** Two shake frames, a hop down onto
+  the walkway, and the same tile-by-tile walk as everyone, ending at the
+  lockers. Going back is the same in reverse. No banner (banners are for
+  what people do to you, INT-3).
+- **He looks like someone, not a mascot.** Black hair with a side part,
+  glasses, a violet bomber open over a black tee, black trousers: a person
+  in the user's likeness, made from the same 16 × 16 body proportions as
+  everyone, with his own four colours.
+
+**Where the poster's tap area goes.** At 2× the tile is 32 px, so the
+button reaches 8 px past it all round to make 48 × 48 px: 8 px up into the
+panel's top padding (16 px, so it never touches the border), 8 px down onto
+the walkway row (aisle tile (5,1), where nobody stands still: avatars only
+walk through it), and 8 px into each mirror. At 3× the tile is already
+48 px. The button sits under the avatars in the stacking order (`z-index:
+0`), so in the moment someone walks past below it, a tap lands on the thing
+drawn on top; focused, it rises over everything so its ring shows whole.
+
+**Why the 30 s rest is a dim and not a number.** BOT-4 asks for the rest;
+system 14 rules out countdowns outside the rest timer. Half opacity on the
+poster art (the frame, the plate and the face all at 50%) says "not now"
+the way a faded Away avatar says "not here", and the button is
+`aria-disabled` with "(not ready yet)" in its name. Since 14 Oct the dim
+follows a send back only (on the full poster): sending Dony back never
+waits, so the empty poster never dims.
+
+**Why the alone line changes, and to what.** "Just you so far" is false
+with Dony on the map. The line still shows while you're the only real
+person, because sending the passcode is still the real ask. While Dony is
+out it reads: **"Your squad's not in yet. Send them the passcode 📲"**.
+Same job, same emoji, true either way, and it doesn't mention Dony.
+
+**Sprite choices (settled from six rounds of prototypes, kept under
+`.shots/room/dony/`).** The fourth round's finding was that the jacket
+vanished into the dark floor and the face read as a mask. Two causes: the
+hair was drawn in ink, so the head's outline and the hair merged into one
+black band; and the glasses filled a whole ink row with a second ink row for
+the nose under it. The fix:
+
+- **Hair in a lifted charcoal (`#2e3046`), not ink**, so the head keeps its
+  ink outline and the hair reads as hair, like everyone else's.
+- **Glasses in one row** (row 5): ink frames with temples running out past
+  the head, and in each lens a skin pixel (the eye catching the light) and
+  two violet pixels (a tinted lens). Skin rows above and below keep the
+  glasses a line across a face, not a visor. The nose is skin, not ink.
+- **The jacket is violet (`#8b6cf2`)**, a mid-light value that stands off
+  the floor (`#0f2a1a`) and off the panel at 1× and 2×. It is not a state
+  colour and is far from Sam's purple shirt (`#6a4c93`) next to it. The
+  black tee and trousers reuse the hair colour, which keeps him within four
+  colours and gives the jacket its open front.
+
+Rejected in round 6: dark lenses (read as sunglasses and a mask at 2×), a
+cream jacket (nearly the Idle tag's paper, and close to Ji-woo's white
+shirt), cobalt (close to the resting blue). The violet was compared with
+lilac and mauve too: lilac washed out against the paper tags, mauve sat too
+close to Sam's purple at 1×.
+
+#### How a newcomer learns the poster is a button (14 Oct)
+
+**The problem.** The poster is drawn in the wall's tiles and outline on
+purpose, so it reads as part of the room. That same choice means nothing
+says "tap me": a newcomer sees a picture on a wall. The user asked for a
+hint, "a ring of light or something like that".
+
+**What it is: marquee bulbs.** A ring of single-pixel bulbs round the
+poster's frame, the way a cinema lights up its poster or a fairground
+lights up a sign. It is the user's ring of light, drawn as a thing in the
+gym, not a UI glow laid over it: a pixel glow (a soft halo, a pulsing
+outline) would need blur or smooth easing (system 14 rules both out), and a
+square outline round the tile would look like the focus ring or your
+station's leaf corners, which already mean "focused" and "yours". Bulbs are
+new on this map, read as "look here" to anyone who has seen a theatre, and
+fit the joke the poster already makes ("Member of the month").
+
+- **Drawn.** Two sets of bulbs on the 16 × 16 grid, mirrored left to right:
+  every other pixel along the top row, down both outer columns and beside
+  the plate (appendix). Set A and set B alternate along the ring.
+- **Animated.** For the page's first minute the sets swap every 500 ms,
+  lit in `--paper`, unlit in `--edge`, `steps(1)`, so the light runs round
+  the poster: system 11's two-frame loop, at one swap every 500 ms, far
+  below the three-flashes-a-second limit. After 60 cycles every bulb stays
+  lit and still. A minute is long enough to catch the eye of someone who
+  has just walked in, and short enough that it isn't still moving behind
+  someone's third set.
+- **Colour.** `--paper` on the wall's `--deep` is 11:1; `--edge` reads as
+  an unlit bulb. Not `--leaf` (that is Lifting and your station), not
+  `--focus` yellow (the focus ring), not a state colour.
+
+**When it shows: while the room has never had a summon.** That is
+`rooms.dony_summoned_at` being null, which the server already stores, so
+nothing new is kept. Checked against the alternatives:
+
+| Rule | Why not |
+| --- | --- |
+| First visit only (per person) | Needs new storage (a column per user, or `localStorage` that a new phone forgets), and in a busy room most people will see someone else summon him anyway. |
+| Until this person's first tap | The same storage, and it would keep a squad-mate's poster lit after they've watched him come out six times. |
+| Whenever the poster is full | Lit for the whole session after every send back, forever. It would tug at the eye during every rest. |
+| **Until the room's first summon** | One flag the room already has, the same for everyone in the room, and it answers the real question: once anyone has called him out, everyone has seen the poster empty and the person walk out of it, and that is the lesson. |
+
+**When it stops.** At the first summon's swap (summon step 3), on every
+screen, at the same moment the poster empties. Afterwards a sent-back,
+full poster has no bulbs: the room has learnt. A room is short-lived (it
+closes when the last person leaves), so every new session starts lit.
+
+**Not on the empty poster, not while it rests, not while pending.** The
+empty poster can only exist after a summon, so by the rule above it never
+has bulbs, and it doesn't need them: the empty frame with his violet
+outline already explains itself, and whoever summoned him is in the room.
+The poster only rests after a send back, so it never rests with bulbs on.
+While a tap is pending, bulbs and poster sink together (the button's
+existing pending look), and go out at the swap.
+
+**Screen readers.** Nothing changes: the button's name is already "Call
+Dony out of his poster", which says what it does, and it is the first
+button on the map in tab order. The bulbs are inside the `aria-hidden` svg.
+No extra text and no `aria-describedby`: a sighted newcomer gets a light
+because the picture doesn't look like a button; a screen reader user
+already hears that it is one.
+
+**No words.** A line such as "Tap the poster" would be one more sentence
+in a gym that only uses words for numbers and state, would sit either on
+the map (over people) or in the sheet (beside Start set and Done), and
+BOT-5's spirit is that Dony isn't explained. If the showcase shows that
+people see the bulbs and still don't tap, the cheapest next step is a
+`title` on the button, not a label.
+
+**Not competing with the sheet or the rest timer.** The bulbs are at the
+top of the map, the furthest point from the dock, at 2 or 3 sprite pixels
+(4 to 6 px) each, in paper on deep green, not in a state colour and not
+leaf. They move only in the first minute, before most people have started
+a set; after that they are as quiet as the wall clock. The button's 48 px
+tap area doesn't grow. Under reduced motion they never move: all lit from
+the first frame.
+
+**Template check.** The generic version is a tooltip bubble with an arrow
+("Tap here to add a bot!"), or a pulsing blue dot from an onboarding
+library. Both would look the same in any app. Bulbs round a member-of-the-
+month poster only make sense on a gym wall.
+
 ## 2. Requirements covered
 
 | Requirement (source) | Element |
@@ -331,6 +559,20 @@ isn't one and to go again.
 | System 12 "banners and state changes for *you* are `role="status"`" | `p#sheet-news[role=status]` outside `.gym`, filled with the stamp's text after a Done swap. |
 | LOG-4 "starts a rest timer … none after cardio" | Cardio gets no rest: it stays Lifting with Done, and `div.set-done` says "No rest timer after cardio". |
 | LOG-3 "Each pre-fills from the person's last set of that exercise", **changed for timed kinds** (user, 8 Oct) | Weight and bodyweight pre-fill as before. Duration and cardio open and come back empty (placeholders `0` / `00`), with `p.last` as the reference. See Departure 15: the build updates LOG-3 in `docs/product/spec-4-weeks.md`. |
+| BOT-1 "The back wall's poster is 'Member of the month: Dony'. Anyone in the room can tap it (by touch, click or keyboard) to summon Dony: on every screen the poster goes empty and he hops down onto the walkway" (4-week, Dony) | `button.poster` on tile (5,0): a real `<button>` (so touch, click, Enter and Space all work), submitting `form#dony` with `action=dony&intent=summon`. On the room's update, every screen plays the shake, swaps to the empty frame and plays the hop and the walk (3.2a). States "Summon", "Dony just in". |
+| BOT-1 "He can be summoned again any number of times after being sent back; each summon is a fresh visit" | The same button and the same animation once the rest is over. State "Summoned again": he starts Idle at the lockers again. |
+| BOT-2 "his own 16 × 16 sprite (an Asian character with glasses and a cool outfit) in every pose a person has, plus the poster's full and empty frames, within the art rules" | Appendix "Dony": stand, walk × 2, lift × 2, rest, sit, hop, plus the poster's full, glint and empty frames over the wall tile. Four colours plus props, ink outline, whole-number scale. Not in the avatar editor (nothing in the Lobby group changes). |
+| BOT-3 "He goes Idle, Lifting, Resting and Slacking … never Finished, and every screen sees each change within about a second" | Dony is one more entry in the room's view, drawn by the same code as people: same spots, same poses, same tags, same rows (3.2a, 3.4). States "Dony · Idle", "· Lifting", "· Resting", "· Slacking", at 390 and 1280 px. |
+| BOT-4 "Anyone in the room can tap the empty poster to send Dony back: he stops whatever he's doing, frees his station, walks back and hops into the poster" | The empty poster's button submits `intent=send-back`. State "Send back" (Tom sends back the Dony that Priya summoned), and "Sent back". |
+| BOT-4 (14 Oct) "sending Dony back has no wait … the 30 s rest applies only to summoning him again after a send back" | `.poster.resting` on the full poster only: art at 50%, `aria-disabled`, "(not ready yet)" in its name; no countdown (system 14). The empty poster is never `.resting`. |
+| BOT-1 "Anyone in the room can tap it" with the user's request (14 Oct) for "a hint that guides the user to tap the poster, a ring of light" | `.poster .bulbs` while `rooms.dony_summoned_at` is null: the marquee for the page's first minute, then lit and still; out from the first summon on. State "Poster hint". |
+| BOT-4 "A tap only acts if the poster is still as its tapper saw it … otherwise it does nothing, silently" | The tap carries `intent` (what the tapper saw). A tap that did nothing gets no message; the next room update redraws the poster. State "A tap that did nothing". |
+| BOT-4 (a tap that fails to reach the server) with system 13 "Error: … the page-level failures" and system 3 "Errors say what to do next" | `p.error.poster-error[role=alert]` directly under the map, inside the map panel. State "Poster error". |
+| BOT-5 "Dony appears on the map and in the squad list like a person, with no bot marker" | An ordinary `.avatar` and an ordinary `.people li`, last in the list; accessible name "Dony, lifting, back squat on squat rack 3". No badge, no "(bot)", no explaining line. State "Busy room with Dony". |
+| BOT-5 "He never counts as a member, toward the 12, as host" | `p.spots` and the pips count people only ("1 of 12 in" with Dony out); the End room confirm names people only; the leave note's "last one in" ignores him. |
+| BOT-5 "like a person, with no bot marker" (so no arrival banner, which INT-3 keeps for what people do to you), and the copy bank's alone line, which would be false with Dony on the map | No `.banner`. `p.alone` reads "Your squad's not in yet. Send them the passcode 📲" while Dony is out and you are the only person. |
+| System 11 "Reduced motion: avatars jump to their destination instead of walking" | No shake, glint, hop or walk: the poster swaps frames and Dony appears at, or vanishes from, his spot. State "Reduced motion". |
+| System 12 "every action … works by keyboard", focus ring; tap targets at least 44 px | The poster is a focusable button in tab order before the avatars, with the Night `--focus` ring on its 48 × 48 px tap area. |
 
 ## 3. Structure
 
@@ -402,7 +644,7 @@ wide, 3× (480 px) in a 1280 × 800 laptop window. The panel's top padding is
 
 ```
      x 0 1 2 3 4 5 6 7 8 9
-y 0    W M M M K P M M M W     back wall: mirrors, the clock, a poster
+y 0    W M M M K P M M M W     back wall: mirrors, the clock, Dony's poster
 y 1    [ 1 . 2 : : 3 . 4 ]     stations 1-4 against the mirrors
 y 2    [ : : : : : : : : ]     aisle
 y 3    [ 5 . 6 : : 7 . 8 ]     stations 5-8
@@ -414,7 +656,7 @@ y 8    [ . r . : : . i . ]     lobby
 y 9    _ _ _ _ E e _ _ _ _     front wall; the entrance is (4,9) and (5,9)
 ```
 
-- `W` wall, `M` mirror, `K` clock, `P` poster, `[` `]` side walls, `_`
+- `W` wall, `M` mirror, `K` clock, `P` Dony's poster (a button over a wall tile, 3.2a), `[` `]` side walls, `_`
   front wall, `E` `e` the entrance mat (an arrow pointing in), `.` rubber
   floor, `:` aisle walkway, `C` the water cooler (over a side wall tile),
   `L` the lockers (over a side wall tile).
@@ -502,6 +744,128 @@ straight to the target. Walking never delays anything in the sheet.
 when there is equipment. It holds one 16 × 16 SVG: the equipment, or the
 empty bay with its number. Yours (the slot you hold while Lifting, Resting,
 Slacking or Away) adds `.mine` and a second SVG, the leaf corners.
+
+### 3.2a Dony and his poster (14 Oct)
+
+#### The poster button
+
+```html
+<!-- once per page, outside div.gym, so the map's redraws never replace it -->
+<form method="post" id="dony"><input type="hidden" name="action" value="dony" /></form>
+
+<!-- in .map, straight after svg.tiles, before the stations and avatars -->
+<button type="submit" form="dony" name="intent" value="summon" class="poster"
+        aria-label="Call Dony out of his poster">
+  <svg viewBox="0 0 16 16" aria-hidden="true">
+    <use href="#poster-full" /><use href="#poster-glint" class="glint" />
+    <!-- only while the room has never had a summon (14 Oct) -->
+    <use href="#poster-bulbs" class="bulbs" /><use href="#poster-bulbs-alt" class="bulbs alt" />
+  </svg>
+</button>
+```
+
+- **Full** (Dony in): `value="summon"`, label "Call Dony out of his
+  poster", the full frame plus the glint frame.
+- **Empty** (Dony out): `value="send-back"`, label "Send Dony back to his
+  poster", the empty frame alone.
+- **Bulbs** (14 Oct; the hint): while the room has never had a summon
+  (`rooms.dony_summoned_at` is null, sent as `view.dony.fresh`), the full
+  poster's svg also holds the two bulb `<use>`s above, after the glint. Nothing
+  on the button itself changes: no class, no attribute, the same label. They
+  are never drawn on the empty poster (which can't exist while `fresh` is
+  true). The CSS runs the marquee for the page's first minute
+  (`animation: poster-bulbs 1s steps(1) 60`), then they stay lit; a page
+  opened later in the same fresh room gets its own first minute.
+- **Resting** (30 s after the room's last send back; the full poster only,
+  14 Oct): add `.resting` and `aria-disabled="true"`, and append " (not ready
+  yet)" to the label. The empty poster never rests: Dony can be sent back
+  the moment he's out. Use `aria-disabled`, not `disabled`, so it keeps focus
+  and stays in the tab order. The script swallows the click; without JS the
+  post goes through and the server ignores it (BOT-4).
+- **Pending** (tapped, waiting for the server): add `.pending` and
+  `aria-disabled="true"`; the label is unchanged. It clears when the room's
+  next update redraws the poster, or on failure.
+- **Position**: tile (5,0), the `P` in `MAP`. Before the stations and
+  avatars in source order, so keyboard users meet it first on the map, and
+  under them in stacking (`z-index: 0`).
+- **The tile under it**: the tile layer draws `W` (the plain wall) at
+  (5,0). The old `TILES.P` art is retired.
+
+**What a tap does (script).** `fetch` the form as a POST with
+`action=dony` and `intent`, set `.pending`, and wait. Then:
+
+- **204 (acted, or did nothing)**: nothing on this screen. The room's next
+  SSE message, which every screen gets, says whether Dony is out, and the
+  redraw plays the animation (or doesn't). A tap that did nothing gets no
+  message: the redraw is the answer (BOT-4). If no message has come 3 s after
+  the 204, clear `.pending`.
+- **Network failure or 5xx**: clear `.pending`, and put
+  `<p class="error poster-error" role="alert">Dony didn't hear you. Try
+  again.</p>` as the map panel's last child, under `.map`. It goes on the
+  next tap on the poster, or after 8 s. The poster stays as it was.
+- **Without JS**: the form posts, the server acts and redirects (303) back
+  to the room, which renders the result with no animation.
+
+The server's side of `action=dony` (one transaction, the intent checked
+against the stored state and the 30 s rest) is BOT-1 and BOT-4's, not a
+design matter. The view needs per room: `donyOut` (summoned after the last
+send back), `posterRestingUntil`, and Dony's state while out (below).
+
+#### Dony on the map and in the list
+
+Dony is one more member in the view the page already draws, with three
+differences:
+
+1. **His sprite is his own.** Render `svg.av` from `DONY` (appendix) instead
+   of `poseOf(pose)` plus a hair overlay, with `style="--av-skin: #e9bd94;
+   --av-hair: #2e3046; --av-shirt: #8b6cf2"` (his fixed palette). Pose names
+   match people's: `stand`, `lift`, `rest`, `sit`, plus `walk1`, `walk2`,
+   `hop`. The idle bob, the lift loop (`lift` and `lift2`) and the phone glow
+   work on his grids exactly as on people's: rows 0 to 12 bob.
+2. **He is last.** In the squad list, after every person (people stay in
+   join order). Among the people in his state, he takes the spot after the
+   last person: with Priya Idle, Priya is at (8,7) and Dony at (6,7).
+3. **He is never "you" and never host**: no `.me`, no badge. His button does
+   what anyone else's does this week (nothing beyond focus). He is never
+   Away, never Finished.
+
+Everything else is a person's: `button.avatar` (with `.on-station` while
+Lifting or Slacking), `span.tag.state-{state}` with "Dony", the accessible
+name ("Dony, resting, squat rack 3"), the row (`.who` "Dony", `.what` by
+state as in 3.4, `.chip.state-*`), quiet updates with no live region.
+
+#### Summon, step by step (every screen, from the room's update)
+
+| Step | Time | What happens |
+| --- | --- | --- |
+| 1 | 0 ms | The tapper's poster has been `.pending` since the tap (only on their screen). |
+| 2 | 0 to 250 ms | `.shake`: two 125 ms frames, a sprite pixel left, then right. |
+| 3 | 250 ms | The poster swaps to the empty frame (ready at once, never `.resting`), and its bulbs, if lit, go out with the full frame and don't come back. Dony's avatar appears at the walkway tile below the poster, (5,1), with `.hop` (one frame half a tile up), and his row is added to the list. |
+| 4 | 375 ms | `.hop` comes off: he has landed. |
+| 5 | 375 ms on | He walks to his idle spot along the usual route (from (5,1): step down to row 2, along to column 4, down column 4 to row 6, along to his column, step in), 125 ms a tile. About 1.4 s to (6,7). |
+
+From then on, his schedule drives him through the same moves as a person;
+first, 3 s Idle at his spot (his warm-up, 14 Oct; was 5 to 20 s).
+
+#### Send back, step by step
+
+| Step | What happens |
+| --- | --- |
+| 1 | The room's update says he's back. His row leaves the list at once, his avatar's tag turns Idle, the button takes `inert` (it's leaving). His station is free; its equipment stays. |
+| 2 | He walks from wherever he is to (5,1): the usual route, ending up column 4, then one step right onto column 5 at row 2, then up to row 1. |
+| 3 | `.hop` for one frame at (5,1), then his avatar is removed. |
+| 4 | The poster plays `.shake` and swaps to the full frame, with `.resting` for 30 s, and no bulbs (the room has had a summon). |
+
+Walking never delays anything in the sheet, and none of this is announced
+(other people's changes are quiet, system 12).
+
+#### Reduced motion
+
+No `.shake`, no glint, no `.hop`, no walk; the bulbs, while there, are all
+lit and still from the first frame. On a summon the poster swaps to
+empty and Dony's avatar is placed straight at his spot; on a send back he
+is removed and the poster swaps to full. State changes after that jump, as
+everyone's do.
 
 ### 3.3 The sheet
 
@@ -728,6 +1092,11 @@ them).
   other people's changes update quietly (system 12).
 - `p.alone` "Just you so far. Send the passcode to the squad 📲" stays,
   when you are the only member.
+- **(14 Oct) With Dony out**, his row is last, and `p.alone` still shows
+  while you are the only *person*, but reads **"Your squad's not in yet.
+  Send them the passcode 📲"**. It hides once a second person joins, Dony or
+  not. The script's `alone.hidden = members.length > 1` counts people only,
+  and swaps the text when `donyOut` changes.
 
 ### 3.5 This workout
 
@@ -743,6 +1112,10 @@ Finish workout at its foot; its top border now carries only the title.
   `<span class="room-link">spotter.fly.dev/join/SB64FR</span>`" (ROOM-3's
   invite link; the host is `Astro.url.host`).
 - Leave and End room (host, with others in) are unchanged.
+- **(14 Oct) Dony counts in none of it**: the pips and "N of 12 in" count
+  people; End room appears only with other *people* in, and its confirm
+  names only them; "You're the last one in" holds with Dony out. There is no
+  Dony control in this panel.
 - **The leave note** gains a third case, for when you have logged nothing
   (checked in this order):
   - last one in: "You're the last one in, so leaving closes the room."
@@ -759,6 +1132,16 @@ and `slackAt` per member. The map also needs:
   `stateStartedAt` (for "Offline 2 min" and the walk-in), and the rest end
   (for "1:24 left");
 - per room: the 12 stations, `{ slot, equipment | null }`.
+
+- (14 Oct, the hint) per room: `dony.fresh`, true while
+  `rooms.dony_summoned_at` is null. Derived from the column the server
+  already writes; no migration.
+- (14 Oct) per room: `donyOut`, `posterRestingUntil` (0 while he's out;
+  the last send back plus 30 s while he's in); and while Dony is
+  out, an entry shaped like a member's (name "Dony", state, exercise, slot,
+  rest end, `slackAt`, `stateStartedAt`) with a flag that tells the page to
+  use his sprite and to put him last. It must not be counted where members
+  are counted (headcount, End room, the last-one-in note, the alone line).
 
 The first render comes from the server (so it works without JS and after a
 reload, GYM-8). Each SSE message carries the same view; the client redraws
@@ -780,6 +1163,16 @@ stations, avatars and rows from it.
 - **Dock timer**: the `IntersectionObserver` in 3.3.
 - **Your avatar**: `click` moves focus to `.dock button`.
 - **After Done** (8 Oct): `afterDone()` in 3.3 item 11.
+- **The poster** (14 Oct): the tap, pending, failure and the redraw in
+  3.2a; on each room message, compare `donyOut` with what's drawn and play
+  the summon or the send back; set `.resting` until `posterRestingUntil`
+  (one `setTimeout`, not a tick: nothing counts down on screen). The
+  summon's swap writes the empty frame alone, which drops the bulbs; the
+  send back's swap writes the full frame plus glint, and adds the two bulb
+  `<use>`s only if the message's `dony.fresh` is true (it never is after a
+  summon, so in practice never). Don't rewrite the poster's svg on a
+  redraw or a reconnect that doesn't swap it, or the first minute's
+  marquee would start again.
 
 ## 4. States
 
@@ -803,6 +1196,22 @@ stations, avatars and rows from it.
 | **Just logged · plank** (8 Oct) | Done on a 1:30 hold | Like weight: the 1:00 rest starts ("after 1:30"), tab Resting, Set 2, Start set. The Hold field is empty (dim `0:00`) and the stopwatch row stays hidden until Start set starts it from zero. The stamp "Set 1 logged: 1:30". |
 | **Phone, just logged** (8 Oct; weight and cardio frames) | Done tapped on a 390 × 660 phone while scrolled down to the fields | The page jumps so the sheet's top border is 24 px under the top of the screen: the new timer (or the logged block), Set N+1 and the fields above the pinned dock, the stamp on the dock. If the sheet's top was already in view, nothing scrolls. |
 | **Finished** (others; not drawn) | Someone finished their workout here | They stand at an idle spot with a trophy-yellow tag; their row reads "12 sets · 48 min" with the Finished chip. |
+| **Poster: full** (14 Oct) | Dony isn't out and the poster isn't resting, in a room that has had a summon (a room that hasn't shows the bulbs, below) | Dony's face and glasses in a violet frame, with a skin plate under it. One glint frame every 8 s. Label "Call Dony out of his poster". |
+| **Poster: focused** | Keyboard focus | The Night `--focus` ring around the 48 × 48 px tap area, drawn over any tag. |
+| **Poster: pressed / pending** | Tapped; the post hasn't answered | Sunk one sprite pixel, `aria-disabled`, label kept. Nothing spins or hides. Only on the tapper's screen. |
+| **Poster: empty** | Dony is out | Charcoal inside the frame with his outline in violet; the plate stays. Label "Send Dony back to his poster". |
+| **Poster: resting** | 30 s after a send back, for everyone | Art at 50%, `aria-disabled`, "(not ready yet)" in its name. No countdown. The full poster only: since 14 Oct the empty poster never rests, so a summon leaves it ready at once. |
+| **Poster hint** (14 Oct) | The room has never had a summon (`dony.fresh`): every new room, until the first tap that calls Dony out | Bulbs round the full poster. For the page's first minute the two sets swap lit (`--paper`) and unlit (`--edge`) every 500 ms; then all lit and still. Focused: the ring outside them. Tapped: they sink with the poster while pending. They go out at the first summon's swap on every screen, and never come back in that room. No words; the label is unchanged. Reduced motion: lit and still from the start. Drawn in "Room alone", "Poster error" and the summon's first two frames too. |
+| **Poster error** | The post failed (no connection, 5xx) | The poster stays as it was; `p.error.poster-error` "Dony didn't hear you. Try again." under the map, in the map panel. Not a banner, not near the dock. Goes on the next tap or after 8 s. |
+| **Summon** (storyboard) | Anyone taps the full poster; the room's update arrives | Tap (pressed), shake, empty poster plus the hop to (5,1), the walk to the lockers. His row appears with the hop. No banner. About 2 s. |
+| **Dony just in** | Right after a summon, Priya alone | Priya and Dony both Idle by the lockers (his 3 s warm-up); the poster empty and ready (no dim, no bulbs); the squad list Priya then Dony; `p.alone` reworded; "1 of 12 in"; the sheet is untouched (Idle, Pick a lift). |
+| **Dony · Idle / Lifting / Resting / Slacking** | His schedule | As a person in that state: Idle at an idle spot with a paper tag; Lifting on squat rack 3 with the bar overhead and a leaf tag, row "Back squat · squat rack 3"; Resting at the cooler with the blue bottle, row "Rest 2:28 left · squat rack 3"; Slacking sitting on his rack with his phone, red tag, row "1:12 over rest · squat rack 3". Drawn beside Mia (you), at both widths. |
+| **Busy room with Dony** | Priya (you, host), Mia, Tom and Dony | Dony squatting on rack 3, last in the list as an ordinary row, no badge. "3 of 12 in"; End room's confirm names Mia and Tom only. |
+| **Send back** (storyboard) | Tom taps the empty poster (Priya summoned him) | Dony mid-set; his row leaves the list, his tag turns Idle, he walks to (5,1), hops, and the poster shakes and fills, then rests. The rack stays on station 3. |
+| **Sent back** | After the send back | No Dony on the map or in the list; squat rack 3 free with its rack; the poster full and resting. |
+| **Summoned again** | 30 s later, anyone taps the full poster | The summon exactly as the first time; a fresh visit: Idle at the lockers again, last in the list again. |
+| **A tap that did nothing** | Priya taps the full poster just after Tom's summon landed | Her poster presses in; within a second the update arrives and plays Tom's summon. No error, no message. |
+| **Reduced motion** | `prefers-reduced-motion: reduce` | No shake, glint, hop or walk: the poster swaps, and Dony appears at his spot or vanishes. |
 | Idle, edit set, delete confirm, end-room confirm, pending, without JS, first time, bodyweight, duration, stopwatch running, error | As in the last revision (the old "cardio, stopwatch idle" state with the bubble is now "Just logged · cardio"; the duration state's Hold field is now empty) | Unchanged, except that the primary button is in the dock, a chosen lift shows `p.spot`, and every sheet with a rest running has Start set instead of Done and no Skip (pending, without JS, duration, which also hides its stopwatch until Start set; edit and delete keep Save). Pending disables the dock's button. Without JS the map is the server's render at the CSS scale, the list shows server times, and `.conn` stays `Live`. |
 
 ## 5. Departures
@@ -874,7 +1283,49 @@ stations, avatars and rows from it.
     pattern borrowed for the gym, and nobody saw it. `div.set-done` reuses
     the rest block's frame in leaf.
 
+18. **The poster is a map control that isn't an avatar** (14 Oct). System 9
+    lists no such component; it follows `.avatar`'s rules (a button on the
+    grid, at least 44 px, the Night ring) and adds one more thing you can
+    tap on the map, far from the dock.
+19. **A sprite outside the avatar system** (14 Oct). System 10 says avatar
+    palettes are skin, hair, shirt and outline; Dony's slots are the same
+    four, but his grids are his own (not `BODY` plus a hair overlay) and his
+    colours are fixed (BOT-2). His jacket violet (`#8b6cf2`) and charcoal
+    (`#2e3046`) are new raw hex values, allowed only inside sprite palettes
+    (system 5).
+20. **An error on Night under the map** (14 Oct). The layout's `.error`
+    (white on `--error`) is used as is; it is the gym's first page-level
+    error outside the sheet. It sits in the map panel because the map is
+    where the tap was, and the copy is plain (no emoji), per system 3.
+21. **The alone line has two wordings** (14 Oct). The copy bank's "Just you
+    so far…" stays for a truly empty room; with Dony out it reads "Your
+    squad's not in yet. Send them the passcode 📲". Worth adding to the
+    copy bank in `system.md`.
+22. **A two-frame loop on scenery that stops** (14 Oct). The bulbs are the
+    map's first decoration that animates for a while and then stops
+    (system 11 describes loops on sprites, which run for as long as the
+    state lasts). It stops so that the only moving things on the map after
+    the first minute are people, and the wall stays quiet behind a set.
+    It uses `steps(1)`, tokens only, and freezes under reduced motion.
+
 ## 6. Open questions
+
+- **Tapping Dony's own avatar** (14 Oct). This week it does what anyone
+  else's does: nothing beyond focus. Once the interaction menu (INT-1) ships,
+  he should take cheers like anyone; that is a later design.
+- **Bulbs, enough or too much?** (14 Oct). The marquee is drawn for the
+  first minute and then lit and still until the first summon. If the
+  showcase finds people still don't tap it, the next steps are, in order: a
+  `title` on the button ("Member of the month: tap to call him out"), then
+  re-running the marquee each time someone joins a fresh room. If it reads
+  as noise, drop the still phase and let the bulbs go out after the minute.
+- **The empty poster for a newcomer** (14 Oct). Whether "a stranger called
+  Dony" plus an empty frame is enough of a hint for someone who joins after
+  he came out is for the showcase to tell. If it isn't, the cheapest fix is
+  the poster's accessible name and a `title` ("Member of the month: Dony,
+  out on the floor"), not a label on him.
+- **Glint frequency** (14 Oct). One frame every 8 s is a guess at "alive but
+  not distracting during a heavy set"; drop it if it catches eyes.
 
 - None on map size: 10 × 10 is confirmed by the user.
 - **Exercise loops.** The 4-week spec asks for eight two-frame loops. The
@@ -1373,6 +1824,158 @@ The empty bay is generated, not drawn: a dashed square in `e` on rows and column
 .ee..ee..ee..ee.
 ................
 ```
+
+### Dony (14 Oct, BOT-2)
+
+A new module, `src/sprites/dony.ts`. His slots are the avatar's (`k` ink,
+`s` skin, `h` hair, `t` shirt), so `Avatar.astro`'s `runs()` and the `.av`
+slot classes draw him unchanged, plus the gym's props (`m` dim, `w` paper,
+`r` resting blue, as classes `pm pw pr`). His colours are fixed and set on
+the svg as custom properties:
+
+```ts
+// src/sprites/dony.ts (proposed): Dony, the gym's member of the month.
+// His own grids, not BODY plus hair; four colours, set on the svg:
+// --av-skin skin, --av-hair charcoal (hair, tee, trousers), --av-shirt jacket.
+export const DONY_LOOK = { skin: "#e9bd94", hair: "#2e3046", shirt: "#8b6cf2" };
+
+const HEAD = [
+  ".....kkkkkk.....",
+  "....khhhhhhkk...",  // side part: the hair overhangs to his left
+  "...khhhhhhhhhk..",
+  "...khhhhhhhhhk..",
+  "...khhhsssssk...",  // the fringe swept across the forehead
+  "..kksttkksttkk..",  // glasses: ink frames, temples past the head; each lens an eye glint (s) and a tint (t)
+  "...kssssssssk...",
+  "...kssssssssk...",
+  "....kssssssk....",
+];
+// an open violet jacket over a black tee
+const TORSO = ["...kktthhttkk...", "..ktttthhttttk..", "..ktktthhttktk..", "..ksktthhttksk.."];
+const BELT = "...kkkkkkkkkk...";
+const LEGS = ["...khhk..khhk...", "...kkkk..kkkk..."];
+const ARMS_UP_TORSO = ["ksktttthhttttksk", "..ktttthhttttk..", "..ktttthhttttk..", "...kttthhtttk..."];
+```
+
+The frames (rows 0 to 8 are `HEAD` unless stated; props in `m w r`):
+
+| Frame | Grid |
+| --- | --- |
+| `stand` | `HEAD`, `TORSO`, `BELT`, `LEGS` |
+| `walk1` | `stand` with rows 14 to 15 `"...khhk..kkkk..."`, `"...kkkk........."` |
+| `walk2` | `stand` with rows 14 to 15 `"...kkkk..khhk..."`, `".........kkkk..."` |
+| `lift` | `HEAD`, `ARMS_UP_TORSO`, `BELT`, `LEGS`; arms at columns 0 to 1 and 14 to 15: row 1 `kk` / `kk`, rows 2 to 8 `ks` / `sk`; the bar prop `"mmwwwwwwwwwwwwmm"` on row 0 |
+| `lift2` | `HEAD`, `ARMS_UP_TORSO`, `BELT`, `LEGS` with no raised arms; the bar on row 8 (at the shoulders) |
+| `rest` | `stand` plus the bottle prop at (12, 8): `".k."`, `"kwk"`, `"krk"`, `"krk"`, `"krk"`, `"kkk"` |
+| `sit` | two blank rows, `HEAD` (rows 2 to 10), then `"...kktthhttkk..."`, `"..ktttkkkktttk.."`, `"..ktskkkkkkstk.."`, `".kkkkkkkkkkkkkk."`, `".khhk......khhk."`; the phone glow `"ww"` at (7, 12) |
+| `hop` | `lift` without the bar, rows 14 to 15 `"..khhk....khhk.."`, `"..kkkk....kkkk.."` (arms up, feet apart) |
+
+Loops: Idle and Resting bob rows 0 to 12 by 1 px every 400 ms; Lifting
+alternates `lift` and `lift2` every 250 ms; Slacking toggles the phone glow
+every 400 ms; walking alternates `walk1` and `walk2` per tile. Freeze on the
+first frame under reduced motion. Every frame is 16 × 16, uses at most `k s
+h t` plus props, and has an ink outline.
+
+### The poster (14 Oct, BOT-1, BOT-2)
+
+Drawn over the wall tile `W` (`.` lets the wall show), in Dony's palette
+(`k s h t` as above, painted with the same `.av`-style slot classes or as
+hex in a symbol):
+
+```ts
+export const POSTER = {
+  full: [
+    "................",
+    "..kkkkkkkkkkkk..",
+    "..kttttttttttk..",  // the violet frame
+    "..kttkkkkkkttk..",
+    "..ktkhhhhhhktk..",  // his hair
+    "..ktkhhssssktk..",
+    "..kkkstkkstkkk..",  // his glasses, the frames reaching the poster's edge
+    "..ktkssssssktk..",
+    "..kttksssskttk..",
+    "..kkttkhhkttkk..",  // the black tee's collar
+    "..kttthhhhtttk..",
+    "..kkkkkkkkkkkk..",
+    "....kssssssk....",  // the plate: "Member of the month"
+    "....kskksksk....",  //   in three ink marks
+    "....kkkkkkkk....",
+    "................",
+  ],
+  // one frame every 8 s, drawn over full: his lenses catch the light
+  glint: ["................", "................", "................", "................", "................", "................",
+          "......s...s.....", "................", "................", "................", "................", "................",
+          "................", "................", "................", "................"],
+  empty: [
+    "................",
+    "..kkkkkkkkkkkk..",
+    "..kttttttttttk..",
+    "..kthhhhhhhhtk..",  // the backing, charcoal
+    "..kthhtttthhtk..",  // his outline in violet, where he was
+    "..kthththhthtk..",
+    "..kthththhthtk..",
+    "..kthhthhthhtk..",
+    "..kthhhtthhhtk..",
+    "..kthtthhtthtk..",
+    "..ktthhhhhhttk..",
+    "..kkkkkkkkkkkk..",
+    "....kssssssk....",
+    "....kskksksk....",
+    "....kkkkkkkk....",
+    "................",
+  ],
+};
+```
+
+**The bulbs (14 Oct, the hint).** Two more grids in `POSTER`, each a set of
+single pixels in one slot, painted with `fill="currentColor"` (not the
+poster's palette) so the CSS colours them lit or unlit. Mirrored left to
+right; A and B alternate along the ring:
+
+```ts
+  // the hint: bulbs round the poster while the room has never had a summon.
+  // "b" is drawn in currentColor; A is `bulbs`, B is `bulbs-alt`.
+  bulbs: [
+    "..b...b..b...b..",
+    "................",
+    "b..............b",
+    "................",
+    "................",
+    "................",
+    "b..............b",
+    "................",
+    "................",
+    "................",
+    "b..............b",
+    "................",
+    "..b..........b..",
+    "................", "................", "................",
+  ],
+  "bulbs-alt": [
+    "b...b......b...b",
+    "................",
+    "................",
+    "................",
+    "b..............b",
+    "................",
+    "................",
+    "................",
+    "b..............b",
+    "................",
+    "................",
+    "................",
+    "b..............b",
+    "................", "................", "................",
+  ],
+```
+
+They sit in the wall's columns 0, 1, 14 and 15 and rows 0 to 12, outside
+the frame (columns 2 to 13, rows 1 to 11) and beside the plate (row 12), so
+they never cover his face. On the wall's top ink row they read as bulbs set
+into the ceiling trim.
+
+`MAP` keeps its `P` (the poster's place, read by the page to position the
+button), but the tile layer draws `TILES.W` there; `TILES.P` can go.
 
 New 8 × 8 icons for `src/sprites/icons.ts` (`c` is the text colour):
 
