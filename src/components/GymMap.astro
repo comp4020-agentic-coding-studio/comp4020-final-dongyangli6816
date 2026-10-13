@@ -7,11 +7,12 @@
 // and stations that a scoped style wouldn't reach.
 import Avatar from "./Avatar.astro";
 import Sprite from "./Sprite.astro";
-import { avatarLabel, floorLine, spots } from "../lib/floor.ts";
+import { avatarLabel, everyone, floorLine, spots } from "../lib/floor.ts";
 import type { RoomView } from "../lib/presence.ts";
 import { EQUIPMENT, type Equipment } from "../lib/exercises.ts";
 import { HAIR_STYLES, lookKey, type Look, type Pose } from "../sprites/avatar.ts";
 import { bay, CLAIM, GEAR, GYM_PALETTE, MAP, SCENERY, STATIONS, TILES } from "../sprites/gym.ts";
+import { POSTER, POSTER_PALETTE, type DonyFrame } from "../sprites/dony.ts";
 import { phoneOffIcon } from "../sprites/icons.ts";
 
 interface Props {
@@ -23,24 +24,34 @@ const { view, me, passcode } = Astro.props;
 
 const art = (grid: readonly string[]) => ({ grid, palette: GYM_PALETTE });
 // runs of one colour in a row, as rects, for the tile symbols
-function rects(grid: readonly string[]) {
+function rects(grid: readonly string[], palette = GYM_PALETTE) {
   const out: { x: number; y: number; w: number; fill: string }[] = [];
   grid.forEach((row, y) => {
     for (let x = 0; x < row.length; ) {
       let end = x + 1;
       while (row[end] === row[x]) end++;
-      if (row[x] !== ".") out.push({ x, y, w: end - x, fill: GYM_PALETTE[row[x]] });
+      if (row[x] !== ".") out.push({ x, y, w: end - x, fill: palette[row[x]] });
       x = end;
     }
   });
   return out;
 }
-// one symbol per kind of tile; scenery is its wall tile with the art over it
+// one symbol per kind of tile; scenery is its wall tile with the art over it,
+// and the poster's place is plain wall under its button
 const kinds = [...new Set(MAP.join(""))];
-const symbolOf = (ch: string) => TILES[SCENERY[ch]?.base ?? ch];
+const symbolOf = (ch: string) => TILES[SCENERY[ch]?.base ?? (ch === "P" ? "W" : ch)];
+// BOT-1, BOT-4: Dony's poster, full while he's in it, empty while he's out,
+// resting for 30 s after any change
+const poster = view.dony;
+const resting = view.now < poster.restingUntil;
+const posterLabel =
+  (poster.out ? "Send Dony back to his poster" : "Call Dony out of his poster") + (resting ? " (not ready yet)" : "");
+const posterArt = (grid: readonly string[]) => rects(grid, POSTER_PALETTE);
+const donyPose = (pose: Pose): DonyFrame => pose;
+const DONY_FRAMES: DonyFrame[] = ["stand", "lift", "rest", "sit", "walk1", "walk2", "hop"];
 const mine = view.members.find((m) => m.id === me)?.station?.slot;
 const placed = spots(view, view.now);
-const byId = new Map(view.members.map((m) => [m.id, m]));
+const byId = new Map(everyone(view).map((m) => [m.id, m]));
 const POSES: Pose[] = ["stand", "lift", "rest", "sit"];
 const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black", shirt: "teal" };
 ---
@@ -70,6 +81,30 @@ const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black",
         )
       }
     </svg>
+    <button
+      type="submit"
+      form="dony"
+      name="intent"
+      value={poster.out ? "send-back" : "summon"}
+      class:list={["poster", { resting }]}
+      aria-label={posterLabel}
+      aria-disabled={resting ? "true" : undefined}
+      data-out={String(poster.out)}
+      data-resting-until={poster.restingUntil}
+    >
+      <svg viewBox="0 0 16 16" aria-hidden="true">
+        <use href={poster.out ? "#poster-empty" : "#poster-full"} />
+        {!poster.out && <use href="#poster-glint" class="glint" />}
+        {
+          poster.fresh && (
+            <>
+              <use href="#poster-bulbs" class="bulbs" />
+              <use href="#poster-bulbs-alt" class="bulbs alt" />
+            </>
+          )
+        }
+      </svg>
+    </button>
     {
       view.stations.map((s) => (
         <div
@@ -95,14 +130,14 @@ const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black",
             data-id={m.id}
             data-state={p.state}
             data-pose={p.pose}
-            data-look={lookKey(m.look)}
+            data-look={"dony" in m ? "dony" : lookKey(m.look)}
             aria-label={avatarLabel(m, p.state, m.id === me)}
           >
             <span class={`tag state-${p.state}`}>
               <span class="nm">{m.name}</span>
               {m.away && <Sprite sprite={phoneOffIcon} scale={2} />}
             </span>
-            <Avatar look={m.look} pose={p.pose} />
+            {"dony" in m ? <Avatar dony={donyPose(p.pose)} /> : <Avatar look={m.look} pose={p.pose} />}
           </button>
         );
       })
@@ -130,6 +165,26 @@ const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black",
       </template>
     ))
   }
+  {
+    DONY_FRAMES.map((frame) => (
+      <template data-dony={frame}>
+        <Avatar dony={frame} />
+      </template>
+    ))
+  }
+  <svg width="0" height="0" class="poster-art" aria-hidden="true">
+    <defs>
+      {
+        Object.entries(POSTER).map(([name, grid]) => (
+          <symbol id={`poster-${name}`} viewBox="0 0 16 16">
+            {posterArt(grid).map((r) => (
+              <rect x={r.x} y={r.y} width={r.w} height="1" fill={r.fill} />
+            ))}
+          </symbol>
+        ))
+      }
+    </defs>
+  </svg>
   <template data-claim><Sprite sprite={art(CLAIM)} class="claim" /></template>
   <template data-tag-away><Sprite sprite={phoneOffIcon} scale={2} /></template>
 </section>
@@ -295,6 +350,119 @@ const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black",
   @media (prefers-reduced-motion: reduce) {
     .map-panel .avatar .av-top,
     .map-panel .avatar .pose-sit .pw {
+      animation: none;
+    }
+  }
+
+  /* ---------- Dony's poster (BOT-1, BOT-4) ----------
+     The back wall's P tile, as a button on the map. Its tap area is at least
+     48 px square, centred on the tile: the tile itself at 3x, and at 2x the
+     tile plus 8 px all round (up into the panel's padding, down onto the
+     walkway, where nobody stands still). It sits under the avatars (z 0), so
+     a name tag drawn over it takes the tap; focused, it rises over everything. */
+  .map-panel .poster-art {
+    position: absolute;
+  }
+  .map .poster {
+    --a: max(48px, var(--t));
+    position: absolute;
+    left: calc(5.5 * var(--t) - var(--a) / 2);
+    top: calc(var(--t) / 2 - var(--a) / 2);
+    z-index: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--a);
+    height: var(--a);
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    background: none;
+    box-shadow: none;
+    transform: none;
+    transition: none;
+  }
+  .map .poster:hover,
+  .map .poster:active {
+    background: none;
+    box-shadow: none;
+    transform: none;
+  }
+  .map .poster:focus-visible {
+    z-index: 16;
+  }
+  .poster svg {
+    width: var(--t);
+    height: var(--t);
+    flex: none;
+  }
+  /* pressed: the poster sinks a sprite pixel while the tap is on its way
+     (pending), and can't be tapped again; nothing spins */
+  .map .poster:active svg,
+  .poster.pending svg {
+    transform: translateY(calc(var(--t) / 16));
+  }
+  .poster.pending {
+    cursor: progress;
+  }
+  /* resting 30 s after any summon or send back: dimmed, no countdown */
+  .poster.resting svg {
+    opacity: 0.5;
+  }
+  .poster.resting {
+    cursor: default;
+  }
+  /* his glasses catch the light for one frame every 8 s (full only) */
+  .poster .glint {
+    visibility: hidden;
+    animation: poster-glint 8s steps(1) infinite;
+  }
+  @keyframes poster-glint {
+    98% {
+      visibility: visible;
+    }
+  }
+  /* the hint, until anyone first calls him out in this room: marquee bulbs
+     round the poster, two sets swapping lit and unlit every 500 ms for the
+     page's first minute, then all lit and still */
+  .poster .bulbs {
+    color: var(--paper);
+    animation: poster-bulbs 1s steps(1) 60;
+  }
+  .poster .bulbs.alt {
+    animation-delay: -0.5s;
+  }
+  @keyframes poster-bulbs {
+    50% {
+      color: var(--edge);
+    }
+  }
+  /* the summon and the send back: two 125 ms frames, a sprite pixel left then
+     right, before the poster swaps */
+  .poster.shake svg {
+    animation: poster-shake 250ms steps(1);
+  }
+  @keyframes poster-shake {
+    0% {
+      transform: translateX(calc(var(--t) / -16));
+    }
+    50% {
+      transform: translateX(calc(var(--t) / 16));
+    }
+  }
+  /* the hop between the wall and the walkway: one frame half a tile up */
+  .map .avatar.hop,
+  .map .avatar.hop:hover {
+    transform: translate(-50%, calc(-100% - var(--t) / 2));
+  }
+  /* the tap didn't reach the server: one line under the map */
+  .map-panel .poster-error {
+    margin: var(--px) 0 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .poster .glint,
+    .poster .bulbs,
+    .poster.shake svg {
       animation: none;
     }
   }

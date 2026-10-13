@@ -6,6 +6,8 @@ import { db } from "../../lib/db.ts";
 import { EQUIPMENT, EXERCISES, exerciseById, type Exercise } from "../../lib/exercises.ts";
 import { clock, distanceKm, kg, km, pace, setLabel, timeOfDay, volume } from "../../lib/logbook.ts";
 import { roomView, setFinished, setLifting, SLACK_GRACE_S, type State } from "../../lib/presence.ts";
+import { tapPoster } from "../../lib/dony.ts";
+import { everyone } from "../../lib/floor.ts";
 import { STATE_WORD, stateAt, whatParts } from "../../lib/squad.ts";
 import { broadcast } from "../../lib/realtime.ts";
 import { endRoom, isMember, leaveRoom, ROOM_SIZE, touchRoom, wasMember } from "../../lib/rooms.ts";
@@ -87,6 +89,13 @@ if (Astro.request.method === "POST") {
     if (!ex) return Astro.redirect(here, 303);
     setLifting(user.id, roomId, ex.id);
     return changed(Astro.redirect(`${here}?exercise=${ex.id}`, 303));
+  }
+  // BOT-1, BOT-4: a tap on Dony's poster. A tap that does nothing answers the
+  // same, and the room's next update shows what really happened.
+  if (action === "dony") {
+    const intent = String(form.get("intent"));
+    if ((intent === "summon" || intent === "send-back") && tapPoster(roomId, user.id, intent)) broadcast(roomId);
+    return Astro.request.headers.get("x-spotter") === "poster" ? new Response(null, { status: 204 }) : Astro.redirect(here, 303);
   }
   if (action === "leave") return summary(leaveRoom(user.id, roomId), `/?left=${room.passcode}`);
   if (action === "end") {
@@ -201,7 +210,9 @@ const TAB = {
 // GYM-15: everyone in the room as the server sees them, you first, then in
 // the order they came in; the script keeps it live from the event stream
 const view = roomView(roomId, now);
+// (Dony, while he's out, last of all, BOT-5)
 const squad = [...view.members].sort((a, b) => Number(b.id === user.id) - Number(a.id === user.id));
+if (view.dony.member) squad.push(view.dony.member);
 // GYM-4: the station you claimed, shown in the sheet while you're on a lift
 const myStation = !editing && exercise ? view.members.find((m) => m.id === user.id)?.station : undefined;
 
@@ -558,8 +569,8 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       <ul class="people" data-me={user.id}>
         {
           squad.map((m) => (
-            <li class:list={{ me: m.id === user.id, away: m.away }} data-id={m.id} data-look={lookKey(m.look)}>
-              <Avatar look={m.look} head />
+            <li class:list={{ me: m.id === user.id, away: m.away }} data-id={m.id} data-look={"dony" in m ? "dony" : lookKey(m.look)}>
+              {"dony" in m ? <Avatar dony="stand" head /> : <Avatar look={m.look} head />}
               <span class="who">
                 {m.name}
                 {m.id === user.id && <span class="badge">You</span>}
@@ -584,9 +595,12 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
           ))
         }
       </ul>
-      <p class="alone" hidden={members.length > 1}>Just you so far. Send the passcode to the squad 📲</p>
+      <p class="alone" hidden={members.length > 1}>
+        {view.dony.out ? "Your squad's not in yet. Send them the passcode 📲" : "Just you so far. Send the passcode to the squad 📲"}
+      </p>
       {/* what the script builds rows and the connection badge from */}
       <template data-part="head"><Avatar look={lookOf(user.id)} head allHair vars={false} /></template>
+      <template data-part="dony-head"><Avatar dony="stand" head /></template>
       {
         (Object.keys(STATE_WORD) as State[]).map((s) => (
           <template data-part={s}>
@@ -740,13 +754,15 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   </div>
   {/* outside the room, so an in-place swap keeps it: what Done logged, said once */}
   <p class="sheet-news" id="sheet-news" role="status"></p>
+  {/* BOT-1, BOT-4: what Dony's poster on the map submits */}
+  <form method="post" id="dony"><input type="hidden" name="action" value="dony" /></form>
 </Layout>
 
 <script>
   import { navigate } from "astro:transitions/client";
   import type { RoomView } from "../../lib/presence.ts";
   import { STATE_WORD, stateAt, whatParts } from "../../lib/squad.ts";
-  import { avatarLabel, DOOR, floorLine, route, spots, type Tile } from "../../lib/floor.ts";
+  import { avatarLabel, DOOR, everyone, floorLine, route, spots, UNDER_POSTER, type Tile } from "../../lib/floor.ts";
   import { lookKey, lookVars } from "../../sprites/avatar.ts";
 
   // Every timer here is worked out from Date.now() on each tick, never
@@ -991,6 +1007,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   let tick = () => {};
   document.addEventListener("astro:page-load", () => {
     const gym = document.querySelector<HTMLElement>(".gym");
+    posterDrawn = undefined; // a new page: read the poster as the server drew it
     tick = gym ? init() : () => {};
     if (gym) connect(gym.dataset.room!);
     else disconnect();
@@ -1079,7 +1096,9 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       node.append(...children);
       return node;
     };
-    const members = [...view.members].sort((a, b) => Number(b.id === me) - Number(a.id === me));
+    const people = [...view.members].sort((a, b) => Number(b.id === me) - Number(a.id === me));
+    // Dony, while he's out, is last, and counted nowhere (BOT-5)
+    const members = view.dony.member ? [...people, view.dony.member] : people;
     // Rows are patched in place, not rebuilt: a head is only redrawn when
     // that person's look changes, and the words and chips only when they
     // read differently, so nothing repaints every second (a freshly inserted
@@ -1089,13 +1108,17 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       const li = rows.get(String(m.id)) ?? el("li", "");
       li.dataset.id = String(m.id);
       li.className = [m.id === me && "me", m.away && "away"].filter(Boolean).join(" ");
-      const look = lookKey(m.look);
+      const dony = "dony" in m;
+      const look = dony ? "dony" : lookKey(m.look);
       if (li.dataset.look !== look || !li.querySelector(".av")) {
-        // the head is drawn with every hair style; the look picks one and its colours
-        const head = part("head") as DocumentFragment;
-        const svg = head.querySelector("svg")!;
-        svg.setAttribute("style", lookVars(m.look));
-        svg.dataset.hair = m.look.hair;
+        // the head is drawn with every hair style; the look picks one and its
+        // colours. Dony's is his own.
+        const head = part(dony ? "dony-head" : "head") as DocumentFragment;
+        if (!dony) {
+          const svg = head.querySelector("svg")!;
+          svg.setAttribute("style", lookVars(m.look));
+          svg.dataset.hair = m.look.hair;
+        }
         li.querySelector(".av")?.remove();
         li.prepend(head);
         li.dataset.look = look;
@@ -1131,11 +1154,18 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     const current = [...list.children];
     if (current.length !== ordered.length || ordered.some((li, i) => current[i] !== li)) list.replaceChildren(...ordered);
     const alone = document.querySelector<HTMLElement>(".alone");
-    if (alone) alone.hidden = members.length > 1;
+    if (alone) {
+      alone.hidden = people.length > 1;
+      const line = view.dony.out
+        ? "Your squad's not in yet. Send them the passcode 📲"
+        : "Just you so far. Send the passcode to the squad 📲";
+      if (alone.textContent!.trim() !== line) alone.textContent = line;
+    }
     const count = document.querySelector<HTMLElement>(".spots .count");
-    if (count) count.textContent = `${members.length} of 12 in`;
-    document.querySelectorAll(".spots .pips i").forEach((pip, i) => pip.classList.toggle("in", i < members.length));
+    if (count) count.textContent = `${people.length} of 12 in`;
+    document.querySelectorAll(".spots .pips i").forEach((pip, i) => pip.classList.toggle("in", i < people.length));
     drawMap(now);
+    drawPoster();
   }
 
   // ---------- the map (GYM-1, GYM-9, GYM-10) ----------
@@ -1174,19 +1204,33 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     const floor = document.querySelector<HTMLElement>("#floor");
     if (floor) floor.textContent = floorLine(view.stations);
 
-    const left = new Map([...map.querySelectorAll<HTMLButtonElement>(".avatar")].map((b) => [b.dataset.id!, b]));
+    const left = new Map(
+      [...map.querySelectorAll<HTMLButtonElement>(".avatar:not(.leaving)")].map((b) => [b.dataset.id!, b]),
+    );
+    const all = everyone(view);
     for (const p of spots(view, now)) {
-      const m = view.members.find((x) => x.id === p.id)!;
+      const m = all.find((x) => x.id === p.id)!;
+      const dony = "dony" in m;
       let b = left.get(String(p.id));
       left.delete(String(p.id));
       if (!b) {
-        // someone new walks in from the door
+        // someone new walks in from the door; Dony hops down from his poster,
+        // once it has shaken (3.2a), or is simply there under reduced motion
         b = document.createElement("button");
         b.type = "button";
         b.className = "avatar";
         b.dataset.id = String(p.id);
         b.append(Object.assign(document.createElement("span"), { className: "tag" }));
-        place(b, DOOR);
+        place(b, dony && !reducedMotion.matches ? UNDER_POSTER : dony ? p.tile : DOOR);
+        if (dony && !reducedMotion.matches && posterDrawn === false) {
+          b.hidden = true;
+          const arriving = b;
+          setTimeout(() => {
+            arriving.hidden = false;
+            arriving.classList.add("hop");
+            setTimeout(() => arriving.classList.remove("hop"), STEP_MS);
+          }, 250);
+        }
         map.append(b);
       }
       b.classList.toggle("me", m.id === me);
@@ -1201,21 +1245,130 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
         if (m.away) tag.append(copy("data-tag-away"));
         tag.dataset.key = tagKey;
       }
-      const look = lookKey(m.look);
+      const look = dony ? "dony" : lookKey(m.look);
       if (b.dataset.pose !== p.pose || b.dataset.look !== look || !b.querySelector(".av")) {
-        const sprite = copy(`data-pose="${p.pose}"`);
-        const svg = sprite.querySelector("svg")!;
-        svg.setAttribute("style", lookVars(m.look));
-        svg.dataset.hair = m.look.hair;
+        const sprite = copy(dony ? `data-dony="${p.pose}"` : `data-pose="${p.pose}"`);
+        if (!dony) {
+          const svg = sprite.querySelector("svg")!;
+          svg.setAttribute("style", lookVars(m.look));
+          svg.dataset.hair = m.look.hair;
+        }
         b.querySelector(".av")?.remove();
         b.append(sprite);
         b.dataset.pose = p.pose;
         b.dataset.look = look;
       }
-      walk(b, p.tile, p.onStation);
+      // he waits on the walkway until the hop, then walks like anyone
+      if (b.hidden) {
+        const going = b;
+        setTimeout(() => walk(going, p.tile, p.onStation), 250 + STEP_MS);
+      } else walk(b, p.tile, p.onStation);
     }
-    for (const b of left.values()) b.remove();
+    for (const b of left.values()) {
+      if (b.dataset.look !== "dony" || reducedMotion.matches) {
+        b.remove();
+        continue;
+      }
+      // Dony sent back: he walks to the walkway under his poster and hops in;
+      // his row has already gone, and the poster fills once he's in (3.2a)
+      b.classList.add("leaving");
+      b.inert = true;
+      walk(b, UNDER_POSTER, false, () => {
+        b.classList.add("hop");
+        setTimeout(() => {
+          b.remove();
+          drawPoster();
+        }, STEP_MS);
+      });
+    }
   }
+
+  // ---------- Dony's poster (BOT-1, BOT-4; spec 3.2a) ----------
+  // Full while he's in it, empty while he's out. It changes when a room
+  // message says so: a shake, then the swap, and the dim for 30 s. While he
+  // is walking back, it waits for him to hop in.
+  let posterDrawn: boolean | undefined; // what the poster shows: out or not
+  let posterRest: ReturnType<typeof setTimeout> | undefined;
+  function drawPoster() {
+    const button = document.querySelector<HTMLButtonElement>(".map-panel .poster");
+    if (!button || !view) return;
+    const out = view.dony.out;
+    if (posterDrawn === undefined) posterDrawn = button.dataset.out === "true";
+    const leaving = document.querySelector(".map-panel .avatar.leaving");
+    if (out !== posterDrawn && !(!out && leaving)) {
+      const svg = button.querySelector("svg")!;
+      const swap = () => {
+        svg.innerHTML = out ? '<use href="#poster-empty" />' : '<use href="#poster-full" /><use href="#poster-glint" class="glint" />';
+      };
+      if (reducedMotion.matches) swap();
+      else {
+        button.classList.remove("shake");
+        void button.offsetWidth;
+        button.classList.add("shake");
+        setTimeout(() => {
+          button.classList.remove("shake");
+          swap();
+        }, 250);
+      }
+      posterDrawn = out;
+      button.dataset.out = String(out);
+      button.classList.remove("pending");
+      clearTimeout(pendingTimer);
+    }
+    button.value = out ? "send-back" : "summon";
+    const resting = Date.now() + offset < view.dony.restingUntil;
+    button.classList.toggle("resting", resting);
+    if (resting || button.classList.contains("pending")) button.setAttribute("aria-disabled", "true");
+    else button.removeAttribute("aria-disabled");
+    button.setAttribute(
+      "aria-label",
+      (out ? "Send Dony back to his poster" : "Call Dony out of his poster") + (resting ? " (not ready yet)" : ""),
+    );
+    // one timer, not a tick: nothing counts down on screen
+    clearTimeout(posterRest);
+    if (resting) posterRest = setTimeout(drawPoster, view.dony.restingUntil - (Date.now() + offset) + 50);
+  }
+
+  // A tap posts in the background; the room's next message, which every
+  // screen gets, is the answer. Without JS the form posts and the page comes
+  // back with the result.
+  let pendingTimer: ReturnType<typeof setTimeout> | undefined;
+  document.addEventListener(
+    "click",
+    (e) => {
+      const button = (e.target as Element).closest?.<HTMLButtonElement>(".map-panel .poster");
+      if (!button) return;
+      e.preventDefault();
+      document.querySelector(".map-panel .poster-error")?.remove();
+      if (button.getAttribute("aria-disabled") === "true") return;
+      const form = document.querySelector<HTMLFormElement>("#dony")!;
+      const body = new URLSearchParams([...new FormData(form, button)] as [string, string][]);
+      button.classList.add("pending");
+      button.setAttribute("aria-disabled", "true");
+      const settle = () => {
+        button.classList.remove("pending");
+        drawPoster();
+      };
+      fetch(location.pathname, { method: "POST", body, headers: { "x-spotter": "poster" } })
+        .then((res) => {
+          if (!res.ok) throw new Error(String(res.status));
+          // a tap that did nothing gets no message: stop waiting after 3 s
+          clearTimeout(pendingTimer);
+          pendingTimer = setTimeout(settle, 3000);
+        })
+        .catch(() => {
+          settle();
+          const error = Object.assign(document.createElement("p"), {
+            className: "error poster-error",
+            textContent: "Dony didn't hear you. Try again.",
+          });
+          error.setAttribute("role", "alert");
+          button.closest(".map-panel")!.append(error);
+          setTimeout(() => error.remove(), 8000);
+        });
+    },
+    true,
+  );
 
   const tileOf = (b: HTMLElement): Tile => [Number(b.style.getPropertyValue("--x")), Number(b.style.getPropertyValue("--y"))];
   function place(b: HTMLElement, [x, y]: Tile) {
@@ -1225,7 +1378,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   // Steps an avatar along the aisles to its tile, one tile a step; a new
   // target mid-walk sets off again from wherever it has got to.
   const walks = new WeakMap<HTMLElement, { to: string; timer: ReturnType<typeof setInterval> }>();
-  function walk(b: HTMLElement, to: Tile, onStation: boolean) {
+  function walk(b: HTMLElement, to: Tile, onStation: boolean, then?: () => void) {
     const key = to.join(",");
     const going = walks.get(b);
     if (going?.to === key) return;
@@ -1234,6 +1387,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       place(b, to);
       b.classList.toggle("on-station", onStation);
       walks.delete(b);
+      then?.();
     };
     const path = route(tileOf(b), to);
     if (path.length === 0 || reducedMotion.matches) return arrive();
@@ -1301,6 +1455,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     document.title = next.title;
     // keep the router's own history state, so Back still works
     if (res.url !== location.href) history.replaceState(history.state, "", res.url);
+    posterDrawn = undefined;
     tick = init();
     tick();
     liveTick();

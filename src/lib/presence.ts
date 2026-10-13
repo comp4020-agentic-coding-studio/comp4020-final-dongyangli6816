@@ -5,6 +5,7 @@ import { parseLook, type Look } from "../sprites/avatar.ts";
 import { lookOf } from "./avatars.ts";
 import { presence, roomMembers, rooms, sets, users, workouts } from "./schema.ts";
 import { claimStation, releaseStation, roomStations } from "./stations.ts";
+import { donyView, type DonyMember } from "./dony.ts";
 
 export const SLACK_GRACE_S = 30; // GYM-11
 export const AWAY_MS = 60_000; // GYM-14
@@ -39,6 +40,12 @@ export type RoomView = {
   members: MemberView[];
   // GYM-8: what is on each of the twelve stations
   stations: { slot: number; equipment: Equipment | null }[];
+  // BOT-1 to BOT-5: whether Dony is out of his poster, when the poster can be
+  // tapped again, and him while he's out. Never among the members, so
+  // nothing that counts people counts him.
+  dony: { out: boolean; restingUntil: number; fresh: boolean; member: DonyMember | null };
+  // when Dony next changes what he's doing, for realtime.ts; not sent
+  donyNext?: number | null;
 };
 
 // Choosing a lift (or logging a set of it) puts the person on it, on a
@@ -73,9 +80,21 @@ export function clearPresence(roomId: number, userId?: number): void {
 // decided from stored timestamps alone, so it's the same after a restart and
 // for someone whose phone is locked.
 export function roomView(roomId: number, now = Date.now()): RoomView {
-  const room = db.select({ hostUserId: rooms.hostUserId, closedAt: rooms.closedAt }).from(rooms).where(eq(rooms.id, roomId)).get();
-  if (!room || room.closedAt) return { now, closed: true, members: [], stations: [] };
+  const room = db
+    .select({
+      hostUserId: rooms.hostUserId,
+      closedAt: rooms.closedAt,
+      donySummonedAt: rooms.donySummonedAt,
+      donySentBackAt: rooms.donySentBackAt,
+    })
+    .from(rooms)
+    .where(eq(rooms.id, roomId))
+    .get();
+  if (!room || room.closedAt) {
+    return { now, closed: true, members: [], stations: [], dony: { out: false, restingUntil: 0, fresh: false, member: null } };
+  }
   const floor = roomStations(roomId);
+  const { next: donyNext, ...dony } = donyView(roomId, room, floor, now);
 
   const members = db
     .select({
@@ -114,6 +133,8 @@ export function roomView(roomId: number, now = Date.now()): RoomView {
   return {
     now,
     closed: false,
+    dony,
+    donyNext,
     stations: floor.map(({ slot, equipment }) => ({ slot, equipment })),
     members: members.map((m) => {
       const set = latest.get(m.id);

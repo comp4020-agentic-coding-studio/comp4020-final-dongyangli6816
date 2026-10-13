@@ -22,6 +22,7 @@ export const GYM_PALETTE: Record<string, string> = {
 };
 
 // k ink, n night, f floor, p panel, d deep, g green, e edge, m dim, w paper, l leaf, r resting
+// P is Dony's poster (BOT-1): a button the room page lays over a plain wall
 export const MAP: string[] = [
   "WMMMKPMMMW",
   "[...::...]",
@@ -127,24 +128,6 @@ export const TILES: Record<string, string[]> = {
     "ddddkwwwwwwkdddd",
     "dddddkkkkkkddddd",
     "dddddddddddddddd",
-    "dddddddddddddddd",
-    "kkkkkkkkkkkkkkkk",
-    "kkkkkkkkkkkkkkkk",
-  ],
-  "P": [
-    "kkkkkkkkkkkkkkkk",
-    "dddddddddddddddd",
-    "ddkkkkkkkkkkkkdd",
-    "ddkllllllllllkdd",
-    "ddkllllllllllkdd",
-    "ddklkkllllkklkdd",
-    "ddklkkkkkkkklkdd",
-    "ddklkkllllkklkdd",
-    "ggkllllllllllkgg",
-    "ggklkkkkkkkklkgg",
-    "ddkllllllllllkdd",
-    "ddklkkkkkllllkdd",
-    "ddkkkkkkkkkkkkdd",
     "dddddddddddddddd",
     "kkkkkkkkkkkkkkkk",
     "kkkkkkkkkkkkkkkk",
