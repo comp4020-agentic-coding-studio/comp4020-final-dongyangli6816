@@ -11,6 +11,12 @@ export type Tile = [number, number];
 export type Spot = { id: number; tile: Tile; onStation: boolean; pose: Pose; state: State };
 
 export const DOOR: Tile = [4, 9];
+// where Dony lands from his poster, and leaves from: the walkway under it
+export const UNDER_POSTER: Tile = [5, 1];
+
+// The people in the room, then Dony if he's out: everyone the map and the
+// squad list draw. Anything that counts people uses view.members alone.
+export const everyone = (view: RoomView): MemberView[] => (view.dony?.member ? [...view.members, view.dony.member] : view.members);
 // fill orders: the first three of each never overlap
 const REST_SPOTS: Tile[] = [[1, 7], [3, 7], [2, 8], [1, 8], [3, 8], [2, 7], [1, 6], [3, 6], [2, 6], [4, 8], [4, 7], [4, 6]];
 const IDLE_SPOTS: Tile[] = [[8, 7], [6, 7], [7, 8], [8, 8], [6, 8], [7, 7], [8, 6], [6, 6], [7, 6], [5, 8], [5, 7], [5, 6]];
@@ -20,11 +26,12 @@ const stateAt = (m: MemberView, now: number): State =>
   m.state === "resting" && m.slackAt !== null && now >= m.slackAt ? "slacking" : m.state;
 
 // Lifting and Slacking are on their station; Resting at the cooler; Idle and
-// Finished by the lockers. Spots go by join order within a state.
+// Finished by the lockers. Spots go by join order within a state, with Dony,
+// while he's out, after every person (BOT-5).
 export function spots(view: RoomView, now: number): Spot[] {
   let rest = 0;
   let idle = 0;
-  return view.members.map((m) => {
+  return everyone(view).map((m) => {
     const state = stateAt(m, now);
     if ((state === "lifting" || state === "slacking") && m.station) {
       const equipment = view.stations.find((s) => s.slot === m.station!.slot)?.equipment;

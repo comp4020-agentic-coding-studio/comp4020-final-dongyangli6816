@@ -177,3 +177,36 @@ test("your own avatar is a shortcut to the sheet's button", async ({ browser }) 
   await page.locator(".map .avatar.me").click();
   await expect(page.locator(".dock button")).toBeFocused();
 });
+
+test("tapping Dony's poster brings him out on every screen, and sends him back", async ({ browser }) => {
+  const mia = await person(browser, "Mia");
+  const tom = await person(browser, "Tom");
+  const { path, passcode } = await openRoom(mia);
+  await join(tom, passcode);
+  const miaPage = await mia.newPage();
+  const tomPage = await tom.newPage();
+  await Promise.all([miaPage.goto(path), tomPage.goto(path)]);
+  await expect(tomPage.locator(".map-panel .conn .badge")).toHaveText("Live");
+  // a room that has never had him out lights the poster's bulbs
+  await expect(tomPage.locator(".map .poster .bulbs")).toHaveCount(2);
+
+  await miaPage.locator(".map .poster").click();
+  // on Tom's screen: Dony on the map and last in the list, still two of twelve
+  const dony = tomPage.locator('.map .avatar[data-look="dony"]');
+  await expect(dony).toHaveCount(1, { timeout: 1500 });
+  await expect(tomPage.locator(".people li").last()).toContainText("Dony");
+  await expect(tomPage.locator(".spots .count")).toHaveText("2 of 12 in");
+  // the bulbs go out at the first summon, on every screen
+  await expect(tomPage.locator(".map .poster .bulbs")).toHaveCount(0);
+  // Tom sends him back straight away; he walks to the poster and hops in
+  const poster = tomPage.locator(".map .poster");
+  await expect(poster).toHaveAttribute("aria-label", "Send Dony back to his poster");
+  await poster.click();
+  await expect(tomPage.locator(".people li", { hasText: "Dony" })).toHaveCount(0, { timeout: 1500 });
+  await expect(dony).toHaveCount(0, { timeout: 3000 });
+  // the full poster rests before he can be called out again
+  await expect(poster).toHaveAttribute("aria-label", "Call Dony out of his poster (not ready yet)");
+  await expect(poster).toHaveClass(/resting/);
+  // and the bulbs stay out: the room has learnt
+  await expect(tomPage.locator(".map .poster .bulbs")).toHaveCount(0);
+});

@@ -5,8 +5,11 @@
 // than a fill, and the look's colours arrive as custom properties, so a
 // palette swap is three variables.
 import { AVATAR_UPPER_ROWS, HAIR, HAIR_STYLES, lookVars, poseOf, type HairStyle, type Look, type Pose } from "../sprites/avatar.ts";
+import { DONY_VARS, donyFrame, type DonyFrame } from "../sprites/dony.ts";
 
 interface Props {
+  // Dony's own sprite and colours in this frame, instead of a look (BOT-2)
+  dony?: DonyFrame;
   // no look draws the body alone, as the invite's empty spot (with class "ghost")
   look?: Look | null;
   // the gym's poses (GYM-10); standing everywhere else
@@ -20,7 +23,7 @@ interface Props {
   vars?: boolean;
   class?: string;
 }
-const { look, pose = "stand", head = false, allHair = false, vars = !!look, class: className } = Astro.props;
+const { dony, look, pose = "stand", head = false, allHair = false, vars = !!look, class: className } = Astro.props;
 
 type Run = { x: number; y: number; w: number; slot: string };
 const PROP: Record<string, string> = { m: "pm", w: "pw", r: "pr" };
@@ -37,20 +40,20 @@ function runs(grid: readonly string[], dy = 0, prop = false): Run[] {
   });
   return out;
 }
-const { body: grid, hairRow, props } = poseOf(pose);
+const { body: grid, hairRow, props } = dony ? { ...donyFrame(dony), hairRow: 0 } : poseOf(pose);
 const body = runs(grid);
-const styles: HairStyle[] = !look ? [] : allHair ? HAIR_STYLES.map((s) => s.id) : [look.hair];
+const styles: HairStyle[] = dony || !look ? [] : allHair ? HAIR_STYLES.map((s) => s.id) : [look.hair];
 const hair = styles.map((style) => ({ style, runs: runs(HAIR[style], hairRow) }));
 const extra = runs(props, 0, true);
 ---
 
 <svg
-  class:list={["av", `pose-${pose}`, className]}
+  class:list={["av", `pose-${dony === "sit" ? "sit" : dony?.startsWith("lift") ? "lift" : dony ? "stand" : pose}`, className]}
   viewBox={head ? "1 0 14 11" : "0 0 16 16"}
   shape-rendering="crispEdges"
   aria-hidden="true"
-  data-hair={allHair && look ? look.hair : undefined}
-  style={vars && look ? lookVars(look) : undefined}
+  data-hair={allHair && look && !dony ? look.hair : undefined}
+  style={dony ? DONY_VARS : vars && look ? lookVars(look) : undefined}
 >
   <g class="av-top">
     {body.filter((r) => r.y < AVATAR_UPPER_ROWS).map((r) => <rect x={r.x} y={r.y} width={r.w} height="1" class={r.slot} />)}

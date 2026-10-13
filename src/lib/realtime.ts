@@ -11,15 +11,30 @@ const PING_MS = 20_000; // keeps the stream open through Fly's proxy, and the pe
 type Client = { userId: number; send: (chunk: string) => boolean };
 const streams = new Map<number, Set<Client>>();
 
-const message = (roomId: number) => `event: room\ndata: ${JSON.stringify(roomView(roomId))}\n\n`;
+// Dony (BOT-3) changes what he's doing on his own, with nobody posting
+// anything, so each message also sets one timer per room for his next
+// change. The timer only says when to look again; what he's doing is still
+// read fresh from the database, so a timer lost to a restart costs nothing
+// but a late redraw.
+const donyTimers = new Map<number, ReturnType<typeof setTimeout>>();
 
 // Sends everyone watching the room what it looks like now. Called after
 // anything changes it.
 export function broadcast(roomId: number): void {
+  clearTimeout(donyTimers.get(roomId));
+  donyTimers.delete(roomId);
   const clients = streams.get(roomId);
   if (!clients?.size) return;
-  const chunk = message(roomId);
+  const { donyNext, ...view } = roomView(roomId);
+  const chunk = `event: room\ndata: ${JSON.stringify(view)}\n\n`;
   for (const c of clients) c.send(chunk);
+  if (donyNext) {
+    // capped, so a long rest by the lockers doesn't hold a timer for minutes
+    const wait = Math.min(Math.max(donyNext - view.now, 0) + 50, 10 * 60_000);
+    const timer = setTimeout(() => broadcast(roomId), wait);
+    timer.unref();
+    donyTimers.set(roomId, timer);
+  }
 }
 
 export const openStreams = (): number => [...streams.values()].reduce((n, s) => n + s.size, 0);

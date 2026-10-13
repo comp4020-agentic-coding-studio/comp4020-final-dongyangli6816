@@ -33,6 +33,11 @@ export const rooms = sqliteTable(
     createdAt: integer("created_at").notNull(),
     lastActiveAt: integer("last_active_at").notNull(),
     closedAt: integer("closed_at"),
+    // BOT-1, BOT-4: Dony's poster. He is out while the last summon is newer
+    // than the last send back; everything he does follows from these (dony.ts)
+    donySummonedAt: integer("dony_summoned_at"),
+    donySummonedBy: integer("dony_summoned_by").references(() => users.id),
+    donySentBackAt: integer("dony_sent_back_at"),
   },
   // a passcode is unique among open rooms only, so closed rooms free theirs (ROOM-1, ROOM-6)
   (t) => [uniqueIndex("rooms_open_passcode").on(t.passcode).where(sql`closed_at is null`)],

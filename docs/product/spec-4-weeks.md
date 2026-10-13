@@ -194,6 +194,16 @@ equipment.
 | INT-6 | P1 | Free-text messages up to 140 characters, sent to the room, rate-limited to one every 2 s. Text is always escaped, never rendered as HTML. |
 | INT-7 | P1 | A per-person setting to turn slaps off. |
 
+### Dony
+
+| ID | Pri | Requirement |
+| --- | --- | --- |
+| BOT-1 | P1 | The back wall's poster is "Member of the month: Dony". Anyone in the room can tap it (by touch, click or keyboard) to summon Dony: on every screen the poster goes empty and he hops down onto the walkway. The server records the summon (when, by whom). He can be summoned again any number of times after being sent back; each summon is a fresh visit with a new schedule. |
+| BOT-2 | P1 | Dony is drawn with his own 16 × 16 sprite (an Asian character with glasses and a cool outfit) in every pose a person has, plus the poster's full and empty frames, within the art rules. He can't be picked in the avatar editor. |
+| BOT-3 | P1 | Dony trains by a schedule worked out from the room and his summon time: blocks of 4 to 6 lifts over 45 to 60 minutes, 3 to 5 sets each, realistic set lengths and rests, 3 to 6 minutes Idle between blocks, mostly on equipment already on the floor (at most two deliveries a block). He goes Idle, Lifting, Resting and Slacking (about one rest in eight, at most twice a block) through the same station rules (GYM-4), never Finished, and every screen sees each change within about a second (GYM-13). |
+| BOT-4 | P1 | Anyone in the room can tap the empty poster to send Dony back: he stops whatever he's doing, frees his station, walks back and hops into the poster. He can be sent back at any moment; after a send back the poster rests for 30 seconds before he can be summoned again. A tap only acts if the poster is still as its tapper saw it (full for a summon, empty for a send back) and, for a summon, isn't resting; otherwise it does nothing, silently. |
+| BOT-5 | P1 | Dony appears on the map and in the squad list like a person, with no bot marker. He never counts as a member, toward the 12, as host or as room activity. A station he holds is always free for a person to take. The room closes when the last real person leaves, as now, and he goes with it. He appears in no logbook, summary, history or friends list. |
+
 ### Operations (Crit 10)
 
 | ID | Pri | Requirement |
@@ -333,7 +343,7 @@ that the crit can read.
 | 9 | **Crit 8**, Wed 7 Oct, 07:00 | Placeholder deployed first, then: ACC-1 to 4, ROOM-1 and 2, LOG-1 to 4 and LOG-7 in plain pages, no gym yet. A stranger signs up, creates a room, logs a set, and finds it in their history next time | README v1 (what "good" means), PROCESS.md v1 with the stack ADR, `reflections/crit-8.md`, repo public |
 | 10 | **Crit 9**, Wed 14 Oct, 07:00 | The gym: tiles, avatar sprites, AV-1 to 3, GYM-1 to 5 and 8 to 15, ROOM-3 to 6, LOG-5 and 6; real-time over SSE. New equipment simply appears on its station this week | One written decision about how the app behaves with several people in it (GYM-5, two people wanting the same station at once, is a natural one), PROCESS.md rewritten, `reflections/crit-9.md`; start reading for the research note |
 | 11 | **Crit 10**, Wed 21 Oct, 07:00 | The gym worker and its delivery and swap animations (GYM-6 and 7), INT-1 to 5, OPS-1 and 2 | Server-side logging in place, PROCESS.md rewritten, `reflections/crit-10.md` |
-| 12 | Studio session, Wed 28 Oct | P1 items in order of how much they serve README's "good"; keyboard, resize and slow-connection passes; showcase rehearsal with several browsers | Research note drafted |
+| 12 | Studio session, Wed 28 Oct | P1 items in order of how much they serve README's "good", BOT-1 to 5 among them; keyboard, resize and slow-connection passes; showcase rehearsal with several browsers | Research note drafted |
 | — | **Submission**, Mon 9 Nov, 12:00 | Frozen | README (400–600 words), PROCESS.md (900–1100), CLAUDE.md, spec/, three reflections, `research-note.md` (600–800) |
 | — | Showcase, Wed 11 Nov | — | — |
 
