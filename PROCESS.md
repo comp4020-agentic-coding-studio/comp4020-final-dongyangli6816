@@ -1,47 +1,45 @@
 # Process overview
 
-Version 1, written for Crit 8 (week 9). This page is rewritten at each crit, so
-it always describes the project as it stands.
+Version 2, written for Crit 9 (week 10).
 
-## From the brief to a spec
+## From the brief to a spec (Crit 8)
 
-I started with my own problem, not a feature list: since moving to Australia I
-haven't trained, because the friend who kept me honest isn't here.
-[`docs/product/idea.md`](docs/product/idea.md) is that idea in my own words. A full product
-spec came next, but it was written for a public launch over twenty weeks. So I
-cut it down to [a four-week spec](docs/product/spec-4-weeks.md) that fits the
-course setup: one 256 MB machine, one volume, and a machine that stops when idle.
-That cut, with the reason for each item dropped, is in
-[`88b3e0d`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/commit/88b3e0d).
+The final project asks for something completely different from the crits and the earlier assignments. All it requires is a multi-user website, which is easy. But that also means there is much more room to show what I learned and thought about this semester.
 
-The four-week spec is what directs the agent. Each requirement has an ID, and
-each week's row in its delivery plan says what ships. Week 9 is accounts, rooms,
-logging and history as plain pages, with no gym yet.
+The easy way to pick a topic would be to ask Claude for suggestions. The problem is how attention works: Claude's ideas are always reinventing the wheel. You can find a thousand similar websites online. I wanted to build something nobody had tried before, and something that actually solves a problem.
 
-## The stack
+So I wrote down [a rough idea](docs/product/idea.md) from my own story: a virtual gym that lets people work out together even when they live apart. I believe an app like this would actually push someone like me to go back to the gym and start training again.
 
-Astro in server mode on Node, with SQLite on the `/data` volume through Drizzle.
-The reasons and the options I rejected (Hono, `node:sqlite`, a single-page app)
-are in [ADR 0001](docs/adr/0001-stack.md). The short version: I had already
-deployed this stack to Fly in Crit 7, and the cutoff was a day away. Before
-trusting it, I ran the CI checks against the Docker image under a 256 MB memory
-cap. Its peak was 164 MB.
+Then I fed this rough idea to the agent. I asked for a production-grade spec, and it gave me [a launch plan stretching over twenty weeks](docs/product/spec-mvp.md). So I had to ask it again to cut the plan down to [four weeks](docs/product/spec-4-weeks.md), which is what this project actually needs ([`88b3e0d`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/commit/88b3e0d)). From then on I used that doc to keep the agent pointed at the goal ([`fce8475`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/commit/fce8475), [`36eea8b`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/commit/36eea8b)).
 
-## How I worked with the agent
+## Choose the tech stack (Crit 8)
 
-I planned in plan mode, deciding which spec copy was current and how big this
-week's slice was, before any code. [`CLAUDE.md`](CLAUDE.md) holds my rules,
-including that nothing is committed without my approval. The build landed as
-one commit per unit, and the feature commits cite the requirement IDs they
-build:
-[`eb72012...cdcb62f`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/compare/eb72012...cdcb62f).
-The checks in `spec/` came with the code, in
-[`01ce3ef`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/commit/01ce3ef).
+When selecting tech stacks, I asked Claude to give me several options based on the project. Eventually I chose Astro in server mode on Node, with SQLite on the `/data` volume through Drizzle.
+Full details in [ADR 0001](docs/adr/0001-stack.md). In short, the machine has256 MB, one volume and no database server, so the stack has to be one process that owns its own file.
 
-One correction: the agent's first commit script didn't stop when a step
-failed. A file deletion landed in the wrong commit and the scaffold commit went
-missing. Its output showed the error, the agent reported it, and the local
-commits were undone and redone in order, before anything was pushed. Because the
-redo happened locally, the history no longer shows the mistake, so this paragraph
-is the record. The lesson for the harness is that batch steps must stop at the
-first failure.
+## First build (Crit 8)
+
+With the spec doc ready, I started building. The first thing I did was migrate my `CLAUDE.md` rules from [the last crit](https://github.com/comp4020-agentic-coding-studio/comp4020-crit7-dongyangli6816/blob/960131a/CLAUDE.md), but this time I only brought over the git rule instead of all of them ([`c8718ed`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/commit/c8718ed)). This project is not like any of the previous crits or assignments. It is a full stack app that will take more than a month and around $1000 of tokens to build, so rules that worked on a small prototype may not work here. I kept the git rule and started the rest fresh.
+
+The building stage for Crit 8 went smoothly. The spec doc was good enough that a couple of simple prompts got me a small demo page ([`c8718ed...01ce3ef`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/compare/c8718ed...01ce3ef)). The design is not as good as I pictured though ([the pages as shipped](docs/evidence/2026-10-07-designer-redesign/before/), tag [`crit-8`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/tree/crit-8)), so next week, on top of the crit tasks, I want to work on the design of the app.
+
+## My first agent - designer (Crit 9)
+This follows up on my concern from last week. When I built the first version of the app, the only design instruction I gave Claude was pixel style and a deep green theme ([`8f3c111`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/commit/8f3c111)). The result was so AI. Every page was just words and buttons. It read like a ten thousand word essay written by AI, the kind that makes you lose interest in a millisecond.
+
+What fixed it was a separate agent that only does design. At my last job as a software engineer I always worked with a UI/UX designer, and they designed our pages off a big design system: which colors to use, which colors to avoid, who our users are, and so on. I wanted the same thing in my workflow, so I asked Claude to build my first custom agent, [the designer](.claude/agents/designer.md), along with [the design system](docs/design/system.md) it designs from ([`f010c1b`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/commit/f010c1b)).
+
+To put the designer into the workflow, I added a `CLAUDE.md` rule: the main agent has to decide whether a feature touches a page. If it does, it has to wake the designer first and design the page before implementing it ([`2286a37`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/commit/2286a37)). The main
+agent is not allowed to edit any front end code without a design in hand. I also added the same rule as a hook ([`4acfc6b`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/commit/4acfc6b); [why a hook](docs/evidence/2026-10-08-design-gate-hook/README.md)).
+
+Then I ran the existing pages back through this workflow, and it worked incredibly well ([`4fc046e`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/commit/4fc046e), [`3a67afc`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/commit/3a67afc), [`55fad94`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/commit/55fad94), [`132f839`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/commit/132f839); [how it was run](docs/evidence/2026-10-07-designer-redesign/README.md)). The contrast is below.
+
+| Home, before | Home, after | Join, before | Join, after |
+| --- | --- | --- | --- |
+| <img src="docs/evidence/2026-10-07-designer-redesign/before/home-signed-out-mobile.png" width="160" alt="The signed-out home page at 390 px before the redesign: a headline card and three identical text cards, one per step"> | <img src="docs/evidence/2026-10-07-designer-redesign/after/home-signed-out-mobile.png" width="160" alt="The signed-out home page at 390 px after the redesign: a preview of what the squad sees, with avatars and lifting, resting, slacking and finished badges, then the three steps as numbered sets"> | <img src="docs/evidence/2026-10-07-designer-redesign/before/join-mobile.png" width="160" alt="The join page at 390 px before the redesign: a single card with a passcode field and a Join button"> | <img src="docs/evidence/2026-10-07-designer-redesign/after/join-mobile.png" width="160" alt="The join page at 390 px after the redesign: a door icon, six character boxes for the passcode with a hint about letters it never uses, and a way to start a new room if the old one has closed"> |
+
+It does come at a cost. On the same page, the designer workflow uses about five times as many tokens and takes about ten times as long as doing it without a design step. Thanks to the Opus 5.5 update brought the price down though, so I can live with the trade off.
+
+## Other Claude.md rules I added (Crit 9)
+**Repository map** As the project got bigger, every new conversation started the same way: I asked Claude to do something, and it spent longer and longer walking the project to find the file it had to edit. The docs were part of the problem. Every workflow I added left more of them lying around the repo, with no order to any of it. So I made a repository map, so the agent can look up which file to edit and where a new file belongs ([`fce8475`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/commit/fce8475)).
+
+**Branches and pull requests** This is for repo protection and it is a common practice in industry. AI is non-deterministic, and on a project this size it can run out of context and just commit everything it has, finished or not, straight to my main branch. I added the rule to keep that off main and keep the commit history readable ([`4fbc0ed`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/commit/4fbc0ed)). Before it, every commit went straight to `main` ([`88b3e0d`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/commit/88b3e0d) to [`207ea31`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/commit/207ea31)); after it, each feature arrived as its own pull request ([`9337b9d...c8e3dd3`](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/compare/9337b9d...c8e3dd3)).
