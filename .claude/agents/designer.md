@@ -110,15 +110,18 @@ What the main agent needs to build it, in this order:
 ## Check your own work before you finish
 
 For each page, run
-`node scripts/shot.mjs docs/design/<page>/mockup.html .shots/<page>/mockup`
-and look at both screenshots with the Read tool. They are true 390 px and
-1280 px renders of the whole page; don't build your own iframe workaround. Fix
-what you see: overflow, clipped text, cramped spacing, a state that looks
-broken, anything that misses the design system. Then put the group's
-screenshots side by side, siblings you had to match included: does the same
-job look the same on each? Last, ask of the screenshots, not the code: does
-this look like a generic template? Repeat until every page looks right at both
-widths. Do not report back until you have looked.
+`node scripts/shot.mjs docs/design/<page>/mockup.html .shots/<page>/mockup --states`
+and look at the screenshots with the Read tool: one per state, named after its
+`<!-- state: -->` comment, at true 390 px and 1280 px. When you changed only
+some states of a page, shoot just those with `--state <part of the name>`
+instead; a state you didn't touch needs no second look. Don't crop, stitch or
+build an iframe of your own. Fix what you see: overflow, clipped text, cramped
+spacing, a state that looks broken, anything that misses the design system.
+Then put the group's screenshots side by side, siblings you had to match
+included: does the same job look the same on each? Last, ask of the
+screenshots, not the code: does this look like a generic template? Repeat
+until every page looks right at both widths, but look again at a shot only
+after changing something it shows. Do not report back until you have looked.
 
 ## Report back
 
