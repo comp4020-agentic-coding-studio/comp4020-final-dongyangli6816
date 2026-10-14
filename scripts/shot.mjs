@@ -9,6 +9,12 @@
 //
 //   --cookies  a curl cookie jar (curl -c jar ...) whose sid signs the page in
 //   --run      JavaScript to run after load, e.g. to fill and submit a form
+//   --states   instead of the whole page, one shot per `<!-- state: name -->`
+//              in it: <out-prefix>-<name>-mobile.png and -desktop.png
+//   --state    the same, for only the states whose name contains this text
+//
+// A state is the elements after its comment, up to the next state comment
+// beside them or the end of their parent.
 //
 // It drives Chrome over the DevTools protocol rather than with --window-size,
 // because headless Chrome won't lay a window out narrower than 500 px. It
@@ -16,9 +22,10 @@
 // every line's height and the shot would be wrong.
 import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createServer } from "node:http";
 import { tmpdir } from "node:os";
-import { dirname, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { dirname, extname, relative, resolve, sep } from "node:path";
+import { svg as spriteSheet } from "./sprites.ts";
 
 const args = process.argv.slice(2);
 const flag = (name) => {
@@ -27,12 +34,43 @@ const flag = (name) => {
 };
 const jar = flag("--cookies");
 const js = flag("--run");
+const only = flag("--state");
+const states = only !== undefined || args.includes("--states");
+if (args.includes("--states")) args.splice(args.indexOf("--states"), 1);
 const [target, out] = args;
 if (!target || !out) {
-  console.error("usage: node scripts/shot.mjs <url-or-html-file> <out-prefix> [--cookies <jar>] [--run <js>]");
+  console.error(
+    "usage: node scripts/shot.mjs <url-or-html-file> <out-prefix> [--cookies <jar>] [--run <js>] [--states | --state <text>]",
+  );
   process.exit(2);
 }
-const url = /^(https?|file):\/\//.test(target) ? target : pathToFileURL(resolve(target)).href;
+// A file is served from the repo on a local port rather than opened as
+// file://, so a mockup can draw from /sprites.svg, the sheet of every sprite
+// in src/sprites/ (scripts/sprites.ts), built fresh for each run.
+const root = resolve(import.meta.dirname, "..");
+const TYPES = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".svg": "image/svg+xml", ".png": "image/png", ".woff2": "font/woff2", ".woff": "font/woff" };
+let server;
+let url = target;
+if (!/^(https?|file):\/\//.test(target)) {
+  if (!resolve(target).startsWith(root + sep)) {
+    console.error(`${target} is outside the repo, so it can't be served; pass a file:// URL instead`);
+    process.exit(2);
+  }
+  const sheet = spriteSheet();
+  server = createServer((req, res) => {
+    const path = decodeURIComponent(new URL(req.url, "http://x").pathname);
+    if (path === "/sprites.svg") return res.writeHead(200, { "content-type": TYPES[".svg"] }).end(sheet);
+    const file = resolve(root, `.${path}`);
+    let body;
+    try {
+      if (file.startsWith(root + sep)) body = readFileSync(file);
+    } catch {}
+    if (!body) return res.writeHead(404).end();
+    res.writeHead(200, { "content-type": TYPES[extname(file)] ?? "application/octet-stream" }).end(body);
+  });
+  await new Promise((r) => server.listen(0, "127.0.0.1", r));
+  url = `http://127.0.0.1:${server.address().port}/${relative(root, resolve(target)).split(sep).join("/")}`;
+}
 
 const chrome = process.env.CHROME ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const port = 9300 + Math.floor(Math.random() * 500);
@@ -42,6 +80,13 @@ const proc = spawn(
   ["--headless=new", "--disable-gpu", "--hide-scrollbars", `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, "about:blank"],
   { stdio: "ignore" },
 );
+process.on("uncaughtException", (err) => {
+  console.error(err.message);
+  proc.kill();
+  server?.close();
+  rmSync(profile, { recursive: true, force: true });
+  process.exit(1);
+});
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 let page;
@@ -66,10 +111,14 @@ ws.addEventListener("message", (e) => {
   pending.get(m.id)?.(m.result);
   pending.delete(m.id);
 });
+// a page that never answers (a 404, a font that never loads) fails the shot
+// rather than hanging it
 const send = (method, params = {}) =>
-  new Promise((r) => {
-    pending.set(++id, r);
-    ws.send(JSON.stringify({ id, method, params }));
+  new Promise((r, reject) => {
+    const n = ++id;
+    const timer = setTimeout(() => reject(new Error(`${method} got no answer in 30 s (${url})`)), 30_000);
+    pending.set(n, (result) => (clearTimeout(timer), r(result)));
+    ws.send(JSON.stringify({ id: n, method, params }));
   });
 const evaluate = async (expression) =>
   (await send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true })).result.value;
@@ -109,11 +158,57 @@ for (const [name, width] of [["mobile", 390], ["desktop", 1280]]) {
     await viewport(height);
     await sleep(300);
   }
-  const shot = await send("Page.captureScreenshot", { format: "png", clip: { x: 0, y: 0, width, height, scale: 1 } });
-  writeFileSync(`${out}-${name}.png`, Buffer.from(shot.data, "base64"));
-  console.log(`${out}-${name}.png`);
+  const clips = states ? await evaluate(`(${stateBoxes})(${JSON.stringify(only ?? "")})`) : [{ slug: "", x: 0, y: 0, width, height }];
+  if (states && clips.length === 0) {
+    console.error(`no state matching "${only ?? ""}" in ${target}`);
+    process.exitCode = 1;
+  }
+  for (const { slug, ...clip } of clips) {
+    const file = `${out}${slug && `-${slug}`}-${name}.png`;
+    const shot = await send("Page.captureScreenshot", { format: "png", clip: { ...clip, scale: 1 } });
+    writeFileSync(file, Buffer.from(shot.data, "base64"));
+    console.log(file);
+  }
 }
 ws.close();
 proc.kill();
+server?.close();
+
+// Runs in the page: the box round each state's elements, in page pixels.
+function stateBoxes(only) {
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_COMMENT);
+  const comments = [];
+  while (walker.nextNode()) {
+    const m = walker.currentNode.data.match(/^\s*state:\s*(.+?)\s*$/);
+    if (m && m[1].toLowerCase().includes(only.toLowerCase())) comments.push([walker.currentNode, m[1]]);
+  }
+  const seen = new Map();
+  return comments.flatMap(([comment, name]) => {
+    let box;
+    for (let n = comment.nextSibling; n && !(n.nodeType === 8 && /^\s*state:/.test(n.data)); n = n.nextSibling) {
+      if (n.nodeType !== 1) continue;
+      // a group of further states ends this one too
+      if (holdsState(n)) break;
+      const r = n.getBoundingClientRect();
+      if (r.width === 0 && r.height === 0) continue;
+      box = box
+        ? { l: Math.min(box.l, r.left), t: Math.min(box.t, r.top), r: Math.max(box.r, r.right), b: Math.max(box.b, r.bottom) }
+        : { l: r.left, t: r.top, r: r.right, b: r.bottom };
+    }
+    if (!box) return [];
+    let slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    seen.set(slug, (seen.get(slug) ?? 0) + 1);
+    if (seen.get(slug) > 1) slug += `-${seen.get(slug)}`;
+    // a margin of 8 px, so a shadow or focus ring on the edge isn't cut off
+    const x = Math.max(0, Math.floor(box.l + scrollX) - 8);
+    const y = Math.max(0, Math.floor(box.t + scrollY) - 8);
+    return [{ slug, x, y, width: Math.ceil(box.r + scrollX) + 8 - x, height: Math.ceil(box.b + scrollY) + 8 - y }];
+  });
+  function holdsState(el) {
+    const w = document.createTreeWalker(el, NodeFilter.SHOW_COMMENT);
+    while (w.nextNode()) if (/^\s*state:/.test(w.currentNode.data)) return true;
+    return false;
+  }
+}
 await sleep(200);
 rmSync(profile, { recursive: true, force: true });

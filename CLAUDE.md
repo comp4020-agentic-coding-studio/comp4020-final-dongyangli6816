@@ -28,9 +28,11 @@ src/pages/                   routes; one .astro (or .ts endpoint) per URL
 src/layouts/Layout.astro     page shell and every global style and token
 src/components/              shared .astro components
 src/lib/                     server logic: db, auth, rooms, workouts, logbook
-src/sprites/                 pixel art as character grids, one subject each
+src/sprites/                 pixel art as character grids, one subject each;
+                             the only copy: mockups draw it via sprites.ts
 drizzle/                     generated migrations (pnpm db:generate), no hand edits
-scripts/                     repo tools; shot.mjs takes every screenshot;
+scripts/                     repo tools; shot.mjs takes every screenshot and
+                             serves mockups the sprite sheet sprites.ts builds;
                              hooks/ holds the scripts .claude/settings.json runs
 docs/product/                idea.md, spec-4-weeks.md (directs the build),
                              spec-mvp.md (full spec, reference only)

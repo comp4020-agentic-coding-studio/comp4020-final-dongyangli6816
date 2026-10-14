@@ -815,18 +815,12 @@
     <!-- Pixel icons on an 8 × 8 grid in currentColor, shown at 2×. The build
          draws them with Sprite.astro from src/sprites/icons.ts. -->
     <svg width="0" height="0" style="position: absolute" aria-hidden="true">
-      <symbol id="i-trophy" viewBox="0 0 8 8"><rect x="0" y="0" width="1" height="1" fill="currentColor"/><rect x="1" y="0" width="1" height="1" fill="currentColor"/><rect x="2" y="0" width="1" height="1" fill="currentColor"/><rect x="3" y="0" width="1" height="1" fill="currentColor"/><rect x="4" y="0" width="1" height="1" fill="currentColor"/><rect x="5" y="0" width="1" height="1" fill="currentColor"/><rect x="6" y="0" width="1" height="1" fill="currentColor"/><rect x="7" y="0" width="1" height="1" fill="currentColor"/><rect x="0" y="1" width="1" height="1" fill="currentColor"/><rect x="2" y="1" width="1" height="1" fill="currentColor"/><rect x="3" y="1" width="1" height="1" fill="currentColor"/><rect x="4" y="1" width="1" height="1" fill="currentColor"/><rect x="5" y="1" width="1" height="1" fill="currentColor"/><rect x="7" y="1" width="1" height="1" fill="currentColor"/><rect x="0" y="2" width="1" height="1" fill="currentColor"/><rect x="2" y="2" width="1" height="1" fill="currentColor"/><rect x="3" y="2" width="1" height="1" fill="currentColor"/><rect x="4" y="2" width="1" height="1" fill="currentColor"/><rect x="5" y="2" width="1" height="1" fill="currentColor"/><rect x="7" y="2" width="1" height="1" fill="currentColor"/><rect x="1" y="3" width="1" height="1" fill="currentColor"/><rect x="2" y="3" width="1" height="1" fill="currentColor"/><rect x="3" y="3" width="1" height="1" fill="currentColor"/><rect x="4" y="3" width="1" height="1" fill="currentColor"/><rect x="5" y="3" width="1" height="1" fill="currentColor"/><rect x="6" y="3" width="1" height="1" fill="currentColor"/><rect x="2" y="4" width="1" height="1" fill="currentColor"/><rect x="3" y="4" width="1" height="1" fill="currentColor"/><rect x="4" y="4" width="1" height="1" fill="currentColor"/><rect x="5" y="4" width="1" height="1" fill="currentColor"/><rect x="3" y="5" width="1" height="1" fill="currentColor"/><rect x="4" y="5" width="1" height="1" fill="currentColor"/><rect x="2" y="6" width="1" height="1" fill="currentColor"/><rect x="3" y="6" width="1" height="1" fill="currentColor"/><rect x="4" y="6" width="1" height="1" fill="currentColor"/><rect x="5" y="6" width="1" height="1" fill="currentColor"/><rect x="1" y="7" width="1" height="1" fill="currentColor"/><rect x="2" y="7" width="1" height="1" fill="currentColor"/><rect x="3" y="7" width="1" height="1" fill="currentColor"/><rect x="4" y="7" width="1" height="1" fill="currentColor"/><rect x="5" y="7" width="1" height="1" fill="currentColor"/><rect x="6" y="7" width="1" height="1" fill="currentColor"/></symbol>
-      <symbol id="i-arrow" viewBox="0 0 8 8"><rect x="3" y="1" width="1" height="1" fill="currentColor"/><rect x="3" y="2" width="1" height="1" fill="currentColor"/><rect x="4" y="2" width="1" height="1" fill="currentColor"/><rect x="0" y="3" width="1" height="1" fill="currentColor"/><rect x="1" y="3" width="1" height="1" fill="currentColor"/><rect x="2" y="3" width="1" height="1" fill="currentColor"/><rect x="3" y="3" width="1" height="1" fill="currentColor"/><rect x="4" y="3" width="1" height="1" fill="currentColor"/><rect x="5" y="3" width="1" height="1" fill="currentColor"/><rect x="0" y="4" width="1" height="1" fill="currentColor"/><rect x="1" y="4" width="1" height="1" fill="currentColor"/><rect x="2" y="4" width="1" height="1" fill="currentColor"/><rect x="3" y="4" width="1" height="1" fill="currentColor"/><rect x="4" y="4" width="1" height="1" fill="currentColor"/><rect x="5" y="4" width="1" height="1" fill="currentColor"/><rect x="6" y="4" width="1" height="1" fill="currentColor"/><rect x="0" y="5" width="1" height="1" fill="currentColor"/><rect x="1" y="5" width="1" height="1" fill="currentColor"/><rect x="2" y="5" width="1" height="1" fill="currentColor"/><rect x="3" y="5" width="1" height="1" fill="currentColor"/><rect x="4" y="5" width="1" height="1" fill="currentColor"/><rect x="5" y="5" width="1" height="1" fill="currentColor"/><rect x="3" y="6" width="1" height="1" fill="currentColor"/><rect x="4" y="6" width="1" height="1" fill="currentColor"/><rect x="3" y="7" width="1" height="1" fill="currentColor"/></symbol>
+      
+      
     </svg>
     <header class="topbar">
       <a href="/" class="brand" aria-label="Spotter home">
-        <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges">
-          <rect x="0" y="2" width="2" height="4" fill="#c8e66b" />
-          <rect x="2" y="0" width="2" height="8" fill="#c8e66b" />
-          <rect x="4" y="3" width="8" height="2" fill="#e8f0d8" />
-          <rect x="12" y="0" width="2" height="8" fill="#c8e66b" />
-          <rect x="14" y="2" width="2" height="4" fill="#c8e66b" />
-        </svg>
+        <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><use href="/sprites.svg#logo"/></svg>
         <span>Spotter</span>
       </a>
       <nav>
@@ -858,7 +852,7 @@
 
           <article class="card entry">
             <header class="entry-head">
-              <h3><a href="/workouts/31">Today<span class="vh">, summary</span><svg class="go" width="16" height="16" aria-hidden="true"><use href="#i-arrow" /></svg></a></h3>
+              <h3><a href="/workouts/31">Today<span class="vh">, summary</span><svg class="go" width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a></h3>
               <p class="when"><time datetime="2026-10-08T18:42">6:42</time> – <time datetime="2026-10-08T19:46">7:46 pm</time></p>
             </header>
             <dl class="tally">
@@ -897,7 +891,7 @@
 
           <article class="card entry">
             <header class="entry-head">
-              <h3><a href="/workouts/30">Tue 6 Oct<span class="vh">, summary</span><svg class="go" width="16" height="16" aria-hidden="true"><use href="#i-arrow" /></svg></a></h3>
+              <h3><a href="/workouts/30">Tue 6 Oct<span class="vh">, summary</span><svg class="go" width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a></h3>
               <p class="when"><time datetime="2026-10-06T07:05">7:05</time> – <time datetime="2026-10-06T08:10">8:10 am</time></p>
             </header>
             <dl class="tally">
@@ -932,7 +926,7 @@
 
           <article class="card entry">
             <header class="entry-head">
-              <h3><a href="/workouts/29">Mon 5 Oct<span class="vh">, summary</span><svg class="go" width="16" height="16" aria-hidden="true"><use href="#i-arrow" /></svg></a></h3>
+              <h3><a href="/workouts/29">Mon 5 Oct<span class="vh">, summary</span><svg class="go" width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a></h3>
               <p class="when"><time datetime="2026-10-05T06:10">6:10</time> – <time datetime="2026-10-05T06:48">6:48 am</time></p>
             </header>
             <dl class="tally">
@@ -965,7 +959,7 @@
 
           <article class="card entry">
             <header class="entry-head">
-              <h3><a href="/workouts/28">Sat 3 Oct<span class="vh">, summary</span><svg class="go" width="16" height="16" aria-hidden="true"><use href="#i-arrow" /></svg></a></h3>
+              <h3><a href="/workouts/28">Sat 3 Oct<span class="vh">, summary</span><svg class="go" width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a></h3>
               <p class="when"><time datetime="2026-10-03T09:02">9:02</time> – <time datetime="2026-10-03T10:00">10:00 am</time></p>
             </header>
             <dl class="tally">
@@ -1065,7 +1059,7 @@
 
           <article class="card entry">
             <header class="entry-head">
-              <h3><a href="/workouts/30">Tue 6 Oct<span class="vh">, summary</span><svg class="go" width="16" height="16" aria-hidden="true"><use href="#i-arrow" /></svg></a></h3>
+              <h3><a href="/workouts/30">Tue 6 Oct<span class="vh">, summary</span><svg class="go" width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a></h3>
               <p class="when"><time datetime="2026-10-06T07:05">7:05</time> – <time datetime="2026-10-06T08:10">8:10 am</time></p>
             </header>
             <dl class="tally">
@@ -1125,13 +1119,7 @@
 
         <h1>History</h1>
         <div class="card empty">
-          <svg viewBox="0 0 16 8" width="64" height="32" aria-hidden="true" shape-rendering="crispEdges">
-            <rect x="0" y="2" width="2" height="4" fill="#1f6b3a" />
-            <rect x="2" y="0" width="2" height="8" fill="#1f6b3a" />
-            <rect x="4" y="3" width="8" height="2" fill="#0b2416" />
-            <rect x="12" y="0" width="2" height="8" fill="#1f6b3a" />
-            <rect x="14" y="2" width="2" height="4" fill="#1f6b3a" />
-          </svg>
+          <svg viewBox="0 0 16 8" width="64" height="32" aria-hidden="true" shape-rendering="crispEdges"><use href="/sprites.svg#bigDumbbell"/></svg>
           <p>No workouts yet. Your future self is waiting 🏋️</p>
           <a href="/" class="button">Start one</a>
         </div>
