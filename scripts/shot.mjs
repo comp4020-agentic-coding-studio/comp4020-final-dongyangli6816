@@ -22,9 +22,10 @@
 // every line's height and the shot would be wrong.
 import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createServer } from "node:http";
 import { tmpdir } from "node:os";
-import { dirname, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { dirname, extname, relative, resolve, sep } from "node:path";
+import { svg as spriteSheet } from "./sprites.ts";
 
 const args = process.argv.slice(2);
 const flag = (name) => {
@@ -43,7 +44,33 @@ if (!target || !out) {
   );
   process.exit(2);
 }
-const url = /^(https?|file):\/\//.test(target) ? target : pathToFileURL(resolve(target)).href;
+// A file is served from the repo on a local port rather than opened as
+// file://, so a mockup can draw from /sprites.svg, the sheet of every sprite
+// in src/sprites/ (scripts/sprites.ts), built fresh for each run.
+const root = resolve(import.meta.dirname, "..");
+const TYPES = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".svg": "image/svg+xml", ".png": "image/png", ".woff2": "font/woff2", ".woff": "font/woff" };
+let server;
+let url = target;
+if (!/^(https?|file):\/\//.test(target)) {
+  if (!resolve(target).startsWith(root + sep)) {
+    console.error(`${target} is outside the repo, so it can't be served; pass a file:// URL instead`);
+    process.exit(2);
+  }
+  const sheet = spriteSheet();
+  server = createServer((req, res) => {
+    const path = decodeURIComponent(new URL(req.url, "http://x").pathname);
+    if (path === "/sprites.svg") return res.writeHead(200, { "content-type": TYPES[".svg"] }).end(sheet);
+    const file = resolve(root, `.${path}`);
+    let body;
+    try {
+      if (file.startsWith(root + sep)) body = readFileSync(file);
+    } catch {}
+    if (!body) return res.writeHead(404).end();
+    res.writeHead(200, { "content-type": TYPES[extname(file)] ?? "application/octet-stream" }).end(body);
+  });
+  await new Promise((r) => server.listen(0, "127.0.0.1", r));
+  url = `http://127.0.0.1:${server.address().port}/${relative(root, resolve(target)).split(sep).join("/")}`;
+}
 
 const chrome = process.env.CHROME ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const port = 9300 + Math.floor(Math.random() * 500);
@@ -53,6 +80,13 @@ const proc = spawn(
   ["--headless=new", "--disable-gpu", "--hide-scrollbars", `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, "about:blank"],
   { stdio: "ignore" },
 );
+process.on("uncaughtException", (err) => {
+  console.error(err.message);
+  proc.kill();
+  server?.close();
+  rmSync(profile, { recursive: true, force: true });
+  process.exit(1);
+});
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 let page;
@@ -77,10 +111,14 @@ ws.addEventListener("message", (e) => {
   pending.get(m.id)?.(m.result);
   pending.delete(m.id);
 });
+// a page that never answers (a 404, a font that never loads) fails the shot
+// rather than hanging it
 const send = (method, params = {}) =>
-  new Promise((r) => {
-    pending.set(++id, r);
-    ws.send(JSON.stringify({ id, method, params }));
+  new Promise((r, reject) => {
+    const n = ++id;
+    const timer = setTimeout(() => reject(new Error(`${method} got no answer in 30 s (${url})`)), 30_000);
+    pending.set(n, (result) => (clearTimeout(timer), r(result)));
+    ws.send(JSON.stringify({ id: n, method, params }));
   });
 const evaluate = async (expression) =>
   (await send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true })).result.value;
@@ -134,6 +172,7 @@ for (const [name, width] of [["mobile", 390], ["desktop", 1280]]) {
 }
 ws.close();
 proc.kill();
+server?.close();
 
 // Runs in the page: the box round each state's elements, in page pixels.
 function stateBoxes(only) {
