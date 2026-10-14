@@ -1,7 +1,7 @@
 ---
 // One person's avatar as crisp SVG (AV-2): the body in a pose, with the hair
 // drawn over the head inside the bobbing group (g.av-top). Each pixel carries
-// its slot as a class (k, s, t, h; pm, pw, pr for the gym's props) rather
+// its slot as a class (k, s, t, h, the shades S, T, H; pm, pw, pr for the gym's props) rather
 // than a fill, and the look's colours arrive as custom properties, so a
 // palette swap is three variables.
 import { AVATAR_UPPER_ROWS, HAIR, HAIR_STYLES, lookVars, poseOf, type HairStyle, type Look, type Pose } from "../sprites/avatar.ts";
@@ -91,6 +91,17 @@ const extra = runs(props, 0, true);
   .av .t {
     fill: var(--av-shirt);
   }
+  /* the shades (ADR 0005): a palette's own shade when it has one, else its
+     colour mixed a third of the way to ink */
+  .av .S {
+    fill: var(--av-skin-2, color-mix(in srgb, var(--av-skin), var(--ink) 30%));
+  }
+  .av .H {
+    fill: var(--av-hair-2, color-mix(in srgb, var(--av-hair), var(--ink) 30%));
+  }
+  .av .T {
+    fill: var(--av-shirt-2, color-mix(in srgb, var(--av-shirt), var(--ink) 30%));
+  }
   /* the gym's props: the bar, the bottle, the phone's glow */
   .av .pm {
     fill: var(--dim);
@@ -115,6 +126,8 @@ const extra = runs(props, 0, true);
   .av.ghost {
     --av-skin: var(--card);
     --av-shirt: var(--card);
+    --av-skin-2: var(--card);
+    --av-shirt-2: var(--card);
   }
   .av.ghost .k {
     fill: var(--muted);

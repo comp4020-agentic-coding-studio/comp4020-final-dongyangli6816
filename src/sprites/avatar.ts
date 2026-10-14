@@ -1,8 +1,10 @@
 // A person's avatar (AV-1, AV-2, docs/design/avatar/spec.md): one body grid
 // with no hair, four hair overlays drawn at the head, and a look of four
-// choices. Slot letters: k ink, s skin, t shirt, h hair. Colours are never in
-// the grids: Avatar.astro gives each pixel its slot as a class, and the look
-// sets --av-skin, --av-hair and --av-shirt, so recolouring is a palette swap.
+// choices. Slot letters: k ink, s skin, t shirt, h hair, and S, T, H for a
+// darker shade of each (ADR 0005). Colours are never in the grids:
+// Avatar.astro gives each pixel its slot as a class, and the look sets
+// --av-skin, --av-hair and --av-shirt (and a shade's -2 where a palette has
+// one), so recolouring is a palette swap.
 // Pure data, so the room's script can use it too.
 //
 // The grids below are drawn at 16 × 16 and exported doubled to 32 × 32
@@ -191,14 +193,22 @@ export function parseLook(json: string | null): Look | null {
   }
 }
 
-const hex = (list: readonly { id: string; hex: string }[], id: string) => list.find((o) => o.id === id)!.hex;
+// A choice's colour, and its darker shade where the palette names one (ADR
+// 0005); without one, Avatar.astro mixes the colour towards ink.
+type Swatch = { id: string; hex: string; shade?: string };
+const swatch = (list: readonly Swatch[], id: string) => list.find((o) => o.id === id)!;
+const withShade = (prop: string, o: Swatch) => `${prop}: ${o.hex}` + (o.shade ? `; ${prop}-2: ${o.shade}` : "");
 
 // One string per look, to tell whether a drawn avatar is still right.
 export const lookKey = (look: Look): string => `${look.skin}|${look.hair}|${look.hairColour}|${look.shirt}`;
 
 // The look's three colours, as the custom properties .av reads.
 export const lookVars = (look: Look): string =>
-  `--av-skin: ${hex(SKINS, look.skin)}; --av-hair: ${hex(HAIR_COLOURS, look.hairColour)}; --av-shirt: ${hex(SHIRTS, look.shirt)}`;
+  [
+    withShade("--av-skin", swatch(SKINS, look.skin)),
+    withShade("--av-hair", swatch(HAIR_COLOURS, look.hairColour)),
+    withShade("--av-shirt", swatch(SHIRTS, look.shirt)),
+  ].join("; ");
 
 // The editor's live preview with no JavaScript: the checked radios set the
 // palette on the form with :has(), generated here from the palettes so the
@@ -214,7 +224,9 @@ export function editorCss(): string {
     ["shirt", "--av-shirt", SHIRTS],
   ] as const;
   for (const [field, prop, list] of vars) {
-    for (const o of list) rules.push(`.editor:has(input[name="${field}"][value="${o.id}"]:checked) { ${prop}: ${o.hex}; }`);
+    for (const o of list as readonly Swatch[]) {
+      rules.push(`.editor:has(input[name="${field}"][value="${o.id}"]:checked) { ${withShade(prop, o)}; }`);
+    }
   }
   return rules.join("\n");
 }
