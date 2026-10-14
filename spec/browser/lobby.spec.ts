@@ -10,14 +10,18 @@ test("the avatar preview follows a choice before it's saved", async ({ browser }
   const page = await mia.newPage();
   await page.goto("/avatar");
   const shirt = page.locator(".preview .av rect.t").first();
-  await page.locator('input[name="shirt"][value="grey"]').check();
-  // grey is #8c8f94: the preview is recoloured by CSS alone (AV-2)
-  await expect(shirt).toHaveCSS("fill", "rgb(140, 143, 148)");
+  // a new account's look is random (AV-3), so pick a shirt it isn't wearing:
+  // grey is #8c8f94, white #eeeee6
+  const saved = JSON.parse((await page.locator("form.editor").getAttribute("data-saved"))!);
+  const [pick, fill] = saved.shirt === "grey" ? ["white", "rgb(238, 238, 230)"] : ["grey", "rgb(140, 143, 148)"];
+  await page.locator(`input[name="shirt"][value="${pick}"]`).check();
+  // the preview is recoloured by CSS alone (AV-2)
+  await expect(shirt).toHaveCSS("fill", fill);
   await expect(page.locator("form.editor .status-line")).toHaveText("Not saved yet.");
 
   await page.locator(".actions button").click();
   await expect(page.locator(".bubble")).toContainText("Saved");
-  await expect(page.locator('input[name="shirt"][value="grey"]')).toBeChecked();
+  await expect(page.locator(`input[name="shirt"][value="${pick}"]`)).toBeChecked();
 });
 
 test("Randomise rolls a look in the page, without saving it", async ({ browser }) => {
