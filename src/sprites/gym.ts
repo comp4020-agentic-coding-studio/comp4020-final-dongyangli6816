@@ -1,9 +1,14 @@
 // The gym (GYM-1, docs/design/room/spec.md, appendix): a fixed 10 x 10 map
-// of 16 px tiles, the scenery on its walls, the eight pieces of equipment and
-// the twelve stations. Every grid is 16 x 16, one letter per pixel, "." for
-// transparent; the letters are the palette below, all of them design tokens.
-// Pure data, so the room's script can draw from it too.
+// of 32 px tiles, the scenery on its walls, the eight pieces of equipment and
+// the twelve stations. Every grid is 32 x 32 (ADR 0005), one letter per pixel,
+// "." for transparent; the letters are the palette below, all of them design
+// tokens. The grids here are drawn at 16 x 16 and exported doubled, until
+// they're redrawn at 32. Pure data, so the room's script can draw from it too.
 import type { Equipment } from "../lib/exercises.ts";
+import { upscale } from "./sprite.ts";
+
+const each = <K extends string>(grids: Record<K, string[]>) =>
+  Object.fromEntries(Object.entries<string[]>(grids).map(([k, g]) => [k, upscale(g)])) as Record<K, string[]>;
 
 // k ink, n night, f floor, p panel, d deep, g green, e edge, m dim, w paper,
 // l leaf, r resting
@@ -41,7 +46,7 @@ export const STATIONS: [number, number][] = [
   [1, 1], [3, 1], [6, 1], [8, 1], [1, 3], [3, 3], [6, 3], [8, 3], [1, 5], [3, 5], [6, 5], [8, 5],
 ];
 
-export const TILES: Record<string, string[]> = {
+const TILES16: Record<string, string[]> = {
   ".": [
     "pppppppppppppppp",
     "pfffffffffffffff",
@@ -225,7 +230,7 @@ export const TILES: Record<string, string[]> = {
 };
 
 // drawn over the wall tile named by base
-export const SCENERY: Record<string, { base: string; grid: string[] }> = {
+const SCENERY16: Record<string, { base: string; grid: string[] }> = {
   C: { base: "[", grid: [
     "................",
     ".....kkkkkk.....",
@@ -264,7 +269,7 @@ export const SCENERY: Record<string, { base: string; grid: string[] }> = {
   ] },
 };
 
-export const GEAR: Record<Equipment, string[]> = {
+const GEAR16: Record<Equipment, string[]> = {
   "treadmill": [
     "..kkkkkkkkkkkk..",
     "..kmmmmmmmmmmk..",
@@ -412,7 +417,7 @@ export const GEAR: Record<Equipment, string[]> = {
 };
 
 // your station: leaf corners
-export const CLAIM: string[] = [
+const CLAIM16: string[] = [
   "llll........llll",
   "l..............l",
   "l..............l",
@@ -432,6 +437,13 @@ export const CLAIM: string[] = [
 ];
 
 
+export const TILES = each(TILES16);
+export const SCENERY = Object.fromEntries(
+  Object.entries(SCENERY16).map(([k, { base, grid }]) => [k, { base, grid: upscale(grid) }]),
+);
+export const GEAR = each(GEAR16);
+export const CLAIM = upscale(CLAIM16);
+
 // 3 x 5 digits for the empty bays' numbers
 const DIGITS: Record<string, string[]> = {
   "0": ["eee", "e.e", "e.e", "e.e", "eee"],
@@ -447,8 +459,9 @@ const DIGITS: Record<string, string[]> = {
 };
 
 // An empty station: a dashed square in edge green on rows and columns 1 and
-// 14, and its slot number, centred, from row 5.
-export function bay(slot: number): string[] {
+// 14, and its slot number, centred, from row 5 (of the 16 x 16 drawing).
+export const bay = (slot: number): string[] => upscale(bay16(slot));
+function bay16(slot: number): string[] {
   const g = Array.from({ length: 16 }, () => Array(16).fill("."));
   const dash = (i: number) => i === 14 || ((i - 1) >> 1) % 2 === 0;
   for (let i = 1; i <= 14; i++) {

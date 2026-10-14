@@ -156,11 +156,11 @@ const next = encodeURIComponent(`/join/${passcode}`);
   /* a patch of gym floor, as on signup: a deep wall along the top with a
      green skirting line, and the page's own 16 px checker */
   .floor {
-    --s: 4px;
+    --s: 2px;
     position: relative;
     display: flex;
     gap: 0.5rem;
-    min-height: calc(var(--s) * 16 + 88px);
+    min-height: calc(var(--s) * 32 + 88px);
     padding: 0 0.5rem 0.75rem;
     border: var(--px) solid var(--ink);
     border-top: calc(var(--px) * 4) solid var(--deep);
@@ -179,7 +179,7 @@ const next = encodeURIComponent(`/join/${passcode}`);
   .scene :global(.doorway) {
     flex: none;
     display: block;
-    width: 64px; /* 16 px sprite at 4x */
+    width: 64px; /* 32 px sprite at 2x */
     height: 64px;
   }
   .stand {
@@ -206,15 +206,15 @@ const next = encodeURIComponent(`/join/${passcode}`);
   .floor :global(.av) {
     display: block;
     flex: none;
-    width: calc(var(--s) * 16);
-    height: calc(var(--s) * 16);
+    width: calc(var(--s) * 32);
+    height: calc(var(--s) * 32);
   }
   .floor :global(.av-top) {
     animation: idle 800ms steps(1) infinite;
   }
   @keyframes idle {
     50% {
-      transform: translateY(1px); /* one sprite pixel */
+      transform: translateY(2px); /* one pixel of the 16 x 16 drawing */
     }
   }
 

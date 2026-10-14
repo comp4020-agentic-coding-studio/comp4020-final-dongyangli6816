@@ -6,6 +6,7 @@
 // palette swap is three variables.
 import { AVATAR_UPPER_ROWS, HAIR, HAIR_STYLES, lookVars, poseOf, type HairStyle, type Look, type Pose } from "../sprites/avatar.ts";
 import { DONY_VARS, donyFrame, type DonyFrame } from "../sprites/dony.ts";
+import { TILE } from "../sprites/sprite.ts";
 
 interface Props {
   // Dony's own sprite and colours in this frame, instead of a look (BOT-2)
@@ -49,7 +50,7 @@ const extra = runs(props, 0, true);
 
 <svg
   class:list={["av", `pose-${dony === "sit" ? "sit" : dony?.startsWith("lift") ? "lift" : dony ? "stand" : pose}`, className]}
-  viewBox={head ? "1 0 14 11" : "0 0 16 16"}
+  viewBox={head ? "2 0 28 22" : `0 0 ${TILE} ${TILE}`}
   shape-rendering="crispEdges"
   aria-hidden="true"
   data-hair={allHair && look && !dony ? look.hair : undefined}

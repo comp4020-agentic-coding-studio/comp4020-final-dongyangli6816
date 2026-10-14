@@ -4,11 +4,15 @@
 // the grids: Avatar.astro gives each pixel its slot as a class, and the look
 // sets --av-skin, --av-hair and --av-shirt, so recolouring is a palette swap.
 // Pure data, so the room's script can use it too.
+//
+// The grids below are drawn at 16 × 16 and exported doubled to 32 × 32
+// (ADR 0005), until they're redrawn at 32.
+import { upscale } from "./sprite.ts";
 
-// Rows 0 to 12 bob in the idle loop.
-export const AVATAR_UPPER_ROWS = 13;
+// Rows 0 to 25 bob in the idle loop: rows 0 to 12 of the 16 × 16 drawing.
+export const AVATAR_UPPER_ROWS = 26;
 
-export const BODY = [
+const BODY16 = [
   "................",
   ".....kkkkkk.....",
   "....kssssssk....",
@@ -29,7 +33,7 @@ export const BODY = [
 
 // Overlays start at row 0, column 0: the head anchor of the front-facing idle
 // frames.
-export const HAIR = {
+const HAIR16 = {
   crop: [".....kkkkkk.....", "....khhhhhhk....", "...khhhhhhhhk...", "...khhhhhhhhk...", "...kh......hk..."],
   curls: [
     "....kkkkkkkk....",
@@ -64,7 +68,11 @@ export const HAIR = {
     ".............k..",
   ],
 } as const;
-export type HairStyle = keyof typeof HAIR;
+export type HairStyle = keyof typeof HAIR16;
+export const BODY = upscale(BODY16);
+export const HAIR = Object.fromEntries(
+  Object.entries(HAIR16).map(([style, grid]) => [style, upscale(grid)]),
+) as Record<HairStyle, string[]>;
 
 // The gym's poses (GYM-10, docs/design/room/spec.md, appendix), all built on
 // BODY: the body grid, the row the hair overlay starts at, and props drawn
@@ -78,10 +86,14 @@ const put = (grid: string[], x: number, y: number, rows: readonly string[]) =>
     grid[y + dy] = line.join("");
   });
 export function poseOf(pose: Pose): { body: string[]; hairRow: number; props: string[] } {
+  const { body, hairRow, props } = poseOf16(pose);
+  return { body: upscale(body), hairRow: hairRow * 2, props: upscale(props) };
+}
+function poseOf16(pose: Pose): { body: string[]; hairRow: number; props: string[] } {
   const props = Array<string>(16).fill(blank);
   if (pose === "lift") {
     // arms up at columns 1-2 and 13-14, the shoulders wide, a bar overhead
-    const body = [...BODY];
+    const body = [...BODY16];
     put(body, 1, 1, ["kk..........kk"]);
     for (let y = 2; y <= 8; y++) put(body, 1, y, ["ks..........sk"]);
     body.splice(9, 4, ".kskttttttttksk.", "..kttttttttttk..", "..kttttttttttk..", "...kttttttttk...");
@@ -90,15 +102,15 @@ export function poseOf(pose: Pose): { body: string[]; hairRow: number; props: st
   }
   if (pose === "rest") {
     put(props, 12, 8, [".k.", "kwk", "krk", "krk", "krk", "kkk"]);
-    return { body: [...BODY], hairRow: 0, props };
+    return { body: [...BODY16], hairRow: 0, props };
   }
   if (pose === "sit") {
-    const body = [blank, blank, ...BODY.slice(0, 9)];
+    const body = [blank, blank, ...BODY16.slice(0, 9)];
     body.push("...kkttttttkk...", "..ktttkkkktttk..", "..ktskkkkkkstk..", ".kkkkkkkkkkkkkk.", ".kssk......kssk.");
     put(props, 7, 12, ["ww"]);
     return { body, hairRow: 2, props };
   }
-  return { body: [...BODY], hairRow: 0, props };
+  return { body: [...BODY16], hairRow: 0, props };
 }
 
 // The choices, in the order the editor shows them. The id is what's stored.

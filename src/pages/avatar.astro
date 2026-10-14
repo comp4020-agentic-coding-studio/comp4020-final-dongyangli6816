@@ -178,14 +178,14 @@ const isNew = param("new") === "1" && !!next;
   }
   /* a patch of gym floor, as on signup and join */
   .floor {
-    --s: 6px; /* 16 px sprite at a whole 6x = 96 px */
+    --s: 3px; /* 32 px sprite at a whole 3x = 96 px */
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-end;
     gap: 0.5rem;
-    min-height: calc(var(--s) * 16 + 88px);
+    min-height: calc(var(--s) * 32 + 88px);
     padding: 0 0.5rem 0.75rem;
     border: var(--px) solid var(--ink);
     border-top: calc(var(--px) * 4) solid var(--deep);
@@ -213,15 +213,15 @@ const isNew = param("new") === "1" && !!next;
     background: rgb(0 0 0 / 70%);
   }
   .floor :global(.av) {
-    width: calc(var(--s) * 16);
-    height: calc(var(--s) * 16);
+    width: calc(var(--s) * 32);
+    height: calc(var(--s) * 32);
   }
   .floor :global(.av-top) {
     animation: idle 800ms steps(1) infinite;
   }
   @keyframes idle {
     50% {
-      transform: translateY(1px); /* one sprite pixel */
+      transform: translateY(2px); /* one pixel of the 16 x 16 drawing */
     }
   }
   .floor :global(.floor-prop) {
@@ -229,14 +229,14 @@ const isNew = param("new") === "1" && !!next;
     bottom: 0.75rem;
   }
   .floor :global(.kettlebell) {
-    left: calc(50% - var(--s) * 14 - 0.5rem);
-    width: calc(var(--s) * 6);
-    height: calc(var(--s) * 6);
+    left: calc(50% - var(--s) * 28 - 0.5rem);
+    width: calc(var(--s) * 12);
+    height: calc(var(--s) * 12);
   }
   .floor :global(.dumbbell) {
-    left: calc(50% + var(--s) * 8 + 0.5rem);
-    width: calc(var(--s) * 8);
-    height: calc(var(--s) * 4);
+    left: calc(50% + var(--s) * 16 + 0.5rem);
+    width: calc(var(--s) * 16);
+    height: calc(var(--s) * 8);
   }
   /* the saved hair, for browsers without :has() */
   .preview :global(.hair) {
@@ -278,7 +278,7 @@ const isNew = param("new") === "1" && !!next;
       gap: 0 1.5rem;
     }
     .preview {
-      --s: 7px; /* 112 px; 8x would push the props off the floor */
+      --s: 4px; /* 128 px; 5x would push the props off the floor */
       grid-area: preview;
       position: relative;
     }
@@ -369,7 +369,7 @@ const isNew = param("new") === "1" && !!next;
     border: var(--px) solid var(--ink);
   }
   .style :global(.av) {
-    width: 56px; /* the head, 14 x 11 sprite pixels at 4x */
+    width: 56px; /* the head, 28 x 22 sprite pixels at 2x */
     height: 44px;
   }
   /* chosen: a leaf inner ring and a tick, so it isn't colour alone */

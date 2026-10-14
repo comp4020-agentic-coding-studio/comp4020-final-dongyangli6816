@@ -4,8 +4,10 @@
 // person's (k ink, s skin, h hair, t shirt), so Avatar.astro and the .av slot
 // classes draw him unchanged, with his four colours set on the svg. Props as
 // everyone's: m dim, w paper, r resting blue. Pure data, so the room's script
-// can use it too.
+// can use it too. Drawn at 16 × 16, exported doubled to 32 × 32 (ADR 0005)
+// until redrawn.
 import type { Pose } from "./avatar.ts";
+import { upscale } from "./sprite.ts";
 
 export const DONY_VARS = "--av-skin: #e9bd94; --av-hair: #2e3046; --av-shirt: #8b6cf2";
 
@@ -46,6 +48,10 @@ export type DonyFrame = Pose | "lift2" | "walk1" | "walk2" | "hop";
 
 // Each frame is the body (slots k s h t) and its props (m w r), drawn over it.
 export function donyFrame(frame: DonyFrame): { body: string[]; props: string[] } {
+  const { body, props } = donyFrame16(frame);
+  return { body: upscale(body), props: upscale(props) };
+}
+function donyFrame16(frame: DonyFrame): { body: string[]; props: string[] } {
   const props = Array<string>(16).fill(blank);
   const stand = [...HEAD, ...TORSO, BELT, ...LEGS];
   switch (frame) {
@@ -81,7 +87,7 @@ export function donyFrame(frame: DonyFrame): { body: string[]; props: string[] }
 
 // BOT-1: his poster on the back wall, over the wall tile ("." lets it show).
 // The glint is one frame every 8 s over the full poster: his lenses flash.
-export const POSTER = {
+const POSTER16 = {
   full: [
     blank,
     "..kkkkkkkkkkkk..",
@@ -159,4 +165,7 @@ export const POSTER = {
     blank,
   ],
 };
+export const POSTER = Object.fromEntries(
+  Object.entries(POSTER16).map(([name, grid]) => [name, upscale(grid)]),
+) as Record<keyof typeof POSTER16, string[]>;
 export const POSTER_PALETTE = { k: "#0b2416", s: "#e9bd94", h: "#2e3046", t: "#8b6cf2", b: "currentColor" };

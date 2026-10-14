@@ -55,7 +55,8 @@ test("someone on their station stays put (avatars used to walk out and back)", a
   expect([...tiles]).toEqual(["6,1"]);
 });
 
-test("the map is drawn at a whole 2x on a phone", async ({ browser }) => {
+// 10 tiles of 32 px at 1x (ADR 0005)
+test("the map is drawn at a whole 1x on a phone", async ({ browser }) => {
   const mia = await person(browser, "Mia");
   const { path } = await openRoom(mia);
   const page = await mia.newPage();
