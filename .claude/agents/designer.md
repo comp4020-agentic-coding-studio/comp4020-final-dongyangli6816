@@ -66,7 +66,8 @@ were only asked to match, `src/`, `spec/` or anything else.
 
 ### `mockup.html`, one per page
 
-A standalone static page that opens in a browser by double-clicking:
+A static page, seen through `scripts/shot.mjs`, which serves it from the repo
+(it won't open by double-clicking, since its art comes from `/sprites.svg`):
 
 - Load the fonts with
   `<link rel="stylesheet" href="../../../node_modules/@fontsource/press-start-2p/400.css">`
@@ -79,13 +80,24 @@ A standalone static page that opens in a browser by double-clicking:
   from the tokens. A rule the whole group uses is written the same in each
   page's block and marked `/* shared: <group> */`, so the main agent can move
   it into one place.
-- Keep the pixel art light, since the whole file has to be read to be
-  edited. Draw each sprite once, inside a hidden `<svg>` at the top of
-  `<body>`, as a `<symbol>` or `<g id>`, with one `<path>` per colour
-  (`d="M3 0h2v1h-2z…"`), never one `<rect>` per pixel. Every place the
-  sprite appears is then a `<use href="#id">`. An avatar's slot colours
-  (`var(--av-skin)` and the rest) go in an inline `style` on its paths, so
-  each `<use>` takes the colours set on its own `<svg>`.
+- Draw the existing pixel art from the shared sheet, never a copy of it:
+  `<svg viewBox="0 0 16 16"><use href="/sprites.svg#eq-squat-rack"/></svg>`.
+  The sheet is built from `src/sprites/` on every shot, so it is always the
+  real art; `node scripts/sprites.ts --ids` lists what's in it (avatars by
+  pose and hair, Dony's frames, tiles and `map-tiles`, equipment, bays,
+  posters, icons). Set an avatar's colours as `--av-skin`, `--av-hair` and
+  `--av-shirt` on its `<svg>`. To show part of a sprite through a smaller
+  `viewBox` (an avatar's head), give the `<use>` its own `width` and
+  `height`, or the whole sprite is squeezed in.
+- Only art that doesn't exist yet is drawn in the mockup: once, inside a
+  hidden `<svg>` at the top of `<body>`, as a `<symbol>` with one `<path>`
+  per colour (`d="M3 0h2v1h-2z…"`), never one `<rect>` per pixel, used with
+  `<use href="#id">`. Put its grid in the spec too, so the main agent can add
+  it to `src/sprites/`, after which the mockup draws it from the sheet.
+- An avatar whose pixels the page's CSS reaches into (the idle bob on
+  `.av-top`, a ghost's recolour, the editor's hair switch) can't be a
+  `<use>`, since CSS can't style inside one: draw that avatar inline, as the
+  Lobby mockups do.
 - Use realistic Australian data: kilograms, real lift names, a plausible
   history. No lorem ipsum.
 - Show every state the page needs (see "Every page designs these states" in
