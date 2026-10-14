@@ -164,7 +164,7 @@ equipment.
 
 | ID | Pri | Requirement |
 | --- | --- | --- |
-| GYM-1 | P0 | The gym is one fixed map on a 16 px tile grid: walls, floor, an entrance, a water cooler, aisles, and 12 stations. It fits a portrait phone screen and a laptop window without scrolling. |
+| GYM-1 | P0 | The gym is one fixed map on a 32 px tile grid (ADR 0005): walls, floor, an entrance, a water cooler, aisles, and 12 stations. It fits a portrait phone screen and a laptop window without scrolling. |
 | GYM-2 | P0 | A new room starts with the treadmill, flat bench, squat rack and dumbbell rack on four stations, and eight empty stations. |
 | GYM-3 | P0 | Each station holds at most one piece of equipment, and each piece of equipment is used by one person at a time. The same kind of equipment can be on several stations at once (five people benching means five benches). A person keeps their station while resting, slacking or Away, and holds none while Idle. |
 | GYM-4 | P0 | Choosing an exercise releases the station the person was using, then claims one, in this order: (1) a station that already has that equipment and nobody using it; (2) an empty station, which triggers a delivery; (3) the station whose equipment has gone unused longest, which triggers a swap. Any equipment can be swapped out, including the four a room opens with, as long as nobody is using it. |
@@ -199,7 +199,7 @@ equipment.
 | ID | Pri | Requirement |
 | --- | --- | --- |
 | BOT-1 | P1 | The back wall's poster is "Member of the month: Dony". Anyone in the room can tap it (by touch, click or keyboard) to summon Dony: on every screen the poster goes empty and he hops down onto the walkway. The server records the summon (when, by whom). He can be summoned again any number of times after being sent back; each summon is a fresh visit with a new schedule. |
-| BOT-2 | P1 | Dony is drawn with his own 16 × 16 sprite (an Asian character with glasses and a cool outfit) in every pose a person has, plus the poster's full and empty frames, within the art rules. He can't be picked in the avatar editor. |
+| BOT-2 | P1 | Dony is drawn with his own 32 × 32 sprite (an Asian character with glasses and a cool outfit) in every pose a person has, plus the poster's full and empty frames, within the art rules. He can't be picked in the avatar editor. |
 | BOT-3 | P1 | Dony trains by a schedule worked out from the room and his summon time: blocks of 4 to 6 lifts over 45 to 60 minutes, 3 to 5 sets each, realistic set lengths and rests, 3 to 6 minutes Idle between blocks, mostly on equipment already on the floor (at most two deliveries a block). He goes Idle, Lifting, Resting and Slacking (about one rest in eight, at most twice a block) through the same station rules (GYM-4), never Finished, and every screen sees each change within about a second (GYM-13). |
 | BOT-4 | P1 | Anyone in the room can tap the empty poster to send Dony back: he stops whatever he's doing, frees his station, walks back and hops into the poster. He can be sent back at any moment; after a send back the poster rests for 30 seconds before he can be summoned again. A tap only acts if the poster is still as its tapper saw it (full for a summon, empty for a send back) and, for a summon, isn't resting; otherwise it does nothing, silently. |
 | BOT-5 | P1 | Dony appears on the map and in the squad list like a person, with no bot marker. He never counts as a member, toward the 12, as host or as room activity. A station he holds is always free for a person to take. The room closes when the last real person leaves, as now, and he goes with it. He appears in no logbook, summary, history or friends list. |
@@ -214,16 +214,16 @@ equipment.
 
 ## Art direction
 
-The look is the overworld of the early Game Boy and Game Boy Color Pokémon
-games: top-down, a 16 px tile grid, small sprites, few colours, and two-frame
-animations. The style is borrowed; no Pokémon assets are, since the repo is
+The look is the overworld of the Game Boy Color and Game Boy Advance Pokémon
+games: top-down, a 32 px tile grid, small sprites, few colours, and two-frame
+animations (16 px until ADR 0005). The style is borrowed; no Pokémon assets are, since the repo is
 public and they are Nintendo's.
 
 **Sprites as data.** Every sprite is drawn in code: a grid of characters, one
 per pixel, each mapping to a slot in a palette.
 
 ```ts
-// a 4×4 excerpt; real sprites are 16×16
+// a 4×4 excerpt; real sprites are 32×32
 const frame = [
   "..hh",
   ".hss",
@@ -241,7 +241,8 @@ const frame = [
   drawing.
 - Hair and accessories are overlay layers drawn at a head anchor that each body
   frame defines, so one hair sprite per direction fits every animation.
-- At most 4 colours per sprite plus transparency, in keeping with the style.
+- At most 7 colours per sprite plus transparency (ADR 0005): the look's
+  three colours, a darker shade of each, and the ink outline.
 
 **What has to be drawn**
 

@@ -301,8 +301,8 @@ Rules:
 - **Top bar**: passcode (tap to copy), headcount, and a menu with Invite,
   sound on/off and Leave. Room actions never compete with the set buttons.
 - **Map**: shown whole, never scrolled or cropped. Scaled by the largest whole
-  number that fits (spec "Rendering"). To get a 2× zoom on a 360 px phone, the
-  map should be at most 10 tiles (160 px) wide; see "Open questions".
+  number that fits (spec "Rendering"): 10 × 10 tiles of 32 px, so 320 px at
+  1× on a phone or a short laptop, 640 px at 2× where that fits (ADR 0005).
 - **Bottom panel**: pinned to the bottom on phones, the right column on
   laptops. Its content follows your state (section 9).
 - **People list** (GYM-15): the same information as the map in text, so it is
@@ -360,7 +360,7 @@ names to use.
   every second.
 - **`.stepper`**: `−` value `+` with each button at least 48 × 48 px. Weight
   steps 2.5 kg, reps step 1. The value is an input, so typing works too.
-- **`.avatar`**: a sprite inside a `<button>`. The sprite is 16 × 16 drawn at
+- **`.avatar`**: a sprite inside a `<button>`. The sprite is 32 × 32 drawn at
   the map's scale, but the button's hit area is at least 44 × 44 px. A name
   tag (VT323, `--paper` on `#000` at 70%) floats above it, with a speech
   bubble above that when the person sends a preset.
@@ -386,14 +386,21 @@ names to use.
 
 ## 10. The gym art
 
-The look is the early Game Boy and Game Boy Color Pokémon overworld: top-down,
-16 px tiles, small sprites, few colours, two-frame animations. The style is
-borrowed; no Nintendo assets are.
+The look is the Game Boy Color and Game Boy Advance Pokémon overworld:
+top-down, 32 px tiles, small sprites, few colours, two-frame animations. The
+style is borrowed; no Nintendo assets are. ADR 0005 moved the art from 16 px
+to 32 px and says why.
 
 - **Sprites are data**: character grids in `src/sprites/`, one module per
   subject, rendered once per palette in the browser (spec "Art direction").
-- **At most 4 colours per sprite plus transparency.** Avatar palettes are
-  skin, hair, shirt and outline (`--ink`).
+- **At most 7 colours per sprite plus transparency** (was 4). An avatar's
+  are skin, hair, shirt and outline (`--ink`), plus a darker shade of skin,
+  hair and shirt. A shade comes with its colour choice, so a look is still
+  three choices and recolouring stays a palette swap. Props a pose holds (the
+  bar, the bottle, the phone's glow) are drawn over it in interface tokens
+  and don't count.
+- **32 × 32 per sprite and tile.** The 8 × 8 interface icons, the logo and the
+  Paper checker are interface, not art, and stay as they are.
 - **Outlines are `--ink`** on every sprite, so sprites stay readable on the
   dark floor.
 - **Whole-number scaling only**, with `image-rendering: pixelated`. A
@@ -527,10 +534,6 @@ page that shows them is next touched.
 
 For the user to decide; the designer agent should not settle these alone.
 
-- **Map size.** A map 10 tiles wide gets a 2× zoom on a 360 px phone (320 px)
-  and fits 12 stations, a water cooler and an entrance only if laid out
-  tightly. A wider map drops to 1× on small phones, with 16 px avatars, which
-  is too small to read. Decide the tile dimensions before drawing tiles.
 - **Final name.** "Spotter" is still a working title (spec open questions);
   the logo and copy assume it.
 - **Slap.** The copy and the menu keep the slap; revisit after the Crit 9 pod
