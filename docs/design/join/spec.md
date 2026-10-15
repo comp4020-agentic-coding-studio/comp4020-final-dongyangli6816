@@ -16,8 +16,10 @@ This section is identical in all three Lobby specs.
   the person's own avatar on `.floor` (the gym-floor patch signup introduced:
   a `--deep` wall with a green skirting line over the page's checker), name
   tag above (`.nametag`), bobbing in the two-frame idle loop (400 ms a frame,
-  `steps(1)`, frozen under reduced motion). Sprites are 4× (64 px) except in
-  the editor, where you're the subject (6× on phones, 7× from 900 px).
+  `steps(1)`, frozen under reduced motion; the upper body moves 2 sprite
+  pixels). Sprites are 32 × 32 (ADR 0005), shown at 2× (64 px) except in the
+  editor, where you're the subject (3×, 96 px, on phones; 4×, 128 px, from
+  900 px). A list's head crop is `viewBox="2 0 28 22"` at 2× (56 × 44 px).
   - home: a 9 rem tile beside `Hi, Mia`, with **Edit avatar** under the
     greeting;
   - join: the floor sits under the `h1` and lead, with the gym's open
@@ -162,9 +164,9 @@ drawn once.
 
 1. `div.card.join-card`. `.join-card` caps the card at 30rem, centred.
    1. `h1` `Join your squad`; `p.lead` `Got the code? Pop it in 📲`.
-   2. `div.floor.`**`scene`** `aria-hidden="true"`: `svg.doorway` (64 px)
-      + `div.stand` > `span.nametag` {displayName} + `svg.av` (4×,
-      idle loop).
+   2. `div.floor.`**`scene`** `aria-hidden="true"`: `svg.doorway` (32 × 32
+      at 2×, 64 px; new art, avatar spec appendix) + `div.stand` >
+      `span.nametag` {displayName} + `svg.av` (2×, 64 px, idle loop).
    3. `form.join-form method="post" action="/join"`. The action is now
       explicit, because the same card renders at `/join/CODE`.
       - `label for="passcode"` `Passcode`; `p.hint#passcode-hint`
