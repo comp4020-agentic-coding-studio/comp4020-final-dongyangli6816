@@ -247,3 +247,60 @@ agent's call.
 
 1. **Time zone** (carried over): dates and "Today" use the server's zone, which
    is UTC on Fly unless `TZ` is set. This is the user's decision.
+
+## Appendix: 32 × 32 art (ADR 0005)
+
+**`bigDumbbell`** (empty state), redrawn at **32 × 16**, not 32 × 32: it is
+the logo's dumbbell, a wide object, and a square grid would only add eight
+transparent rows above and below. 32 × 16 keeps today's footprint, so
+`history.astro` keeps `<Sprite sprite={bigDumbbell} scale={2} />` and it still
+shows at **64 × 32 px** (whole-number 2×, unchanged). Replace the
+`upscale([...])` call with the plain grid below; this sprite no longer goes
+through `upscale()`.
+
+What the extra detail adds: two plates each side (a tall inner plate, a
+shorter outer one) with a `--leaf` highlight on their top-left edge, the same
+lime as the logo's plates; a darker `--deep` shade on their lower half; a
+collar; and a bar in `--muted` with ink knurling. 5 colours plus
+transparency, all existing tokens, ink outline all round. The mockup draws it
+from `#big-dumbbell-32` in its hidden `<svg>`; once this is in
+`src/sprites/props.ts`, it can go back to `/sprites.svg#bigDumbbell` with
+`viewBox="0 0 32 16"`.
+
+```ts
+// The logo's dumbbell in green and ink: the empty logbook. 32 × 16, drawn at
+// full size (ADR 0005), not upscaled.
+export const bigDumbbell: Sprite = {
+  grid: [
+    "....kkkk................kkkk....",
+    "...kllllk..............kllllk...",
+    "...klgggk..............kggglk...",
+    ".kkklgggk..............kggglkkk.",
+    "kllklgggkkk..........kkkggglkllk",
+    "klgklgggkmk..........kmkggglkglk",
+    "klgklgggkmkkkkkkkkkkkkmkggglkglk",
+    "klgklgggkmkmmmkmmkmmmkmkggglkglk",
+    "kdgkdgggkmkmkmmmmmmkmkmkgggdkgdk",
+    "kddkdgggkmkkkkkkkkkkkkmkgggdkddk",
+    "kddkdgggkmk..........kmkgggdkddk",
+    "kddkddddkkk..........kkkddddkddk",
+    ".kkkddddk..............kddddkkk.",
+    "...kddddk..............kddddk...",
+    "...kddddk..............kddddk...",
+    "....kkkk................kkkk....",
+  ],
+  palette: {
+    k: INK,
+    g: "#1f6b3a", // --green, plate
+    d: "#0f3d22", // --deep, plate shade
+    l: "#c8e66b", // --leaf, plate highlight (the logo's plate colour)
+    m: "#3d5a45", // --muted, bar and collar
+  },
+};
+```
+
+**Summary person** (`workouts/[id].astro`): not redrawn here (Lobby owns the
+person). 64 px on phones and 96 px from 421 px are 2× and 3× of 32, so both
+stay whole-number and need no change. The CSS comment there still says
+"4× on phones, 6× from 421 px", which was true of the 16 px grid; it should
+read "2× on phones, 3× from 421 px".
