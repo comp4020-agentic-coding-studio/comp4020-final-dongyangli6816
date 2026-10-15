@@ -384,9 +384,10 @@ const here = (href: string) => (Astro.url.pathname.replace(/\/$/, "") === href ?
     background-color: var(--night);
     background-image: conic-gradient(var(--floor) 25%, transparent 0 50%, var(--floor) 0 75%, transparent 0);
   }
-  /* the gym needs room for two columns at 900 px and up */
+  /* the gym needs room for two columns at 900 px and up, and for the map at
+     2x (640 px) beside the sheet (room spec, Departure 19) */
   body.night main {
-    max-width: 64rem;
+    max-width: 72rem;
   }
   .night h2 {
     color: var(--leaf);

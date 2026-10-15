@@ -228,13 +228,14 @@ const isNew = param("new") === "1" && !!next;
     position: absolute;
     bottom: 0.75rem;
   }
+  /* each prop one sprite pixel beyond a hand */
   .floor :global(.kettlebell) {
-    left: calc(50% - var(--s) * 28 - 0.5rem);
+    left: calc(50% - var(--s) * 26);
     width: calc(var(--s) * 12);
     height: calc(var(--s) * 12);
   }
   .floor :global(.dumbbell) {
-    left: calc(50% + var(--s) * 16 + 0.5rem);
+    left: calc(50% + var(--s) * 14);
     width: calc(var(--s) * 16);
     height: calc(var(--s) * 8);
   }

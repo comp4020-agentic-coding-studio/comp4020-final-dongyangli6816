@@ -9,7 +9,7 @@ test("the avatar preview follows a choice before it's saved", async ({ browser }
   const mia = await person(browser, "Mia");
   const page = await mia.newPage();
   await page.goto("/avatar");
-  const shirt = page.locator(".preview .av rect.t").first();
+  const shirt = page.locator(".preview .av path.t").first();
   // a new account's look is random (AV-3), so pick a shirt it isn't wearing:
   // grey is #8c8f94, white #eeeee6
   const saved = JSON.parse((await page.locator("form.editor").getAttribute("data-saved"))!);

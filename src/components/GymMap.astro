@@ -14,7 +14,7 @@ import { HAIR_STYLES, lookKey, type Look, type Pose } from "../sprites/avatar.ts
 import { bay, CLAIM, GEAR, GYM_PALETTE, MAP, SCENERY, STATIONS, TILES } from "../sprites/gym.ts";
 import { POSTER, POSTER_PALETTE, type DonyFrame } from "../sprites/dony.ts";
 import { phoneOffIcon } from "../sprites/icons.ts";
-import { TILE } from "../sprites/sprite.ts";
+import { paths, TILE } from "../sprites/sprite.ts";
 
 interface Props {
   view: RoomView;
@@ -24,19 +24,9 @@ interface Props {
 const { view, me, passcode } = Astro.props;
 
 const art = (grid: readonly string[]) => ({ grid, palette: GYM_PALETTE });
-// runs of one colour in a row, as rects, for the tile symbols
-function rects(grid: readonly string[], palette = GYM_PALETTE) {
-  const out: { x: number; y: number; w: number; fill: string }[] = [];
-  grid.forEach((row, y) => {
-    for (let x = 0; x < row.length; ) {
-      let end = x + 1;
-      while (row[end] === row[x]) end++;
-      if (row[x] !== ".") out.push({ x, y, w: end - x, fill: palette[row[x]] });
-      x = end;
-    }
-  });
-  return out;
-}
+// a grid as one path per colour, for the tile and poster symbols
+const filled = (grid: readonly string[], palette: Record<string, string> = GYM_PALETTE) =>
+  [...paths(grid)].map(([ch, d]) => ({ fill: palette[ch], d }));
 // one symbol per kind of tile; scenery is its wall tile with the art over it,
 // and the poster's place is plain wall under its button
 const kinds = [...new Set(MAP.join(""))];
@@ -47,7 +37,7 @@ const poster = view.dony;
 const resting = view.now < poster.restingUntil;
 const posterLabel =
   (poster.out ? "Send Dony back to his poster" : "Call Dony out of his poster") + (resting ? " (not ready yet)" : "");
-const posterArt = (grid: readonly string[]) => rects(grid, POSTER_PALETTE);
+const posterArt = (grid: readonly string[]) => filled(grid, POSTER_PALETTE);
 const donyPose = (pose: Pose): DonyFrame => pose;
 const DONY_FRAMES: DonyFrame[] = ["stand", "lift", "rest", "sit", "walk1", "walk2", "hop"];
 const mine = view.members.find((m) => m.id === me)?.station?.slot;
@@ -67,11 +57,10 @@ const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black",
         {
           kinds.map((ch) => (
             <symbol id={`tile-${ch.charCodeAt(0)}`} viewBox={`0 0 ${TILE} ${TILE}`}>
-              {rects(symbolOf(ch)).map((r) => (
-                <rect x={r.x} y={r.y} width={r.w} height="1" fill={r.fill} />
+              {filled(symbolOf(ch)).map((p) => (
+                <path fill={p.fill} d={p.d} />
               ))}
-              {SCENERY[ch] &&
-                rects(SCENERY[ch].grid).map((r) => <rect x={r.x} y={r.y} width={r.w} height="1" fill={r.fill} />)}
+              {SCENERY[ch] && filled(SCENERY[ch].grid).map((p) => <path fill={p.fill} d={p.d} />)}
             </symbol>
           ))
         }
@@ -178,8 +167,8 @@ const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black",
       {
         Object.entries(POSTER).map(([name, grid]) => (
           <symbol id={`poster-${name}`} viewBox={`0 0 ${TILE} ${TILE}`}>
-            {posterArt(grid).map((r) => (
-              <rect x={r.x} y={r.y} width={r.w} height="1" fill={r.fill} />
+            {posterArt(grid).map((p) => (
+              <path fill={p.fill} d={p.d} />
             ))}
           </symbol>
         ))
@@ -208,7 +197,7 @@ const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black",
     height: calc(var(--t) * 10);
     margin: 0 auto;
   }
-  @media (min-width: 900px) and (min-height: 760px) {
+  @media (min-width: 1120px) and (min-height: 760px) {
     .map-panel .map {
       --s: 2;
     }

@@ -6,7 +6,7 @@
 // palette swap is three variables.
 import { AVATAR_UPPER_ROWS, HAIR, HAIR_STYLES, lookVars, poseOf, type HairStyle, type Look, type Pose } from "../sprites/avatar.ts";
 import { DONY_VARS, donyFrame, type DonyFrame } from "../sprites/dony.ts";
-import { TILE } from "../sprites/sprite.ts";
+import { paths, TILE } from "../sprites/sprite.ts";
 
 interface Props {
   // Dony's own sprite and colours in this frame, instead of a look (BOT-2)
@@ -26,26 +26,18 @@ interface Props {
 }
 const { dony, look, pose = "stand", head = false, allHair = false, vars = !!look, class: className } = Astro.props;
 
-type Run = { x: number; y: number; w: number; slot: string };
+// one path per slot; a prop's m, w and r are drawn in the gym's colours, and
+// any body letter in the props (the lift's arms) keeps its slot
 const PROP: Record<string, string> = { m: "pm", w: "pw", r: "pr" };
-function runs(grid: readonly string[], dy = 0, prop = false): Run[] {
-  const out: Run[] = [];
-  grid.forEach((row, y) => {
-    for (let x = 0; x < row.length; ) {
-      const ch = row[x];
-      let end = x + 1;
-      while (row[end] === ch) end++;
-      if (ch !== ".") out.push({ x, y: y + dy, w: end - x, slot: prop ? (PROP[ch] ?? ch) : ch });
-      x = end;
-    }
-  });
-  return out;
-}
+const slotted = (map: Map<string, string>, prop = false) =>
+  [...map].map(([ch, d]) => ({ slot: prop ? (PROP[ch] ?? ch) : ch, d }));
 const { body: grid, hairRow, props } = dony ? { ...donyFrame(dony), hairRow: 0 } : poseOf(pose);
-const body = runs(grid);
+const top = slotted(paths(grid, 0, AVATAR_UPPER_ROWS));
+const bottom = slotted(paths(grid, AVATAR_UPPER_ROWS));
 const styles: HairStyle[] = dony || !look ? [] : allHair ? HAIR_STYLES.map((s) => s.id) : [look.hair];
-const hair = styles.map((style) => ({ style, runs: runs(HAIR[style], hairRow) }));
-const extra = runs(props, 0, true);
+const hair = styles.map((style) => ({ style, parts: slotted(paths(HAIR[style], 0, Infinity, hairRow)) }));
+const propsTop = slotted(paths(props, 0, AVATAR_UPPER_ROWS), true);
+const propsBottom = slotted(paths(props, AVATAR_UPPER_ROWS), true);
 ---
 
 <svg
@@ -57,20 +49,20 @@ const extra = runs(props, 0, true);
   style={dony ? DONY_VARS : vars && look ? lookVars(look) : undefined}
 >
   <g class="av-top">
-    {body.filter((r) => r.y < AVATAR_UPPER_ROWS).map((r) => <rect x={r.x} y={r.y} width={r.w} height="1" class={r.slot} />)}
+    {top.map((p) => <path class={p.slot} d={p.d} />)}
     {
       hair.map((h) => (
         <g class={`hair hair-${h.style}`}>
-          {h.runs.map((r) => (
-            <rect x={r.x} y={r.y} width={r.w} height="1" class={r.slot} />
+          {h.parts.map((p) => (
+            <path class={p.slot} d={p.d} />
           ))}
         </g>
       ))
     }
-    {extra.filter((r) => r.y < AVATAR_UPPER_ROWS).map((r) => <rect x={r.x} y={r.y} width={r.w} height="1" class={r.slot} />)}
+    {propsTop.map((p) => <path class={p.slot} d={p.d} />)}
   </g>
-  {!head && body.filter((r) => r.y >= AVATAR_UPPER_ROWS).map((r) => <rect x={r.x} y={r.y} width={r.w} height="1" class={r.slot} />)}
-  {!head && extra.filter((r) => r.y >= AVATAR_UPPER_ROWS).map((r) => <rect x={r.x} y={r.y} width={r.w} height="1" class={r.slot} />)}
+  {!head && bottom.map((p) => <path class={p.slot} d={p.d} />)}
+  {!head && propsBottom.map((p) => <path class={p.slot} d={p.d} />)}
 </svg>
 
 <style is:global>

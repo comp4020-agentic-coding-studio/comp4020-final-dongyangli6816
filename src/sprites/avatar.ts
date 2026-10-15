@@ -6,123 +6,319 @@
 // --av-skin, --av-hair and --av-shirt (and a shade's -2 where a palette has
 // one), so recolouring is a palette swap.
 // Pure data, so the room's script can use it too.
-//
-// The grids below are drawn at 16 × 16 and exported doubled to 32 × 32
-// (ADR 0005), until they're redrawn at 32.
-import { upscale } from "./sprite.ts";
 
-// Rows 0 to 25 bob in the idle loop: rows 0 to 12 of the 16 × 16 drawing.
+// Rows 0 to 25 bob in the idle loop: everything above the belt (row 26).
 export const AVATAR_UPPER_ROWS = 26;
 
-const BODY16 = [
-  "................",
-  ".....kkkkkk.....",
-  "....kssssssk....",
-  "...kssssssssk...",
-  "...kssssssssk...",
-  "...kskssssksk...",
-  "...kskssssksk...",
-  "...kssssssssk...",
-  "....kssssssk....",
-  "...kkttttttkk...",
-  "..kttttttttttk..",
-  "..ktkttttttktk..",
-  "..kskttttttksk..",
-  "...kkkkkkkkkk...",
-  "...kssk..kssk...",
-  "...kkkk..kkkk...",
+export const BODY = [
+  "................................",
+  "..........kkkkkkkkkkkk..........",
+  "........kksssssssssssskk........",
+  ".......kssssssssssssssssk.......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  ".....ksssskksssssssskkssssk.....",
+  ".....kSssskksssssssskksssSk.....",
+  ".....ksssskksssssssskkssssk.....",
+  "......kSssssssssssssssssSk......",
+  "......kSssssssssssssssssSk......",
+  ".......kSsssssskkssssssSk.......",
+  "........kksssssssssssskk........",
+  "..........kkkSSSSSSkkk..........",
+  "......kkkktttTTTTTTtttkkkk......",
+  "....kkTttttttttttttttttttTkk....",
+  "...kTttkTttttttttttttttTkttTk...",
+  "...kTttkTttttttttttttttTkttTk...",
+  "...kssskTttttttttttttttTksssk...",
+  "...kssskTttttttttttttttTksssk...",
+  "...kSSSkTttttttttttttttTkSSSk...",
+  "....kkkkkTTTTTTTTTTTTTTkkkkk....",
+  ".......kkkkkkkkkkkkkkkkkk.......",
+  ".......kkkkkkk....kkkkkkk.......",
+  "........kssssk....kssssk........",
+  "........kSsssk....ksssSk........",
+  ".......kTTTTTk....kTTTTTk.......",
+  ".......kkkkkkk....kkkkkkk.......",
 ];
 
 // Overlays start at row 0, column 0: the head anchor of the front-facing idle
-// frames.
-const HAIR16 = {
-  crop: [".....kkkkkk.....", "....khhhhhhk....", "...khhhhhhhhk...", "...khhhhhhhhk...", "...kh......hk..."],
+// frames. They draw over the head's outline, never inside the face (rows
+// 10 to 16, columns 8 to 23).
+export const HAIR = {
+  crop: [
+    "..........kkkkkkkkkkkk..........",
+    "........kkhhhhhhhhhhhhkk........",
+    ".......khhhhhhhhhhhhhhhhk.......",
+    "......khhhhhhhhhhhhhhhhhhk......",
+    "......khhhhhhhhhhhhhhhhhhk......",
+    "......khhhhhhhhhhhhhhhhhhk......",
+    "......khHhhhhhhhhhhhhhhHhk......",
+    "......kHHHhHHhhHHhhHHhHHHk......",
+    "......kH..H...H..H...H..Hk......",
+  ],
   curls: [
-    "....kkkkkkkk....",
-    "...khhhhhhhhk...",
-    "..khhhkhhkhhhk..",
-    "..khhhhhhhhhhk..",
-    "..khkhhhhhhkhk..",
-    "..khh......hhk..",
-    "..kh........hk..",
+    "........kkk.kkkkkkkk.kkk........",
+    "......kkhhhkhhhhhhhhkhhhkk......",
+    ".....khhhhhhhhhhhhhhhhhhhhk.....",
+    "....khhHhhhhHhhhhhhHhhhhHhhk....",
+    "....khhhhhhhhhhhhhhhhhhhhhhk....",
+    "...khhHhhhhHhhhhhhhhHhhhhHhhk...",
+    "...khhhhhhhhhhhhhhhhhhhhhhhhk...",
+    "...khHhhHhhhHhhHHhhHhhhHhhHhk...",
+    "...khhhHH.HHH.HHHH.HHH.HHhhhk...",
+    "...kHhhH...H........H...HhhHk...",
+    "...khHhk................khHhk...",
+    "...kHhhk................khhHk...",
+    "...khHhk................khHhk...",
+    "....kHk..................kHk....",
   ],
   long: [
-    ".....kkkkkk.....",
-    "....khhhhhhk....",
-    "...khhhhhhhhk...",
-    "...khhhhhhhhk...",
-    "...khh....hhk...",
-    "..kh........hk..",
-    "..kh........hk..",
-    "..kh........hk..",
-    "..kh........hk..",
-    "..khh......hhk..",
-    "..kkk......kkk..",
+    "..........kkkkkkkkkkkk..........",
+    "........kkhhhhhhhhhhhhkk........",
+    ".......khhhhhhhhhhhhhhhhk.......",
+    "......khhhhhhhhhhhhhhhhhhk......",
+    ".....khhhhhhhhhhhhhhhhhhhhk.....",
+    ".....khhhhhhhhhhhhhhhhhhhhk.....",
+    "....khhhhhhhhhhhhhhhhhhhhhhk....",
+    "....khhhHhhhhhhHHhhhhhhHhhhk....",
+    "....khhHHH.HHHHHHHHHH.HHHhhk....",
+    "....khhH................Hhhk....",
+    "....khHk................kHhk....",
+    "....khHk................kHhk....",
+    "....khHk................kHhk....",
+    "....khHk................kHhk....",
+    "....khHk................kHhk....",
+    "....khHk................kHhk....",
+    "....khHk................kHhk....",
+    "....khHk................kHhk....",
+    "....khHk................kHhk....",
+    "....kHHk................kHHk....",
+    "....kkkk................kkkk....",
   ],
   ponytail: [
-    ".....kkkkkk.....",
-    "....khhhhhhkk...",
-    "...khhhhhhhhhk..",
-    "...khhhhhhhhhhk.",
-    "...kh......hhhk.",
-    "............khk.",
-    "............khk.",
-    ".............k..",
+    "..........kkkkkkkkkkkk..........",
+    "........kkhhhhhhhhhhhhkk.kkk....",
+    ".......khhhhhhhhhhhhhhhhkhhhk...",
+    "......khhhhhhhhhhhhhhhhhhkkkkk..",
+    "......khhhhhhhhhhhhhhhhhhkhhhk..",
+    "......khhhhhhhhhhhhhhhhhhkhhHk..",
+    "......khHhhhhhhhhhhhhhhHhkhhHk..",
+    "......kHHHhHHhhHHhhHHhHHHkhhHk..",
+    "......kH..H...H..H...H..HkhHHk..",
+    ".........................khHk...",
+    ".........................kHHk...",
+    "..........................kk....",
   ],
 } as const;
-export type HairStyle = keyof typeof HAIR16;
-export const BODY = upscale(BODY16);
-export const HAIR = Object.fromEntries(
-  Object.entries(HAIR16).map(([style, grid]) => [style, upscale(grid)]),
-) as Record<HairStyle, string[]>;
+export type HairStyle = keyof typeof HAIR;
 
 // The gym's poses (GYM-10, docs/design/room/spec.md, appendix), all built on
 // BODY: the body grid, the row the hair overlay starts at, and props drawn
 // over both in m dim, w paper or r resting blue (classes pm, pw, pr).
 export type Pose = "stand" | "lift" | "rest" | "sit";
-const blank = "................";
-const put = (grid: string[], x: number, y: number, rows: readonly string[]) =>
-  rows.forEach((row, dy) => {
-    const line = grid[y + dy].split("");
-    [...row].forEach((ch, dx) => ch !== "." && (line[x + dx] = ch));
-    grid[y + dy] = line.join("");
-  });
-export function poseOf(pose: Pose): { body: string[]; hairRow: number; props: string[] } {
-  const { body, hairRow, props } = poseOf16(pose);
-  return { body: upscale(body), hairRow: hairRow * 2, props: upscale(props) };
-}
-function poseOf16(pose: Pose): { body: string[]; hairRow: number; props: string[] } {
-  const props = Array<string>(16).fill(blank);
-  if (pose === "lift") {
-    // arms up at columns 1-2 and 13-14, the shoulders wide, a bar overhead
-    const body = [...BODY16];
-    put(body, 1, 1, ["kk..........kk"]);
-    for (let y = 2; y <= 8; y++) put(body, 1, y, ["ks..........sk"]);
-    body.splice(9, 4, ".kskttttttttksk.", "..kttttttttttk..", "..kttttttttttk..", "...kttttttttk...");
-    put(props, 0, 0, ["mmwwwwwwwwwwwwmm"]);
-    return { body, hairRow: 0, props };
-  }
-  if (pose === "rest") {
-    put(props, 12, 8, [".k.", "kwk", "krk", "krk", "krk", "kkk"]);
-    return { body: [...BODY16], hairRow: 0, props };
-  }
-  if (pose === "sit") {
-    const body = [blank, blank, ...BODY16.slice(0, 9)];
-    body.push("...kkttttttkk...", "..ktttkkkktttk..", "..ktskkkkkkstk..", ".kkkkkkkkkkkkkk.", ".kssk......kssk.");
-    put(props, 7, 12, ["ww"]);
-    return { body, hairRow: 2, props };
-  }
-  return { body: [...BODY16], hairRow: 0, props };
-}
+// Props are drawn over the body and the hair, so they may use the body's
+// slots too (k s S t T for the lift's raised arms, the rest's fingers):
+// Avatar.astro's runs() keeps any letter that isn't m, w or r as its slot.
+const EMPTY = Array<string>(32).fill("................................");
+
+// lift: the head 3 rows down so the bar clears every hair style; the arms
+// are props, so they draw over curls, long and the ponytail
+const LIFT_BODY = [
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "..........kkkkkkkkkkkk..........",
+  "........kksssssssssssskk........",
+  ".......kssssssssssssssssk.......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  ".....ksssskksssssssskkssssk.....",
+  ".....kSssskksssssssskksssSk.....",
+  ".....ksssskksssssssskkssssk.....",
+  "......kSssssssssssssssssSk......",
+  "......kSssssssssssssssssSk......",
+  ".......kSsssssskkssssssSk.......",
+  "........kksssssssssssskk........",
+  "..........kkkSSSSSSkkk..........",
+  "......kkkktttTTTTTTtttkkkk......",
+  "......kTttttttttttttttttTk......",
+  ".......kTttttttttttttttTk.......",
+  ".......kTttttttttttttttTk.......",
+  ".......kkTTTTTTTTTTTTTTkk.......",
+  ".......kkkkkkkkkkkkkkkkkk.......",
+  ".......kkkkkkk....kkkkkkk.......",
+  "........kssssk....kssssk........",
+  "........kSsssk....ksssSk........",
+  ".......kTTTTTk....kTTTTTk.......",
+  ".......kkkkkkk....kkkkkkk.......",
+];
+const LIFT_PROPS = [
+  "mkkkkk....................kkkkkm",
+  "mkssskwwwwwwwwwwwwwwwwwwwwkssskm",
+  "mksssk....................kssskm",
+  "mkSSSk....................kSSSkm",
+  ".kSssk....................kssSk.",
+  ".kSssk....................kssSk.",
+  ".kSssk....................kssSk.",
+  ".kSssk....................kssSk.",
+  ".kSssk....................kssSk.",
+  ".kSssk....................kssSk.",
+  ".kSssk....................kssSk.",
+  ".kSssk....................kssSk.",
+  ".kSssk....................kssSk.",
+  ".kSssk....................kssSk.",
+  ".kSssk....................kssSk.",
+  ".kSssk....................kssSk.",
+  ".kSssk....................kssSk.",
+  ".kkkkk....................kkkkk.",
+  ".kTttk....................kttTk.",
+  ".kTttk....................kttTk.",
+  ".kTttk....................kttTk.",
+  ".kTtttt..................ttttTk.",
+  "..kTttt..................tttTk..",
+  "...kkkkk................kkkkk...",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+];
+
+// rest: BODY, with a bottle held in the right hand, the fingers over it
+const REST_PROPS = [
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  ".........................kkk....",
+  ".........................kwk....",
+  "........................kkkkk...",
+  "........................kwrrk...",
+  "........................kwrrk...",
+  "........................kwrrk...",
+  "........................kwrrk...",
+  "........................kwrrk...",
+  "........................kwrrk...",
+  "........................ksssk...",
+  "........................ksssk...",
+  "........................kSSSk...",
+  "........................kkkkk...",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+];
+
+// sit: the head 2 rows down, forearms in to a phone at the lap, knees
+// towards us; the glow (w) blinks in GymMap.astro
+const SIT_BODY = [
+  "................................",
+  "................................",
+  "................................",
+  "..........kkkkkkkkkkkk..........",
+  "........kksssssssssssskk........",
+  ".......kssssssssssssssssk.......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  ".....ksssskksssssssskkssssk.....",
+  ".....kSssskksssssssskksssSk.....",
+  ".....ksssskksssssssskkssssk.....",
+  "......kSssssssssssssssssSk......",
+  "......kSssssssssssssssssSk......",
+  ".......kSsssssskkssssssSk.......",
+  "........kksssssssssssskk........",
+  "..........kkkSSSSSSkkk..........",
+  "......kkkktttTTTTTTtttkkkk......",
+  "....kkTttttttttttttttttttTkk....",
+  "...kTttkTttttkkkkkkttttTkttTk...",
+  "...kssskTttttkkkkkkttttTksssk...",
+  "...kSsssssssskkkkkkssssssssSk...",
+  "....kkkkkkkkkkkkkkkkkkkkkkkk....",
+  "....kkkkkkkkkkkkkkkkkkkkkkkk....",
+  "......kssssssk....kssssssk......",
+  "......kssssssk....kssssssk......",
+  "......kSsssssk....ksssssSk......",
+  ".....kTTTTTTTk....kTTTTTTTk.....",
+  ".....kkkkkkkkk....kkkkkkkkk.....",
+];
+const SIT_PROPS = [
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "..............wwww..............",
+  "..............wwww..............",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+];
+
+const POSES: Record<Pose, { body: string[]; hairRow: number; props: string[] }> = {
+  stand: { body: BODY, hairRow: 0, props: EMPTY },
+  lift: { body: LIFT_BODY, hairRow: 3, props: LIFT_PROPS },
+  rest: { body: BODY, hairRow: 0, props: REST_PROPS },
+  sit: { body: SIT_BODY, hairRow: 2, props: SIT_PROPS },
+};
+export const poseOf = (pose: Pose) => POSES[pose];
 
 // The choices, in the order the editor shows them. The id is what's stored.
 export const SKINS = [
-  { id: "1", name: "Skin tone 1, lightest", hex: "#f6d7bd" },
-  { id: "2", name: "Skin tone 2", hex: "#e9bd94" },
-  { id: "3", name: "Skin tone 3", hex: "#d09a68" },
-  { id: "4", name: "Skin tone 4", hex: "#ad7447" },
-  { id: "5", name: "Skin tone 5", hex: "#8a5532" },
-  { id: "6", name: "Skin tone 6, deepest", hex: "#6e4429" },
+  { id: "1", name: "Skin tone 1, lightest", hex: "#f6d7bd", shade: "#e0b69a" },
+  { id: "2", name: "Skin tone 2", hex: "#e9bd94", shade: "#cf9a73" },
+  { id: "3", name: "Skin tone 3", hex: "#d09a68", shade: "#b37a4f" },
+  { id: "4", name: "Skin tone 4", hex: "#ad7447", shade: "#8f5a36" },
+  { id: "5", name: "Skin tone 5", hex: "#8a5532", shade: "#6e4026" },
+  { id: "6", name: "Skin tone 6, deepest", hex: "#6e4429", shade: "#55311d" },
 ] as const;
 export const HAIR_STYLES = [
   { id: "crop", name: "Crop" },
@@ -131,25 +327,25 @@ export const HAIR_STYLES = [
   { id: "ponytail", name: "Ponytail" },
 ] as const;
 export const HAIR_COLOURS = [
-  { id: "black", name: "Black", hex: "#1d1714" },
-  { id: "dark-brown", name: "Dark brown", hex: "#4a2c1a" },
-  { id: "brown", name: "Brown", hex: "#7d4e2b" },
-  { id: "ginger", name: "Ginger", hex: "#b5552a" },
-  { id: "blonde", name: "Blonde", hex: "#d6ad55" },
-  { id: "silver", name: "Silver", hex: "#c3c7bd" },
-  { id: "pink", name: "Pink", hex: "#e46fae" },
-  { id: "blue", name: "Blue", hex: "#4d6bd6" },
+  { id: "black", name: "Black", hex: "#1d1714", shade: "#3a2e28" },
+  { id: "dark-brown", name: "Dark brown", hex: "#4a2c1a", shade: "#33190f" },
+  { id: "brown", name: "Brown", hex: "#7d4e2b", shade: "#5a3319" },
+  { id: "ginger", name: "Ginger", hex: "#b5552a", shade: "#873a1d" },
+  { id: "blonde", name: "Blonde", hex: "#d6ad55", shade: "#ad7f37" },
+  { id: "silver", name: "Silver", hex: "#c3c7bd", shade: "#8f929a" },
+  { id: "pink", name: "Pink", hex: "#e46fae", shade: "#b4488a" },
+  { id: "blue", name: "Blue", hex: "#4d6bd6", shade: "#3446a3" },
 ] as const;
 // none red, and none a state colour, so a shirt never reads as a state
 export const SHIRTS = [
-  { id: "purple", name: "Purple", hex: "#6a4c93" },
-  { id: "navy", name: "Navy", hex: "#2e3f7f" },
-  { id: "teal", name: "Teal", hex: "#1f8a86" },
-  { id: "charcoal", name: "Charcoal", hex: "#3b3b45" },
-  { id: "orange", name: "Orange", hex: "#e07b28" },
-  { id: "pink", name: "Pink", hex: "#d65a9a" },
-  { id: "white", name: "White", hex: "#eeeee6" },
-  { id: "grey", name: "Grey", hex: "#8c8f94" },
+  { id: "purple", name: "Purple", hex: "#6a4c93", shade: "#4c3470" },
+  { id: "navy", name: "Navy", hex: "#2e3f7f", shade: "#1f2a5c" },
+  { id: "teal", name: "Teal", hex: "#1f8a86", shade: "#156663" },
+  { id: "charcoal", name: "Charcoal", hex: "#3b3b45", shade: "#282832" },
+  { id: "orange", name: "Orange", hex: "#e07b28", shade: "#b0561a" },
+  { id: "pink", name: "Pink", hex: "#d65a9a", shade: "#a83c76" },
+  { id: "white", name: "White", hex: "#eeeee6", shade: "#bdbcc4" },
+  { id: "grey", name: "Grey", hex: "#8c8f94", shade: "#66686f" },
 ] as const;
 
 export type Look = {
