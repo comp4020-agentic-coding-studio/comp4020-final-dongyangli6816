@@ -535,7 +535,7 @@ month poster only make sense on a gym wall.
 
 | Requirement (source) | Element |
 | --- | --- |
-| GYM-1 "one fixed map on a 16 px tile grid: walls, floor, an entrance, a water cooler, aisles, and 12 stations. It fits a portrait phone screen and a laptop window without scrolling" (4-week) | `.map`: the 10 × 10 grid in section 3.2, drawn at the largest whole-number scale that fits: 2× (320 px) on a 360 to 430 px phone, 3× (480 px) on a laptop. Never cropped or scrolled. |
+| GYM-1 "one fixed map on a 32 px tile grid (ADR 0005): walls, floor, an entrance, a water cooler, aisles, and 12 stations. It fits a portrait phone screen and a laptop window without scrolling" (4-week) | `.map`: the 10 × 10 grid in section 3.2, 32 × 32 tiles, drawn at the largest whole-number scale that fits: 1× (320 px) on a 360 to 430 px phone, 2× (640 px) on a laptop window at least 1104 × 760 (Departure 19), else 1×. Never cropped or scrolled. |
 | "scaled by the largest whole number that fits, and recomputed on resize" (4-week, Rendering) | The scale script in 3.8; CSS media queries are the no-JS fallback. |
 | GYM-2 "A new room starts with the treadmill, flat bench, squat rack and dumbbell rack on four stations, and eight empty stations" | Slots 1 to 4 (the row along the mirrors) hold those four; slots 5 to 12 are numbered empty bays. State "Room alone". |
 | GYM-4 / brief: "you are told which station you claimed" | `.station.mine` (leaf corners), the leaf ring on your tag, `p.spot` "Your spot: Lifting platform 5" in the sheet, and your row in the list. Choosing posts `action=choose` (as the server now expects). |
@@ -606,14 +606,14 @@ dock (3.2), as a shortcut.
   <h1 class="map-sign" id="room-title"><span class="vh">Room </span><span class="passcode">SB64FR</span></h1>
   <p class="conn" role="status"><span class="badge">Live</span></p>
   <p class="vh" id="floor">On the floor: treadmill, flat bench, … 6 stations empty.</p>
-  <div class="map" style="--s: 2">
-    <svg class="tiles" viewBox="0 0 160 160" aria-hidden="true">…</svg>
+  <div class="map" style="--s: 1">
+    <svg class="tiles" viewBox="0 0 320 320" aria-hidden="true">…</svg>
     <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg …/></div>
     … 12 stations …
     <button type="button" class="avatar on-station" style="--x: 6; --y: 1" data-state="lifting"
             aria-label="Mia, lifting, back squat on squat rack 3">
       <span class="tag state-lifting"><span class="nm">Mia</span></span>
-      <svg class="av" viewBox="0 0 16 16" style="--av-skin: …; --av-hair: …; --av-shirt: …">…</svg>
+      <svg class="av" viewBox="0 0 32 32" style="--av-skin: …; --av-hair: …; --av-shirt: …">…</svg>
     </button>
     …
   </div>
@@ -631,13 +631,15 @@ dock (3.2), as a shortcut.
 
 #### Size
 
-`--t` is one tile: `16px × --s`. The board is `10 × --t` square, centred in
-the panel. `--s` is the largest whole number with
-`160 × s ≤ the panel's inner width` and
-`160 × s ≤ innerHeight − top bar height − 48`, at least 1, recomputed on
-`resize` (3.8). Without JS: `--s: 2`, and `3` at `min-width: 900px` and
-`min-height: 600px`. Results: 2× (320 px) on every phone from 360 to 430 px
-wide, 3× (480 px) in a 1280 × 800 laptop window. The panel's top padding is
+`--t` is one tile: `32px × --s` (ADR 0005). The board is `10 × --t` square,
+centred in the panel. `--s` is the largest whole number with
+`320 × s ≤ the panel's inner width` and
+`320 × s ≤ innerHeight − top bar height − 48`, at least 1, recomputed on
+`resize` (3.8). Without JS: `--s: 1`, and `2` at `min-width: 1120px` and
+`min-height: 760px`. Results: 1× (320 px) on every phone from 360 to 430 px
+wide; 2× (640 px) on a laptop whose window is at least 1104 px wide and
+about 760 px tall (the night page is 72rem wide for this, Departure 19),
+1× below that. The panel's top padding is
 16 px; the passcode tab overhangs the border by half its height.
 
 #### The grid (10 × 10 tiles, origin top left)
@@ -671,7 +673,7 @@ y 9    _ _ _ _ E e _ _ _ _     front wall; the entrance is (4,9) and (5,9)
   "empty station" rule: fill empty stations in slot order (5, 6, … 12), so
   the floor fills from the top.
 - **The tile layer is static**: render it once (`Sprite.astro` can draw the
-  whole 160 × 160 grid as one SVG, or the page can use a cached `<symbol>`).
+  whole 320 × 320 grid as one SVG, or the page can use a cached `<symbol>`).
 
 #### Who stands where
 
@@ -741,7 +743,7 @@ straight to the target. Walking never delays anything in the sheet.
 #### Stations
 
 `div.station` with `style="--x; --y"`, `data-slot`, and `data-equipment`
-when there is equipment. It holds one 16 × 16 SVG: the equipment, or the
+when there is equipment. It holds one 32 × 32 SVG: the equipment, or the
 empty bay with its number. Yours (the slot you hold while Lifting, Resting,
 Slacking or Away) adds `.mine` and a second SVG, the leaf corners.
 
@@ -756,7 +758,7 @@ Slacking or Away) adds `.mine` and a second SVG, the leaf corners.
 <!-- in .map, straight after svg.tiles, before the stations and avatars -->
 <button type="submit" form="dony" name="intent" value="summon" class="poster"
         aria-label="Call Dony out of his poster">
-  <svg viewBox="0 0 16 16" aria-hidden="true">
+  <svg viewBox="0 0 32 32" aria-hidden="true">
     <use href="#poster-full" /><use href="#poster-glint" class="glint" />
     <!-- only while the room has never had a summon (14 Oct) -->
     <use href="#poster-bulbs" class="bulbs" /><use href="#poster-bulbs-alt" class="bulbs alt" />
@@ -1218,8 +1220,9 @@ stations, avatars and rows from it.
 ## 5. Departures
 
 1. **Map size: 10 × 10 tiles**, confirmed by the user (system 16 had left
-   it open). It gives 2× on a 360 px phone, with room for 12 stations two
-   tiles apart, a cooler, lockers, aisles and a door.
+   it open). At 32 px tiles (ADR 0005) it is 320 px at 1×, which fits a
+   360 px phone, with room for 12 stations two tiles apart, a cooler,
+   lockers, aisles and a door.
 2. **Name tags are the state colour with an ink name**, not paper on 70%
    black. System 5 says the state colour is used for the name tag; system 9
    describes it the other way. At 2× there's no room for an icon box in the
@@ -1309,6 +1312,27 @@ stations, avatars and rows from it.
     the first minute are people, and the wall stays quiet behind a set.
     It uses `steps(1)`, tokens only, and freezes under reduced motion.
 
+19. **The night page is 72rem wide, not 64rem** (15 Oct, ADR 0005). At
+   32 px tiles the map is 320 px (1×) or 640 px (2×). Layout's
+   `body.night main { max-width: 64rem }` leaves the map's column 560 px
+   inside its panel next to the 24rem sheet, so 640 never fit on any laptop,
+   however tall: a 1280 × 800 or 1440 × 900 window got a 320 px map in a
+   560 px panel (before: `.shots/room/p32b/before-busy-room-default-desktop.png`).
+   At 72rem (1152 px) the column holds 688 px, so 640 fits from a 1104 px
+   wide window (after: `.shots/room/p32b/m2-busy-room-default-desktop.png`).
+   Only the room uses `surface="night"`, so no other page changes. The build
+   changes `body.night main` in `Layout.astro` to `max-width: 72rem` and the
+   no-JS fallback in `GymMap.astro` to `@media (min-width: 1120px) and
+   (min-height: 760px) { --s: 2 }`. `fitMap()` stays as it is. Height is
+   still the limit on short windows: 640 needs `innerHeight ≥ 640 + top bar
+   (about 72 px) + 48 = 760`. A 1440 × 900 screen's browser window (about
+   810 px inside) gets 2×, and so does a 1280 × 800 viewport (800 − 72 −
+   48 = 680, the size `scripts/shot.mjs` shoots). A 1280 × 800 *screen*,
+   whose browser window is about 710 px inside after the menu bar and
+   toolbar, still gets 1×. Trimming the top bar or the panel's header can't
+   win back the missing 50 px without hiding the top bar, which every page
+   shares, so this design leaves the height rule alone.
+
 ## 6. Open questions
 
 - **Tapping Dony's own avatar** (14 Oct). This week it does what anyone
@@ -1363,454 +1387,7 @@ Redrawn at 32 × 32: see "Appendix: 32 × 32 art, people (ADR 0005)".
 
 ### Map, tiles, scenery, equipment
 
-```ts
-// src/sprites/gym.ts (proposed). Palette letters are token values:
-// k ink, n night, f floor, p panel, d deep, g green, e edge, m dim, w paper, l leaf, r resting
-export const MAP = [
-  "WMMMKPMMMW",
-  "[...::...]",
-  "[::::::::]",
-  "[...::...]",
-  "[::::::::]",
-  "[...::...]",
-  "[::::::::]",
-  "C...::...L",
-  "[...::...]",
-  "____Ee____",
-];
-
-export const STATIONS = [ // slot 1 to 12, [x, y]
-  [1, 1], [3, 1], [6, 1], [8, 1], [1, 3], [3, 3], [6, 3], [8, 3], [1, 5], [3, 5], [6, 5], [8, 5],
-];
-
-export const TILES = {
-  ".": [
-    "pppppppppppppppp",
-    "pfffffffffffffff",
-    "pfffffnfffffffff",
-    "pfffffffffffnfff",
-    "pffnffffffffffff",
-    "pfffffffffffffff",
-    "pfffffffffnfffff",
-    "pfffffffffffffff",
-    "pffffffnffffffff",
-    "pfffffffffffffff",
-    "pfffffffffffffnf",
-    "pffnffffffffffff",
-    "pfffffffffffffff",
-    "pfffffffnfffffff",
-    "pfffffffffffffff",
-    "pfffffffffffffff",
-  ],
-  ":": [
-    "pppppppppppppppp",
-    "pppppppppppppppp",
-    "ppgppppppppgpppp",
-    "pppppppppppppppp",
-    "pppppppppppppppp",
-    "pppppppppppppppp",
-    "pppppgppppppppgp",
-    "pppppppppppppppp",
-    "pppppppppppppppp",
-    "pppppppppppppppp",
-    "ppgppppppppgpppp",
-    "pppppppppppppppp",
-    "pppppppppppppppp",
-    "pppppppppppppppp",
-    "pppppgppppppppgp",
-    "pppppppppppppppp",
-  ],
-  "W": [
-    "kkkkkkkkkkkkkkkk",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "gggggggggggggggg",
-    "gggggggggggggggg",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "kkkkkkkkkkkkkkkk",
-    "kkkkkkkkkkkkkkkk",
-  ],
-  "M": [
-    "kkkkkkkkkkkkkkkk",
-    "dddddddddddddddd",
-    "dkkkkkkkkkkkkkkd",
-    "dkmmmmmmmmmwmmkd",
-    "dkmmmmmmmmwmmmkd",
-    "dkmmmmmmmwmmmmkd",
-    "dkmmmmmmwmmmmmkd",
-    "dkmmmmmwmmmmwmkd",
-    "dkmmmmwmmmmwmmkd",
-    "dkmmmwmmmmwmmmkd",
-    "dkmmmmmmmwmmmmkd",
-    "dkmmmmmmmmmmmmkd",
-    "dkkkkkkkkkkkkkkd",
-    "dddddddddddddddd",
-    "kkkkkkkkkkkkkkkk",
-    "kkkkkkkkkkkkkkkk",
-  ],
-  "K": [
-    "kkkkkkkkkkkkkkkk",
-    "dddddddddddddddd",
-    "dddddkkkkkkddddd",
-    "ddddkwwwwwwkdddd",
-    "dddkwwwwkwwwkddd",
-    "dddkwwwwkwwwkddd",
-    "dddkwwwwkwwwkddd",
-    "dddkwwwwkkkwkddd",
-    "gggkwwwwwwwwkggg",
-    "gggkwwwwwwwwkggg",
-    "ddddkwwwwwwkdddd",
-    "dddddkkkkkkddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "kkkkkkkkkkkkkkkk",
-    "kkkkkkkkkkkkkkkk",
-  ],
-  "P": [
-    "kkkkkkkkkkkkkkkk",
-    "dddddddddddddddd",
-    "ddkkkkkkkkkkkkdd",
-    "ddkllllllllllkdd",
-    "ddkllllllllllkdd",
-    "ddklkkllllkklkdd",
-    "ddklkkkkkkkklkdd",
-    "ddklkkllllkklkdd",
-    "ggkllllllllllkgg",
-    "ggklkkkkkkkklkgg",
-    "ddkllllllllllkdd",
-    "ddklkkkkkllllkdd",
-    "ddkkkkkkkkkkkkdd",
-    "dddddddddddddddd",
-    "kkkkkkkkkkkkkkkk",
-    "kkkkkkkkkkkkkkkk",
-  ],
-  "[": [
-    "kdddddddddddddgk",
-    "kdddddddddddddgk",
-    "kdddddddddddddgk",
-    "kdddddddddddddgk",
-    "kdddddddddddddgk",
-    "kdddddddddddddgk",
-    "kdddddddddddddgk",
-    "kkkkkkkkkkkkkkgk",
-    "kdddddddddddddgk",
-    "kdddddddddddddgk",
-    "kdddddddddddddgk",
-    "kdddddddddddddgk",
-    "kdddddddddddddgk",
-    "kdddddddddddddgk",
-    "kdddddddddddddgk",
-    "kkkkkkkkkkkkkkgk",
-  ],
-  "]": [
-    "kgdddddddddddddk",
-    "kgdddddddddddddk",
-    "kgdddddddddddddk",
-    "kgdddddddddddddk",
-    "kgdddddddddddddk",
-    "kgdddddddddddddk",
-    "kgdddddddddddddk",
-    "kgkkkkkkkkkkkkkk",
-    "kgdddddddddddddk",
-    "kgdddddddddddddk",
-    "kgdddddddddddddk",
-    "kgdddddddddddddk",
-    "kgdddddddddddddk",
-    "kgdddddddddddddk",
-    "kgdddddddddddddk",
-    "kgkkkkkkkkkkkkkk",
-  ],
-  "_": [
-    "kkkkkkkkkkkkkkkk",
-    "gggggggggggggggg",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "kkkkkkkkkkkkkkkk",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "kkkkkkkkkkkkkkkk",
-  ],
-  "E": [
-    "kdkggggggggggggg",
-    "kdkggggggggggggg",
-    "kdkggggggggggggg",
-    "kdkggggggggggggl",
-    "kdkgggggggggggll",
-    "kdkgggggggggglll",
-    "kdkgggggggggllll",
-    "kdkggggggggggggl",
-    "kdkggggggggggggl",
-    "kdkggggggggggggl",
-    "kdkggggggggggggl",
-    "kdkggggggggggggl",
-    "kdkggggggggggggl",
-    "kdkggggggggggggg",
-    "kdkggggggggggggg",
-    "kdkggggggggggggg",
-  ],
-  "e": [
-    "gggggggggggggkdk",
-    "gggggggggggggkdk",
-    "gggggggggggggkdk",
-    "lggggggggggggkdk",
-    "llgggggggggggkdk",
-    "lllggggggggggkdk",
-    "llllgggggggggkdk",
-    "lggggggggggggkdk",
-    "lggggggggggggkdk",
-    "lggggggggggggkdk",
-    "lggggggggggggkdk",
-    "lggggggggggggkdk",
-    "lggggggggggggkdk",
-    "gggggggggggggkdk",
-    "gggggggggggggkdk",
-    "gggggggggggggkdk",
-  ],
-};
-
-// drawn over the wall tile named by base
-export const SCENERY = {
-  C: { base: "[", grid: [
-    "................",
-    ".....kkkkkk.....",
-    "....krrrrrrk....",
-    "....krrwrrrk....",
-    "....krrwrrrk....",
-    "....krrrrrrk....",
-    ".....kkrrkk.....",
-    "...kkkkkkkkkk...",
-    "...kwwwwwwwwk...",
-    "...kwrkwwkrwk...",
-    "...kwwwwwwwwk...",
-    "...kmmmmmmmmk...",
-    "...kmmmmmmmmk...",
-    "...kmmmmmmmmk...",
-    "...kmmmmmmmmk...",
-    "...kkkkkkkkkk...",
-  ] },
-  L: { base: "]", grid: [
-    "kkkkkkkkkkkkkkkk",
-    "keeeeeekkeeeeeek",
-    "kemmmmekkemmmmek",
-    "keeeeeekkeeeeeek",
-    "kemmmmekkemmmmek",
-    "keeeeeekkeeeeeek",
-    "keeeeeekkeeeeeek",
-    "keeeewekkeweeeek",
-    "keeeewekkeweeeek",
-    "keeeeeekkeeeeeek",
-    "keeeeeekkeeeeeek",
-    "keeeeeekkeeeeeek",
-    "keeeeeekkeeeeeek",
-    "keeeeeekkeeeeeek",
-    "kkkkkkkkkkkkkkkk",
-    "kkkkkkkkkkkkkkkk",
-  ] },
-};
-
-export const EQUIPMENT = {
-  "treadmill": [
-    "..kkkkkkkkkkkk..",
-    "..kmmmmmmmmmmk..",
-    "..kmkkkkkkkkmk..",
-    "..kmkwwwwwwkmk..",
-    "..kmkkkkkkkkmk..",
-    "..kmmmmmmmmmmk..",
-    "..kkmkkkkkkmkk..",
-    "..kmmknnnnkmmk..",
-    "..kmmknnnnkmmk..",
-    "..kmmkkkkkkmmk..",
-    "..kmmknnnnkmmk..",
-    "..kmmknnnnkmmk..",
-    "..kmmkkkkkkmmk..",
-    "..kmmknnnnkmmk..",
-    "..kmmknnnnkmmk..",
-    "..kkkkkkkkkkkk..",
-  ],
-  "flat-bench": [
-    "kkkk........kkkk",
-    "kmmkwwwwwwwwkmmk",
-    "kmmk.kk..kk.kmmk",
-    "kkkk.kk..kk.kkkk",
-    "....kkkkkkkk....",
-    "....kggggggk....",
-    "....kggggggk....",
-    "....kggggggk....",
-    "....kggggggk....",
-    "....kggggggk....",
-    "....kggggggk....",
-    "....kggggggk....",
-    "....kkkkkkkk....",
-    ".....kmk.kmk....",
-    ".....kmk.kmk....",
-    ".....kkk.kkk....",
-  ],
-  "squat-rack": [
-    "..kkkkkkkkkkkk..",
-    "..kmmmmmmmmmmk..",
-    "..kkkkkkkkkkkk..",
-    "..kmk......kmk..",
-    "kkkmk......kmkkk",
-    "kmkmk......kmkmk",
-    "kmwwwwwwwwwwwwmk",
-    "kmkmk......kmkmk",
-    "kkkmk......kmkkk",
-    "..kmk......kmk..",
-    "..kmk......kmk..",
-    "..kmk......kmk..",
-    "..kmk......kmk..",
-    ".kkmkk....kkmkk.",
-    ".kmmmk....kmmmk.",
-    ".kkkkk....kkkkk.",
-  ],
-  "dumbbell-rack": [
-    "................",
-    ".kkk.kkkkkk.kkk.",
-    ".kmkkkmkkmkkkmk.",
-    ".kmwwwmkkmwwwmk.",
-    ".kmkkkmkkmkkkmk.",
-    ".kkk.kkkkkk.kkk.",
-    "keeeeeeeeeeeeeek",
-    "kkkkkkkkkkkkkkkk",
-    ".kkk.kkkkkk.kkk.",
-    ".kmkkkmkkmkkkmk.",
-    ".kmwwwmkkmwwwmk.",
-    ".kmkkkmkkmkkkmk.",
-    ".kkk.kkkkkk.kkk.",
-    "keeeeeeeeeeeeeek",
-    "kkkkkkkkkkkkkkkk",
-    ".kk..........kk.",
-  ],
-  "lifting-platform": [
-    "kkkkkkkkkkkkkkkk",
-    "keeeeeeeeeeeeeek",
-    "keeeeeeeeeeeeeek",
-    "keekkkeeeekkkeek",
-    "keekmkeeeekmkeek",
-    "keekmkeeeekmkeek",
-    "keekmkkkkkkmkeek",
-    "keekmwwwwwwmkeek",
-    "keekmkkkkkkmkeek",
-    "keekmkeeeekmkeek",
-    "keekmkeeeekmkeek",
-    "keekkkeeeekkkeek",
-    "keeeeeeeeeeeeeek",
-    "keeeeeeeeeeeeeek",
-    "keeeeeeeeeeeeeek",
-    "kkkkkkkkkkkkkkkk",
-  ],
-  "pull-up-bar": [
-    ".kkkkkkkkkkkkkk.",
-    ".kwwwwwwwwwwwwk.",
-    ".kkkkkkkkkkkkkk.",
-    ".kmk........kmk.",
-    ".kmk........kmk.",
-    ".kmk........kmk.",
-    ".kmk........kmk.",
-    ".kmk........kmk.",
-    ".kmk........kmk.",
-    ".kmk........kmk.",
-    ".kmk........kmk.",
-    ".kmk........kmk.",
-    ".kmk........kmk.",
-    "kkmkk......kkmkk",
-    "kmmmk......kmmmk",
-    "kkkkk......kkkkk",
-  ],
-  "cable-machine": [
-    "..kkkkkkkkkkkk..",
-    "..kmmmmmmmmmmk..",
-    "..kmkkkkkkkkmk..",
-    "..kmk......kmk..",
-    "..kmk.kkkk.kmk..",
-    "..kmk.kwwk.kmk..",
-    "..kmk.kkkk.kmk..",
-    "..kmk.kwwk.kmk..",
-    "..kmk.kkkk.kmk..",
-    "..kmk.kwwk.kmk..",
-    "..kmk.kkkk.kmk..",
-    "..kmk.kwwk.kmk..",
-    "..kmk.kkkk.kmk..",
-    ".kkmkkkkkkkkmkk.",
-    ".kmmmmmmmmmmmmk.",
-    ".kkkkkkkkkkkkkk.",
-  ],
-  "exercise-mat": [
-    "................",
-    "...kkkkkkkkkk...",
-    "...kggggggggk...",
-    "...keeeeeeeek...",
-    "...kggggggggk...",
-    "...kggggggggk...",
-    "...keeeeeeeek...",
-    "...kggggggggk...",
-    "...kggggggggk...",
-    "...keeeeeeeek...",
-    "...kggggggggk...",
-    "...kggggggggk...",
-    "...keeeeeeeek...",
-    "...kggggggggk...",
-    "...kkkkkkkkkk...",
-    "................",
-  ],
-};
-
-export const CLAIM = [ // your station: leaf corners
-  "llll........llll",
-  "l..............l",
-  "l..............l",
-  "l..............l",
-  "................",
-  "................",
-  "................",
-  "................",
-  "................",
-  "................",
-  "................",
-  "................",
-  "l..............l",
-  "l..............l",
-  "l..............l",
-  "llll........llll",
-];
-```
-
-The empty bay is generated, not drawn: a dashed square in `e` on rows and columns 1 and 14 (pixels `i` where `((i - 1) >> 1) % 2 === 0`, plus 14), and the slot number in 3 × 5 digits in `e`, centred, from row 5. Bay 7 comes out as:
-
-```
-................
-.ee..ee..ee..ee.
-.e............e.
-................
-................
-.e....eee.....e.
-.e......e.....e.
-.......e........
-.......e........
-.e.....e......e.
-.e............e.
-................
-................
-.e............e.
-.ee..ee..ee..ee.
-................
-```
+Redrawn at 32 × 32: see "Appendix: 32 × 32 art, the room (ADR 0005)".
 
 ### Dony and the poster (14 Oct, BOT-1, BOT-2)
 
@@ -1836,7 +1413,7 @@ frames and his poster. Every grid was checked by script to be exactly 32 ×
 `/sprites.svg` carries them, the mockup's `#av-…-32`, `#dony-…-32` and
 `#poster-…-32` symbols go back to `/sprites.svg#av-…`, `#dony-…` and
 `#poster-…` (drop the `-32`). The tiles, machines, bays and scenery are
-part 2 and stay doubled 16 × 16 until then.
+part 2: see "Appendix: 32 × 32 art, the room (ADR 0005)".
 
 Coordinates are (column, row), 0-based.
 
@@ -2792,4 +2369,867 @@ export const POSTER = {
 // two new letters: T the frame's shadow and the bomber's shade, w the paper
 // behind him and the plate
 export const POSTER_PALETTE = {k: "#0b2416", s: "#e9bd94", h: "#2e3046", t: "#8b6cf2", T: "#6650c8", w: "#e8f0d8", b: "currentColor"};
+```
+
+## Appendix: 32 × 32 art, the room (ADR 0005)
+
+The only copy of the room at 32 × 32: the ten tiles, the two pieces of
+scenery, the eight machines, the claim corners and the empty bays' rule.
+Every grid was checked by script to be exactly 32 × 32, to use only
+`GYM_PALETTE` letters, and to use at most 7 colours, the cooler and the
+lockers counted together with the wall tile under them. Paste the blocks
+into `src/sprites/gym.ts`. Once `/sprites.svg` carries them, the mockup's
+`#tile-…-32`, `#map-tiles-32`, `#eq-…-32`, `#bay-…-32` and `#claim-32`
+symbols (between the `room-32` comments) go back to `/sprites.svg#<id>`
+(drop the `-32`). `MAP` and `STATIONS` don't change.
+
+Coordinates are (column, row), 0-based.
+
+### What this changes in the code
+
+- **No more `upscale()` in gym.ts.** `TILES`, `SCENERY`, `GEAR` and `CLAIM`
+  are exported as drawn; `each()`, the `upscale` import and the `*16`
+  consts go. `sprite.ts` keeps `upscale()` only if another module still
+  uses it.
+- **`TILES` is keyed by MAP letter**, as before (`.` `:` `W` `M` `K` `[` `]`
+  `_` `E` `e`). `P` still draws `TILES.W` (GymMap's `symbolOf`, the
+  sprites script's `base`); there is no `TILES.P`.
+- **`bay()` is rewritten** from the second block: 6 × 10 digits and a
+  2 px dashed square. `bay16()` goes.
+- **The night page's width** (Departure 19): `body.night main` in
+  `Layout.astro` becomes `max-width: 72rem`, and GymMap's no-JS fallback
+  becomes `@media (min-width: 1120px) and (min-height: 760px)`.
+- **GymMap's `rects()`** draws one `<rect>` per run, so it needs no change.
+  A 32 × 32 tile has about four times as many runs. If the page weight
+  matters, switch it to one `<path>` per colour, as `scripts/sprites.ts`
+  does.
+
+### How each piece reads
+
+- **Floor `.`**: a rubber mat per tile, its top row and left column in
+  `p` (the seam), sparse `n` granules. **Aisle `:`**: the lighter walkway in
+  `p`, 2 × 2 studs (`g` over `d`) in a diamond lattice every 8 px.
+- **Wall `W`**: ink top on rows 0 to 1 (the poster's bulbs sit in it),
+  a `n` shadow line on row 2, block courses in `d` and `n` on rows 3 to 15,
+  the rail on rows 16 to 19 (`e` lit edge, `g`, `n` shadow), boards on rows
+  20 to 27, ink skirting on rows 28 to 31. The poster (columns 5 to 26,
+  rows 2 to 27) hangs over the rail; its plate ends on row 27, just above
+  the skirting.
+- **Mirror `M`**: the wall with an aluminium (`m`) glass panel on columns 3 to
+  28, rows 3 to 26, a paper top edge, `e` shade on the right and bottom, two
+  diagonal paper glints. **Clock `K`**: a round face (ink rim, `e` bezel,
+  paper face) centred over the rail, `m` ticks at the quarters, the hands at
+  3 o'clock.
+- **Side walls `[` `]`**: seen from above, as they were: an ink outer edge,
+  block courses in `d` and `n`, the green rim on the room side (columns 28
+  to 29 of `[`; `]` is its mirror). **Front wall `_`**: the same wall turned,
+  its green rim on rows 2 to 3, facing in.
+- **Entrance `E` `e`**: one picture across two tiles: door jambs at the
+  outer edges, a ribbed mat (`g`, `d` ribs, `e` border), and a leaf arrow
+  pointing in, outlined in ink, split down the middle between the tiles.
+- **Water cooler `C`** (on `[`): the resting-blue bottle with a paper glint
+  and a level line, a neck, a paper cabinet top with a blue (cold) tap and a
+  dim (room) tap, the drip tray in `n`, a dim cabinet with two vents. This
+  is still the only `r` in the scenery.
+- **Lockers `L`** (on `]`): two `e` doors with `g` shade, three vents each,
+  paper handles meeting at the middle, a padlock on the right-hand door.
+
+### The machines: what their top 12 rows show
+
+An avatar on a station covers the tile from row 12 down (15 behind someone
+sitting), so the top 12 rows of each machine have to say what it is.
+
+| Machine | Rows 0 to 11 |
+| --- | --- |
+| treadmill | the console with its `e` bar-chart readout on `n`, both handrails, the belt's top edge on row 9 |
+| flat-bench | the bar racked on its uprights (rows 3 to 6, paper, ink outline), a plate stack at each end, the pad's top |
+| squat-rack | the top crossbar, the uprights, a loaded bar on the J-hooks (rows 7 to 10) |
+| dumbbell-rack | the top tier: three dumbbells with dim heads and paper handles, the shelf on rows 10 to 13 |
+| lifting-platform | the wood centre between `g` rubber sides, a loaded bar on rows 7 to 10, black bumpers |
+| pull-up-bar | the paper bar with its black grips (rows 2 to 6), the two posts |
+| cable-machine | the top beam, two pulleys, the cables, the weight stack's top plates |
+| exercise-mat | the rolled end of the mat in `e` with a paper highlight, a kettlebell beside it |
+
+### The empty bay
+
+An empty station is a dashed square in `e`, 2 px thick, on rows and columns
+2 to 3 and 28 to 29. Dashes are 4 px long with 2 px gaps, starting at 2
+(`(i − 2) % 6 < 4`), so all four corners are solid and the square ends on a
+dash at 29. The number uses 6 × 10 digits with 2 px strokes, centred: each
+digit is 8 px apart (6 + 2 gap), the run starts at `x = (32 − (8n − 2)) / 2`
+(13 for one digit, 9 for two) on rows 11 to 20. Only `e` is used, so the
+bay stays the quietest thing on the floor.
+
+### The claim corners
+
+Your station's corners: an 8 px leaf L, 2 px thick, at each corner (rows
+and columns 0 to 1), with a 1 px ink line just inside it (row and column 2),
+so the leaf reads on the floor, on the aisle and on the green lifting
+platform alike.
+
+```ts
+// src/sprites/gym.ts: replaces TILES16, SCENERY16, GEAR16, CLAIM16, the
+// each() helper, the upscale() import and the doubled exports below them.
+// The tiles, one per MAP letter. P (the poster) is drawn as W.
+export const TILES: Record<string, string[]> = {
+  ".": [
+    "pppppppppppppppppppppppppppppppp",
+    "pfffffffffffffffffffffffffffffff",
+    "pfffffffffffffffffffffffffffffff",
+    "pfffffffffffffffffffffffffffffnf",
+    "pfffffffffffffffffffffffffffffff",
+    "pfffpffffffnnfffffffffffffffffff",
+    "pfffffffffffffffffffffffffffffff",
+    "pffffffffffffffffffffffffnffffff",
+    "pfffffffffffffffffpfffffffffffff",
+    "pfffffffffffffffffffffffffffffff",
+    "pffffnffffffffffffffffffffffffff",
+    "pfffffffffffffffffffffffffffffff",
+    "pfffffffffffffffffffffffffffffff",
+    "pfffffffffffffffffffnnffffffffff",
+    "pfffffffffffffffffffffffffffffff",
+    "pffffffffffffffffffffffffffpffff",
+    "pffnffffffffffffffffffffffffffff",
+    "pfffffffffffffffffffffffffffffff",
+    "pfffffffffffffnfffffffffffffffff",
+    "pfffffffffffffffffffffffffffffff",
+    "pfffffffpfffffffffffffffffffffff",
+    "pfffffffffffffffffffffffffffnnff",
+    "pfffffffffffffffffffffffffffffff",
+    "pfffffffffffffffffffffpfffffffff",
+    "pffffffnnfffffffffffffffffffffff",
+    "pfffffffffffffffffffffffffffffff",
+    "pfffffffffffffffffffffffffffffff",
+    "pfffffffffffffffffnfffffffffffff",
+    "pfffffffffffffffffffffffffffffff",
+    "pffffffffnfffffffffffffffnffffff",
+    "pfffffffffffffffffffffffffffffff",
+    "pfffffffffffffffffffffffffffffff",
+  ],
+  ":": [
+    "pppppppppppppppppppppppppppppppp",
+    "pppppppppppppppppppppppppppppppp",
+    "ppggppppppggppppppggppppppggpppp",
+    "ppddppppppddppppppddppppppddpppp",
+    "pppppppppppppppppppppppppppppppp",
+    "pppppppppppppppppppppppppppppppp",
+    "ppppppggppppppggppppppggppppppgg",
+    "ppppppddppppppddppppppddppppppdd",
+    "pppppppppppppppppppppppppppppppp",
+    "pppppppppppppppppppppppppppppppp",
+    "ppggppppppggppppppggppppppggpppp",
+    "ppddppppppddppppppddppppppddpppp",
+    "pppppppppppppppppppppppppppppppp",
+    "pppppppppppppppppppppppppppppppp",
+    "ppppppggppppppggppppppggppppppgg",
+    "ppppppddppppppddppppppddppppppdd",
+    "pppppppppppppppppppppppppppppppp",
+    "pppppppppppppppppppppppppppppppp",
+    "ppggppppppggppppppggppppppggpppp",
+    "ppddppppppddppppppddppppppddpppp",
+    "pppppppppppppppppppppppppppppppp",
+    "pppppppppppppppppppppppppppppppp",
+    "ppppppggppppppggppppppggppppppgg",
+    "ppppppddppppppddppppppddppppppdd",
+    "pppppppppppppppppppppppppppppppp",
+    "pppppppppppppppppppppppppppppppp",
+    "ppggppppppggppppppggppppppggpppp",
+    "ppddppppppddppppppddppppppddpppp",
+    "pppppppppppppppppppppppppppppppp",
+    "pppppppppppppppppppppppppppppppp",
+    "ppppppggppppppggppppppggppppppgg",
+    "ppppppddppppppddppppppddppppppdd",
+  ],
+  W: [
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+    "dddddddndddddddddddddddndddddddd",
+    "dddddddndddddddddddddddndddddddd",
+    "dddddddndddddddddddddddndddddddd",
+    "dddddddndddddddddddddddndddddddd",
+    "dddddddndddddddddddddddndddddddd",
+    "dddddddndddddddddddddddndddddddd",
+    "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+    "dddddddddddddddndddddddddddddddn",
+    "dddddddddddddddndddddddddddddddn",
+    "dddddddddddddddndddddddddddddddn",
+    "dddddddddddddddndddddddddddddddn",
+    "dddddddddddddddndddddddddddddddn",
+    "dddddddddddddddndddddddddddddddn",
+    "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "gggggggggggggggggggggggggggggggg",
+    "gggggggggggggggggggggggggggggggg",
+    "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+    "dddddddddddddddddddddddddddddddd",
+    "dddddddndddddddndddddddndddddddn",
+    "dddddddndddddddndddddddndddddddn",
+    "dddddddndddddddndddddddndddddddn",
+    "dddddddndddddddndddddddndddddddn",
+    "dddddddndddddddndddddddndddddddn",
+    "dddddddndddddddndddddddndddddddn",
+    "dddddddndddddddndddddddndddddddn",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+  ],
+  M: [
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+    "dddkkkkkkkkkkkkkkkkkkkkkkkkkkddd",
+    "dddkwwwwwwwwwwwwwwwwwwwwwwwwkddd",
+    "dddkmmmmmmmmmmmmmmmmmmmmmmmekddd",
+    "dddkmmmmmwmmmmmmmmmmmmmmmmmekddd",
+    "dddkmmmmwmmmmmmmmmmmmmmmmmmekddd",
+    "dddkmmmwmmmmmmmmmmmmmmmmmmmekddd",
+    "nnnkmmwmmmmmmmmmmmmmmmwwmmmeknnn",
+    "dddkmmmmmmmmmmmmmmmmmwwmmmmekddn",
+    "dddkmmmmmmmmmmmmmmmmwwmmmmmekddn",
+    "dddkmmmmmmmmmmmmmmmwwmmmmmmekddn",
+    "dddkmmmmmmmmmmmmmmwwmmmmmmmekddn",
+    "dddkmmmmmmmmmmmmmwwmmmmmmmmekddn",
+    "dddkmmmmmmmmmmmmwwmmmmmmmmmekddn",
+    "eeekmmmmmmmmmmmwwmmmmmmmwmmekeee",
+    "gggkmmmmmmmmmmwwmmmmmmmwmmmekggg",
+    "gggkmmmmmmmmmwwmmmmmmmwmmmmekggg",
+    "nnnkmmmmmmmmwwmmmmmmmwmmmmmeknnn",
+    "dddkmmmmmmmwwmmmmmmmwmmmmmmekddd",
+    "dddkmmmmmmwwmmmmmmmwmmmmmmmekddn",
+    "dddkmmmmmwwmmmmmmmwmmmmmmmmekddn",
+    "dddkmmmmmmmmmmmmmwmmmmmmmmmekddn",
+    "dddkmmmmmmmmmmmmmmmmmmmmmmmekddn",
+    "dddkeeeeeeeeeeeeeeeeeeeeeeeekddn",
+    "dddkkkkkkkkkkkkkkkkkkkkkkkkkkddn",
+    "dddddddndddddddndddddddndddddddn",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+  ],
+  K: [
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "nnnnnnnnnnnnnnnkknnnnnnnnnnnnnnn",
+    "dddddddnddddkkkeekkkdddndddddddd",
+    "dddddddnddkkeeemmeeekkdndddddddd",
+    "dddddddndkeewwwmmwwweekndddddddd",
+    "dddddddnkeewwwwkkwwwweekdddddddd",
+    "dddddddnkewwwwwkkwwwwwekdddddddd",
+    "dddddddkewwwwwwkkwwwwwwekddddddd",
+    "nnnnnnnkewwwwwwkkwwwwwweknnnnnnn",
+    "dddddddkewwwwwwkkwwwwwwekddddddn",
+    "ddddddkemmwwwwwkkkkkkwmmekdddddn",
+    "ddddddkemmwwwwwkkkkkkwmmekdddddn",
+    "dddddddkewwwwwwwwwwwwwwekddddddn",
+    "dddddddkewwwwwwwwwwwwwwekddddddn",
+    "dddddddkewwwwwwwwwwwwwwekddddddn",
+    "eeeeeeeekewwwwwwwwwwwwekeeeeeeee",
+    "ggggggggkeewwwwwwwwwweekgggggggg",
+    "gggggggggkeewwwmmwwweekggggggggg",
+    "nnnnnnnnnnkkeeemmeeekknnnnnnnnnn",
+    "ddddddddddddkkkeekkkdddddddddddd",
+    "dddddddnddnnnnnnnnnnnndndddddddn",
+    "dddddddndddddddndddddddndddddddn",
+    "dddddddndddddddndddddddndddddddn",
+    "dddddddndddddddndddddddndddddddn",
+    "dddddddndddddddndddddddndddddddn",
+    "dddddddndddddddndddddddndddddddn",
+    "dddddddndddddddndddddddndddddddn",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+  ],
+  "[": [
+    "kknnnnnnnnnnnnnnnnnnnnnnnnnnggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkggkk",
+    "kknnnnnnnnnnnnnnnnnnnnnnnnnnggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkggkk",
+  ],
+  "]": [
+    "kkggnnnnnnnnnnnnnnnnnnnnnnnnnnkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkggnnnnnnnnnnnnnnnnnnnnnnnnnnkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+  ],
+  "_": [
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "gggggggggggggggggggggggggggggggg",
+    "gggggggggggggggggggggggggggggggg",
+    "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddknnnnnnnnnnnnnnnk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "nnnnnnnnnnnnnnnkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddknnnnnnnnnnnnnnnk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+  ],
+  E: [
+    "kkddkkgggggggggggggggggggggggggg",
+    "kkddkkgggggggggggggggggggggggggg",
+    "kkddkkgggggggggggggggggggggggggg",
+    "kkddkkgggeeeeeeeeeeeeeeeeeeeeeee",
+    "kkddkkgggeggggggggggggggggggggkk",
+    "kkddkkgggegggggggggggggggggggkkl",
+    "kkddkkgggeddddddddddddddddddkkll",
+    "kkddkkgggegggggggggggggggggkklll",
+    "kkddkkgggeggggggggggggggggkkllll",
+    "kkddkkgggedddddddddddddddkklllll",
+    "kkddkkgggeggggggggggggggkkllllll",
+    "kkddkkgggegggggggggggggkklllllll",
+    "kkddkkgggeddddddddddddkkllllllll",
+    "kkddkkgggegggggggggggkklllllllll",
+    "kkddkkgggeggggggggggkkllllllllll",
+    "kkddkkgggeddddddddddklllllllllll",
+    "kkddkkgggeggggggggggkkkkkkkkklll",
+    "kkddkkgggeggggggggggggggggggklll",
+    "kkddkkgggeddddddddddddddddddklll",
+    "kkddkkgggeggggggggggggggggggklll",
+    "kkddkkgggeggggggggggggggggggklll",
+    "kkddkkgggeddddddddddddddddddklll",
+    "kkddkkgggeggggggggggggggggggklll",
+    "kkddkkgggeggggggggggggggggggklll",
+    "kkddkkgggeddddddddddddddddddklll",
+    "kkddkkgggeggggggggggggggggggklll",
+    "kkddkkgggeggggggggggggggggggkkkk",
+    "kkddkkgggegggggggggggggggggggggg",
+    "kkddkkgggeeeeeeeeeeeeeeeeeeeeeee",
+    "kkddkkgggggggggggggggggggggggggg",
+    "kkddkkgggggggggggggggggggggggggg",
+    "kkddkkgggggggggggggggggggggggggg",
+  ],
+  e: [
+    "ggggggggggggggggggggggggggkkddkk",
+    "ggggggggggggggggggggggggggkkddkk",
+    "ggggggggggggggggggggggggggkkddkk",
+    "eeeeeeeeeeeeeeeeeeeeeeegggkkddkk",
+    "kkggggggggggggggggggggegggkkddkk",
+    "lkkgggggggggggggggggggegggkkddkk",
+    "llkkddddddddddddddddddegggkkddkk",
+    "lllkkgggggggggggggggggegggkkddkk",
+    "llllkkggggggggggggggggegggkkddkk",
+    "lllllkkdddddddddddddddegggkkddkk",
+    "llllllkkggggggggggggggegggkkddkk",
+    "lllllllkkgggggggggggggegggkkddkk",
+    "llllllllkkddddddddddddegggkkddkk",
+    "lllllllllkkgggggggggggegggkkddkk",
+    "llllllllllkkggggggggggegggkkddkk",
+    "lllllllllllkddddddddddegggkkddkk",
+    "lllkkkkkkkkkggggggggggegggkkddkk",
+    "lllkggggggggggggggggggegggkkddkk",
+    "lllkddddddddddddddddddegggkkddkk",
+    "lllkggggggggggggggggggegggkkddkk",
+    "lllkggggggggggggggggggegggkkddkk",
+    "lllkddddddddddddddddddegggkkddkk",
+    "lllkggggggggggggggggggegggkkddkk",
+    "lllkggggggggggggggggggegggkkddkk",
+    "lllkddddddddddddddddddegggkkddkk",
+    "lllkggggggggggggggggggegggkkddkk",
+    "kkkkggggggggggggggggggegggkkddkk",
+    "ggggggggggggggggggggggegggkkddkk",
+    "eeeeeeeeeeeeeeeeeeeeeeegggkkddkk",
+    "ggggggggggggggggggggggggggkkddkk",
+    "ggggggggggggggggggggggggggkkddkk",
+    "ggggggggggggggggggggggggggkkddkk",
+  ],
+};
+
+// drawn over the wall tile named by base
+export const SCENERY: Record<string, { base: string; grid: string[] }> = {
+  C: { base: "[", grid: [
+    "................................",
+    "...........kkkkkkkkkk...........",
+    "..........kkrrrrrrrrkk..........",
+    "..........krwwrrrrrrrk..........",
+    "..........krwrrrrrrrrk..........",
+    "..........krwrrrrrrrrk..........",
+    "..........kwrwwwwwwwwk..........",
+    "..........krwrrrrrrrrk..........",
+    "..........krwrrrrrrrrk..........",
+    "..........krrrrrrrrrrk..........",
+    "..........kkrrrrrrrrkk..........",
+    "...........kkkkkkkkkk...........",
+    "..............krrk..............",
+    ".......kkkkkkkkkkkkkkkkkk.......",
+    ".......kwwwrrwwwwwwmmwwwk.......",
+    ".......kwwwrrwwwwwwmmwwwk.......",
+    ".......kwwwkkwwwwwwkkwwwk.......",
+    ".......kwwwwwwwwwwwwwwwwk.......",
+    ".......kwkkkkkkkkkkkkkkwk.......",
+    ".......kwkkkkkkkkkkkkkkwk.......",
+    ".......kwknnnnnnnnnnnnkwk.......",
+    ".......kmkkkkkkkkkkkkkkmk.......",
+    ".......kmmmmmmmmmmmmmmmmk.......",
+    ".......kmmmmmmmmmmmmmmmmk.......",
+    ".......kmmmmmmmmmmmmmmmmk.......",
+    ".......kmmmkkkkkkkkkkmmmk.......",
+    ".......kmmmmmmmmmmmmmmmmk.......",
+    ".......kmmmkkkkkkkkkkmmmk.......",
+    ".......kmmmmmmmmmmmmmmmmk.......",
+    ".......kmmmmmmmmmmmmmmmmk.......",
+    ".......kkkkkkkkkkkkkkkkkk.......",
+    "......kkkkkkkkkkkkkkkkkkkk......",
+  ] },
+  L: { base: "]", grid: [
+    "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keemmmmmmmeegkkeemmmmmmmeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keemmmmmmmeegkkeemmmmmmmeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keemmmmmmmeegkkeemmmmmmmeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keeeeeeeeewegkkeeweeeeeeeegk..",
+    "..keeeeeeeeewegkkeeweeeeeeeegk..",
+    "..keeeeeeeeewegkkeewekkeeeeegk..",
+    "..keeeeeeeeewegkkeewkeekeeeegk..",
+    "..keeeeeeeeewegkkeewkkkkeeeegk..",
+    "..keeeeeeeeeeegkkeeekmmkeeeegk..",
+    "..keeeeeeeeeeegkkeeekkmkeeeegk..",
+    "..keeeeeeeeeeegkkeeekmmkeeeegk..",
+    "..keeeeeeeeeeegkkeeekkkkeeeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keegggggeeeegkkeegggggeeeegk..",
+    "..keegggggeeeegkkeegggggeeeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..kggggggggggggkkggggggggggggk..",
+    "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
+    "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
+  ] },
+};
+
+export const GEAR: Record<Equipment, string[]> = {
+  "treadmill": [
+    "................................",
+    "....kkkkkkkkkkkkkkkkkkkkkkkk....",
+    "....kwwwwwwwwwwwwwwwwwwwwwwk....",
+    ".kkkkmmmkkkkkkkkkkkkkkkkmmmkkkk.",
+    ".kwmkmmmknnnnnnnennnennkmmmkwmk.",
+    ".kwmkmwmknnnenenenenennkmwmkwmk.",
+    ".kwmkmemknenenenenenennkmemkwmk.",
+    ".kwmkmmmkkkkkkkkkkkkkkkkmmmkwmk.",
+    ".kwmkkkkkkkkkkkkkkkkkkkkkkkkwmk.",
+    ".kwmkkkkkkkkkkkkkkkkkkkkkkkkwmk.",
+    ".kwmkkwwwwwwwwwwwwwwwwwwwwkkwmk.",
+    ".kwmkkmmmmmmmmmmmmmmmmmmmmkkwmk.",
+    ".kwmkkkkkkkkkkkkkkkkkkkkkkkkwmk.",
+    ".kwmkkmmmknnnnnnnnnnnnkmmmkkwmk.",
+    ".kwmkkmmmknnnnnnnnnnnnkmmmkkwmk.",
+    ".kwmkkmmmkddddddddddddkmmmkkwmk.",
+    ".kwmkkmmmknnnnnnnnnnnnkmmmkkwmk.",
+    ".kkkkkmmmknnnnnnnnnnnnkmmmkkkkk.",
+    ".....kmmmkddddddddddddkmmmk.....",
+    ".....kmmmknnnnnnnnnnnnkmmmk.....",
+    ".....kmmmknnnnnnnnnnnnkmmmk.....",
+    ".....kmmmkddddddddddddkmmmk.....",
+    ".....kmmmknnnnnnnnnnnnkmmmk.....",
+    ".....kmmmknnnnnnnnnnnnkmmmk.....",
+    ".....kmmmkddddddddddddkmmmk.....",
+    ".....kmmmknnnnnnnnnnnnkmmmk.....",
+    ".....kmmmknnnnnnnnnnnnkmmmk.....",
+    ".....kmmmkddddddddddddkmmmk.....",
+    ".....kmmmknnnnnnnnnnnnkmmmk.....",
+    ".....kkkkkkkkkkkkkkkkkkkkkk.....",
+    ".....kkkkkkkkkkkkkkkkkkkkkk.....",
+    "................................",
+  ],
+  "flat-bench": [
+    "..kkkk....................kkkk..",
+    "..kkwk....................kwkk..",
+    "kkkkwk..kkk..........kkk..kwkkkk",
+    "kwkkwkkkkkkkkkkkkkkkkkkkkkkwkkwk",
+    "kmkkmkwwwwwwwwwwwwwwwwwwwwkmkkmk",
+    "kmkkmkwwwwwwwwwwwwwwwwwwwwkmkkmk",
+    "kmkkmkkkkkkkkkkkkkkkkkkkkkkmkkmk",
+    "kkkkmk..kmk..........kmk..kmkkkk",
+    "..kkmk..kmk.kkkkkkkk.kmk..kmkk..",
+    "..kkkk..kmkkkeeeeeekkkmk..kkkk..",
+    "........kmkkeggggggekkmk........",
+    "........kmkkeggggggekkmk........",
+    "......kkkmkkeggggggekkmkkk......",
+    "......kmkmkkeggggggekkmkmk......",
+    "......kkkkkkeggggggekkkkkk......",
+    "...........keggggggek...........",
+    "...........keggggggek...........",
+    "...........keggggggek...........",
+    "...........keggggggek...........",
+    "...........keggggggek...........",
+    "...........keggggggek...........",
+    "...........keggggggek...........",
+    "...........keggggggek...........",
+    "...........keggggggek...........",
+    "...........keggggggek...........",
+    "...........keggggggek...........",
+    "........kkkkkddddddkkkkk........",
+    "........kmm.kkkkkkkk.mmk........",
+    "........kmmmmmmmmmmmmmmk........",
+    "........kkkkkkkkkkkkkkkk........",
+    "................................",
+    "................................",
+  ],
+  "squat-rack": [
+    "................................",
+    "....kkkkkkkkkkkkkkkkkkkkkkkk....",
+    "....kwwwwwwwwwwwwwwwwwwwwwwk....",
+    "....kmmmmmmmmmmkkmmmmmmmmmmk....",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kwmkkmmk................kmmkkmwk",
+    "kwmkkmmk................kmmkkmwk",
+    "kwmkkkkkkkkkkkkkkkkkkkkkkkkkkmwk",
+    "kwmkwwwwwwwwwwwwwwwwwwwwwwwwkmwk",
+    "kmmkwwwwwwwwwwwwwwwwwwwwwwwwkmmk",
+    "kmmkkkkkkkkkkkkkkkkkkkkkkkkkkmmk",
+    "kmmkkmmkmm............mmkmmkkmmk",
+    "kmmkkmmkkm............mkkmmkkmmk",
+    "kmmkkkkk................kkkkkmmk",
+    "kkkkkmmk................kmmkkkkk",
+    "....kmmk................kmmk....",
+    "....kkkk................kkkk....",
+    "....kmmk................kmmk....",
+    "....kmmk................kmmk....",
+    "....kkkkkkkkk......kkkkkkkkk....",
+    "....kmmkmmmmk......kmmmmkmmk....",
+    "....kmmkkkkkk......kkkkkkmmk....",
+    "....kkkk................kkkk....",
+    "....kmmk................kmmk....",
+    "....kmmk................kmmk....",
+    "....kkkk................kkkk....",
+    "....kmmk................kmmk....",
+    ".kkkkkkkkkk..........kkkkkkkkkk.",
+    ".kmmmmmmmmk..........kmmmmmmmmk.",
+    ".kmmmmmmmmk..........kmmmmmmmmk.",
+    ".kkkkkkkkkk..........kkkkkkkkkk.",
+    "................................",
+  ],
+  "dumbbell-rack": [
+    "................................",
+    "................................",
+    "................................",
+    "..kkk...kkk.kkk...kkk.kkk...kkk.",
+    "..kwk...kwk.kwk...kwk.kwk...kwk.",
+    "..kmkkkkkmk.kmkkkkkmk.kmkkkkkmk.",
+    "..kmwwwwwmk.kmwwwwwmk.kmwwwwwmk.",
+    "..kmkkkkkmk.kmkkkkkmk.kmkkkkkmk.",
+    "..kmk...kmk.kmk...kmk.kmk...kmk.",
+    ".kkkk...kkk.kkk...kkk.kkk...kkk.",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "gggggggggggggggggggggggggggggggg",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    ".kmk........................kmk.",
+    ".kkkk...kkk.kkk...kkk.kkk...kkk.",
+    ".kkgk...kgk.kgk...kgk.kgk...kgk.",
+    ".kkgkkkkkgk.kgkkkkkgk.kgkkkkkgk.",
+    ".kkgwwwwwgk.kgwwwwwgk.kgwwwwwgk.",
+    ".kkgkkkkkgk.kgkkkkkgk.kgkkkkkgk.",
+    ".kkgk...kgk.kgk...kgk.kgk...kgk.",
+    ".kkkk...kkk.kkk...kkk.kkk...kkk.",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "gggggggggggggggggggggggggggggggg",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    ".kmk........................kmk.",
+    ".kmk........................kmk.",
+    "kkkkk......................kkkkk",
+    "kmmmk......................kmmmk",
+    "kkkkk......................kkkkk",
+    "................................",
+  ],
+  "lifting-platform": [
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kgggkkkgkeeeedeeeedeeeekgkkkggdk",
+    "kggkknkkkeeeedeeeedeeeekkknkkgdk",
+    "kggkmnnkkkkeedeeeedeekkkknnmkgdk",
+    "kggkmnnkkmkeedeeeedeekmkknnmkgdk",
+    "kggkmnnkkmkeedeeeedeekmkknnmkgdk",
+    "kggkmnnkknkkedeeeedekknkknnmkgdk",
+    "kgkknnnkknkmkkkkkkkkmknkknnnkkdk",
+    "kgkknnnkknkmwwwwwwwwmknkknnnkkdk",
+    "kgkknnnkknkmwwwwwwwwmknkknnnkkdk",
+    "kgkknnnkknkmkkkkkkkkmknkknnnkkdk",
+    "kggknnnkknkkedeeeedekknkknnnkgdk",
+    "kggknnnkknkeedeeeedeeknkknnnkgdk",
+    "kggknnnkknkeedeeeedeeknkknnnkgdk",
+    "kggknnnkkkkeedeeeedeekkkknnnkgdk",
+    "kggkknkkkeeeedeeeedeeeekkknkkgdk",
+    "kgggkkkgkeeeedeeeedeeeekgkkkggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kddddddddddddddddddddddddddddddk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+  ],
+  "pull-up-bar": [
+    "................................",
+    "................................",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kwwwwwwwnnnnnwwwwwwnnnnnwwwwwwwk",
+    "kwwwwwwwnnnnnwwwwwwnnnnnwwwwwwwk",
+    "kmmmmmmmnnnnnmmmmmmnnnnnmmmmmmmk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "...kwmk..................kmwk...",
+    "...kwmk..................kmwk...",
+    "...kwmkkkk............kkkkmwk...",
+    "...kwmkkkk............kkkkmwk...",
+    "...kwmk..................kmwk...",
+    "...kwmk..................kmwk...",
+    "...kwmk..................kmwk...",
+    "...kwmk..................kmwk...",
+    "...kwmkkkkkk........kkkkkkmwk...",
+    "...kwmknnnnk........knnnnkmwk...",
+    "...kwmknnnnk........knnnnkmwk...",
+    "...kwmkkkkkk........kkkkkkmwk...",
+    "...kwmk..................kmwk...",
+    "...kwmk..................kmwk...",
+    "...kwmk..................kmwk...",
+    "...kwmk..................kmwk...",
+    "...kwmk..................kmwk...",
+    "...kwmk..................kmwk...",
+    "...kwmk..................kmwk...",
+    "...kwmk..................kmwk...",
+    "kkkkkkkkkk............kkkkkkkkkk",
+    "kmmmmmmmmk............kmmmmmmmmk",
+    "kmmmmmmmmk............kmmmmmmmmk",
+    "kkkkkkkkkk............kkkkkkkkkk",
+    "................................",
+  ],
+  "cable-machine": [
+    "................................",
+    "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
+    "..kwwwwwwwwwwwwwwwwwwwwwwwwwwk..",
+    "..kmmmmmmmmmeeeeeeeemmmmmmmmmk..",
+    "..kmmmmmmmmmeeeeeeeemmmmmmmmmk..",
+    "..kkkk.kkk.kkkknnkkkk.kkk.kkkk..",
+    "..kwmkkkwkkk...nn...kkkwkkkmwk..",
+    "..kwmkkwkwkk...nn...kkwkwkkmwk..",
+    "..kwmkkkwkkkwwwwwwwwkkkwkkkmwk..",
+    "..kwmk.kkk.kmmmmmmmmk.kkk.kmwk..",
+    "..kwmk..n..kkkkkkkkkk..n..kmwk..",
+    "..kwmk..n..kmmmmmmmmk..n..kmwk..",
+    "..kwmk..n..kmmmmmmmmk..n..kmwk..",
+    "..kwmk..n..kkkkkkkkkk..n..kmwk..",
+    "..kwmk..n..kmmmmmmmmk..n..kmwk..",
+    "..kwmk..n..kmmmmmmmmk..n..kmwk..",
+    "..kwmk..n..kkkkkkkkkk..n..kmwk..",
+    "..kwmk..n..kmmmmmmmmwwwk..kmwk..",
+    "..kwmk..n..kmmmmmmmmk..n..kmwk..",
+    "..kwmk..n..kkkkkkkkkk..n..kmwk..",
+    "..kwmkkkkkkkmmmmmmmmkkkkkkkmwk..",
+    "..kwmkkmmmkkmmmmmmmmkkmmmkkmwk..",
+    "..kwmkkmmmkkkkkkkkkkkkmmmkkmwk..",
+    "..kwmkkkkkkkmmmmmmmmkkkkkkkmwk..",
+    "..kwmk.....kmmmmmmmmk.....kmwk..",
+    "..kwmk.....kkkkkkkkkk.....kmwk..",
+    "..kwmk.....k........k.....kmwk..",
+    "kkkkkkkkkkkk........kkkkkkkkkkkk",
+    "kmmmmmmmmmmk........kmmmmmmmmmmk",
+    "kmmmmmmmmmmk........kmmmmmmmmmmk",
+    "kkkkkkkkkkkk........kkkkkkkkkkkk",
+    "................................",
+  ],
+  "exercise-mat": [
+    "...........................kkkk.",
+    ".......kkkkkkkkkkkkkkkkkk.kk..kk",
+    "......kwwwwwwwwwwwwwwwwwwkk....k",
+    "......kegeeeeeeeeeeeeeegekkkkkkk",
+    "......kegkeeeeeeeeeeeekgekkmwmmk",
+    "......kegeeeeeeeeeeeeeegekkmmmmk",
+    "......kddddddddddddddddddkkmmmmk",
+    ".......kkkkkkkkkkkkkkkkkk..kkkk.",
+    ".......kgggggggggggggggdk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......keeeeeeeeeeeeeeedk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......keeeeeeeeeeeeeeedk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......keeeeeeeeeeeeeeedk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......keeeeeeeeeeeeeeedk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......keeeeeeeeeeeeeeedk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......kddddddddddddddddk.......",
+    ".......kkkkkkkkkkkkkkkkkk.......",
+    "................................",
+  ],
+};
+
+// your station: leaf corners, an ink line inside them so they read on any floor
+export const CLAIM: string[] = [
+  "llllllll................llllllll",
+  "llllllll................llllllll",
+  "llkkkkkk................kkkkkkll",
+  "llk..........................kll",
+  "llk..........................kll",
+  "llk..........................kll",
+  "llk..........................kll",
+  "llk..........................kll",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "llk..........................kll",
+  "llk..........................kll",
+  "llk..........................kll",
+  "llk..........................kll",
+  "llk..........................kll",
+  "llkkkkkk................kkkkkkll",
+  "llllllll................llllllll",
+  "llllllll................llllllll",
+];
+```
+
+```ts
+// src/sprites/gym.ts: replaces the 3 x 5 DIGITS, bay() and bay16().
+// 6 x 10 digits for the empty bays' numbers, two pixels per stroke
+const DIGITS: Record<string, string[]> = {
+  "0": [".eeee.", "eeeeee", "ee..ee", "ee..ee", "ee..ee", "ee..ee", "ee..ee", "ee..ee", "eeeeee", ".eeee."],
+  "1": ["..ee..", ".eee..", "eeee..", "..ee..", "..ee..", "..ee..", "..ee..", "..ee..", "eeeeee", "eeeeee"],
+  "2": [".eeee.", "eeeeee", "ee..ee", "....ee", "...eee", "..eee.", ".eee..", "eee...", "eeeeee", "eeeeee"],
+  "3": [".eeee.", "eeeeee", "ee..ee", "....ee", "..eee.", "..eee.", "....ee", "ee..ee", "eeeeee", ".eeee."],
+  "4": ["...eee", "..eeee", ".ee.ee", "ee..ee", "ee..ee", "eeeeee", "eeeeee", "....ee", "....ee", "....ee"],
+  "5": ["eeeeee", "eeeeee", "ee....", "eeeee.", "eeeeee", "....ee", "....ee", "ee..ee", "eeeeee", ".eeee."],
+  "6": [".eeee.", "eeeeee", "ee....", "eeeee.", "eeeeee", "ee..ee", "ee..ee", "ee..ee", "eeeeee", ".eeee."],
+  "7": ["eeeeee", "eeeeee", "....ee", "...ee.", "...ee.", "..ee..", "..ee..", "..ee..", "..ee..", "..ee.."],
+  "8": [".eeee.", "eeeeee", "ee..ee", "ee..ee", ".eeee.", "eeeeee", "ee..ee", "ee..ee", "eeeeee", ".eeee."],
+  "9": [".eeee.", "eeeeee", "ee..ee", "ee..ee", "eeeeee", ".eeeee", "....ee", "....ee", "eeeeee", ".eeee."],
+};
+
+// An empty station: a dashed square in edge green, 2 px thick, on rows and
+// columns 2-3 and 28-29 (dashes of 4, gaps of 2, starting at 2, so every
+// corner is solid), and its slot number centred, digits 2 apart, rows 11-20.
+export function bay(slot: number): string[] {
+  const g = Array.from({ length: 32 }, () => Array<string>(32).fill("."));
+  const dash = (i: number) => (i - 2) % 6 < 4;
+  for (let i = 2; i <= 29; i++) {
+    if (!dash(i)) continue;
+    for (const t of [2, 3, 28, 29]) g[t][i] = g[i][t] = "e";
+  }
+  const digits = String(slot).split("");
+  let x = (32 - (digits.length * 8 - 2)) / 2;
+  for (const d of digits) {
+    DIGITS[d].forEach((row, dy) => [...row].forEach((ch, dx) => ch !== "." && (g[11 + dy][x + dx] = ch)));
+    x += 8;
+  }
+  return g.map((r) => r.join(""));
+}
 ```
