@@ -10,8 +10,8 @@ interface Props {
   // "invite": signed out, arrived by an invite link (ROOM-3)
   mode: "join" | "invite";
   passcode?: string;
-  // ROOM-2's one generic error, or ROOM-4's full room
-  error?: "none" | "full";
+  // ROOM-2's one generic error, ROOM-4's full room, or ROOM-7's limit
+  error?: "none" | "full" | "limited";
   name?: string;
   look?: Look;
 }
@@ -90,7 +90,9 @@ const next = encodeURIComponent(`/join/${passcode}`);
             <p class="error" id="passcode-error">
               {error === "full"
                 ? "This gym's full: 12 of 12 are in. Wait for someone to leave, or start a new room below."
-                : "No open room has that passcode. Check it with your squad."}
+                : error === "limited"
+                  ? "Too many tries. Give it a minute."
+                  : "No open room has that passcode. Check it with your squad."}
             </p>
           )}
           <div class="actions">

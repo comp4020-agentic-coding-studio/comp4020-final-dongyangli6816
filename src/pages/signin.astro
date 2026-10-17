@@ -2,31 +2,49 @@
 import { eq } from "drizzle-orm";
 import { isHttps, safeNext, startSession, verifyPassword } from "../lib/auth.ts";
 import { db } from "../lib/db.ts";
+import { clientIp, failed, tooMany } from "../lib/limit.ts";
 import { log, maskEmail } from "../lib/log.ts";
 import { users } from "../lib/schema.ts";
 import Sprite from "../components/Sprite.astro";
 import Layout from "../layouts/Layout.astro";
 import { door } from "../sprites/door.ts";
 
+const SIGNIN_TRIES = 10;
+const SIGNIN_WINDOW_MS = 15 * 60_000;
+
 const next = safeNext(Astro.url.searchParams.get("next"));
 let error = "";
+// too many tries: the error shows, but neither field is marked wrong, and
+// the cursor isn't put back in the password (docs/design/signin/spec.md)
+let limited = false;
 let email = "";
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
   email = String(form.get("email") ?? "").trim().toLowerCase();
   const password = String(form.get("password") ?? "");
-  const user = db.select().from(users).where(eq(users.email, email)).get();
+  // ten wrong passwords for one email from one address, and that pair waits
+  // out the window, right password or not, so it can't be guessed by brute force
+  const key = `signin:${email}:${clientIp(Astro.request, Astro.clientAddress)}`;
 
-  if (user && (await verifyPassword(password, user.passwordHash))) {
-    startSession(Astro.cookies, user.id, isHttps(Astro.request));
-    log("signin", { uid: user.id, user: user.displayName });
-    return Astro.redirect(next, 303);
+  if (tooMany(key, SIGNIN_TRIES, SIGNIN_WINDOW_MS)) {
+    log("signin_limited", { email: maskEmail(email) });
+    error = "Too many tries. Give it 15 minutes, then try again.";
+    limited = true;
+    Astro.response.status = 429;
+  } else {
+    const user = db.select().from(users).where(eq(users.email, email)).get();
+    if (user && (await verifyPassword(password, user.passwordHash))) {
+      startSession(Astro.cookies, user.id, isHttps(Astro.request));
+      log("signin", { uid: user.id, user: user.displayName });
+      return Astro.redirect(next, 303);
+    }
+    failed(key, SIGNIN_WINDOW_MS);
+    // one message for both cases, so the form doesn't reveal who has an account
+    log("signin_failed", { email: maskEmail(email), known: !!user });
+    error = "That email and password don't match an account. Check both and try again.";
+    Astro.response.status = 400;
   }
-  // one message for both cases, so the form doesn't reveal who has an account
-  log("signin_failed", { email: maskEmail(email), known: !!user });
-  error = "That email and password don't match an account. Check both and try again.";
-  Astro.response.status = 400;
 }
 
 // where signing in takes you, read from next; never look up the room itself,
@@ -58,7 +76,7 @@ const where = toRoom
         autocomplete="email"
         value={email}
         required
-        aria-invalid={error ? "true" : undefined}
+        aria-invalid={error && !limited ? "true" : undefined}
         aria-describedby={error ? "signin-error" : undefined}
       />
       <label for="password">Password</label>
@@ -68,8 +86,8 @@ const where = toRoom
         type="password"
         autocomplete="current-password"
         required
-        autofocus={!!error}
-        aria-invalid={error ? "true" : undefined}
+        autofocus={!!error && !limited}
+        aria-invalid={error && !limited ? "true" : undefined}
         aria-describedby={error ? "signin-error" : undefined}
       />
       {error && <p class="error" id="signin-error">{error}</p>}

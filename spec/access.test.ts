@@ -95,3 +95,39 @@ describe("a room's live stream stops once you're no longer in it", () => {
     expect(await endsWithin(hostScreen.ended, 300)).toBe("still open");
   });
 });
+
+describe("passwords and passcodes can't be guessed by brute force", () => {
+  it("stops sign-in after ten wrong passwords, even with the right one", async () => {
+    const { email, password } = await signUp(new Browser());
+    for (let i = 0; i < 10; i++) {
+      expect((await new Browser().post("/signin", { email, password: `wrong-${i}` })).status).toBe(400);
+    }
+    const res = await new Browser().post("/signin", { email, password });
+    expect(res.status).toBe(429);
+    expect(await res.text()).toContain("Too many tries. Give it 15 minutes");
+  });
+
+  it("doesn't count right passwords, or other people's tries", async () => {
+    const mine = await signUp(new Browser());
+    const theirs = await signUp(new Browser());
+    for (let i = 0; i < 10; i++) await new Browser().post("/signin", { email: theirs.email, password: "wrong" });
+    for (let i = 0; i < 12; i++) {
+      expect((await new Browser().post("/signin", { email: mine.email, password: mine.password })).status).toBe(303);
+    }
+  });
+
+  it("stops joining after ten wrong passcodes, typed or from a link (ROOM-7)", async () => {
+    const host = new Browser();
+    await signUp(host);
+    const { passcode } = await createRoom(host);
+    const guesser = new Browser();
+    await signUp(guesser);
+    for (let i = 0; i < 5; i++) expect((await guesser.post("/join", { passcode: "ZZZZZ2" })).status).toBe(404);
+    for (let i = 0; i < 5; i++) expect((await guesser.get("/join/ZZZZZ3")).status).toBe(404);
+
+    const typed = await guesser.post("/join", { passcode });
+    expect(typed.status).toBe(429);
+    expect(await typed.text()).toContain("Too many tries. Give it a minute.");
+    expect((await guesser.get(`/join/${passcode}`)).status).toBe(429);
+  });
+});

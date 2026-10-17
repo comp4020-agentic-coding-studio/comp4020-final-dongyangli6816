@@ -2,6 +2,7 @@
 import JoinCard from "../components/JoinCard.astro";
 import Layout from "../layouts/Layout.astro";
 import { lookOf } from "../lib/avatars.ts";
+import { joinLimited, joinFailed } from "../lib/limit.ts";
 import { log, who } from "../lib/log.ts";
 import { normalisePasscode } from "../lib/passcode.ts";
 import { joinRoom } from "../lib/rooms.ts";
@@ -9,21 +10,29 @@ import { joinRoom } from "../lib/rooms.ts";
 const user = Astro.locals.user;
 if (!user) return Astro.redirect("/signin?next=/join", 303);
 
-let error: "none" | "full" | undefined;
+let error: "none" | "full" | "limited" | undefined;
 let passcode = "";
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
   passcode = normalisePasscode(String(form.get("passcode") ?? ""));
-  const joined = joinRoom(user.id, passcode);
-  if ("roomId" in joined) {
-    log("room.join", { ...who(user), room: joined.roomId, via: "passcode" });
-    return Astro.redirect(`/rooms/${joined.roomId}`, 303);
+  if (joinLimited(user.id)) {
+    // ROOM-7: the code is kept, and not marked wrong, since it may be right
+    log("room.join_refused", { ...who(user), reason: "limited", via: "passcode" });
+    error = "limited";
+    Astro.response.status = 429;
+  } else {
+    const joined = joinRoom(user.id, passcode);
+    if ("roomId" in joined) {
+      log("room.join", { ...who(user), room: joined.roomId, via: "passcode" });
+      return Astro.redirect(`/rooms/${joined.roomId}`, 303);
+    }
+    if (joined.error === "none") joinFailed(user.id);
+    log("room.join_refused", { ...who(user), reason: joined.error, via: "passcode" });
+    // ROOM-2: one generic message, whatever was wrong with the code; ROOM-4:
+    // a full room says so, since the code itself was right
+    error = joined.error;
+    Astro.response.status = error === "full" ? 409 : 404;
   }
-  log("room.join_refused", { ...who(user), reason: joined.error, via: "passcode" });
-  // ROOM-2: one generic message, whatever was wrong with the code; ROOM-4:
-  // a full room says so, since the code itself was right
-  error = joined.error;
-  Astro.response.status = error === "full" ? 409 : 404;
 }
 ---
 
