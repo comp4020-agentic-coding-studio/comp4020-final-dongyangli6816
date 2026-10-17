@@ -173,8 +173,9 @@ if (Astro.request.method === "POST") {
       const read = readSet(ex.kind, form);
       if ("values" in read) {
         logSet(user.id, roomId, ex, read.values);
-        did("set.log", { exercise: ex.name, ...values(read.values) });
-        lift(ex);
+        // the set says where it was done; a second station.claim would be noise
+        const claim = setLifting(user.id, roomId, ex.id);
+        did("set.log", { exercise: ex.name, ...values(read.values), slot: claim?.slot });
         return changed(Astro.redirect(`${here}?exercise=${ex.id}&rested=1`, 303));
       }
       ({ error, field: errorField } = read);
