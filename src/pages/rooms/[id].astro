@@ -9,6 +9,7 @@ import { roomView, setFinished, setLifting, SLACK_GRACE_S, type State } from "..
 import { tapPoster } from "../../lib/dony.ts";
 import { everyone } from "../../lib/floor.ts";
 import { STATE_WORD, stateAt, whatParts } from "../../lib/squad.ts";
+import { log, who } from "../../lib/log.ts";
 import { broadcast } from "../../lib/realtime.ts";
 import { endRoom, isMember, leaveRoom, ROOM_SIZE, touchRoom, wasMember } from "../../lib/rooms.ts";
 import { roomMembers, rooms, users, workouts } from "../../lib/schema.ts";
@@ -61,7 +62,10 @@ if (room?.closedAt && wasMember(roomId, user.id)) {
   return Astro.redirect(`/?ended=${room.passcode}${hadWorkout ? "&logged=1" : ""}`, 303);
 }
 // someone without the passcode can't see that the room exists
-if (!room || !isMember(roomId, user.id)) return new Response("Not found", { status: 404 });
+if (!room || !isMember(roomId, user.id)) {
+  log("room.denied", { ...who(user), room: Astro.params.id, method: Astro.request.method });
+  return new Response("Not found", { status: 404 });
+}
 touchRoom(roomId, user.id);
 const isHost = room.hostUserId === user.id;
 const here = Astro.url.pathname;
@@ -78,39 +82,65 @@ if (Astro.request.method === "POST") {
 
   // GYM-13: whatever this request changes, everyone watching the room sees it
   const changed = <T,>(result: T): T => (broadcast(roomId), result);
+  // OPS-1: one line per thing done in the room, saying who did it
+  const did = (event: string, fields: Parameters<typeof log>[1] = {}) =>
+    log(event, { ...who(user), room: roomId, ...fields });
+  const lift = (ex: Exercise) => {
+    const claim = setLifting(user.id, roomId, ex.id);
+    did("station.claim", { exercise: ex.name, slot: claim?.slot, arrived: claim?.arrived });
+  };
+  const values = (v: SetValues) => ({ kg: v.weightKg, reps: v.reps, s: v.durationS, m: v.distanceM });
 
   if (action === "finish") {
     const workoutId = finishWorkout(user.id, roomId);
     setFinished(user.id, roomId);
+    did("workout.finish", { workout: workoutId });
     return changed(summary(workoutId, "/"));
   }
   if (action === "choose") {
     const ex = exerciseById(Number(form.get("exercise")));
     if (!ex) return Astro.redirect(here, 303);
-    setLifting(user.id, roomId, ex.id);
+    lift(ex);
     return changed(Astro.redirect(`${here}?exercise=${ex.id}`, 303));
   }
   // BOT-1, BOT-4: a tap on Dony's poster. A tap that does nothing answers the
   // same, and the room's next update shows what really happened.
   if (action === "dony") {
     const intent = String(form.get("intent"));
-    if ((intent === "summon" || intent === "send-back") && tapPoster(roomId, user.id, intent)) broadcast(roomId);
+    const took = (intent === "summon" || intent === "send-back") && tapPoster(roomId, user.id, intent);
+    did("dony.tap", { intent, took });
+    if (took) broadcast(roomId);
     return Astro.request.headers.get("x-spotter") === "poster" ? new Response(null, { status: 204 }) : Astro.redirect(here, 303);
   }
-  if (action === "leave") return summary(leaveRoom(user.id, roomId), `/?left=${room.passcode}`);
+  if (action === "leave") {
+    const workoutId = leaveRoom(user.id, roomId);
+    did("room.leave", { workout: workoutId });
+    return summary(workoutId, `/?left=${room.passcode}`);
+  }
   if (action === "end") {
     const ended = endRoom(user.id, roomId);
-    if (!ended) return new Response("Only the host can end the room", { status: 403 });
+    if (!ended) {
+      did("room.end_denied", { host: room.hostUserId });
+      return new Response("Only the host can end the room", { status: 403 });
+    }
+    did("room.end", { workout: ended.workoutId });
     return summary(ended.workoutId, "/");
   }
   if (action === "rest") {
     const delta = String(form.get("delta"));
-    if (delta === "-15" || delta === "15" || delta === "skip") adjustRest(user.id, roomId, delta);
+    if (delta === "-15" || delta === "15" || delta === "skip") {
+      adjustRest(user.id, roomId, delta);
+      did("rest.adjust", { delta });
+    }
     return changed(Astro.redirect(here + Astro.url.search.replace(/[?&]rested=1/, ""), 303));
   }
   if (action === "delete") {
     const own = Number.isInteger(setId) ? setToEdit(user.id, roomId, setId) : undefined;
-    if (!own || !deleteSet(user.id, roomId, setId)) return new Response("Not found", { status: 404 });
+    if (!own || !deleteSet(user.id, roomId, setId)) {
+      did("set.denied", { action, set: form.get("set_id")?.toString() });
+      return new Response("Not found", { status: 404 });
+    }
+    did("set.delete", { set: setId });
     return changed(Astro.redirect(`${here}?exercise=${own.exerciseId}`, 303));
   }
   // GYM-10: Start set ends the rest and puts you on the lift. The page comes
@@ -118,16 +148,21 @@ if (Astro.request.method === "POST") {
   if (action === "start") {
     const ex = exerciseById(Number(form.get("exercise_id")));
     adjustRest(user.id, roomId, "skip");
-    if (ex) setLifting(user.id, roomId, ex.id);
+    did("rest.adjust", { delta: "skip" });
+    if (ex) lift(ex);
     broadcast(roomId);
     submitted = form;
   } else if (action === "edit") {
     const own = Number.isInteger(setId) ? setToEdit(user.id, roomId, setId) : undefined;
     const ex = own && exerciseById(own.exerciseId);
-    if (!own || !ex) return new Response("Not found", { status: 404 });
+    if (!own || !ex) {
+      did("set.denied", { action, set: form.get("set_id")?.toString() });
+      return new Response("Not found", { status: 404 });
+    }
     const read = readSet(ex.kind, form);
     if ("values" in read) {
       editSet(user.id, roomId, setId, read.values);
+      did("set.edit", { set: setId, exercise: ex.name, ...values(read.values) });
       return changed(Astro.redirect(`${here}?exercise=${ex.id}`, 303));
     }
     ({ error, field: errorField } = read);
@@ -138,7 +173,8 @@ if (Astro.request.method === "POST") {
       const read = readSet(ex.kind, form);
       if ("values" in read) {
         logSet(user.id, roomId, ex, read.values);
-        setLifting(user.id, roomId, ex.id);
+        did("set.log", { exercise: ex.name, ...values(read.values) });
+        lift(ex);
         return changed(Astro.redirect(`${here}?exercise=${ex.id}&rested=1`, 303));
       }
       ({ error, field: errorField } = read);

@@ -2,6 +2,7 @@
 import JoinCard from "../components/JoinCard.astro";
 import Layout from "../layouts/Layout.astro";
 import { lookOf } from "../lib/avatars.ts";
+import { log, who } from "../lib/log.ts";
 import { normalisePasscode } from "../lib/passcode.ts";
 import { joinRoom } from "../lib/rooms.ts";
 
@@ -14,7 +15,11 @@ if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
   passcode = normalisePasscode(String(form.get("passcode") ?? ""));
   const joined = joinRoom(user.id, passcode);
-  if ("roomId" in joined) return Astro.redirect(`/rooms/${joined.roomId}`, 303);
+  if ("roomId" in joined) {
+    log("room.join", { ...who(user), room: joined.roomId, via: "passcode" });
+    return Astro.redirect(`/rooms/${joined.roomId}`, 303);
+  }
+  log("room.join_refused", { ...who(user), reason: joined.error, via: "passcode" });
   // ROOM-2: one generic message, whatever was wrong with the code; ROOM-4:
   // a full room says so, since the code itself was right
   error = joined.error;

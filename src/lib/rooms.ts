@@ -1,5 +1,6 @@
 import { and, count, eq, isNull, lt, ne } from "drizzle-orm";
 import { db } from "./db.ts";
+import { log } from "./log.ts";
 import { newPasscode } from "./passcode.ts";
 import { clearPresence } from "./presence.ts";
 import { broadcast } from "./realtime.ts";
@@ -154,6 +155,7 @@ export function sweepIdleRooms(now = Date.now()): void {
     .all();
   for (const r of idle) {
     closeRoom(r.id);
+    log("room.idle_close", { room: r.id });
     broadcast(r.id);
   }
 }

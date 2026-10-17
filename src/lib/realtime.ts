@@ -1,3 +1,4 @@
+import { log } from "./log.ts";
 import { AWAY_MS, roomView } from "./presence.ts";
 import { touchRoom } from "./rooms.ts";
 
@@ -46,9 +47,11 @@ export function subscribe(roomId: number, userId: number, signal: AbortSignal): 
   const encoder = new TextEncoder();
   let client: Client | undefined;
   let ping: ReturnType<typeof setInterval> | undefined;
+  const opened = Date.now();
 
   const close = () => {
     if (!client) return;
+    log("stream.close", { uid: userId, room: roomId, s: Math.round((Date.now() - opened) / 1000) });
     streams.get(roomId)?.delete(client);
     if (!streams.get(roomId)?.size) streams.delete(roomId);
     client = undefined;
@@ -72,6 +75,7 @@ export function subscribe(roomId: number, userId: number, signal: AbortSignal): 
       };
       if (!streams.has(roomId)) streams.set(roomId, new Set());
       streams.get(roomId)!.add(client);
+      log("stream.open", { uid: userId, room: roomId, watching: streams.get(roomId)!.size });
       touchRoom(roomId, userId);
       client.send("retry: 2000\n\n");
       // the newcomer gets the room, and everyone else sees them back from Away

@@ -4,7 +4,7 @@ import { EQUIPMENT, exerciseById, type Equipment } from "./exercises.ts";
 import { parseLook, type Look } from "../sprites/avatar.ts";
 import { lookOf } from "./avatars.ts";
 import { presence, roomMembers, rooms, sets, users, workouts } from "./schema.ts";
-import { claimStation, releaseStation, roomStations } from "./stations.ts";
+import { claimStation, releaseStation, roomStations, type Claim } from "./stations.ts";
 import { donyView, type DonyMember } from "./dony.ts";
 
 export const SLACK_GRACE_S = 30; // GYM-11
@@ -49,15 +49,16 @@ export type RoomView = {
 };
 
 // Choosing a lift (or logging a set of it) puts the person on it, on a
-// station with its equipment (GYM-4).
-export function setLifting(userId: number, roomId: number, exerciseId: number): void {
+// station with its equipment (GYM-4). Returns the station it took.
+export function setLifting(userId: number, roomId: number, exerciseId: number): Claim | undefined {
   const exercise = exerciseById(exerciseId);
-  if (exercise) claimStation(userId, roomId, exercise.equipment);
+  const claim = exercise && claimStation(userId, roomId, exercise.equipment);
   const row = { roomId, state: "lifting" as const, exerciseId, stateStartedAt: Date.now() };
   db.insert(presence)
     .values({ userId, ...row })
     .onConflictDoUpdate({ target: presence.userId, set: row })
     .run();
+  return claim;
 }
 
 export function setFinished(userId: number, roomId: number): void {
