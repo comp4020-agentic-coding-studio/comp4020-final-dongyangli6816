@@ -71,6 +71,7 @@ stay plain, as section 3 of the design system requires.
 | ACC-3: "Sign in and sign out. A sign-in lasts 30 days on that browser" (4-weeks spec) | Same `<form method="post">` with no `action`, so it posts to the current URL with `?next=` kept. The server logic is untouched. |
 | Spec check: a set "is in their history after signing out and back in" (`spec/core-loop.test.ts` posts `email` and `password` to `/signin` and expects 303) | Field `name`s, `type`s, the POST and the 303 redirect are all unchanged |
 | One generic error, "so the form doesn't reveal who has an account" (comment in `signin.astro`) | One `.error` for both cases, with new copy that still doesn't say which field was wrong |
+| Brute-force protection: 10 wrong passwords per email and IP in 15 minutes, then 429 (Crit 10 security fix; `src/lib/limit.ts`) | The Rate limited state: the same `.error` slot, no field marked invalid, copy that names the real wait |
 | ROOM-3: invite links "survive signing up first"; `/join/:code` "asks the person to sign in or sign up first and then joins" (4-weeks spec, Screens) | The sign-up stub's `href` is `/signup?next=${encodeURIComponent(next)}`, as today. For `/rooms/…` the stub says "You'll still land in the gym." |
 | "Tap targets are at least 44 px; the main button sits within thumb reach" (4-weeks spec, Screens) | Inputs and buttons are 48 px tall. **Sign in** is full width at the bottom of the card. |
 | "reachable by keyboard with a visible focus ring" (4-weeks spec, Screens; design system section 12) | Native form order: email, password, Sign in, Sign up. Paper ink ring (Layout change L1). |
@@ -177,6 +178,7 @@ focus ring) is not for the build.
 | **Heading to a gym** | `GET /signin?next=/rooms/12` (the room redirects here) | Line: "Sign in and you'll walk straight into the gym." Stub: "New here? You'll still land in the gym." The stub's href is `/signup?next=%2Frooms%2F12`. |
 | **Heading to History** | `?next=/history` (shown in the Pending state of the mockup) | Line: "Sign in to open your logbook." |
 | **Error** | `POST` with a wrong email or password (status 400, as today) | The email stays filled and the password is empty. `p.error#signin-error` appears under the password field and above the button. Both inputs get `aria-invalid="true"` and `aria-describedby="signin-error"`, and the password input gets `autofocus`, so the person can retype straight away. The context line still follows `next`. |
+| **Rate limited** | `POST` after 10 wrong passwords for that email from that IP within 15 minutes (status 429; refused even with the right password until the window passes) | The same slot as Error, same place and styling: `p.error#signin-error` reads `Too many tries. Give it 15 minutes, then try again.` The email stays filled and the password is empty. **No `aria-invalid`** on either input, since the password may well be right (join's Room full and Rate limited precedent). Both inputs keep `aria-describedby="signin-error"`, so whoever lands on a field hears why. **No `autofocus`**: retyping at once would only be refused again. The context line and the Sign up stub still follow `next`. The copy never says whether the email has an account. |
 | **Pending** | The person taps **Sign in** (script above) | The button is disabled with its label kept and stays pressed down (L4): `--muted` fill, no drop shadow, moved down `--px`. Below it, "Checking you in…" appears in `.hint` inside the `role="status"` region. No spinner. |
 | **Success** | `POST` matches (status 303 to `next`) | No page of its own: the person arrives where `next` points, as today. Nothing to draw here. |
 | **Empty / signed out** | n/a | This page *is* the signed-out destination. On first use the fields are empty, which is the Default state. |
@@ -195,6 +197,11 @@ under Open questions.
   `.hint` under the password field, for example "Forgot it? There's no reset
   yet, so ask whoever runs this Spotter." The user should decide that, so it
   isn't in the mockup.
+- **Rate limited is an error that doesn't mark the fields**, as join's Room
+  full is: it sits in the error slot but without `aria-invalid`, because the
+  input may be correct. "15 minutes" rather than join's "a minute" because
+  that is the real window, and it is always long enough: the lock lifts no
+  later than 15 minutes after the tenth wrong try.
 - Nothing else breaks the design system. The door sprite follows section 10:
   5 colours, ink outline, whole-number 3× scaling (96 px) and `crispEdges`.
 

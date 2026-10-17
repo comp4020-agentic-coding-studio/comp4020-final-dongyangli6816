@@ -634,6 +634,33 @@
 
       <hr class="state-break" />
 
+      <!-- state: rate-limited -->
+      <p class="state-label">Rate limited <span>10 wrong passwords in 15 min, 429, email kept, nothing focused</span></p>
+      <div class="card">
+        <div class="entry-head">
+          <svg class="entry-door" viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><use href="/sprites.svg#door"/></svg>
+          <div>
+            <h1>Sign in</h1>
+            <p class="entry-where">Welcome back. The weights missed you.</p>
+          </div>
+        </div>
+        <form method="post">
+          <label for="email-5">Email</label>
+          <input id="email-5" name="email" type="email" autocomplete="email" value="sam.nguyen@bigpond.com" aria-describedby="signin-error-5" required />
+          <label for="password-5">Password</label>
+          <input id="password-5" name="password" type="password" autocomplete="current-password" aria-describedby="signin-error-5" required />
+          <p class="error" id="signin-error-5">Too many tries. Give it 15 minutes, then try again.</p>
+          <div class="actions"><button type="submit" class="wide">Sign in</button></div>
+          <p class="hint entry-status" role="status"></p>
+        </form>
+      </div>
+      <div class="actions entry-alt">
+        <p>New here?</p>
+        <a class="button secondary" href="/signup?next=%2F">Sign up</a>
+      </div>
+
+      <hr class="state-break" />
+
       <!-- state: pending -->
       <p class="state-label">Pending <span>tapped Sign in, slow gym wifi</span></p>
       <div class="card">
