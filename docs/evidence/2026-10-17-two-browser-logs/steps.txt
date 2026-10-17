@@ -1,0 +1,17 @@
+--- both sign up
+--- Mia opens a room
+--- Tom types a wrong code, then the right one
+--- Mia picks bench and logs a set
+--- Tom picks squat
+--- Tom tries to delete Mia's set 1
+404
+--- Tom tries to edit it to 200 kg
+404
+--- Tom tries to end Mia's room
+403
+--- Mia finishes; Tom tries to open her summary /workouts/1
+404
+--- Tom leaves, then tries to look back in
+404
+404
+--- Mia signs out
