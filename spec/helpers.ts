@@ -52,7 +52,8 @@ export async function createRoom(b: Browser): Promise<{ path: string; passcode: 
 }
 
 // A room's live stream (GYM-13) as this browser sees it. next() resolves with
-// the next `room` event, or rejects if none arrives within ms; close() hangs up.
+// the next `room` event, or rejects if none arrives within ms; ended resolves
+// when the server hangs up; close() hangs up from this end.
 export type RoomEvent = {
   now: number;
   closed: boolean;
@@ -75,8 +76,9 @@ export async function openEvents(b: Browser, roomPath: string) {
   const res = await b.request(`${roomPath}/events`, { signal: hangUp.signal });
   const queue: RoomEvent[] = [];
   const waiting: ((e: RoomEvent) => void)[] = [];
+  let ended: Promise<void> = Promise.resolve();
   if (res.ok && res.body) {
-    (async () => {
+    ended = (async () => {
       const decoder = new TextDecoder();
       let buffer = "";
       try {
@@ -122,6 +124,7 @@ export async function openEvents(b: Browser, roomPath: string) {
         if (test(e)) return e;
       }
     },
+    ended,
     close: () => hangUp.abort(),
   };
 }
