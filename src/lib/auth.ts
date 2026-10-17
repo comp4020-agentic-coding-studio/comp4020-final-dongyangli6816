@@ -63,6 +63,12 @@ export function endSession(cookies: AstroCookies): void {
   cookies.delete(COOKIE, { path: "/" });
 }
 
+// Where to go after signing in, up or saving a look: a path on this site, or
+// home. "//evil.com" and "/\evil.com" start with "/" but browsers read them
+// as another host, so they go home too.
+export const safeNext = (next: string | null | undefined, home = "/"): string =>
+  next && next.startsWith("/") && !next.startsWith("//") && !next.includes("\\") ? next : home;
+
 // The request reached Fly over HTTPS (Fly sets X-Forwarded-Proto), or the app
 // was hit directly over HTTPS.
 export const isHttps = (request: Request): boolean =>

@@ -1,6 +1,6 @@
 ---
 import { eq } from "drizzle-orm";
-import { hashPassword, isHttps, startSession } from "../lib/auth.ts";
+import { hashPassword, isHttps, safeNext, startSession } from "../lib/auth.ts";
 import { db } from "../lib/db.ts";
 import { log, maskEmail } from "../lib/log.ts";
 import { users } from "../lib/schema.ts";
@@ -10,7 +10,7 @@ import Layout from "../layouts/Layout.astro";
 import { parseLook, randomLook } from "../sprites/avatar.ts";
 import { dumbbell, kettlebell } from "../sprites/props.ts";
 
-const next = Astro.url.searchParams.get("next") ?? "/";
+const next = safeNext(Astro.url.searchParams.get("next"));
 const errors: Record<string, string> = {};
 let email = "";
 let displayName = "";
@@ -48,8 +48,7 @@ if (Astro.request.method === "POST") {
     log("account.create", { uid: user.id, user: displayName });
     // AV-3: a new account can edit its look straight away; an invite goes
     // straight on to its room instead
-    const to = next.startsWith("/") ? next : "/";
-    return Astro.redirect(to === "/" ? "/avatar?new=1&next=/" : to, 303);
+    return Astro.redirect(next === "/" ? "/avatar?new=1&next=/" : next, 303);
   }
   log("account.create_refused", { email: maskEmail(email), fields: Object.keys(errors).join(",") });
   Astro.response.status = 400;
