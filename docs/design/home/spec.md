@@ -16,8 +16,10 @@ This section is identical in all three Lobby specs.
   the person's own avatar on `.floor` (the gym-floor patch signup introduced:
   a `--deep` wall with a green skirting line over the page's checker), name
   tag above (`.nametag`), bobbing in the two-frame idle loop (400 ms a frame,
-  `steps(1)`, frozen under reduced motion). Sprites are 4× (64 px) except in
-  the editor, where you're the subject (6× on phones, 7× from 900 px).
+  `steps(1)`, frozen under reduced motion; the upper body moves 2 sprite
+  pixels). Sprites are 32 × 32 (ADR 0005), shown at 2× (64 px) except in the
+  editor, where you're the subject (3×, 96 px, on phones; 4×, 128 px, from
+  900 px). A list's head crop is `viewBox="2 0 28 22"` at 2× (56 × 44 px).
   - home: a 9 rem tile beside `Hi, Mia`, with **Edit avatar** under the
     greeting;
   - join: the floor sits under the `h1` and lead, with the gym's open
@@ -152,9 +154,9 @@ The shell is the layout's. **Bold** names are new, from `<style id="page">`.
 
 As built, with one change. In `ul.squad`, each `li`'s first child becomes
 the person's avatar head: the shared avatar renderer with `head` set
-(`viewBox="1 0 14 11"`, drawn at 3×, 42 × 33 px, no animation). It
+(`viewBox="2 0 28 22"`, drawn at 2×, 56 × 44 px, no animation). It
 replaces the 8 × 8 `head()` sprite. The grid's first column goes from
-32px to 42px. The mockup people's looks are in the avatar spec. The
+32px to 56px. The mockup people's looks are in the avatar spec. The
 `head()` export in `avatar.ts` can then go.
 
 ### Signed in
@@ -162,7 +164,7 @@ replaces the 8 × 8 `head()` sprite. The grid's first column goes from
 1. `header.`**`player`**: a grid, `9rem 1fr`, centred vertically.
    - `a.floor.`**`player-tile`** `href="/avatar" tabindex="-1"
      aria-hidden="true"` > `span.stand` > `span.nametag` {displayName} +
-     the avatar (`svg.av`, 4×, idle loop).
+     the avatar (`svg.av`, 2×, 64 px, idle loop).
    - `div` > `h1` `Hi, {displayName}` + `a.`**`edit-link`**`[href=/avatar]`
      with the `pencil` icon (8 × 8 at 2×) + `Edit avatar`.
 2. **One bubble at most** (unchanged logic and copy): Left, Ended (with a

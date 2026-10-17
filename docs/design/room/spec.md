@@ -46,7 +46,7 @@ the mirrors) becomes **Dony's "Member of the month" poster**, and it is a
 button on the map: tap the full poster and Dony, the user's own likeness,
 steps out of it and trains like anyone; tap the empty poster and he goes back
 in. It is the only control for him, never in the sheet or the dock. He is
-drawn with his own 16 × 16 sprite (appendix), appears on the map and as the
+drawn with his own 32 × 32 sprite (appendix, people), appears on the map and as the
 last row of the squad list exactly like a person, with **no bot marker
 anywhere**, and doesn't count in "N of 12 in". The alone line no longer says
 "just you" while he's out. No banner when he arrives or leaves: the poster and
@@ -91,9 +91,9 @@ The Gym group is this page alone. It sits beside Lobby (`home`, `join`,
   `140 kg × 5`, `BW + 10 kg × 6`, `1:30`, `5 km · 25:00`.
 - **A person is drawn one way everywhere**: the Lobby group's avatar sprite
   (`svg.av`, slot classes `k s t h`, colours from `--av-skin`, `--av-hair`,
-  `--av-shirt`; `docs/design/avatar/spec.md`). The map uses the whole 16 × 16
+  `--av-shirt`; `docs/design/avatar/spec.md`). The map uses the whole 32 × 32
   sprite at the map's scale; the people list uses the same head crop as
-  home's squad rows (`viewBox="1 0 14 11"`, 42 × 33 px). Mia, Tom, Ji-woo and
+  home's squad rows (`viewBox="2 0 28 22"`, 56 × 44 px, 2×). Mia, Tom, Ji-woo and
   Priya wear the looks the avatar spec gives them.
 - **A squad row is home's "What your squad sees" row**: head, name over a
   dim "what they're doing" line, state chip on the right.
@@ -209,7 +209,7 @@ him unchanged. New, in `<style id="page">`:
 
 | Piece | What it is |
 | --- | --- |
-| `.map .poster` | The poster button on the back wall: a 48 px tap area centred on tile (5,0), the 16 × 16 poster inside at the map's scale |
+| `.map .poster` | The poster button on the back wall: a 48 px tap area centred on tile (5,0), the 32 × 32 poster inside at the map's scale |
 | `.poster.pending` | Pressed while the tap is on its way: sunk one sprite pixel, `aria-disabled` |
 | `.poster.resting` | The 30 s after a send back (full poster only): the art at 50%, `aria-disabled`, no countdown |
 | `.poster .bulbs`, `.bulbs.alt`, `@keyframes poster-bulbs` (14 Oct) | The hint: marquee bulbs round the full poster while the room has never had a summon; two sets swap lit and unlit for the first minute, then stay lit |
@@ -398,8 +398,8 @@ the colours and that's any chat app's bot. What makes this Spotter's:
   what people do to you, INT-3).
 - **He looks like someone, not a mascot.** Black hair with a side part,
   glasses, a violet bomber open over a black tee, black trousers: a person
-  in the user's likeness, made from the same 16 × 16 body proportions as
-  everyone, with his own four colours.
+  in the user's likeness, made from the same 32 × 32 body proportions as
+  everyone, with his own three colours and their shades.
 
 **Where the poster's tap area goes.** At 2× the tile is 32 px, so the
 button reaches 8 px past it all round to make 48 × 48 px: 8 px up into the
@@ -466,9 +466,9 @@ station's leaf corners, which already mean "focused" and "yours". Bulbs are
 new on this map, read as "look here" to anyone who has seen a theatre, and
 fit the joke the poster already makes ("Member of the month").
 
-- **Drawn.** Two sets of bulbs on the 16 × 16 grid, mirrored left to right:
-  every other pixel along the top row, down both outer columns and beside
-  the plate (appendix). Set A and set B alternate along the ring.
+- **Drawn.** Two sets of 2 × 2 bulbs on the 32 × 32 grid, mirrored left to
+  right: along the top row, down both outer columns and beside the plate
+  (appendix, people). Set A and set B alternate along the ring.
 - **Animated.** For the page's first minute the sets swap every 500 ms,
   lit in `--paper`, unlit in `--edge`, `steps(1)`, so the light runs round
   the poster: system 11's two-frame loop, at one swap every 500 ms, far
@@ -535,7 +535,7 @@ month poster only make sense on a gym wall.
 
 | Requirement (source) | Element |
 | --- | --- |
-| GYM-1 "one fixed map on a 16 px tile grid: walls, floor, an entrance, a water cooler, aisles, and 12 stations. It fits a portrait phone screen and a laptop window without scrolling" (4-week) | `.map`: the 10 × 10 grid in section 3.2, drawn at the largest whole-number scale that fits: 2× (320 px) on a 360 to 430 px phone, 3× (480 px) on a laptop. Never cropped or scrolled. |
+| GYM-1 "one fixed map on a 32 px tile grid (ADR 0005): walls, floor, an entrance, a water cooler, aisles, and 12 stations. It fits a portrait phone screen and a laptop window without scrolling" (4-week) | `.map`: the 10 × 10 grid in section 3.2, 32 × 32 tiles, drawn at the largest whole-number scale that fits: 1× (320 px) on a 360 to 430 px phone, 2× (640 px) on a laptop window at least 1104 × 760 (Departure 19), else 1×. Never cropped or scrolled. |
 | "scaled by the largest whole number that fits, and recomputed on resize" (4-week, Rendering) | The scale script in 3.8; CSS media queries are the no-JS fallback. |
 | GYM-2 "A new room starts with the treadmill, flat bench, squat rack and dumbbell rack on four stations, and eight empty stations" | Slots 1 to 4 (the row along the mirrors) hold those four; slots 5 to 12 are numbered empty bays. State "Room alone". |
 | GYM-4 / brief: "you are told which station you claimed" | `.station.mine` (leaf corners), the leaf ring on your tag, `p.spot` "Your spot: Lifting platform 5" in the sheet, and your row in the list. Choosing posts `action=choose` (as the server now expects). |
@@ -561,7 +561,7 @@ month poster only make sense on a gym wall.
 | LOG-3 "Each pre-fills from the person's last set of that exercise", **changed for timed kinds** (user, 8 Oct) | Weight and bodyweight pre-fill as before. Duration and cardio open and come back empty (placeholders `0` / `00`), with `p.last` as the reference. See Departure 15: the build updates LOG-3 in `docs/product/spec-4-weeks.md`. |
 | BOT-1 "The back wall's poster is 'Member of the month: Dony'. Anyone in the room can tap it (by touch, click or keyboard) to summon Dony: on every screen the poster goes empty and he hops down onto the walkway" (4-week, Dony) | `button.poster` on tile (5,0): a real `<button>` (so touch, click, Enter and Space all work), submitting `form#dony` with `action=dony&intent=summon`. On the room's update, every screen plays the shake, swaps to the empty frame and plays the hop and the walk (3.2a). States "Summon", "Dony just in". |
 | BOT-1 "He can be summoned again any number of times after being sent back; each summon is a fresh visit" | The same button and the same animation once the rest is over. State "Summoned again": he starts Idle at the lockers again. |
-| BOT-2 "his own 16 × 16 sprite (an Asian character with glasses and a cool outfit) in every pose a person has, plus the poster's full and empty frames, within the art rules" | Appendix "Dony": stand, walk × 2, lift × 2, rest, sit, hop, plus the poster's full, glint and empty frames over the wall tile. Four colours plus props, ink outline, whole-number scale. Not in the avatar editor (nothing in the Lobby group changes). |
+| BOT-2 "his own 16 × 16 sprite (an Asian character with glasses and a cool outfit) in every pose a person has, plus the poster's full and empty frames, within the art rules" | Appendix "32 × 32 art, people" (ADR 0005 moved every sprite to 32 × 32): stand, walk × 2, lift × 2, rest, sit, hop, plus the poster's full, glint and empty frames over the wall tile. Seven colours plus props, ink outline, whole-number scale. Not in the avatar editor (nothing in the Lobby group changes). |
 | BOT-3 "He goes Idle, Lifting, Resting and Slacking … never Finished, and every screen sees each change within about a second" | Dony is one more entry in the room's view, drawn by the same code as people: same spots, same poses, same tags, same rows (3.2a, 3.4). States "Dony · Idle", "· Lifting", "· Resting", "· Slacking", at 390 and 1280 px. |
 | BOT-4 "Anyone in the room can tap the empty poster to send Dony back: he stops whatever he's doing, frees his station, walks back and hops into the poster" | The empty poster's button submits `intent=send-back`. State "Send back" (Tom sends back the Dony that Priya summoned), and "Sent back". |
 | BOT-4 (14 Oct) "sending Dony back has no wait … the 30 s rest applies only to summoning him again after a send back" | `.poster.resting` on the full poster only: art at 50%, `aria-disabled`, "(not ready yet)" in its name; no countdown (system 14). The empty poster is never `.resting`. |
@@ -606,14 +606,14 @@ dock (3.2), as a shortcut.
   <h1 class="map-sign" id="room-title"><span class="vh">Room </span><span class="passcode">SB64FR</span></h1>
   <p class="conn" role="status"><span class="badge">Live</span></p>
   <p class="vh" id="floor">On the floor: treadmill, flat bench, … 6 stations empty.</p>
-  <div class="map" style="--s: 2">
-    <svg class="tiles" viewBox="0 0 160 160" aria-hidden="true">…</svg>
+  <div class="map" style="--s: 1">
+    <svg class="tiles" viewBox="0 0 320 320" aria-hidden="true">…</svg>
     <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg …/></div>
     … 12 stations …
     <button type="button" class="avatar on-station" style="--x: 6; --y: 1" data-state="lifting"
             aria-label="Mia, lifting, back squat on squat rack 3">
       <span class="tag state-lifting"><span class="nm">Mia</span></span>
-      <svg class="av" viewBox="0 0 16 16" style="--av-skin: …; --av-hair: …; --av-shirt: …">…</svg>
+      <svg class="av" viewBox="0 0 32 32" style="--av-skin: …; --av-hair: …; --av-shirt: …">…</svg>
     </button>
     …
   </div>
@@ -631,13 +631,15 @@ dock (3.2), as a shortcut.
 
 #### Size
 
-`--t` is one tile: `16px × --s`. The board is `10 × --t` square, centred in
-the panel. `--s` is the largest whole number with
-`160 × s ≤ the panel's inner width` and
-`160 × s ≤ innerHeight − top bar height − 48`, at least 1, recomputed on
-`resize` (3.8). Without JS: `--s: 2`, and `3` at `min-width: 900px` and
-`min-height: 600px`. Results: 2× (320 px) on every phone from 360 to 430 px
-wide, 3× (480 px) in a 1280 × 800 laptop window. The panel's top padding is
+`--t` is one tile: `32px × --s` (ADR 0005). The board is `10 × --t` square,
+centred in the panel. `--s` is the largest whole number with
+`320 × s ≤ the panel's inner width` and
+`320 × s ≤ innerHeight − top bar height − 48`, at least 1, recomputed on
+`resize` (3.8). Without JS: `--s: 1`, and `2` at `min-width: 1120px` and
+`min-height: 760px`. Results: 1× (320 px) on every phone from 360 to 430 px
+wide; 2× (640 px) on a laptop whose window is at least 1104 px wide and
+about 760 px tall (the night page is 72rem wide for this, Departure 19),
+1× below that. The panel's top padding is
 16 px; the passcode tab overhangs the border by half its height.
 
 #### The grid (10 × 10 tiles, origin top left)
@@ -671,7 +673,7 @@ y 9    _ _ _ _ E e _ _ _ _     front wall; the entrance is (4,9) and (5,9)
   "empty station" rule: fill empty stations in slot order (5, 6, … 12), so
   the floor fills from the top.
 - **The tile layer is static**: render it once (`Sprite.astro` can draw the
-  whole 160 × 160 grid as one SVG, or the page can use a cached `<symbol>`).
+  whole 320 × 320 grid as one SVG, or the page can use a cached `<symbol>`).
 
 #### Who stands where
 
@@ -693,9 +695,9 @@ y 9    _ _ _ _ E e _ _ _ _     front wall; the entrance is (4,9) and (5,9)
   the same state, and the list is the readable view.
 - **Spots are given out by join order** among the people in that state, so
   every screen puts everyone in the same place with no server state.
-- **On a station** the avatar's feet drop 6 sprite pixels into the aisle
-  below (`top: (y + 1.375) × --t`) and the tag keeps a 6-pixel gap above the
-  head, so the top of the equipment shows between them.
+- **On a station** the avatar's feet drop 12 sprite pixels (of 32) into the
+  aisle below (`top: (y + 1.375) × --t`) and the tag keeps a 12-pixel gap
+  above the head, so the top of the equipment shows between them.
 - **Stacking**: `z-index: y`, so lower rows draw over higher ones; a hovered
   or focused avatar goes to 15, so its tag is never hidden.
 
@@ -741,7 +743,7 @@ straight to the target. Walking never delays anything in the sheet.
 #### Stations
 
 `div.station` with `style="--x; --y"`, `data-slot`, and `data-equipment`
-when there is equipment. It holds one 16 × 16 SVG: the equipment, or the
+when there is equipment. It holds one 32 × 32 SVG: the equipment, or the
 empty bay with its number. Yours (the slot you hold while Lifting, Resting,
 Slacking or Away) adds `.mine` and a second SVG, the leaf corners.
 
@@ -756,7 +758,7 @@ Slacking or Away) adds `.mine` and a second SVG, the leaf corners.
 <!-- in .map, straight after svg.tiles, before the stations and avatars -->
 <button type="submit" form="dony" name="intent" value="summon" class="poster"
         aria-label="Call Dony out of his poster">
-  <svg viewBox="0 0 16 16" aria-hidden="true">
+  <svg viewBox="0 0 32 32" aria-hidden="true">
     <use href="#poster-full" /><use href="#poster-glint" class="glint" />
     <!-- only while the room has never had a summon (14 Oct) -->
     <use href="#poster-bulbs" class="bulbs" /><use href="#poster-bulbs-alt" class="bulbs alt" />
@@ -816,12 +818,13 @@ send back), `posterRestingUntil`, and Dony's state while out (below).
 Dony is one more member in the view the page already draws, with three
 differences:
 
-1. **His sprite is his own.** Render `svg.av` from `DONY` (appendix) instead
-   of `poseOf(pose)` plus a hair overlay, with `style="--av-skin: #e9bd94;
-   --av-hair: #2e3046; --av-shirt: #8b6cf2"` (his fixed palette). Pose names
+1. **His sprite is his own.** Render `svg.av` from `donyFrame(frame)` (appendix,
+   people) instead of `poseOf(pose)` plus a hair overlay, with `DONY_VARS`
+   on the svg (his fixed palette and its shades). Pose names
    match people's: `stand`, `lift`, `rest`, `sit`, plus `walk1`, `walk2`,
    `hop`. The idle bob, the lift loop (`lift` and `lift2`) and the phone glow
-   work on his grids exactly as on people's: rows 0 to 12 bob.
+   work on his grids exactly as on people's: rows 0 to 25 bob
+   (`AVATAR_UPPER_ROWS`).
 2. **He is last.** In the squad list, after every person (people stay in
    join order). Among the people in his state, he takes the spot after the
    last person: with Priya Idle, Priya is at (8,7) and Dony at (6,7).
@@ -1069,7 +1072,7 @@ them).
 
 ```html
 <li class="me">                                   <!-- .me for you, .away when Away -->
-  <svg class="av" viewBox="1 0 14 11" style="--av-…">…</svg>
+  <svg class="av" viewBox="2 0 28 22" style="--av-…">…</svg>
   <span class="who">Priya <span class="badge">You</span> <span class="badge host">Host</span>
     <span class="what">Rest <span class="n">1:24 left</span> · lifting platform 5</span></span>
   <span class="chips"><span class="chip state-resting"><svg…/>Resting</span></span>
@@ -1217,8 +1220,9 @@ stations, avatars and rows from it.
 ## 5. Departures
 
 1. **Map size: 10 × 10 tiles**, confirmed by the user (system 16 had left
-   it open). It gives 2× on a 360 px phone, with room for 12 stations two
-   tiles apart, a cooler, lockers, aisles and a door.
+   it open). At 32 px tiles (ADR 0005) it is 320 px at 1×, which fits a
+   360 px phone, with room for 12 stations two tiles apart, a cooler,
+   lockers, aisles and a door.
 2. **Name tags are the state colour with an ink name**, not paper on 70%
    black. System 5 says the state colour is used for the name tag; system 9
    describes it the other way. At 2× there's no room for an icon box in the
@@ -1308,6 +1312,27 @@ stations, avatars and rows from it.
     the first minute are people, and the wall stays quiet behind a set.
     It uses `steps(1)`, tokens only, and freezes under reduced motion.
 
+19. **The night page is 72rem wide, not 64rem** (15 Oct, ADR 0005). At
+   32 px tiles the map is 320 px (1×) or 640 px (2×). Layout's
+   `body.night main { max-width: 64rem }` leaves the map's column 560 px
+   inside its panel next to the 24rem sheet, so 640 never fit on any laptop,
+   however tall: a 1280 × 800 or 1440 × 900 window got a 320 px map in a
+   560 px panel (before: `.shots/room/p32b/before-busy-room-default-desktop.png`).
+   At 72rem (1152 px) the column holds 688 px, so 640 fits from a 1104 px
+   wide window (after: `.shots/room/p32b/m2-busy-room-default-desktop.png`).
+   Only the room uses `surface="night"`, so no other page changes. The build
+   changes `body.night main` in `Layout.astro` to `max-width: 72rem` and the
+   no-JS fallback in `GymMap.astro` to `@media (min-width: 1120px) and
+   (min-height: 760px) { --s: 2 }`. `fitMap()` stays as it is. Height is
+   still the limit on short windows: 640 needs `innerHeight ≥ 640 + top bar
+   (about 72 px) + 48 = 760`. A 1440 × 900 screen's browser window (about
+   810 px inside) gets 2×, and so does a 1280 × 800 viewport (800 − 72 −
+   48 = 680, the size `scripts/shot.mjs` shoots). A 1280 × 800 *screen*,
+   whose browser window is about 710 px inside after the menu bar and
+   toolbar, still gets 1×. Trimming the top bar or the panel's header can't
+   win back the missing 50 px without hiding the top bar, which every page
+   shares, so this design leaves the height rule alone.
+
 ## 6. Open questions
 
 - **Tapping Dony's own avatar** (14 Oct). This week it does what anyone
@@ -1348,7 +1373,7 @@ stations, avatars and rows from it.
   (appendix). All are drawn with `Sprite.astro`-style rects, crisp edges,
   whole-number scale.
 - Two-frame loops (system 11): Idle and Resting bob the upper body (rows 0
-  to 12) 1 px every 400 ms; Lifting alternates the lift pose with the bar
+  to 25, `AVATAR_UPPER_ROWS`) 2 sprite pixels every 400 ms; Lifting alternates the lift pose with the bar
   at shoulder height every 250 ms; Slacking alternates the phone glow on
   and off every 400 ms. Freeze on frame one under reduced motion.
 - Keep the old ids for everything the spec tests touch: `class="passcode"`,
@@ -1356,623 +1381,17 @@ stations, avatars and rows from it.
 
 ## Appendix: the gym's sprites
 
-### Poses (on the Lobby group's `BODY`, slots `k s t h`)
+### Poses
 
-- **stand**: `BODY` with the hair overlay at row 0.
-- **lift**: `BODY` with rows 9 to 12 replaced by
-  `".kskttttttttksk."`, `"..kttttttttttk.."`, `"..kttttttttttk.."`,
-  `"...kttttttttk..."`; arms at columns 1 to 2 and 13 to 14: row 1 is `k k`
-  / `k k`, rows 2 to 8 are `k s` / `s k`. Then the hair overlay, then a bar
-  prop on row 0: `"mmwwwwwwwwwwwwmm"` (`m` dim, `w` paper).
-- **rest**: stand, plus a bottle prop at (12, 8):
-  `".k."`, `"kwk"`, `"krk"`, `"krk"`, `"krk"`, `"kkk"` (`r` resting blue).
-- **sit**: two empty rows, `BODY` rows 0 to 8, then
-  `"...kkttttttkk..."`, `"..ktttkkkktttk.."`, `"..ktskkkkkkstk.."`,
-  `".kkkkkkkkkkkkkk."`, `".kssk......kssk."`; the hair overlay at row 2; a
-  phone glow prop `"ww"` at (7, 12).
-
-Prop slots in CSS: `.av .pm { fill: var(--dim) }`, `.av .pw { fill:
-var(--paper) }`, `.av .pr { fill: var(--resting) }`.
+Redrawn at 32 × 32: see "Appendix: 32 × 32 art, people (ADR 0005)".
 
 ### Map, tiles, scenery, equipment
 
-```ts
-// src/sprites/gym.ts (proposed). Palette letters are token values:
-// k ink, n night, f floor, p panel, d deep, g green, e edge, m dim, w paper, l leaf, r resting
-export const MAP = [
-  "WMMMKPMMMW",
-  "[...::...]",
-  "[::::::::]",
-  "[...::...]",
-  "[::::::::]",
-  "[...::...]",
-  "[::::::::]",
-  "C...::...L",
-  "[...::...]",
-  "____Ee____",
-];
+Redrawn at 32 × 32: see "Appendix: 32 × 32 art, the room (ADR 0005)".
 
-export const STATIONS = [ // slot 1 to 12, [x, y]
-  [1, 1], [3, 1], [6, 1], [8, 1], [1, 3], [3, 3], [6, 3], [8, 3], [1, 5], [3, 5], [6, 5], [8, 5],
-];
+### Dony and the poster (14 Oct, BOT-1, BOT-2)
 
-export const TILES = {
-  ".": [
-    "pppppppppppppppp",
-    "pfffffffffffffff",
-    "pfffffnfffffffff",
-    "pfffffffffffnfff",
-    "pffnffffffffffff",
-    "pfffffffffffffff",
-    "pfffffffffnfffff",
-    "pfffffffffffffff",
-    "pffffffnffffffff",
-    "pfffffffffffffff",
-    "pfffffffffffffnf",
-    "pffnffffffffffff",
-    "pfffffffffffffff",
-    "pfffffffnfffffff",
-    "pfffffffffffffff",
-    "pfffffffffffffff",
-  ],
-  ":": [
-    "pppppppppppppppp",
-    "pppppppppppppppp",
-    "ppgppppppppgpppp",
-    "pppppppppppppppp",
-    "pppppppppppppppp",
-    "pppppppppppppppp",
-    "pppppgppppppppgp",
-    "pppppppppppppppp",
-    "pppppppppppppppp",
-    "pppppppppppppppp",
-    "ppgppppppppgpppp",
-    "pppppppppppppppp",
-    "pppppppppppppppp",
-    "pppppppppppppppp",
-    "pppppgppppppppgp",
-    "pppppppppppppppp",
-  ],
-  "W": [
-    "kkkkkkkkkkkkkkkk",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "gggggggggggggggg",
-    "gggggggggggggggg",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "kkkkkkkkkkkkkkkk",
-    "kkkkkkkkkkkkkkkk",
-  ],
-  "M": [
-    "kkkkkkkkkkkkkkkk",
-    "dddddddddddddddd",
-    "dkkkkkkkkkkkkkkd",
-    "dkmmmmmmmmmwmmkd",
-    "dkmmmmmmmmwmmmkd",
-    "dkmmmmmmmwmmmmkd",
-    "dkmmmmmmwmmmmmkd",
-    "dkmmmmmwmmmmwmkd",
-    "dkmmmmwmmmmwmmkd",
-    "dkmmmwmmmmwmmmkd",
-    "dkmmmmmmmwmmmmkd",
-    "dkmmmmmmmmmmmmkd",
-    "dkkkkkkkkkkkkkkd",
-    "dddddddddddddddd",
-    "kkkkkkkkkkkkkkkk",
-    "kkkkkkkkkkkkkkkk",
-  ],
-  "K": [
-    "kkkkkkkkkkkkkkkk",
-    "dddddddddddddddd",
-    "dddddkkkkkkddddd",
-    "ddddkwwwwwwkdddd",
-    "dddkwwwwkwwwkddd",
-    "dddkwwwwkwwwkddd",
-    "dddkwwwwkwwwkddd",
-    "dddkwwwwkkkwkddd",
-    "gggkwwwwwwwwkggg",
-    "gggkwwwwwwwwkggg",
-    "ddddkwwwwwwkdddd",
-    "dddddkkkkkkddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "kkkkkkkkkkkkkkkk",
-    "kkkkkkkkkkkkkkkk",
-  ],
-  "P": [
-    "kkkkkkkkkkkkkkkk",
-    "dddddddddddddddd",
-    "ddkkkkkkkkkkkkdd",
-    "ddkllllllllllkdd",
-    "ddkllllllllllkdd",
-    "ddklkkllllkklkdd",
-    "ddklkkkkkkkklkdd",
-    "ddklkkllllkklkdd",
-    "ggkllllllllllkgg",
-    "ggklkkkkkkkklkgg",
-    "ddkllllllllllkdd",
-    "ddklkkkkkllllkdd",
-    "ddkkkkkkkkkkkkdd",
-    "dddddddddddddddd",
-    "kkkkkkkkkkkkkkkk",
-    "kkkkkkkkkkkkkkkk",
-  ],
-  "[": [
-    "kdddddddddddddgk",
-    "kdddddddddddddgk",
-    "kdddddddddddddgk",
-    "kdddddddddddddgk",
-    "kdddddddddddddgk",
-    "kdddddddddddddgk",
-    "kdddddddddddddgk",
-    "kkkkkkkkkkkkkkgk",
-    "kdddddddddddddgk",
-    "kdddddddddddddgk",
-    "kdddddddddddddgk",
-    "kdddddddddddddgk",
-    "kdddddddddddddgk",
-    "kdddddddddddddgk",
-    "kdddddddddddddgk",
-    "kkkkkkkkkkkkkkgk",
-  ],
-  "]": [
-    "kgdddddddddddddk",
-    "kgdddddddddddddk",
-    "kgdddddddddddddk",
-    "kgdddddddddddddk",
-    "kgdddddddddddddk",
-    "kgdddddddddddddk",
-    "kgdddddddddddddk",
-    "kgkkkkkkkkkkkkkk",
-    "kgdddddddddddddk",
-    "kgdddddddddddddk",
-    "kgdddddddddddddk",
-    "kgdddddddddddddk",
-    "kgdddddddddddddk",
-    "kgdddddddddddddk",
-    "kgdddddddddddddk",
-    "kgkkkkkkkkkkkkkk",
-  ],
-  "_": [
-    "kkkkkkkkkkkkkkkk",
-    "gggggggggggggggg",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "kkkkkkkkkkkkkkkk",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "kkkkkkkkkkkkkkkk",
-  ],
-  "E": [
-    "kdkggggggggggggg",
-    "kdkggggggggggggg",
-    "kdkggggggggggggg",
-    "kdkggggggggggggl",
-    "kdkgggggggggggll",
-    "kdkgggggggggglll",
-    "kdkgggggggggllll",
-    "kdkggggggggggggl",
-    "kdkggggggggggggl",
-    "kdkggggggggggggl",
-    "kdkggggggggggggl",
-    "kdkggggggggggggl",
-    "kdkggggggggggggl",
-    "kdkggggggggggggg",
-    "kdkggggggggggggg",
-    "kdkggggggggggggg",
-  ],
-  "e": [
-    "gggggggggggggkdk",
-    "gggggggggggggkdk",
-    "gggggggggggggkdk",
-    "lggggggggggggkdk",
-    "llgggggggggggkdk",
-    "lllggggggggggkdk",
-    "llllgggggggggkdk",
-    "lggggggggggggkdk",
-    "lggggggggggggkdk",
-    "lggggggggggggkdk",
-    "lggggggggggggkdk",
-    "lggggggggggggkdk",
-    "lggggggggggggkdk",
-    "gggggggggggggkdk",
-    "gggggggggggggkdk",
-    "gggggggggggggkdk",
-  ],
-};
-
-// drawn over the wall tile named by base
-export const SCENERY = {
-  C: { base: "[", grid: [
-    "................",
-    ".....kkkkkk.....",
-    "....krrrrrrk....",
-    "....krrwrrrk....",
-    "....krrwrrrk....",
-    "....krrrrrrk....",
-    ".....kkrrkk.....",
-    "...kkkkkkkkkk...",
-    "...kwwwwwwwwk...",
-    "...kwrkwwkrwk...",
-    "...kwwwwwwwwk...",
-    "...kmmmmmmmmk...",
-    "...kmmmmmmmmk...",
-    "...kmmmmmmmmk...",
-    "...kmmmmmmmmk...",
-    "...kkkkkkkkkk...",
-  ] },
-  L: { base: "]", grid: [
-    "kkkkkkkkkkkkkkkk",
-    "keeeeeekkeeeeeek",
-    "kemmmmekkemmmmek",
-    "keeeeeekkeeeeeek",
-    "kemmmmekkemmmmek",
-    "keeeeeekkeeeeeek",
-    "keeeeeekkeeeeeek",
-    "keeeewekkeweeeek",
-    "keeeewekkeweeeek",
-    "keeeeeekkeeeeeek",
-    "keeeeeekkeeeeeek",
-    "keeeeeekkeeeeeek",
-    "keeeeeekkeeeeeek",
-    "keeeeeekkeeeeeek",
-    "kkkkkkkkkkkkkkkk",
-    "kkkkkkkkkkkkkkkk",
-  ] },
-};
-
-export const EQUIPMENT = {
-  "treadmill": [
-    "..kkkkkkkkkkkk..",
-    "..kmmmmmmmmmmk..",
-    "..kmkkkkkkkkmk..",
-    "..kmkwwwwwwkmk..",
-    "..kmkkkkkkkkmk..",
-    "..kmmmmmmmmmmk..",
-    "..kkmkkkkkkmkk..",
-    "..kmmknnnnkmmk..",
-    "..kmmknnnnkmmk..",
-    "..kmmkkkkkkmmk..",
-    "..kmmknnnnkmmk..",
-    "..kmmknnnnkmmk..",
-    "..kmmkkkkkkmmk..",
-    "..kmmknnnnkmmk..",
-    "..kmmknnnnkmmk..",
-    "..kkkkkkkkkkkk..",
-  ],
-  "flat-bench": [
-    "kkkk........kkkk",
-    "kmmkwwwwwwwwkmmk",
-    "kmmk.kk..kk.kmmk",
-    "kkkk.kk..kk.kkkk",
-    "....kkkkkkkk....",
-    "....kggggggk....",
-    "....kggggggk....",
-    "....kggggggk....",
-    "....kggggggk....",
-    "....kggggggk....",
-    "....kggggggk....",
-    "....kggggggk....",
-    "....kkkkkkkk....",
-    ".....kmk.kmk....",
-    ".....kmk.kmk....",
-    ".....kkk.kkk....",
-  ],
-  "squat-rack": [
-    "..kkkkkkkkkkkk..",
-    "..kmmmmmmmmmmk..",
-    "..kkkkkkkkkkkk..",
-    "..kmk......kmk..",
-    "kkkmk......kmkkk",
-    "kmkmk......kmkmk",
-    "kmwwwwwwwwwwwwmk",
-    "kmkmk......kmkmk",
-    "kkkmk......kmkkk",
-    "..kmk......kmk..",
-    "..kmk......kmk..",
-    "..kmk......kmk..",
-    "..kmk......kmk..",
-    ".kkmkk....kkmkk.",
-    ".kmmmk....kmmmk.",
-    ".kkkkk....kkkkk.",
-  ],
-  "dumbbell-rack": [
-    "................",
-    ".kkk.kkkkkk.kkk.",
-    ".kmkkkmkkmkkkmk.",
-    ".kmwwwmkkmwwwmk.",
-    ".kmkkkmkkmkkkmk.",
-    ".kkk.kkkkkk.kkk.",
-    "keeeeeeeeeeeeeek",
-    "kkkkkkkkkkkkkkkk",
-    ".kkk.kkkkkk.kkk.",
-    ".kmkkkmkkmkkkmk.",
-    ".kmwwwmkkmwwwmk.",
-    ".kmkkkmkkmkkkmk.",
-    ".kkk.kkkkkk.kkk.",
-    "keeeeeeeeeeeeeek",
-    "kkkkkkkkkkkkkkkk",
-    ".kk..........kk.",
-  ],
-  "lifting-platform": [
-    "kkkkkkkkkkkkkkkk",
-    "keeeeeeeeeeeeeek",
-    "keeeeeeeeeeeeeek",
-    "keekkkeeeekkkeek",
-    "keekmkeeeekmkeek",
-    "keekmkeeeekmkeek",
-    "keekmkkkkkkmkeek",
-    "keekmwwwwwwmkeek",
-    "keekmkkkkkkmkeek",
-    "keekmkeeeekmkeek",
-    "keekmkeeeekmkeek",
-    "keekkkeeeekkkeek",
-    "keeeeeeeeeeeeeek",
-    "keeeeeeeeeeeeeek",
-    "keeeeeeeeeeeeeek",
-    "kkkkkkkkkkkkkkkk",
-  ],
-  "pull-up-bar": [
-    ".kkkkkkkkkkkkkk.",
-    ".kwwwwwwwwwwwwk.",
-    ".kkkkkkkkkkkkkk.",
-    ".kmk........kmk.",
-    ".kmk........kmk.",
-    ".kmk........kmk.",
-    ".kmk........kmk.",
-    ".kmk........kmk.",
-    ".kmk........kmk.",
-    ".kmk........kmk.",
-    ".kmk........kmk.",
-    ".kmk........kmk.",
-    ".kmk........kmk.",
-    "kkmkk......kkmkk",
-    "kmmmk......kmmmk",
-    "kkkkk......kkkkk",
-  ],
-  "cable-machine": [
-    "..kkkkkkkkkkkk..",
-    "..kmmmmmmmmmmk..",
-    "..kmkkkkkkkkmk..",
-    "..kmk......kmk..",
-    "..kmk.kkkk.kmk..",
-    "..kmk.kwwk.kmk..",
-    "..kmk.kkkk.kmk..",
-    "..kmk.kwwk.kmk..",
-    "..kmk.kkkk.kmk..",
-    "..kmk.kwwk.kmk..",
-    "..kmk.kkkk.kmk..",
-    "..kmk.kwwk.kmk..",
-    "..kmk.kkkk.kmk..",
-    ".kkmkkkkkkkkmkk.",
-    ".kmmmmmmmmmmmmk.",
-    ".kkkkkkkkkkkkkk.",
-  ],
-  "exercise-mat": [
-    "................",
-    "...kkkkkkkkkk...",
-    "...kggggggggk...",
-    "...keeeeeeeek...",
-    "...kggggggggk...",
-    "...kggggggggk...",
-    "...keeeeeeeek...",
-    "...kggggggggk...",
-    "...kggggggggk...",
-    "...keeeeeeeek...",
-    "...kggggggggk...",
-    "...kggggggggk...",
-    "...keeeeeeeek...",
-    "...kggggggggk...",
-    "...kkkkkkkkkk...",
-    "................",
-  ],
-};
-
-export const CLAIM = [ // your station: leaf corners
-  "llll........llll",
-  "l..............l",
-  "l..............l",
-  "l..............l",
-  "................",
-  "................",
-  "................",
-  "................",
-  "................",
-  "................",
-  "................",
-  "................",
-  "l..............l",
-  "l..............l",
-  "l..............l",
-  "llll........llll",
-];
-```
-
-The empty bay is generated, not drawn: a dashed square in `e` on rows and columns 1 and 14 (pixels `i` where `((i - 1) >> 1) % 2 === 0`, plus 14), and the slot number in 3 × 5 digits in `e`, centred, from row 5. Bay 7 comes out as:
-
-```
-................
-.ee..ee..ee..ee.
-.e............e.
-................
-................
-.e....eee.....e.
-.e......e.....e.
-.......e........
-.......e........
-.e.....e......e.
-.e............e.
-................
-................
-.e............e.
-.ee..ee..ee..ee.
-................
-```
-
-### Dony (14 Oct, BOT-2)
-
-A new module, `src/sprites/dony.ts`. His slots are the avatar's (`k` ink,
-`s` skin, `h` hair, `t` shirt), so `Avatar.astro`'s `runs()` and the `.av`
-slot classes draw him unchanged, plus the gym's props (`m` dim, `w` paper,
-`r` resting blue, as classes `pm pw pr`). His colours are fixed and set on
-the svg as custom properties:
-
-```ts
-// src/sprites/dony.ts (proposed): Dony, the gym's member of the month.
-// His own grids, not BODY plus hair; four colours, set on the svg:
-// --av-skin skin, --av-hair charcoal (hair, tee, trousers), --av-shirt jacket.
-export const DONY_LOOK = { skin: "#e9bd94", hair: "#2e3046", shirt: "#8b6cf2" };
-
-const HEAD = [
-  ".....kkkkkk.....",
-  "....khhhhhhkk...",  // side part: the hair overhangs to his left
-  "...khhhhhhhhhk..",
-  "...khhhhhhhhhk..",
-  "...khhhsssssk...",  // the fringe swept across the forehead
-  "..kksttkksttkk..",  // glasses: ink frames, temples past the head; each lens an eye glint (s) and a tint (t)
-  "...kssssssssk...",
-  "...kssssssssk...",
-  "....kssssssk....",
-];
-// an open violet jacket over a black tee
-const TORSO = ["...kktthhttkk...", "..ktttthhttttk..", "..ktktthhttktk..", "..ksktthhttksk.."];
-const BELT = "...kkkkkkkkkk...";
-const LEGS = ["...khhk..khhk...", "...kkkk..kkkk..."];
-const ARMS_UP_TORSO = ["ksktttthhttttksk", "..ktttthhttttk..", "..ktttthhttttk..", "...kttthhtttk..."];
-```
-
-The frames (rows 0 to 8 are `HEAD` unless stated; props in `m w r`):
-
-| Frame | Grid |
-| --- | --- |
-| `stand` | `HEAD`, `TORSO`, `BELT`, `LEGS` |
-| `walk1` | `stand` with rows 14 to 15 `"...khhk..kkkk..."`, `"...kkkk........."` |
-| `walk2` | `stand` with rows 14 to 15 `"...kkkk..khhk..."`, `".........kkkk..."` |
-| `lift` | `HEAD`, `ARMS_UP_TORSO`, `BELT`, `LEGS`; arms at columns 0 to 1 and 14 to 15: row 1 `kk` / `kk`, rows 2 to 8 `ks` / `sk`; the bar prop `"mmwwwwwwwwwwwwmm"` on row 0 |
-| `lift2` | `HEAD`, `ARMS_UP_TORSO`, `BELT`, `LEGS` with no raised arms; the bar on row 8 (at the shoulders) |
-| `rest` | `stand` plus the bottle prop at (12, 8): `".k."`, `"kwk"`, `"krk"`, `"krk"`, `"krk"`, `"kkk"` |
-| `sit` | two blank rows, `HEAD` (rows 2 to 10), then `"...kktthhttkk..."`, `"..ktttkkkktttk.."`, `"..ktskkkkkkstk.."`, `".kkkkkkkkkkkkkk."`, `".khhk......khhk."`; the phone glow `"ww"` at (7, 12) |
-| `hop` | `lift` without the bar, rows 14 to 15 `"..khhk....khhk.."`, `"..kkkk....kkkk.."` (arms up, feet apart) |
-
-Loops: Idle and Resting bob rows 0 to 12 by 1 px every 400 ms; Lifting
-alternates `lift` and `lift2` every 250 ms; Slacking toggles the phone glow
-every 400 ms; walking alternates `walk1` and `walk2` per tile. Freeze on the
-first frame under reduced motion. Every frame is 16 × 16, uses at most `k s
-h t` plus props, and has an ink outline.
-
-### The poster (14 Oct, BOT-1, BOT-2)
-
-Drawn over the wall tile `W` (`.` lets the wall show), in Dony's palette
-(`k s h t` as above, painted with the same `.av`-style slot classes or as
-hex in a symbol):
-
-```ts
-export const POSTER = {
-  full: [
-    "................",
-    "..kkkkkkkkkkkk..",
-    "..kttttttttttk..",  // the violet frame
-    "..kttkkkkkkttk..",
-    "..ktkhhhhhhktk..",  // his hair
-    "..ktkhhssssktk..",
-    "..kkkstkkstkkk..",  // his glasses, the frames reaching the poster's edge
-    "..ktkssssssktk..",
-    "..kttksssskttk..",
-    "..kkttkhhkttkk..",  // the black tee's collar
-    "..kttthhhhtttk..",
-    "..kkkkkkkkkkkk..",
-    "....kssssssk....",  // the plate: "Member of the month"
-    "....kskksksk....",  //   in three ink marks
-    "....kkkkkkkk....",
-    "................",
-  ],
-  // one frame every 8 s, drawn over full: his lenses catch the light
-  glint: ["................", "................", "................", "................", "................", "................",
-          "......s...s.....", "................", "................", "................", "................", "................",
-          "................", "................", "................", "................"],
-  empty: [
-    "................",
-    "..kkkkkkkkkkkk..",
-    "..kttttttttttk..",
-    "..kthhhhhhhhtk..",  // the backing, charcoal
-    "..kthhtttthhtk..",  // his outline in violet, where he was
-    "..kthththhthtk..",
-    "..kthththhthtk..",
-    "..kthhthhthhtk..",
-    "..kthhhtthhhtk..",
-    "..kthtthhtthtk..",
-    "..ktthhhhhhttk..",
-    "..kkkkkkkkkkkk..",
-    "....kssssssk....",
-    "....kskksksk....",
-    "....kkkkkkkk....",
-    "................",
-  ],
-};
-```
-
-**The bulbs (14 Oct, the hint).** Two more grids in `POSTER`, each a set of
-single pixels in one slot, painted with `fill="currentColor"` (not the
-poster's palette) so the CSS colours them lit or unlit. Mirrored left to
-right; A and B alternate along the ring:
-
-```ts
-  // the hint: bulbs round the poster while the room has never had a summon.
-  // "b" is drawn in currentColor; A is `bulbs`, B is `bulbs-alt`.
-  bulbs: [
-    "..b...b..b...b..",
-    "................",
-    "b..............b",
-    "................",
-    "................",
-    "................",
-    "b..............b",
-    "................",
-    "................",
-    "................",
-    "b..............b",
-    "................",
-    "..b..........b..",
-    "................", "................", "................",
-  ],
-  "bulbs-alt": [
-    "b...b......b...b",
-    "................",
-    "................",
-    "................",
-    "b..............b",
-    "................",
-    "................",
-    "................",
-    "b..............b",
-    "................",
-    "................",
-    "................",
-    "b..............b",
-    "................", "................", "................",
-  ],
-```
-
-They sit in the wall's columns 0, 1, 14 and 15 and rows 0 to 12, outside
-the frame (columns 2 to 13, rows 1 to 11) and beside the plate (row 12), so
-they never cover his face. On the wall's top ink row they read as bulbs set
-into the ceiling trim.
+Redrawn at 32 × 32: see "Appendix: 32 × 32 art, people (ADR 0005)".
 
 `MAP` keeps its `P` (the poster's place, read by the page to position the
 button), but the tile layer draws `TILES.W` there; `TILES.P` can go.
@@ -1983,4 +1402,1834 @@ New 8 × 8 icons for `src/sprites/icons.ts` (`c` is the text colour):
 export const phoneOffIcon = icon("cccc.c.c", "c..c..c.", "c..c.c.c", "c..c....", "c..c....", "cccc....", "c.cc....", "cccc....");
 export const signalIcon = icon("......c.", "........", "...cc.c.", "...cc...", "cc.cc.c.", "cc.cc...", "cc.cc.c.", "........");
 export const claimIcon = icon("cc....cc", "c......c", "........", "........", "........", "........", "c......c", "cc....cc");
+```
+
+## Appendix: 32 × 32 art, people (ADR 0005)
+
+The only copy of the gym's people at 32 × 32: the four poses, Dony's eight
+frames and his poster. Every grid was checked by script to be exactly 32 ×
+32 and to use at most 7 colours plus props. Paste each block into
+`src/sprites/`, replacing the 16 × 16 grid and its `upscale()` call. Once
+`/sprites.svg` carries them, the mockup's `#av-…-32`, `#dony-…-32` and
+`#poster-…-32` symbols go back to `/sprites.svg#av-…`, `#dony-…` and
+`#poster-…` (drop the `-32`). The tiles, machines, bays and scenery are
+part 2: see "Appendix: 32 × 32 art, the room (ADR 0005)".
+
+Coordinates are (column, row), 0-based.
+
+### What this changes in the code
+
+- **Props can use body slots.** The lift's raised arms and the rest's
+  fingers round the bottle are drawn in the props layer, so they cover every
+  hair style (curls, long and the ponytail would otherwise draw over a raised
+  arm). In `Avatar.astro`, `runs(props, 0, true)` already keeps any letter
+  that isn't `m`, `w` or `r` as its own slot class (`PROP[ch] ?? ch`), and
+  `scripts/sprites.ts` paints props with the same `SLOT` table, so nothing
+  in either file needs to change.
+- **`hairRow`** is 0 for stand and rest, **3 for lift** (the head moves down
+  3 rows so the bar on rows 0 and 1 clears the tallest hair, the curls, whose
+  overlay starts on its row 0) and **2 for sit**. Dony has no overlay.
+- **Dony's shades.** `DONY_VARS` gains `--av-skin-2: #cf9a73` (the Lobby
+  shade of his skin swatch), `--av-hair-2: #4a4e6e` (lighter than his
+  charcoal, as black hair's shade is: a darker one vanishes into the ink)
+  and `--av-shirt-2: #6650c8`. Every mockup look now sets its swatch's
+  `-2` shade as the Lobby group lists them.
+- **The poster's palette** gains `T` (`#6650c8`, the frame's shadow side and
+  the bomber's shade) and `w` (paper, the photo's background and the
+  plate). Six colours plus the bulbs' `currentColor`.
+- **Head crop** in the squad list: `viewBox="2 0 28 22"` at 56 × 44 px (2×),
+  as home's; the list's first column grows from 42 px to 56 px. The old
+  42 × 33 px would be a 1.5× scale.
+- **The mockup art sheet** shows sprites at 64 px (2×); its old 48 px was
+  3× of 16 and would be 1.5× of 32.
+
+### The upper-rows split and the motion amounts
+
+- **`AVATAR_UPPER_ROWS` stays 26.** In every pose and frame, everything
+  that should move together sits above row 26: the raised arms, the bar,
+  the bottle (base on row 25), the phone and its glow (rows 23 to 24), and
+  Dony's racked bar and elbows in `lift2` (rows 19 to 25). Rows 26 to 31 are
+  shorts or trousers, knees, shins and shoes, which stay planted. Sit doesn't
+  bob (`.pose-sit .av-top { animation: none }`), so its lap on rows 25 to 26
+  is never split.
+- **The idle bob: 2 sprite pixels**, confirmed (`translateY(2px)` in sprite
+  units, 800 ms `steps(1)`). One pixel of 32 is too small to read at 1×
+  (320 px map), and 2 is what the Lobby floor and editor already use.
+- **The station drop: 0.375 of a tile (12 of 32 px)**, confirmed. The feet
+  (soles on row 31) land 12 px into the aisle tile below the station, so
+  the sprite covers the station tile from its row 12 down and the tag ends
+  at the tile's top edge: the machine's top 12 rows show between them (13
+  with the sprite's empty row 0, 15 in sit, whose head starts on row 3).
+  Part 2: draw each machine so its top 12 rows say what it is.
+- **The hop: half a tile (16 of 32 px)**, confirmed, one frame.
+
+### `src/sprites/avatar.ts`: the poses
+
+On `BODY` and `HAIR` from `docs/design/avatar/spec.md`, unchanged.
+
+- **stand**: `BODY`, no props.
+- **lift** (Lifting; its loop is the bob at 500 ms): head and torso 3 rows down; the
+  arms straight up at columns 1 to 5 and 26 to 30, fists on rows 0 to 3
+  round a paper bar on row 1 with dim plates edge-on at columns 0 and 31.
+  The sleeves join the shoulders at rows 17 to 23. The bar is as wide as the
+  sprite, so the barbell reads at 1×.
+- **rest** (Resting): `BODY`, and a bottle held up in the right hand,
+  columns 24 to 28, rows 13 to 25: ink outline, a paper cap, blue water with
+  a paper highlight down its left, the fingers (`s s S`) drawn over its lower
+  third at the person's hand (rows 22 to 24).
+- **sit** (Slacking): head 2 rows down; elbows out, forearms in to a phone
+  held in both hands at the lap (columns 13 to 18, rows 22 to 24), its
+  screen (`w`, columns 14 to 17, rows 23 to 24) blinking with `av-glow`; the
+  shorts as a lap (rows 25 to 26), knees towards us, shins and trainers
+  below (rows 27 to 31).
+
+```ts
+// src/sprites/avatar.ts: replaces poseOf16, put() and the upscale in poseOf.
+// Props are drawn over the body and the hair, so they may use the body's
+// slots too (k s S t T for the lift's raised arms, the rest's fingers):
+// Avatar.astro's runs() keeps any letter that isn't m, w or r as its slot.
+const EMPTY = Array<string>(32).fill("................................");
+
+// lift: the head 3 rows down so the bar clears every hair style; the arms
+// are props, so they draw over curls, long and the ponytail
+const LIFT_BODY = [
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "..........kkkkkkkkkkkk..........",
+  "........kksssssssssssskk........",
+  ".......kssssssssssssssssk.......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  ".....ksssskksssssssskkssssk.....",
+  ".....kSssskksssssssskksssSk.....",
+  ".....ksssskksssssssskkssssk.....",
+  "......kSssssssssssssssssSk......",
+  "......kSssssssssssssssssSk......",
+  ".......kSsssssskkssssssSk.......",
+  "........kksssssssssssskk........",
+  "..........kkkSSSSSSkkk..........",
+  "......kkkktttTTTTTTtttkkkk......",
+  "......kTttttttttttttttttTk......",
+  ".......kTttttttttttttttTk.......",
+  ".......kTttttttttttttttTk.......",
+  ".......kkTTTTTTTTTTTTTTkk.......",
+  ".......kkkkkkkkkkkkkkkkkk.......",
+  ".......kkkkkkk....kkkkkkk.......",
+  "........kssssk....kssssk........",
+  "........kSsssk....ksssSk........",
+  ".......kTTTTTk....kTTTTTk.......",
+  ".......kkkkkkk....kkkkkkk.......",
+];
+const LIFT_PROPS = [
+  "mkkkkk....................kkkkkm",
+  "mkssskwwwwwwwwwwwwwwwwwwwwkssskm",
+  "mksssk....................kssskm",
+  "mkSSSk....................kSSSkm",
+  ".kSssk....................kssSk.",
+  ".kSssk....................kssSk.",
+  ".kSssk....................kssSk.",
+  ".kSssk....................kssSk.",
+  ".kSssk....................kssSk.",
+  ".kSssk....................kssSk.",
+  ".kSssk....................kssSk.",
+  ".kSssk....................kssSk.",
+  ".kSssk....................kssSk.",
+  ".kSssk....................kssSk.",
+  ".kSssk....................kssSk.",
+  ".kSssk....................kssSk.",
+  ".kSssk....................kssSk.",
+  ".kkkkk....................kkkkk.",
+  ".kTttk....................kttTk.",
+  ".kTttk....................kttTk.",
+  ".kTttk....................kttTk.",
+  ".kTtttt..................ttttTk.",
+  "..kTttt..................tttTk..",
+  "...kkkkk................kkkkk...",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+];
+
+// rest: BODY, with a bottle held in the right hand, the fingers over it
+const REST_PROPS = [
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  ".........................kkk....",
+  ".........................kwk....",
+  "........................kkkkk...",
+  "........................kwrrk...",
+  "........................kwrrk...",
+  "........................kwrrk...",
+  "........................kwrrk...",
+  "........................kwrrk...",
+  "........................kwrrk...",
+  "........................ksssk...",
+  "........................ksssk...",
+  "........................kSSSk...",
+  "........................kkkkk...",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+];
+
+// sit: the head 2 rows down, forearms in to a phone at the lap, knees
+// towards us; the glow (w) blinks in GymMap.astro
+const SIT_BODY = [
+  "................................",
+  "................................",
+  "................................",
+  "..........kkkkkkkkkkkk..........",
+  "........kksssssssssssskk........",
+  ".......kssssssssssssssssk.......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  ".....ksssskksssssssskkssssk.....",
+  ".....kSssskksssssssskksssSk.....",
+  ".....ksssskksssssssskkssssk.....",
+  "......kSssssssssssssssssSk......",
+  "......kSssssssssssssssssSk......",
+  ".......kSsssssskkssssssSk.......",
+  "........kksssssssssssskk........",
+  "..........kkkSSSSSSkkk..........",
+  "......kkkktttTTTTTTtttkkkk......",
+  "....kkTttttttttttttttttttTkk....",
+  "...kTttkTttttkkkkkkttttTkttTk...",
+  "...kssskTttttkkkkkkttttTksssk...",
+  "...kSsssssssskkkkkkssssssssSk...",
+  "....kkkkkkkkkkkkkkkkkkkkkkkk....",
+  "....kkkkkkkkkkkkkkkkkkkkkkkk....",
+  "......kssssssk....kssssssk......",
+  "......kssssssk....kssssssk......",
+  "......kSsssssk....ksssssSk......",
+  ".....kTTTTTTTk....kTTTTTTTk.....",
+  ".....kkkkkkkkk....kkkkkkkkk.....",
+];
+const SIT_PROPS = [
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "..............wwww..............",
+  "..............wwww..............",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+];
+
+const POSES: Record<Pose, { body: string[]; hairRow: number; props: string[] }> = {
+  stand: { body: BODY, hairRow: 0, props: EMPTY },
+  lift: { body: LIFT_BODY, hairRow: 3, props: LIFT_PROPS },
+  rest: { body: BODY, hairRow: 0, props: REST_PROPS },
+  sit: { body: SIT_BODY, hairRow: 2, props: SIT_PROPS },
+};
+export const poseOf = (pose: Pose) => POSES[pose];
+```
+
+### `src/sprites/dony.ts`: Dony
+
+His own grids, not `BODY` plus hair, on the same head shape, shoulders and
+legs as the person so he stands beside them as an equal. Black hair, a
+side part on his left (the grid's right) with a shade line, swept across his
+forehead to his right; glasses as two ink rims (columns 8 to 13 and 18 to
+23, rows 10 to 13) joined by a bridge, temples running to his ears, the
+person's eyes inside each lens; a paper glint pixel at each lens's top right
+(in props, so it reads at 1×); a violet bomber open over a
+black tee (the tee down the middle in `h`, its edges `H`), ribbed charcoal
+cuffs and hem; charcoal trousers; trainers in the bomber's shade.
+
+- **walk1 / walk2**: one leg steps up 2 rows (trousers shorten, the shoe
+  lifts), the other planted; mirrored between the two.
+- **lift / lift2**: lift is the members' lift in his sleeves (charcoal cuffs
+  at row 12). lift2 racks the bar across his chest (row 21, plates on rows
+  19 to 23 at columns 0 to 1 and 30 to 31), fists on rows 19 to 22 just
+  outside his shoulders, cuffs on row 23, elbows on rows 24 to 25; nothing below row 25, so the whole arm bobs.
+- **rest**: stand, with the members' bottle.
+- **sit**: the members' sit in his bomber and trousers.
+- **hop**: lift without the bar, open hands, feet kicked apart.
+
+```ts
+// src/sprites/dony.ts: replaces HEAD, TORSO, BELT, LEGS, ARMS_UP_TORSO, BAR,
+// armsUp(), donyFrame16() and the upscale in donyFrame.
+export const DONY_VARS =
+  "--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8";
+
+const STAND = [
+  "...........kkkkkkkkkkk..........",
+  ".........kkhhhhhhhhhhhkk........",
+  "........khhhhhhhhhhhhhhhk.......",
+  ".......khhhhhhhhhhhhhhhhhk......",
+  "......khhhhhhhhhhhhhhhHhhk......",
+  "......khhhhhhhhhhhhhhkHhhk......",
+  "......khhhhhhhhhhhhhhkshhk......",
+  "......khHhhhhhhhhhhhkssHhk......",
+  "......kHHhhhhhhhhkkssssHk.......",
+  "......kHkHHhhhkkksssssssk.......",
+  ".....ksskkkkkksssskkkkkkssk.....",
+  ".....kkkkskkskkkkkkskkskkkk.....",
+  ".....ksskskksksssskskkskssk.....",
+  "......kSkkkkkksssskkkkkkSk......",
+  "......kSssssssssssssssssSk......",
+  ".......kSsssssskkssssssSk.......",
+  "........kksssssssssssskk........",
+  "..........kkkSSSSSSkkk..........",
+  "......kkkkttthhhhhhtttkkkk......",
+  "....kkTttttthhhhhhhhtttttTkk....",
+  "...kTttkTtttHhhhhhhHtttTkttTk...",
+  "...kTttkTtttHhhhhhhHtttTkttTk...",
+  "...kHHHkTtttHhhhhhhHtttTkHHHk...",
+  "...kssskTtttHhhhhhhHtttTksssk...",
+  "...kSSSkTtttHhhhhhhHtttTkSSSk...",
+  "....kkkkkHHHHhhhhhhHHHHkkkkk....",
+  ".......kkkkkkkkkkkkkkkkkk.......",
+  ".......khhhhhk....khhhhhk.......",
+  "........khhhHk....kHhhhk........",
+  "........khhhHk....kHhhhk........",
+  ".......kTTTTTk....kTTTTTk.......",
+  ".......kkkkkkk....kkkkkkk.......",
+];
+const WALK1 = [
+  "...........kkkkkkkkkkk..........",
+  ".........kkhhhhhhhhhhhkk........",
+  "........khhhhhhhhhhhhhhhk.......",
+  ".......khhhhhhhhhhhhhhhhhk......",
+  "......khhhhhhhhhhhhhhhHhhk......",
+  "......khhhhhhhhhhhhhhkHhhk......",
+  "......khhhhhhhhhhhhhhkshhk......",
+  "......khHhhhhhhhhhhhkssHhk......",
+  "......kHHhhhhhhhhkkssssHk.......",
+  "......kHkHHhhhkkksssssssk.......",
+  ".....ksskkkkkksssskkkkkkssk.....",
+  ".....kkkkskkskkkkkkskkskkkk.....",
+  ".....ksskskksksssskskkskssk.....",
+  "......kSkkkkkksssskkkkkkSk......",
+  "......kSssssssssssssssssSk......",
+  ".......kSsssssskkssssssSk.......",
+  "........kksssssssssssskk........",
+  "..........kkkSSSSSSkkk..........",
+  "......kkkkttthhhhhhtttkkkk......",
+  "....kkTttttthhhhhhhhtttttTkk....",
+  "...kTttkTtttHhhhhhhHtttTkttTk...",
+  "...kTttkTtttHhhhhhhHtttTkttTk...",
+  "...kHHHkTtttHhhhhhhHtttTkHHHk...",
+  "...kssskTtttHhhhhhhHtttTksssk...",
+  "...kSSSkTtttHhhhhhhHtttTkSSSk...",
+  "....kkkkkHHHHhhhhhhHHHHkkkkk....",
+  ".......kkkkkkkkkkkkkkkkkk.......",
+  ".......khhhhhk....khhhhhk.......",
+  "........khhhHk....kTTTTTk.......",
+  "........khhhHk....kkkkkkk.......",
+  ".......kTTTTTk..................",
+  ".......kkkkkkk..................",
+];
+const WALK2 = [
+  "...........kkkkkkkkkkk..........",
+  ".........kkhhhhhhhhhhhkk........",
+  "........khhhhhhhhhhhhhhhk.......",
+  ".......khhhhhhhhhhhhhhhhhk......",
+  "......khhhhhhhhhhhhhhhHhhk......",
+  "......khhhhhhhhhhhhhhkHhhk......",
+  "......khhhhhhhhhhhhhhkshhk......",
+  "......khHhhhhhhhhhhhkssHhk......",
+  "......kHHhhhhhhhhkkssssHk.......",
+  "......kHkHHhhhkkksssssssk.......",
+  ".....ksskkkkkksssskkkkkkssk.....",
+  ".....kkkkskkskkkkkkskkskkkk.....",
+  ".....ksskskksksssskskkskssk.....",
+  "......kSkkkkkksssskkkkkkSk......",
+  "......kSssssssssssssssssSk......",
+  ".......kSsssssskkssssssSk.......",
+  "........kksssssssssssskk........",
+  "..........kkkSSSSSSkkk..........",
+  "......kkkkttthhhhhhtttkkkk......",
+  "....kkTttttthhhhhhhhtttttTkk....",
+  "...kTttkTtttHhhhhhhHtttTkttTk...",
+  "...kTttkTtttHhhhhhhHtttTkttTk...",
+  "...kHHHkTtttHhhhhhhHtttTkHHHk...",
+  "...kssskTtttHhhhhhhHtttTksssk...",
+  "...kSSSkTtttHhhhhhhHtttTkSSSk...",
+  "....kkkkkHHHHhhhhhhHHHHkkkkk....",
+  ".......kkkkkkkkkkkkkkkkkk.......",
+  ".......khhhhhk....khhhhhk.......",
+  ".......kTTTTTk....kHhhhk........",
+  ".......kkkkkkk....kHhhhk........",
+  "..................kTTTTTk.......",
+  "..................kkkkkkk.......",
+];
+const LIFT = [
+  ".kkkkk....................kkkkk.",
+  ".ksssk....................ksssk.",
+  ".ksssk....................ksssk.",
+  ".kSSSk.....kkkkkkkkkkk....kSSSk.",
+  ".kSssk...kkhhhhhhhhhhhkk..kssSk.",
+  ".kSssk..khhhhhhhhhhhhhhhk.kssSk.",
+  ".kSssk.khhhhhhhhhhhhhhhhhkkssSk.",
+  ".kSsskkhhhhhhhhhhhhhhhHhhkkssSk.",
+  ".kSsskkhhhhhhhhhhhhhhkHhhkkssSk.",
+  ".kSsskkhhhhhhhhhhhhhhkshhkkssSk.",
+  ".kSsskkhHhhhhhhhhhhhkssHhkkssSk.",
+  ".kSsskkHHhhhhhhhhkkssssHk.kssSk.",
+  ".kHHHkkHkHHhhhkkksssssssk.kHHHk.",
+  ".kTttksskkkkkksssskkkkkksskttTk.",
+  ".kTttkkkkskkskkkkkkskkskkkkttTk.",
+  ".kTttksskskksksssskskksksskttTk.",
+  ".kTttkkSkkkkkksssskkkkkkSkkttTk.",
+  ".kTttkkSssssssssssssssssSkkttTk.",
+  ".kTttk.kSsssssskkssssssSk.kttTk.",
+  ".kTttk..kksssssssssssskk..kttTk.",
+  ".kTttk....kkkSSSSSSkkk....kttTk.",
+  ".kTttttkkkttthhhhhhtttkkkttttTk.",
+  "..kTtttTtttttHhhhhHtttttTtttTk..",
+  "...kkkkkTttttHhhhhHttttTkkkkk...",
+  ".......kTttttHhhhhHttttTk.......",
+  ".......kkHHHHhhhhhhHHHHkk.......",
+  ".......kkkkkkkkkkkkkkkkkk.......",
+  ".......khhhhhk....khhhhhk.......",
+  "........khhhHk....kHhhhk........",
+  "........khhhHk....kHhhhk........",
+  ".......kTTTTTk....kTTTTTk.......",
+  ".......kkkkkkk....kkkkkkk.......",
+];
+const LIFT2 = [
+  "................................",
+  "................................",
+  "................................",
+  "...........kkkkkkkkkkk..........",
+  ".........kkhhhhhhhhhhhkk........",
+  "........khhhhhhhhhhhhhhhk.......",
+  ".......khhhhhhhhhhhhhhhhhk......",
+  "......khhhhhhhhhhhhhhhHhhk......",
+  "......khhhhhhhhhhhhhhkHhhk......",
+  "......khhhhhhhhhhhhhhkshhk......",
+  "......khHhhhhhhhhhhhkssHhk......",
+  "......kHHhhhhhhhhkkssssHk.......",
+  "......kHkHHhhhkkksssssssk.......",
+  ".....ksskkkkkksssskkkkkkssk.....",
+  ".....kkkkskkskkkkkkskkskkkk.....",
+  ".....ksskskksksssskskkskssk.....",
+  "......kSkkkkkksssskkkkkkSk......",
+  "......kSssssssssssssssssSk......",
+  ".......kSsssssskkssssssSk.......",
+  "..kkkkk.kksssssssssssskk.kkkkk..",
+  "..ksssk...kkkSSSSSSkkk...ksssk..",
+  "..kssskkkkttthhhhhhtttkkkksssk..",
+  "..kSSSkTtttttHhhhhHtttttTkSSSk..",
+  "..kHHHkkTttttHhhhhHttttTkkHHHk..",
+  "..kTttkkTttttHhhhhHttttTkkttTk..",
+  "...kkk.kkHHHHhhhhhhHHHHkk.kkk...",
+  ".......kkkkkkkkkkkkkkkkkk.......",
+  ".......khhhhhk....khhhhhk.......",
+  "........khhhHk....kHhhhk........",
+  "........khhhHk....kHhhhk........",
+  ".......kTTTTTk....kTTTTTk.......",
+  ".......kkkkkkk....kkkkkkk.......",
+];
+const SIT = [
+  "................................",
+  "................................",
+  "...........kkkkkkkkkkk..........",
+  ".........kkhhhhhhhhhhhkk........",
+  "........khhhhhhhhhhhhhhhk.......",
+  ".......khhhhhhhhhhhhhhhhhk......",
+  "......khhhhhhhhhhhhhhhHhhk......",
+  "......khhhhhhhhhhhhhhkHhhk......",
+  "......khhhhhhhhhhhhhhkshhk......",
+  "......khHhhhhhhhhhhhkssHhk......",
+  "......kHHhhhhhhhhkkssssHk.......",
+  "......kHkHHhhhkkksssssssk.......",
+  ".....ksskkkkkksssskkkkkkssk.....",
+  ".....kkkkskkskkkkkkskkskkkk.....",
+  ".....ksskskksksssskskkskssk.....",
+  "......kSkkkkkksssskkkkkkSk......",
+  "......kSssssssssssssssssSk......",
+  ".......kSsssssskkssssssSk.......",
+  "........kksssssssssssskk........",
+  "..........kkkSSSSSSkkk..........",
+  "......kkkkttthhhhhhtttkkkk......",
+  "....kkTttttthhhhhhhhtttttTkk....",
+  "...kTttkTtttHkkkkkkHtttTkttTk...",
+  "...kTttkTtttHkkkkkkHtttTkttTk...",
+  "...kTtttttHsskkkkkkssHtttttTk...",
+  "....kkkkkkkkkkkkkkkkkkkkkkkk....",
+  "....khhhhhhhhhhkkhhhhhhhhhhk....",
+  "......khhhhhhk....khhhhhhk......",
+  "......khhhhhHk....kHhhhhhk......",
+  "......khhhhhHk....kHhhhhhk......",
+  ".....kTTTTTTTk....kTTTTTTTk.....",
+  ".....kkkkkkkkk....kkkkkkkkk.....",
+];
+const HOP = [
+  ".kkkkk....................kkkkk.",
+  ".ksssk....................ksssk.",
+  ".ksssk....................ksssk.",
+  ".kSSSk.....kkkkkkkkkkk....kSSSk.",
+  ".kSssk...kkhhhhhhhhhhhkk..kssSk.",
+  ".kSssk..khhhhhhhhhhhhhhhk.kssSk.",
+  ".kSssk.khhhhhhhhhhhhhhhhhkkssSk.",
+  ".kSsskkhhhhhhhhhhhhhhhHhhkkssSk.",
+  ".kSsskkhhhhhhhhhhhhhhkHhhkkssSk.",
+  ".kSsskkhhhhhhhhhhhhhhkshhkkssSk.",
+  ".kSsskkhHhhhhhhhhhhhkssHhkkssSk.",
+  ".kSsskkHHhhhhhhhhkkssssHk.kssSk.",
+  ".kHHHkkHkHHhhhkkksssssssk.kHHHk.",
+  ".kTttksskkkkkksssskkkkkksskttTk.",
+  ".kTttkkkkskkskkkkkkskkskkkkttTk.",
+  ".kTttksskskksksssskskksksskttTk.",
+  ".kTttkkSkkkkkksssskkkkkkSkkttTk.",
+  ".kTttkkSssssssssssssssssSkkttTk.",
+  ".kTttk.kSsssssskkssssssSk.kttTk.",
+  ".kTttk..kksssssssssssskk..kttTk.",
+  ".kTttk....kkkSSSSSSkkk....kttTk.",
+  ".kTttttkkkttthhhhhhtttkkkttttTk.",
+  "..kTtttTtttttHhhhhHtttttTtttTk..",
+  "...kkkkkTttttHhhhhHttttTkkkkk...",
+  ".......kTttttHhhhhHttttTk.......",
+  ".......kkHHHHhhhhhhHHHHkk.......",
+  ".......kkkkkkkkkkkkkkkkkk.......",
+  "......khhhhhkk....kkhhhhhk......",
+  ".....khhhHkk........kkHhhhk.....",
+  "....khhhHk............kHhhhk....",
+  "...kTTTTTk............kTTTTTk...",
+  "...kkkkkkk............kkkkkkk...",
+];
+
+// props: m dim (plates), w paper (the bar, the glint on his lenses, the
+// phone's glow), r resting blue; k s S where a hand wraps the bottle
+const GLINT = [
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "............w.........w.........",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+];
+const LIFT_PROPS = [
+  "m..............................m",
+  "m.....wwwwwwwwwwwwwwwwwwww.....m",
+  "m..............................m",
+  "m..............................m",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "............w.........w.........",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+];
+const LIFT2_PROPS = [
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "............w.........w.........",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "mm............................mm",
+  "mm............................mm",
+  "mm.....wwwwwwwwwwwwwwwwww.....mm",
+  "mm............................mm",
+  "mm............................mm",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+];
+const REST_PROPS = [
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "............w.........w.........",
+  "................................",
+  ".........................kkk....",
+  ".........................kwk....",
+  "........................kkkkk...",
+  "........................kwrrk...",
+  "........................kwrrk...",
+  "........................kwrrk...",
+  "........................kwrrk...",
+  "........................kwrrk...",
+  "........................kwrrk...",
+  "........................ksssk...",
+  "........................ksssk...",
+  "........................kSSSk...",
+  "........................kkkkk...",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+];
+const SIT_PROPS = [
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "............w.........w.........",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "..............wwww..............",
+  "..............wwww..............",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+];
+const HOP_PROPS = [
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "............w.........w.........",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+];
+
+const FRAMES: Record<DonyFrame, { body: string[]; props: string[] }> = {
+  stand: { body: STAND, props: GLINT },
+  walk1: { body: WALK1, props: GLINT },
+  walk2: { body: WALK2, props: GLINT },
+  lift: { body: LIFT, props: LIFT_PROPS },
+  lift2: { body: LIFT2, props: LIFT2_PROPS },
+  rest: { body: STAND, props: REST_PROPS },
+  sit: { body: SIT, props: SIT_PROPS },
+  hop: { body: HOP, props: HOP_PROPS },
+};
+export const donyFrame = (frame: DonyFrame) => FRAMES[frame];
+```
+
+### `src/sprites/dony.ts`: the poster
+
+A framed photo on the back wall, columns 5 to 26, rows 2 to 23, and a paper
+plate (columns 9 to 22, rows 24 to 27) with three ink marks for "Member of
+the month". The frame is violet with its right and bottom sides in the
+shade, so it reads as hung, not printed; inside, his bust on paper: hair,
+the two-rim glasses, a mouth, the bomber's collar over the tee.
+
+- **full**: as above.
+- **glint**: one paper pixel at each lens's top right, (13, 10) and (20, 10),
+  drawn over `full` for one frame every 8 s.
+- **empty**: the same frame and plate, the photo charcoal with his outline
+  in violet where he was.
+- **bulbs / bulbs-alt**: 2 × 2 bulbs in `currentColor`, mirrored left to
+  right. Set A: (5, 0), (15, 0), (25, 0), the outer columns at rows 7 and 17,
+  and beside the plate at (5, 26) and (25, 26). Set B: (10, 0), (20, 0), the
+  outer columns at rows 2, 12 and 22. Both sit on rows 0 to 1 and columns 2
+  to 3 and 28 to 29, outside the frame, and never cover his face.
+
+**How it sits in the wall tile (for part 2).** The poster leaves rows 0 to 1
+and 28 to 31 and columns 0 to 4 and 27 to 31 transparent. Today's doubled
+wall tile has its ink top on rows 0 to 1, the dark wall to row 15, the green
+dado rail on rows 16 to 19 and the ink skirting on rows 28 to 31: so the top
+bulbs sit on the ceiling trim, the frame hangs over the rail (the rail shows
+either side of it, as a picture rail would), the plate sits on the dark wall
+below the rail, and the skirting shows under the plate. If part 2 redraws
+the wall, keep its ink top on rows 0 to 1 (the bulbs read as set into it) and
+the skirting from row 28 down, or the plate will touch it.
+```ts
+// src/sprites/dony.ts: replaces POSTER16 and its upscale.
+export const POSTER = {
+  full: [
+    "................................",
+    "................................",
+    ".....kkkkkkkkkkkkkkkkkkkkkk.....",
+    ".....kttttttttttttttttttttk.....",
+    ".....kttttttttttttttttttttk.....",
+    ".....kttwwwwkkkkkkkkwwwwTTk.....",
+    ".....kttwwwkhhhhhhhhkwwwTTk.....",
+    ".....kttwwkhhhhhhhkhhkwwTTk.....",
+    ".....kttwwkhhhhhhkssskwwTTk.....",
+    ".....kttwkkkkkkkkkkkkkkwTTk.....",
+    ".....kttwwksksksskskskwwTTk.....",
+    ".....kttwwksksksskskskwwTTk.....",
+    ".....kttwwkkkkksskkkkkwwTTk.....",
+    ".....kttwwksssssssssskwwTTk.....",
+    ".....kttwwwkssskkssskwwwTTk.....",
+    ".....kttwwwwkksssskkwwwwTTk.....",
+    ".....kttwwwwwwksskwwwwwwTTk.....",
+    ".....kttwwwkkkthhtkkkwwwTTk.....",
+    ".....kttwkttttthhtttttkwTTk.....",
+    ".....kttkttTtthhhhttTttkTTk.....",
+    ".....kttkttTthhhhhhtTttkTTk.....",
+    ".....kttTTTTTTTTTTTTTTTTTTk.....",
+    ".....kTTTTTTTTTTTTTTTTTTTTk.....",
+    ".....kkkkkkkkkkkkkkkkkkkkkk.....",
+    ".........kwwwwwwwwwwwwk.........",
+    ".........kwkkkwkkwkkkwk.........",
+    ".........kwwwwwwwwwwwwk.........",
+    ".........kkkkkkkkkkkkkk.........",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+  ],
+  glint: [
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    ".............w......w...........",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+  ],
+  empty: [
+    "................................",
+    "................................",
+    ".....kkkkkkkkkkkkkkkkkkkkkk.....",
+    ".....kttttttttttttttttttttk.....",
+    ".....kttttttttttttttttttttk.....",
+    ".....ktthhhhthhhhhhthhhhTTk.....",
+    ".....ktthhhthhhhhhhhthhhTTk.....",
+    ".....ktthhthhhhhhhhhhthhTTk.....",
+    ".....ktthhthhhhhhhhhhthhTTk.....",
+    ".....ktththhhhhhhhhhhhthTTk.....",
+    ".....ktthhthhhhhhhhhhthhTTk.....",
+    ".....ktthhthhhhhhhhhhthhTTk.....",
+    ".....ktthhthhhhhhhhhhthhTTk.....",
+    ".....ktthhthhhhhhhhhhthhTTk.....",
+    ".....ktthhhthhhhhhhhthhhTTk.....",
+    ".....ktthhhhtthhhhtthhhhTTk.....",
+    ".....ktthhhhhhthhthhhhhhTTk.....",
+    ".....ktthhhttthhhhttthhhTTk.....",
+    ".....ktthtthhhhhhhhhhtthTTk.....",
+    ".....kttthhhhhhhhhhhhhhtTTk.....",
+    ".....ktthhhhhhhhhhhhhhhhTTk.....",
+    ".....kttTTTTTTTTTTTTTTTTTTk.....",
+    ".....kTTTTTTTTTTTTTTTTTTTTk.....",
+    ".....kkkkkkkkkkkkkkkkkkkkkk.....",
+    ".........kwwwwwwwwwwwwk.........",
+    ".........kwkkkwkkwkkkwk.........",
+    ".........kwwwwwwwwwwwwk.........",
+    ".........kkkkkkkkkkkkkk.........",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+  ],
+  bulbs: [
+    ".....bb........bb........bb.....",
+    ".....bb........bb........bb.....",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "..bb........................bb..",
+    "..bb........................bb..",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "..bb........................bb..",
+    "..bb........................bb..",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    ".....bb..................bb.....",
+    ".....bb..................bb.....",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+  ],
+  "bulbs-alt": [
+    "..........bb........bb..........",
+    "..........bb........bb..........",
+    "..bb........................bb..",
+    "..bb........................bb..",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "..bb........................bb..",
+    "..bb........................bb..",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "..bb........................bb..",
+    "..bb........................bb..",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+  ],
+};
+// two new letters: T the frame's shadow and the bomber's shade, w the paper
+// behind him and the plate
+export const POSTER_PALETTE = {k: "#0b2416", s: "#e9bd94", h: "#2e3046", t: "#8b6cf2", T: "#6650c8", w: "#e8f0d8", b: "currentColor"};
+```
+
+## Appendix: 32 × 32 art, the room (ADR 0005)
+
+The only copy of the room at 32 × 32: the ten tiles, the two pieces of
+scenery, the eight machines, the claim corners and the empty bays' rule.
+Every grid was checked by script to be exactly 32 × 32, to use only
+`GYM_PALETTE` letters, and to use at most 7 colours, the cooler and the
+lockers counted together with the wall tile under them. Paste the blocks
+into `src/sprites/gym.ts`. Once `/sprites.svg` carries them, the mockup's
+`#tile-…-32`, `#map-tiles-32`, `#eq-…-32`, `#bay-…-32` and `#claim-32`
+symbols (between the `room-32` comments) go back to `/sprites.svg#<id>`
+(drop the `-32`). `MAP` and `STATIONS` don't change.
+
+Coordinates are (column, row), 0-based.
+
+### What this changes in the code
+
+- **No more `upscale()` in gym.ts.** `TILES`, `SCENERY`, `GEAR` and `CLAIM`
+  are exported as drawn; `each()`, the `upscale` import and the `*16`
+  consts go. `sprite.ts` keeps `upscale()` only if another module still
+  uses it.
+- **`TILES` is keyed by MAP letter**, as before (`.` `:` `W` `M` `K` `[` `]`
+  `_` `E` `e`). `P` still draws `TILES.W` (GymMap's `symbolOf`, the
+  sprites script's `base`); there is no `TILES.P`.
+- **`bay()` is rewritten** from the second block: 6 × 10 digits and a
+  2 px dashed square. `bay16()` goes.
+- **The night page's width** (Departure 19): `body.night main` in
+  `Layout.astro` becomes `max-width: 72rem`, and GymMap's no-JS fallback
+  becomes `@media (min-width: 1120px) and (min-height: 760px)`.
+- **GymMap's `rects()`** draws one `<rect>` per run, so it needs no change.
+  A 32 × 32 tile has about four times as many runs. If the page weight
+  matters, switch it to one `<path>` per colour, as `scripts/sprites.ts`
+  does.
+
+### How each piece reads
+
+- **Floor `.`**: a rubber mat per tile, its top row and left column in
+  `p` (the seam), sparse `n` granules. **Aisle `:`**: the lighter walkway in
+  `p`, 2 × 2 studs (`g` over `d`) in a diamond lattice every 8 px.
+- **Wall `W`**: ink top on rows 0 to 1 (the poster's bulbs sit in it),
+  a `n` shadow line on row 2, block courses in `d` and `n` on rows 3 to 15,
+  the rail on rows 16 to 19 (`e` lit edge, `g`, `n` shadow), boards on rows
+  20 to 27, ink skirting on rows 28 to 31. The poster (columns 5 to 26,
+  rows 2 to 27) hangs over the rail; its plate ends on row 27, just above
+  the skirting.
+- **Mirror `M`**: the wall with an aluminium (`m`) glass panel on columns 3 to
+  28, rows 3 to 26, a paper top edge, `e` shade on the right and bottom, two
+  diagonal paper glints. **Clock `K`**: a round face (ink rim, `e` bezel,
+  paper face) centred over the rail, `m` ticks at the quarters, the hands at
+  3 o'clock.
+- **Side walls `[` `]`**: seen from above, as they were: an ink outer edge,
+  block courses in `d` and `n`, the green rim on the room side (columns 28
+  to 29 of `[`; `]` is its mirror). **Front wall `_`**: the same wall turned,
+  its green rim on rows 2 to 3, facing in.
+- **Entrance `E` `e`**: one picture across two tiles: door jambs at the
+  outer edges, a ribbed mat (`g`, `d` ribs, `e` border), and a leaf arrow
+  pointing in, outlined in ink, split down the middle between the tiles.
+- **Water cooler `C`** (on `[`): the resting-blue bottle with a paper glint
+  and a level line, a neck, a paper cabinet top with a blue (cold) tap and a
+  dim (room) tap, the drip tray in `n`, a dim cabinet with two vents. This
+  is still the only `r` in the scenery.
+- **Lockers `L`** (on `]`): two `e` doors with `g` shade, three vents each,
+  paper handles meeting at the middle, a padlock on the right-hand door.
+
+### The machines: what their top 12 rows show
+
+An avatar on a station covers the tile from row 12 down (15 behind someone
+sitting), so the top 12 rows of each machine have to say what it is.
+
+| Machine | Rows 0 to 11 |
+| --- | --- |
+| treadmill | the console with its `e` bar-chart readout on `n`, both handrails, the belt's top edge on row 9 |
+| flat-bench | the bar racked on its uprights (rows 3 to 6, paper, ink outline), a plate stack at each end, the pad's top |
+| squat-rack | the top crossbar, the uprights, a loaded bar on the J-hooks (rows 7 to 10) |
+| dumbbell-rack | the top tier: three dumbbells with dim heads and paper handles, the shelf on rows 10 to 13 |
+| lifting-platform | the wood centre between `g` rubber sides, a loaded bar on rows 7 to 10, black bumpers |
+| pull-up-bar | the paper bar with its black grips (rows 2 to 6), the two posts |
+| cable-machine | the top beam, two pulleys, the cables, the weight stack's top plates |
+| exercise-mat | the rolled end of the mat in `e` with a paper highlight, a kettlebell beside it |
+
+### The empty bay
+
+An empty station is a dashed square in `e`, 2 px thick, on rows and columns
+2 to 3 and 28 to 29. Dashes are 4 px long with 2 px gaps, starting at 2
+(`(i − 2) % 6 < 4`), so all four corners are solid and the square ends on a
+dash at 29. The number uses 6 × 10 digits with 2 px strokes, centred: each
+digit is 8 px apart (6 + 2 gap), the run starts at `x = (32 − (8n − 2)) / 2`
+(13 for one digit, 9 for two) on rows 11 to 20. Only `e` is used, so the
+bay stays the quietest thing on the floor.
+
+### The claim corners
+
+Your station's corners: an 8 px leaf L, 2 px thick, at each corner (rows
+and columns 0 to 1), with a 1 px ink line just inside it (row and column 2),
+so the leaf reads on the floor, on the aisle and on the green lifting
+platform alike.
+
+```ts
+// src/sprites/gym.ts: replaces TILES16, SCENERY16, GEAR16, CLAIM16, the
+// each() helper, the upscale() import and the doubled exports below them.
+// The tiles, one per MAP letter. P (the poster) is drawn as W.
+export const TILES: Record<string, string[]> = {
+  ".": [
+    "pppppppppppppppppppppppppppppppp",
+    "pfffffffffffffffffffffffffffffff",
+    "pfffffffffffffffffffffffffffffff",
+    "pfffffffffffffffffffffffffffffnf",
+    "pfffffffffffffffffffffffffffffff",
+    "pfffpffffffnnfffffffffffffffffff",
+    "pfffffffffffffffffffffffffffffff",
+    "pffffffffffffffffffffffffnffffff",
+    "pfffffffffffffffffpfffffffffffff",
+    "pfffffffffffffffffffffffffffffff",
+    "pffffnffffffffffffffffffffffffff",
+    "pfffffffffffffffffffffffffffffff",
+    "pfffffffffffffffffffffffffffffff",
+    "pfffffffffffffffffffnnffffffffff",
+    "pfffffffffffffffffffffffffffffff",
+    "pffffffffffffffffffffffffffpffff",
+    "pffnffffffffffffffffffffffffffff",
+    "pfffffffffffffffffffffffffffffff",
+    "pfffffffffffffnfffffffffffffffff",
+    "pfffffffffffffffffffffffffffffff",
+    "pfffffffpfffffffffffffffffffffff",
+    "pfffffffffffffffffffffffffffnnff",
+    "pfffffffffffffffffffffffffffffff",
+    "pfffffffffffffffffffffpfffffffff",
+    "pffffffnnfffffffffffffffffffffff",
+    "pfffffffffffffffffffffffffffffff",
+    "pfffffffffffffffffffffffffffffff",
+    "pfffffffffffffffffnfffffffffffff",
+    "pfffffffffffffffffffffffffffffff",
+    "pffffffffnfffffffffffffffnffffff",
+    "pfffffffffffffffffffffffffffffff",
+    "pfffffffffffffffffffffffffffffff",
+  ],
+  ":": [
+    "pppppppppppppppppppppppppppppppp",
+    "pppppppppppppppppppppppppppppppp",
+    "ppggppppppggppppppggppppppggpppp",
+    "ppddppppppddppppppddppppppddpppp",
+    "pppppppppppppppppppppppppppppppp",
+    "pppppppppppppppppppppppppppppppp",
+    "ppppppggppppppggppppppggppppppgg",
+    "ppppppddppppppddppppppddppppppdd",
+    "pppppppppppppppppppppppppppppppp",
+    "pppppppppppppppppppppppppppppppp",
+    "ppggppppppggppppppggppppppggpppp",
+    "ppddppppppddppppppddppppppddpppp",
+    "pppppppppppppppppppppppppppppppp",
+    "pppppppppppppppppppppppppppppppp",
+    "ppppppggppppppggppppppggppppppgg",
+    "ppppppddppppppddppppppddppppppdd",
+    "pppppppppppppppppppppppppppppppp",
+    "pppppppppppppppppppppppppppppppp",
+    "ppggppppppggppppppggppppppggpppp",
+    "ppddppppppddppppppddppppppddpppp",
+    "pppppppppppppppppppppppppppppppp",
+    "pppppppppppppppppppppppppppppppp",
+    "ppppppggppppppggppppppggppppppgg",
+    "ppppppddppppppddppppppddppppppdd",
+    "pppppppppppppppppppppppppppppppp",
+    "pppppppppppppppppppppppppppppppp",
+    "ppggppppppggppppppggppppppggpppp",
+    "ppddppppppddppppppddppppppddpppp",
+    "pppppppppppppppppppppppppppppppp",
+    "pppppppppppppppppppppppppppppppp",
+    "ppppppggppppppggppppppggppppppgg",
+    "ppppppddppppppddppppppddppppppdd",
+  ],
+  W: [
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+    "dddddddndddddddddddddddndddddddd",
+    "dddddddndddddddddddddddndddddddd",
+    "dddddddndddddddddddddddndddddddd",
+    "dddddddndddddddddddddddndddddddd",
+    "dddddddndddddddddddddddndddddddd",
+    "dddddddndddddddddddddddndddddddd",
+    "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+    "dddddddddddddddndddddddddddddddn",
+    "dddddddddddddddndddddddddddddddn",
+    "dddddddddddddddndddddddddddddddn",
+    "dddddddddddddddndddddddddddddddn",
+    "dddddddddddddddndddddddddddddddn",
+    "dddddddddddddddndddddddddddddddn",
+    "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "gggggggggggggggggggggggggggggggg",
+    "gggggggggggggggggggggggggggggggg",
+    "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+    "dddddddddddddddddddddddddddddddd",
+    "dddddddndddddddndddddddndddddddn",
+    "dddddddndddddddndddddddndddddddn",
+    "dddddddndddddddndddddddndddddddn",
+    "dddddddndddddddndddddddndddddddn",
+    "dddddddndddddddndddddddndddddddn",
+    "dddddddndddddddndddddddndddddddn",
+    "dddddddndddddddndddddddndddddddn",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+  ],
+  M: [
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+    "dddkkkkkkkkkkkkkkkkkkkkkkkkkkddd",
+    "dddkwwwwwwwwwwwwwwwwwwwwwwwwkddd",
+    "dddkmmmmmmmmmmmmmmmmmmmmmmmekddd",
+    "dddkmmmmmwmmmmmmmmmmmmmmmmmekddd",
+    "dddkmmmmwmmmmmmmmmmmmmmmmmmekddd",
+    "dddkmmmwmmmmmmmmmmmmmmmmmmmekddd",
+    "nnnkmmwmmmmmmmmmmmmmmmwwmmmeknnn",
+    "dddkmmmmmmmmmmmmmmmmmwwmmmmekddn",
+    "dddkmmmmmmmmmmmmmmmmwwmmmmmekddn",
+    "dddkmmmmmmmmmmmmmmmwwmmmmmmekddn",
+    "dddkmmmmmmmmmmmmmmwwmmmmmmmekddn",
+    "dddkmmmmmmmmmmmmmwwmmmmmmmmekddn",
+    "dddkmmmmmmmmmmmmwwmmmmmmmmmekddn",
+    "eeekmmmmmmmmmmmwwmmmmmmmwmmekeee",
+    "gggkmmmmmmmmmmwwmmmmmmmwmmmekggg",
+    "gggkmmmmmmmmmwwmmmmmmmwmmmmekggg",
+    "nnnkmmmmmmmmwwmmmmmmmwmmmmmeknnn",
+    "dddkmmmmmmmwwmmmmmmmwmmmmmmekddd",
+    "dddkmmmmmmwwmmmmmmmwmmmmmmmekddn",
+    "dddkmmmmmwwmmmmmmmwmmmmmmmmekddn",
+    "dddkmmmmmmmmmmmmmwmmmmmmmmmekddn",
+    "dddkmmmmmmmmmmmmmmmmmmmmmmmekddn",
+    "dddkeeeeeeeeeeeeeeeeeeeeeeeekddn",
+    "dddkkkkkkkkkkkkkkkkkkkkkkkkkkddn",
+    "dddddddndddddddndddddddndddddddn",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+  ],
+  K: [
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "nnnnnnnnnnnnnnnkknnnnnnnnnnnnnnn",
+    "dddddddnddddkkkeekkkdddndddddddd",
+    "dddddddnddkkeeemmeeekkdndddddddd",
+    "dddddddndkeewwwmmwwweekndddddddd",
+    "dddddddnkeewwwwkkwwwweekdddddddd",
+    "dddddddnkewwwwwkkwwwwwekdddddddd",
+    "dddddddkewwwwwwkkwwwwwwekddddddd",
+    "nnnnnnnkewwwwwwkkwwwwwweknnnnnnn",
+    "dddddddkewwwwwwkkwwwwwwekddddddn",
+    "ddddddkemmwwwwwkkkkkkwmmekdddddn",
+    "ddddddkemmwwwwwkkkkkkwmmekdddddn",
+    "dddddddkewwwwwwwwwwwwwwekddddddn",
+    "dddddddkewwwwwwwwwwwwwwekddddddn",
+    "dddddddkewwwwwwwwwwwwwwekddddddn",
+    "eeeeeeeekewwwwwwwwwwwwekeeeeeeee",
+    "ggggggggkeewwwwwwwwwweekgggggggg",
+    "gggggggggkeewwwmmwwweekggggggggg",
+    "nnnnnnnnnnkkeeemmeeekknnnnnnnnnn",
+    "ddddddddddddkkkeekkkdddddddddddd",
+    "dddddddnddnnnnnnnnnnnndndddddddn",
+    "dddddddndddddddndddddddndddddddn",
+    "dddddddndddddddndddddddndddddddn",
+    "dddddddndddddddndddddddndddddddn",
+    "dddddddndddddddndddddddndddddddn",
+    "dddddddndddddddndddddddndddddddn",
+    "dddddddndddddddndddddddndddddddn",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+  ],
+  "[": [
+    "kknnnnnnnnnnnnnnnnnnnnnnnnnnggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkddddddddddddndddddddddddddggkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkggkk",
+    "kknnnnnnnnnnnnnnnnnnnnnnnnnnggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkddddddnddddddddddddnddddddggkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkggkk",
+  ],
+  "]": [
+    "kkggnnnnnnnnnnnnnnnnnnnnnnnnnnkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggdddddddddddddnddddddddddddkk",
+    "kkggkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkggnnnnnnnnnnnnnnnnnnnnnnnnnnkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggddddddnddddddddddddnddddddkk",
+    "kkggkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+  ],
+  "_": [
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "gggggggggggggggggggggggggggggggg",
+    "gggggggggggggggggggggggggggggggg",
+    "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddknnnnnnnnnnnnnnnk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "nnnnnnnnnnnnnnnkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddknnnnnnnnnnnnnnnk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "dddddddddddddddkdddddddddddddddk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+  ],
+  E: [
+    "kkddkkgggggggggggggggggggggggggg",
+    "kkddkkgggggggggggggggggggggggggg",
+    "kkddkkgggggggggggggggggggggggggg",
+    "kkddkkgggeeeeeeeeeeeeeeeeeeeeeee",
+    "kkddkkgggeggggggggggggggggggggkk",
+    "kkddkkgggegggggggggggggggggggkkl",
+    "kkddkkgggeddddddddddddddddddkkll",
+    "kkddkkgggegggggggggggggggggkklll",
+    "kkddkkgggeggggggggggggggggkkllll",
+    "kkddkkgggedddddddddddddddkklllll",
+    "kkddkkgggeggggggggggggggkkllllll",
+    "kkddkkgggegggggggggggggkklllllll",
+    "kkddkkgggeddddddddddddkkllllllll",
+    "kkddkkgggegggggggggggkklllllllll",
+    "kkddkkgggeggggggggggkkllllllllll",
+    "kkddkkgggeddddddddddklllllllllll",
+    "kkddkkgggeggggggggggkkkkkkkkklll",
+    "kkddkkgggeggggggggggggggggggklll",
+    "kkddkkgggeddddddddddddddddddklll",
+    "kkddkkgggeggggggggggggggggggklll",
+    "kkddkkgggeggggggggggggggggggklll",
+    "kkddkkgggeddddddddddddddddddklll",
+    "kkddkkgggeggggggggggggggggggklll",
+    "kkddkkgggeggggggggggggggggggklll",
+    "kkddkkgggeddddddddddddddddddklll",
+    "kkddkkgggeggggggggggggggggggklll",
+    "kkddkkgggeggggggggggggggggggkkkk",
+    "kkddkkgggegggggggggggggggggggggg",
+    "kkddkkgggeeeeeeeeeeeeeeeeeeeeeee",
+    "kkddkkgggggggggggggggggggggggggg",
+    "kkddkkgggggggggggggggggggggggggg",
+    "kkddkkgggggggggggggggggggggggggg",
+  ],
+  e: [
+    "ggggggggggggggggggggggggggkkddkk",
+    "ggggggggggggggggggggggggggkkddkk",
+    "ggggggggggggggggggggggggggkkddkk",
+    "eeeeeeeeeeeeeeeeeeeeeeegggkkddkk",
+    "kkggggggggggggggggggggegggkkddkk",
+    "lkkgggggggggggggggggggegggkkddkk",
+    "llkkddddddddddddddddddegggkkddkk",
+    "lllkkgggggggggggggggggegggkkddkk",
+    "llllkkggggggggggggggggegggkkddkk",
+    "lllllkkdddddddddddddddegggkkddkk",
+    "llllllkkggggggggggggggegggkkddkk",
+    "lllllllkkgggggggggggggegggkkddkk",
+    "llllllllkkddddddddddddegggkkddkk",
+    "lllllllllkkgggggggggggegggkkddkk",
+    "llllllllllkkggggggggggegggkkddkk",
+    "lllllllllllkddddddddddegggkkddkk",
+    "lllkkkkkkkkkggggggggggegggkkddkk",
+    "lllkggggggggggggggggggegggkkddkk",
+    "lllkddddddddddddddddddegggkkddkk",
+    "lllkggggggggggggggggggegggkkddkk",
+    "lllkggggggggggggggggggegggkkddkk",
+    "lllkddddddddddddddddddegggkkddkk",
+    "lllkggggggggggggggggggegggkkddkk",
+    "lllkggggggggggggggggggegggkkddkk",
+    "lllkddddddddddddddddddegggkkddkk",
+    "lllkggggggggggggggggggegggkkddkk",
+    "kkkkggggggggggggggggggegggkkddkk",
+    "ggggggggggggggggggggggegggkkddkk",
+    "eeeeeeeeeeeeeeeeeeeeeeegggkkddkk",
+    "ggggggggggggggggggggggggggkkddkk",
+    "ggggggggggggggggggggggggggkkddkk",
+    "ggggggggggggggggggggggggggkkddkk",
+  ],
+};
+
+// drawn over the wall tile named by base
+export const SCENERY: Record<string, { base: string; grid: string[] }> = {
+  C: { base: "[", grid: [
+    "................................",
+    "...........kkkkkkkkkk...........",
+    "..........kkrrrrrrrrkk..........",
+    "..........krwwrrrrrrrk..........",
+    "..........krwrrrrrrrrk..........",
+    "..........krwrrrrrrrrk..........",
+    "..........kwrwwwwwwwwk..........",
+    "..........krwrrrrrrrrk..........",
+    "..........krwrrrrrrrrk..........",
+    "..........krrrrrrrrrrk..........",
+    "..........kkrrrrrrrrkk..........",
+    "...........kkkkkkkkkk...........",
+    "..............krrk..............",
+    ".......kkkkkkkkkkkkkkkkkk.......",
+    ".......kwwwrrwwwwwwmmwwwk.......",
+    ".......kwwwrrwwwwwwmmwwwk.......",
+    ".......kwwwkkwwwwwwkkwwwk.......",
+    ".......kwwwwwwwwwwwwwwwwk.......",
+    ".......kwkkkkkkkkkkkkkkwk.......",
+    ".......kwkkkkkkkkkkkkkkwk.......",
+    ".......kwknnnnnnnnnnnnkwk.......",
+    ".......kmkkkkkkkkkkkkkkmk.......",
+    ".......kmmmmmmmmmmmmmmmmk.......",
+    ".......kmmmmmmmmmmmmmmmmk.......",
+    ".......kmmmmmmmmmmmmmmmmk.......",
+    ".......kmmmkkkkkkkkkkmmmk.......",
+    ".......kmmmmmmmmmmmmmmmmk.......",
+    ".......kmmmkkkkkkkkkkmmmk.......",
+    ".......kmmmmmmmmmmmmmmmmk.......",
+    ".......kmmmmmmmmmmmmmmmmk.......",
+    ".......kkkkkkkkkkkkkkkkkk.......",
+    "......kkkkkkkkkkkkkkkkkkkk......",
+  ] },
+  L: { base: "]", grid: [
+    "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keemmmmmmmeegkkeemmmmmmmeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keemmmmmmmeegkkeemmmmmmmeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keemmmmmmmeegkkeemmmmmmmeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keeeeeeeeewegkkeeweeeeeeeegk..",
+    "..keeeeeeeeewegkkeeweeeeeeeegk..",
+    "..keeeeeeeeewegkkeewekkeeeeegk..",
+    "..keeeeeeeeewegkkeewkeekeeeegk..",
+    "..keeeeeeeeewegkkeewkkkkeeeegk..",
+    "..keeeeeeeeeeegkkeeekmmkeeeegk..",
+    "..keeeeeeeeeeegkkeeekkmkeeeegk..",
+    "..keeeeeeeeeeegkkeeekmmkeeeegk..",
+    "..keeeeeeeeeeegkkeeekkkkeeeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keegggggeeeegkkeegggggeeeegk..",
+    "..keegggggeeeegkkeegggggeeeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..keeeeeeeeeeegkkeeeeeeeeeeegk..",
+    "..kggggggggggggkkggggggggggggk..",
+    "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
+    "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
+  ] },
+};
+
+export const GEAR: Record<Equipment, string[]> = {
+  "treadmill": [
+    "................................",
+    "....kkkkkkkkkkkkkkkkkkkkkkkk....",
+    "....kwwwwwwwwwwwwwwwwwwwwwwk....",
+    ".kkkkmmmkkkkkkkkkkkkkkkkmmmkkkk.",
+    ".kwmkmmmknnnnnnnennnennkmmmkwmk.",
+    ".kwmkmwmknnnenenenenennkmwmkwmk.",
+    ".kwmkmemknenenenenenennkmemkwmk.",
+    ".kwmkmmmkkkkkkkkkkkkkkkkmmmkwmk.",
+    ".kwmkkkkkkkkkkkkkkkkkkkkkkkkwmk.",
+    ".kwmkkkkkkkkkkkkkkkkkkkkkkkkwmk.",
+    ".kwmkkwwwwwwwwwwwwwwwwwwwwkkwmk.",
+    ".kwmkkmmmmmmmmmmmmmmmmmmmmkkwmk.",
+    ".kwmkkkkkkkkkkkkkkkkkkkkkkkkwmk.",
+    ".kwmkkmmmknnnnnnnnnnnnkmmmkkwmk.",
+    ".kwmkkmmmknnnnnnnnnnnnkmmmkkwmk.",
+    ".kwmkkmmmkddddddddddddkmmmkkwmk.",
+    ".kwmkkmmmknnnnnnnnnnnnkmmmkkwmk.",
+    ".kkkkkmmmknnnnnnnnnnnnkmmmkkkkk.",
+    ".....kmmmkddddddddddddkmmmk.....",
+    ".....kmmmknnnnnnnnnnnnkmmmk.....",
+    ".....kmmmknnnnnnnnnnnnkmmmk.....",
+    ".....kmmmkddddddddddddkmmmk.....",
+    ".....kmmmknnnnnnnnnnnnkmmmk.....",
+    ".....kmmmknnnnnnnnnnnnkmmmk.....",
+    ".....kmmmkddddddddddddkmmmk.....",
+    ".....kmmmknnnnnnnnnnnnkmmmk.....",
+    ".....kmmmknnnnnnnnnnnnkmmmk.....",
+    ".....kmmmkddddddddddddkmmmk.....",
+    ".....kmmmknnnnnnnnnnnnkmmmk.....",
+    ".....kkkkkkkkkkkkkkkkkkkkkk.....",
+    ".....kkkkkkkkkkkkkkkkkkkkkk.....",
+    "................................",
+  ],
+  "flat-bench": [
+    "..kkkk....................kkkk..",
+    "..kkwk....................kwkk..",
+    "kkkkwk..kkk..........kkk..kwkkkk",
+    "kwkkwkkkkkkkkkkkkkkkkkkkkkkwkkwk",
+    "kmkkmkwwwwwwwwwwwwwwwwwwwwkmkkmk",
+    "kmkkmkwwwwwwwwwwwwwwwwwwwwkmkkmk",
+    "kmkkmkkkkkkkkkkkkkkkkkkkkkkmkkmk",
+    "kkkkmk..kmk..........kmk..kmkkkk",
+    "..kkmk..kmk.kkkkkkkk.kmk..kmkk..",
+    "..kkkk..kmkkkeeeeeekkkmk..kkkk..",
+    "........kmkkeggggggekkmk........",
+    "........kmkkeggggggekkmk........",
+    "......kkkmkkeggggggekkmkkk......",
+    "......kmkmkkeggggggekkmkmk......",
+    "......kkkkkkeggggggekkkkkk......",
+    "...........keggggggek...........",
+    "...........keggggggek...........",
+    "...........keggggggek...........",
+    "...........keggggggek...........",
+    "...........keggggggek...........",
+    "...........keggggggek...........",
+    "...........keggggggek...........",
+    "...........keggggggek...........",
+    "...........keggggggek...........",
+    "...........keggggggek...........",
+    "...........keggggggek...........",
+    "........kkkkkddddddkkkkk........",
+    "........kmm.kkkkkkkk.mmk........",
+    "........kmmmmmmmmmmmmmmk........",
+    "........kkkkkkkkkkkkkkkk........",
+    "................................",
+    "................................",
+  ],
+  "squat-rack": [
+    "................................",
+    "....kkkkkkkkkkkkkkkkkkkkkkkk....",
+    "....kwwwwwwwwwwwwwwwwwwwwwwk....",
+    "....kmmmmmmmmmmkkmmmmmmmmmmk....",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kwmkkmmk................kmmkkmwk",
+    "kwmkkmmk................kmmkkmwk",
+    "kwmkkkkkkkkkkkkkkkkkkkkkkkkkkmwk",
+    "kwmkwwwwwwwwwwwwwwwwwwwwwwwwkmwk",
+    "kmmkwwwwwwwwwwwwwwwwwwwwwwwwkmmk",
+    "kmmkkkkkkkkkkkkkkkkkkkkkkkkkkmmk",
+    "kmmkkmmkmm............mmkmmkkmmk",
+    "kmmkkmmkkm............mkkmmkkmmk",
+    "kmmkkkkk................kkkkkmmk",
+    "kkkkkmmk................kmmkkkkk",
+    "....kmmk................kmmk....",
+    "....kkkk................kkkk....",
+    "....kmmk................kmmk....",
+    "....kmmk................kmmk....",
+    "....kkkkkkkkk......kkkkkkkkk....",
+    "....kmmkmmmmk......kmmmmkmmk....",
+    "....kmmkkkkkk......kkkkkkmmk....",
+    "....kkkk................kkkk....",
+    "....kmmk................kmmk....",
+    "....kmmk................kmmk....",
+    "....kkkk................kkkk....",
+    "....kmmk................kmmk....",
+    ".kkkkkkkkkk..........kkkkkkkkkk.",
+    ".kmmmmmmmmk..........kmmmmmmmmk.",
+    ".kmmmmmmmmk..........kmmmmmmmmk.",
+    ".kkkkkkkkkk..........kkkkkkkkkk.",
+    "................................",
+  ],
+  "dumbbell-rack": [
+    "................................",
+    "................................",
+    "................................",
+    "..kkk...kkk.kkk...kkk.kkk...kkk.",
+    "..kwk...kwk.kwk...kwk.kwk...kwk.",
+    "..kmkkkkkmk.kmkkkkkmk.kmkkkkkmk.",
+    "..kmwwwwwmk.kmwwwwwmk.kmwwwwwmk.",
+    "..kmkkkkkmk.kmkkkkkmk.kmkkkkkmk.",
+    "..kmk...kmk.kmk...kmk.kmk...kmk.",
+    ".kkkk...kkk.kkk...kkk.kkk...kkk.",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "gggggggggggggggggggggggggggggggg",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    ".kmk........................kmk.",
+    ".kkkk...kkk.kkk...kkk.kkk...kkk.",
+    ".kkgk...kgk.kgk...kgk.kgk...kgk.",
+    ".kkgkkkkkgk.kgkkkkkgk.kgkkkkkgk.",
+    ".kkgwwwwwgk.kgwwwwwgk.kgwwwwwgk.",
+    ".kkgkkkkkgk.kgkkkkkgk.kgkkkkkgk.",
+    ".kkgk...kgk.kgk...kgk.kgk...kgk.",
+    ".kkkk...kkk.kkk...kkk.kkk...kkk.",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "gggggggggggggggggggggggggggggggg",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    ".kmk........................kmk.",
+    ".kmk........................kmk.",
+    "kkkkk......................kkkkk",
+    "kmmmk......................kmmmk",
+    "kkkkk......................kkkkk",
+    "................................",
+  ],
+  "lifting-platform": [
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kgggkkkgkeeeedeeeedeeeekgkkkggdk",
+    "kggkknkkkeeeedeeeedeeeekkknkkgdk",
+    "kggkmnnkkkkeedeeeedeekkkknnmkgdk",
+    "kggkmnnkkmkeedeeeedeekmkknnmkgdk",
+    "kggkmnnkkmkeedeeeedeekmkknnmkgdk",
+    "kggkmnnkknkkedeeeedekknkknnmkgdk",
+    "kgkknnnkknkmkkkkkkkkmknkknnnkkdk",
+    "kgkknnnkknkmwwwwwwwwmknkknnnkkdk",
+    "kgkknnnkknkmwwwwwwwwmknkknnnkkdk",
+    "kgkknnnkknkmkkkkkkkkmknkknnnkkdk",
+    "kggknnnkknkkedeeeedekknkknnnkgdk",
+    "kggknnnkknkeedeeeedeeknkknnnkgdk",
+    "kggknnnkknkeedeeeedeeknkknnnkgdk",
+    "kggknnnkkkkeedeeeedeekkkknnnkgdk",
+    "kggkknkkkeeeedeeeedeeeekkknkkgdk",
+    "kgggkkkgkeeeedeeeedeeeekgkkkggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kgggggggkeeeedeeeedeeeekggggggdk",
+    "kddddddddddddddddddddddddddddddk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+  ],
+  "pull-up-bar": [
+    "................................",
+    "................................",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kwwwwwwwnnnnnwwwwwwnnnnnwwwwwwwk",
+    "kwwwwwwwnnnnnwwwwwwnnnnnwwwwwwwk",
+    "kmmmmmmmnnnnnmmmmmmnnnnnmmmmmmmk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "...kwmk..................kmwk...",
+    "...kwmk..................kmwk...",
+    "...kwmkkkk............kkkkmwk...",
+    "...kwmkkkk............kkkkmwk...",
+    "...kwmk..................kmwk...",
+    "...kwmk..................kmwk...",
+    "...kwmk..................kmwk...",
+    "...kwmk..................kmwk...",
+    "...kwmkkkkkk........kkkkkkmwk...",
+    "...kwmknnnnk........knnnnkmwk...",
+    "...kwmknnnnk........knnnnkmwk...",
+    "...kwmkkkkkk........kkkkkkmwk...",
+    "...kwmk..................kmwk...",
+    "...kwmk..................kmwk...",
+    "...kwmk..................kmwk...",
+    "...kwmk..................kmwk...",
+    "...kwmk..................kmwk...",
+    "...kwmk..................kmwk...",
+    "...kwmk..................kmwk...",
+    "...kwmk..................kmwk...",
+    "kkkkkkkkkk............kkkkkkkkkk",
+    "kmmmmmmmmk............kmmmmmmmmk",
+    "kmmmmmmmmk............kmmmmmmmmk",
+    "kkkkkkkkkk............kkkkkkkkkk",
+    "................................",
+  ],
+  "cable-machine": [
+    "................................",
+    "..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..",
+    "..kwwwwwwwwwwwwwwwwwwwwwwwwwwk..",
+    "..kmmmmmmmmmeeeeeeeemmmmmmmmmk..",
+    "..kmmmmmmmmmeeeeeeeemmmmmmmmmk..",
+    "..kkkk.kkk.kkkknnkkkk.kkk.kkkk..",
+    "..kwmkkkwkkk...nn...kkkwkkkmwk..",
+    "..kwmkkwkwkk...nn...kkwkwkkmwk..",
+    "..kwmkkkwkkkwwwwwwwwkkkwkkkmwk..",
+    "..kwmk.kkk.kmmmmmmmmk.kkk.kmwk..",
+    "..kwmk..n..kkkkkkkkkk..n..kmwk..",
+    "..kwmk..n..kmmmmmmmmk..n..kmwk..",
+    "..kwmk..n..kmmmmmmmmk..n..kmwk..",
+    "..kwmk..n..kkkkkkkkkk..n..kmwk..",
+    "..kwmk..n..kmmmmmmmmk..n..kmwk..",
+    "..kwmk..n..kmmmmmmmmk..n..kmwk..",
+    "..kwmk..n..kkkkkkkkkk..n..kmwk..",
+    "..kwmk..n..kmmmmmmmmwwwk..kmwk..",
+    "..kwmk..n..kmmmmmmmmk..n..kmwk..",
+    "..kwmk..n..kkkkkkkkkk..n..kmwk..",
+    "..kwmkkkkkkkmmmmmmmmkkkkkkkmwk..",
+    "..kwmkkmmmkkmmmmmmmmkkmmmkkmwk..",
+    "..kwmkkmmmkkkkkkkkkkkkmmmkkmwk..",
+    "..kwmkkkkkkkmmmmmmmmkkkkkkkmwk..",
+    "..kwmk.....kmmmmmmmmk.....kmwk..",
+    "..kwmk.....kkkkkkkkkk.....kmwk..",
+    "..kwmk.....k........k.....kmwk..",
+    "kkkkkkkkkkkk........kkkkkkkkkkkk",
+    "kmmmmmmmmmmk........kmmmmmmmmmmk",
+    "kmmmmmmmmmmk........kmmmmmmmmmmk",
+    "kkkkkkkkkkkk........kkkkkkkkkkkk",
+    "................................",
+  ],
+  "exercise-mat": [
+    "...........................kkkk.",
+    ".......kkkkkkkkkkkkkkkkkk.kk..kk",
+    "......kwwwwwwwwwwwwwwwwwwkk....k",
+    "......kegeeeeeeeeeeeeeegekkkkkkk",
+    "......kegkeeeeeeeeeeeekgekkmwmmk",
+    "......kegeeeeeeeeeeeeeegekkmmmmk",
+    "......kddddddddddddddddddkkmmmmk",
+    ".......kkkkkkkkkkkkkkkkkk..kkkk.",
+    ".......kgggggggggggggggdk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......keeeeeeeeeeeeeeedk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......keeeeeeeeeeeeeeedk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......keeeeeeeeeeeeeeedk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......keeeeeeeeeeeeeeedk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......keeeeeeeeeeeeeeedk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......kgggggggggggggggdk.......",
+    ".......kddddddddddddddddk.......",
+    ".......kkkkkkkkkkkkkkkkkk.......",
+    "................................",
+  ],
+};
+
+// your station: leaf corners, an ink line inside them so they read on any floor
+export const CLAIM: string[] = [
+  "llllllll................llllllll",
+  "llllllll................llllllll",
+  "llkkkkkk................kkkkkkll",
+  "llk..........................kll",
+  "llk..........................kll",
+  "llk..........................kll",
+  "llk..........................kll",
+  "llk..........................kll",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "llk..........................kll",
+  "llk..........................kll",
+  "llk..........................kll",
+  "llk..........................kll",
+  "llk..........................kll",
+  "llkkkkkk................kkkkkkll",
+  "llllllll................llllllll",
+  "llllllll................llllllll",
+];
+```
+
+```ts
+// src/sprites/gym.ts: replaces the 3 x 5 DIGITS, bay() and bay16().
+// 6 x 10 digits for the empty bays' numbers, two pixels per stroke
+const DIGITS: Record<string, string[]> = {
+  "0": [".eeee.", "eeeeee", "ee..ee", "ee..ee", "ee..ee", "ee..ee", "ee..ee", "ee..ee", "eeeeee", ".eeee."],
+  "1": ["..ee..", ".eee..", "eeee..", "..ee..", "..ee..", "..ee..", "..ee..", "..ee..", "eeeeee", "eeeeee"],
+  "2": [".eeee.", "eeeeee", "ee..ee", "....ee", "...eee", "..eee.", ".eee..", "eee...", "eeeeee", "eeeeee"],
+  "3": [".eeee.", "eeeeee", "ee..ee", "....ee", "..eee.", "..eee.", "....ee", "ee..ee", "eeeeee", ".eeee."],
+  "4": ["...eee", "..eeee", ".ee.ee", "ee..ee", "ee..ee", "eeeeee", "eeeeee", "....ee", "....ee", "....ee"],
+  "5": ["eeeeee", "eeeeee", "ee....", "eeeee.", "eeeeee", "....ee", "....ee", "ee..ee", "eeeeee", ".eeee."],
+  "6": [".eeee.", "eeeeee", "ee....", "eeeee.", "eeeeee", "ee..ee", "ee..ee", "ee..ee", "eeeeee", ".eeee."],
+  "7": ["eeeeee", "eeeeee", "....ee", "...ee.", "...ee.", "..ee..", "..ee..", "..ee..", "..ee..", "..ee.."],
+  "8": [".eeee.", "eeeeee", "ee..ee", "ee..ee", ".eeee.", "eeeeee", "ee..ee", "ee..ee", "eeeeee", ".eeee."],
+  "9": [".eeee.", "eeeeee", "ee..ee", "ee..ee", "eeeeee", ".eeeee", "....ee", "....ee", "eeeeee", ".eeee."],
+};
+
+// An empty station: a dashed square in edge green, 2 px thick, on rows and
+// columns 2-3 and 28-29 (dashes of 4, gaps of 2, starting at 2, so every
+// corner is solid), and its slot number centred, digits 2 apart, rows 11-20.
+export function bay(slot: number): string[] {
+  const g = Array.from({ length: 32 }, () => Array<string>(32).fill("."));
+  const dash = (i: number) => (i - 2) % 6 < 4;
+  for (let i = 2; i <= 29; i++) {
+    if (!dash(i)) continue;
+    for (const t of [2, 3, 28, 29]) g[t][i] = g[i][t] = "e";
+  }
+  const digits = String(slot).split("");
+  let x = (32 - (digits.length * 8 - 2)) / 2;
+  for (const d of digits) {
+    DIGITS[d].forEach((row, dy) => [...row].forEach((ch, dx) => ch !== "." && (g[11 + dy][x + dx] = ch)));
+    x += 8;
+  }
+  return g.map((r) => r.join(""));
+}
 ```

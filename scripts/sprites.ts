@@ -16,7 +16,7 @@ import { bay, CLAIM, GEAR, GYM_PALETTE, MAP, SCENERY, STATIONS, TILES } from "..
 import * as icons from "../src/sprites/icons.ts";
 import * as props from "../src/sprites/props.ts";
 import * as door from "../src/sprites/door.ts";
-import type { Sprite } from "../src/sprites/sprite.ts";
+import { TILE, type Sprite } from "../src/sprites/sprite.ts";
 
 // the avatar's slots as Avatar.astro colours them
 const SLOT: Record<string, string> = {
@@ -24,6 +24,9 @@ const SLOT: Record<string, string> = {
   s: "var(--av-skin)",
   t: "var(--av-shirt)",
   h: "var(--av-hair)",
+  S: "var(--av-skin-2, color-mix(in srgb, var(--av-skin), var(--ink) 30%))",
+  H: "var(--av-hair-2, color-mix(in srgb, var(--av-hair), var(--ink) 30%))",
+  T: "var(--av-shirt-2, color-mix(in srgb, var(--av-shirt), var(--ink) 30%))",
   m: "var(--dim)",
   w: "var(--paper)",
   r: "var(--resting)",
@@ -56,33 +59,33 @@ export function sheet(): string[] {
   const poses: Pose[] = ["stand", "lift", "rest", "sit"];
   for (const pose of poses) {
     const { body, hairRow, props: extra } = poseOf(pose);
-    out.push(symbol(`av-${pose}`, 16, 16, slots(body) + slots(extra)));
+    out.push(symbol(`av-${pose}`, TILE, TILE, slots(body) + slots(extra)));
     for (const { id } of HAIR_STYLES) {
-      out.push(symbol(`av-${pose}-${id}`, 16, 16, slots(body) + slots(HAIR[id], hairRow) + slots(extra)));
+      out.push(symbol(`av-${pose}-${id}`, TILE, TILE, slots(body) + slots(HAIR[id], hairRow) + slots(extra)));
     }
   }
-  out.push(symbol("av-ghost", 16, 16, slots(BODY)));
+  out.push(symbol("av-ghost", TILE, TILE, slots(BODY)));
   const frames: DonyFrame[] = ["stand", "lift", "lift2", "rest", "sit", "walk1", "walk2", "hop"];
   for (const frame of frames) {
     const { body, props: extra } = donyFrame(frame);
-    out.push(symbol(`dony-${frame}`, 16, 16, `<g style="${DONY_VARS}">${slots(body) + slots(extra)}</g>`));
+    out.push(symbol(`dony-${frame}`, TILE, TILE, `<g style="${DONY_VARS}">${slots(body) + slots(extra)}</g>`));
   }
 
   // the floor as GymMap draws it: the poster's place is plain wall
   const base = (ch: string) => TILES[SCENERY[ch]?.base ?? (ch === "P" ? "W" : ch)];
   const kinds = [...new Set(MAP.join(""))];
   for (const ch of kinds) {
-    out.push(symbol(`tile-${ch.charCodeAt(0)}`, 16, 16, gym(base(ch)) + (SCENERY[ch] ? gym(SCENERY[ch].grid) : "")));
+    out.push(symbol(`tile-${ch.charCodeAt(0)}`, TILE, TILE, gym(base(ch)) + (SCENERY[ch] ? gym(SCENERY[ch].grid) : "")));
   }
   const floor = MAP.flatMap((row, y) =>
-    [...row].map((ch, x) => `<use href="#tile-${ch.charCodeAt(0)}" x="${x * 16}" y="${y * 16}" width="16" height="16"/>`),
+    [...row].map((ch, x) => `<use href="#tile-${ch.charCodeAt(0)}" x="${x * TILE}" y="${y * TILE}" width="${TILE}" height="${TILE}"/>`),
   );
-  out.push(symbol("map-tiles", 160, 160, floor.join("")));
-  for (const [name, grid] of Object.entries(GEAR)) out.push(symbol(`eq-${name}`, 16, 16, gym(grid)));
-  STATIONS.forEach((_, i) => out.push(symbol(`bay-${i + 1}`, 16, 16, gym(bay(i + 1)))));
-  out.push(symbol("claim", 16, 16, gym(CLAIM)));
+  out.push(symbol("map-tiles", 10 * TILE, 10 * TILE, floor.join("")));
+  for (const [name, grid] of Object.entries(GEAR)) out.push(symbol(`eq-${name}`, TILE, TILE, gym(grid)));
+  STATIONS.forEach((_, i) => out.push(symbol(`bay-${i + 1}`, TILE, TILE, gym(bay(i + 1)))));
+  out.push(symbol("claim", TILE, TILE, gym(CLAIM)));
   for (const [name, grid] of Object.entries(POSTER)) {
-    out.push(symbol(`poster-${name}`, 16, 16, paths(grid, (ch) => POSTER_PALETTE[ch as keyof typeof POSTER_PALETTE])));
+    out.push(symbol(`poster-${name}`, TILE, TILE, paths(grid, (ch) => POSTER_PALETTE[ch as keyof typeof POSTER_PALETTE])));
   }
 
   for (const [name, s] of Object.entries(icons)) out.push(sprite(`i-${name.replace(/Icon$/, "").replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`, s));

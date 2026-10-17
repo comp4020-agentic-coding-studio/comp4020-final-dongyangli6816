@@ -345,7 +345,7 @@ const steps = [
   }
   .squad li {
     display: grid;
-    grid-template-columns: 42px 1fr auto;
+    grid-template-columns: 56px 1fr auto;
     align-items: center;
     gap: 0 0.75rem;
     padding: 0.5rem 0;
@@ -354,10 +354,10 @@ const steps = [
   .squad li:first-child {
     border-top: 0;
   }
-  /* the head crop of the avatar: 14 x 11 sprite pixels at 3x */
+  /* the head crop of the avatar: 28 x 22 sprite pixels at 2x */
   .squad :global(.av) {
-    width: 42px;
-    height: 33px;
+    width: 56px;
+    height: 44px;
   }
 
   /* signed in: you on your patch of floor beside the greeting */
@@ -372,13 +372,13 @@ const steps = [
     margin: 0 0 0.25rem;
   }
   .floor {
-    --s: 4px;
+    --s: 2px;
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-end;
-    min-height: calc(var(--s) * 16 + 88px);
+    min-height: calc(var(--s) * 32 + 88px);
     padding: 0 0.5rem 0.75rem;
     border: var(--px) solid var(--ink);
     border-top: calc(var(--px) * 4) solid var(--deep);
@@ -412,15 +412,15 @@ const steps = [
     color: var(--leaf);
   }
   .floor :global(.av) {
-    width: calc(var(--s) * 16);
-    height: calc(var(--s) * 16);
+    width: calc(var(--s) * 32);
+    height: calc(var(--s) * 32);
   }
   .floor :global(.av-top) {
     animation: idle 800ms steps(1) infinite;
   }
   @keyframes idle {
     50% {
-      transform: translateY(1px); /* one sprite pixel */
+      transform: translateY(2px); /* one pixel of the 16 x 16 drawing */
     }
   }
   @media (prefers-reduced-motion: reduce) {

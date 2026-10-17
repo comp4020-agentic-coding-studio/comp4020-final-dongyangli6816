@@ -815,8 +815,9 @@
     <!-- Pixel icons on an 8 × 8 grid in currentColor, shown at 2×. The build
          draws them with Sprite.astro from src/sprites/icons.ts. -->
     <svg width="0" height="0" style="position: absolute" aria-hidden="true">
-      
-      
+      <!-- New art (ADR 0005): bigDumbbell redrawn at 32 × 16. Grid in spec.md,
+           "Appendix: 32 × 32 art"; once in src/sprites/props.ts, draw it from
+           /sprites.svg#bigDumbbell instead. -->
     </svg>
     <header class="topbar">
       <a href="/" class="brand" aria-label="Spotter home">
@@ -1119,7 +1120,7 @@
 
         <h1>History</h1>
         <div class="card empty">
-          <svg viewBox="0 0 16 8" width="64" height="32" aria-hidden="true" shape-rendering="crispEdges"><use href="/sprites.svg#bigDumbbell"/></svg>
+          <svg viewBox="0 0 32 16" width="64" height="32" aria-hidden="true" shape-rendering="crispEdges"><use href="/sprites.svg#bigDumbbell"/></svg>
           <p>No workouts yet. Your future self is waiting 🏋️</p>
           <a href="/" class="button">Start one</a>
         </div>

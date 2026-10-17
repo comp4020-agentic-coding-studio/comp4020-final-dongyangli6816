@@ -47,7 +47,7 @@ head band with the door sprite (`.entry-head`, `.entry-door`,
 two fields and a button, plus a text link below. That would fit any app with
 the colours swapped. Three things changed because of the check:
 
-- **The front door.** The card's head is a `--deep` band, and a 16 × 16 pixel
+- **The front door.** The card's head is a `--deep` band, and a 32 × 32 pixel
   gym door stands on its ink bottom edge, which works as the threshold. The
   door has a dumbbell sign and lit windows. Signing in is walking back into
   the gym, the same gym the room page draws.
@@ -89,8 +89,8 @@ Top to bottom inside `<Layout title="Sign in">`:
       inside the card border, using negative margins equal to the card
       padding (1.25rem, or 1rem at ≤ 420 px). It has a `--px` ink bottom
       border.
-      - **`svg.entry-door`** (new): the door sprite, `viewBox="0 0 16 16"`,
-        drawn at 80 × 80 (a whole 5×), `shape-rendering="crispEdges"`,
+      - **`svg.entry-door`** (new): the door sprite, `viewBox="0 0 32 32"`,
+        drawn at 96 × 96 (a whole 3×), `shape-rendering="crispEdges"`,
         `aria-hidden="true"`. In the mockup it's a `<symbol>` used four
         times; in the build, inline the rects once or render them from
         a grid (below).
@@ -158,32 +158,7 @@ only fires once both fields are filled.
 
 ### Door sprite
 
-Four colours plus transparency, with an `--ink` outline (design system
-section 10). Its palette is `k` `#0b2416` (ink), `l` `#c8e66b` (leaf),
-`g` `#1f6b3a` (green) and `p` `#e8f0d8` (paper):
-
-```
-..kkkkkkkkkkkk..
-..klkllllllklk..
-..klkkkkkkkklk..
-..klkllllllklk..
-..kkkkkkkkkkkk..
-.kkkkkkkkkkkkkk.
-.kllllllllllllk.
-.klggggkkgggglk.
-.klgppgkkgppglk.
-.klgppgkkgppglk.
-.klggggkkgggglk.
-.klgggpkkpggglk.
-.klggggkkgggglk.
-.klggggkkgggglk.
-.klggggkkgggglk.
-kkkkkkkkkkkkkkkk
-```
-
-Each run of one letter is one `<rect height="1">`; the mockup has them
-merged already. If `src/sprites/` exists by the time this is built, put the
-grid there as `door.ts`, because the system says sprites are data.
+The 32 × 32 grid is in "Appendix: 32 × 32 art (ADR 0005)" at the end of this file.
 
 ### New CSS
 
@@ -221,7 +196,7 @@ under Open questions.
   yet, so ask whoever runs this Spotter." The user should decide that, so it
   isn't in the mockup.
 - Nothing else breaks the design system. The door sprite follows section 10:
-  4 colours, ink outline, whole-number 5× scaling and `crispEdges`.
+  5 colours, ink outline, whole-number 3× scaling (96 px) and `crispEdges`.
 
 ## 6. Layout changes
 
@@ -282,3 +257,73 @@ layout cropped to 390 px, and pages look clipped on the right even when they
 fit. `shot-narrow-390-360.png` shows the real 390 px and 360 px layouts,
 rendered inside iframes of those widths. The critic should use that one for
 narrow checks.
+
+## Appendix: 32 × 32 art (ADR 0005)
+
+### `door`, redrawn at 32 × 32
+
+Replaces the `door` export in `src/sprites/door.ts` (drop its `upscale()`).
+Five colours plus transparency, all already tokens: `k` ink, `l` leaf, `g`
+green, `a` deep (new: the shadow under the lintel, the hinge side of each
+leaf and the kickplates) and `p` paper (the sign's top edge and the lit
+window glass). What 32 px adds over the old 16: a real dumbbell on the sign
+(two plates, collars and the bar) hung on two hooks, a lintel with a shaded
+underside, a frame with depth, windows split into two panes each with a leaf
+glow along the bottom and a glint in one corner, handles beside the seam,
+kickplates, and a step to stand on.
+
+Shown at **96 px (3×)**, confirmed: at 64 px (2×) the door is shorter than
+the h1 plus its line, so it looks like an icon left beside the heading and
+the band gets empty space above it; at 96 it stands on the threshold with the
+heading beside it, as the band was designed. `.entry-door` keeps `width: 96px;
+height: 96px` (already in `signin.astro`). The mockup draws this grid as the
+`<symbol id="door-32">` until it is in the sheet; after that, use
+`/sprites.svg#door`.
+
+```ts
+export const door: Sprite = {
+  grid: [
+    "....kkkkkkkkkkkkkkkkkkkkkkkk....",
+    "....kppppppppppppppppppppppk....",
+    "....kllllkkllllllllllkkllllk....",
+    "....klllkkkkllllllllkkkklllk....",
+    "....klllkkkkkkkkkkkkkkkklllk....",
+    "....klllkkkkllllllllkkkklllk....",
+    "....kllllkkllllllllllkkllllk....",
+    "....kggggggggggggggggggggggk....",
+    "....kkkkkkkkkkkkkkkkkkkkkkkk....",
+    "........k..............k........",
+    ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+    ".kllllllllllllllllllllllllllllk.",
+    ".kggggggggggggggggggggggggggggk.",
+    ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+    ".klgkaaaaaaaaaakkaaaaaaaaaakglk.",
+    ".klgkagggggggggkkgggggggggakglk.",
+    ".klgkakkkkkkkggkkggkkkkkkkakglk.",
+    ".klgkaklpkppkggkkggklpkppkakglk.",
+    ".klgkakppkppkggkkggkppkppkakglk.",
+    ".klgkakppkppklgkkglkppkppkakglk.",
+    ".klgkakllkllklgkkglkllkllkakglk.",
+    ".klgkakllkllklgkkglkllkllkakglk.",
+    ".klgkakkkkkkklgkkglkkkkkkkakglk.",
+    ".klgkagggggggkgkkgkgggggggakglk.",
+    ".klgkagggggggggkkgggggggggakglk.",
+    ".klgkaaaaaaaaagkkgaaaaaaaaakglk.",
+    ".klgkaaaaaaaaagkkgaaaaaaaaakglk.",
+    ".klgkagggggggggkkgggggggggakglk.",
+    ".klgkagggggggggkkgggggggggakglk.",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "kggggggggggggggggggggggggggggggk",
+    "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+  ],
+  palette: { k: INK, l: "#c8e66b", g: "#1f6b3a", a: "#0f3d22", p: "#e8f0d8" },
+};
+```
+
+### Sizes on signup (confirmed, no change)
+
+The avatar is 64 px (32 × 32 at 2×). The floor props are the Lobby
+designer's art; at today's doubled grids the kettlebell (12 × 12) is 24 px and
+the dumbbell (16 × 8) is 32 × 16 px, both 2×. If Lobby changes their grid
+sizes, keep them at 2×.
+

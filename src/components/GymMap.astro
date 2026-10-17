@@ -14,6 +14,7 @@ import { HAIR_STYLES, lookKey, type Look, type Pose } from "../sprites/avatar.ts
 import { bay, CLAIM, GEAR, GYM_PALETTE, MAP, SCENERY, STATIONS, TILES } from "../sprites/gym.ts";
 import { POSTER, POSTER_PALETTE, type DonyFrame } from "../sprites/dony.ts";
 import { phoneOffIcon } from "../sprites/icons.ts";
+import { paths, TILE } from "../sprites/sprite.ts";
 
 interface Props {
   view: RoomView;
@@ -23,19 +24,9 @@ interface Props {
 const { view, me, passcode } = Astro.props;
 
 const art = (grid: readonly string[]) => ({ grid, palette: GYM_PALETTE });
-// runs of one colour in a row, as rects, for the tile symbols
-function rects(grid: readonly string[], palette = GYM_PALETTE) {
-  const out: { x: number; y: number; w: number; fill: string }[] = [];
-  grid.forEach((row, y) => {
-    for (let x = 0; x < row.length; ) {
-      let end = x + 1;
-      while (row[end] === row[x]) end++;
-      if (row[x] !== ".") out.push({ x, y, w: end - x, fill: palette[row[x]] });
-      x = end;
-    }
-  });
-  return out;
-}
+// a grid as one path per colour, for the tile and poster symbols
+const filled = (grid: readonly string[], palette: Record<string, string> = GYM_PALETTE) =>
+  [...paths(grid)].map(([ch, d]) => ({ fill: palette[ch], d }));
 // one symbol per kind of tile; scenery is its wall tile with the art over it,
 // and the poster's place is plain wall under its button
 const kinds = [...new Set(MAP.join(""))];
@@ -46,7 +37,7 @@ const poster = view.dony;
 const resting = view.now < poster.restingUntil;
 const posterLabel =
   (poster.out ? "Send Dony back to his poster" : "Call Dony out of his poster") + (resting ? " (not ready yet)" : "");
-const posterArt = (grid: readonly string[]) => rects(grid, POSTER_PALETTE);
+const posterArt = (grid: readonly string[]) => filled(grid, POSTER_PALETTE);
 const donyPose = (pose: Pose): DonyFrame => pose;
 const DONY_FRAMES: DonyFrame[] = ["stand", "lift", "rest", "sit", "walk1", "walk2", "hop"];
 const mine = view.members.find((m) => m.id === me)?.station?.slot;
@@ -61,23 +52,22 @@ const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black",
   <p class="conn" role="status"><span class="badge">Live</span></p>
   <p class="vh" id="floor">{floorLine(view.stations)}</p>
   <div class="map" data-me={me}>
-    <svg class="tiles" viewBox="0 0 160 160" aria-hidden="true">
+    <svg class="tiles" viewBox={`0 0 ${TILE * 10} ${TILE * 10}`} aria-hidden="true">
       <defs>
         {
           kinds.map((ch) => (
-            <symbol id={`tile-${ch.charCodeAt(0)}`} viewBox="0 0 16 16">
-              {rects(symbolOf(ch)).map((r) => (
-                <rect x={r.x} y={r.y} width={r.w} height="1" fill={r.fill} />
+            <symbol id={`tile-${ch.charCodeAt(0)}`} viewBox={`0 0 ${TILE} ${TILE}`}>
+              {filled(symbolOf(ch)).map((p) => (
+                <path fill={p.fill} d={p.d} />
               ))}
-              {SCENERY[ch] &&
-                rects(SCENERY[ch].grid).map((r) => <rect x={r.x} y={r.y} width={r.w} height="1" fill={r.fill} />)}
+              {SCENERY[ch] && filled(SCENERY[ch].grid).map((p) => <path fill={p.fill} d={p.d} />)}
             </symbol>
           ))
         }
       </defs>
       {
         MAP.flatMap((row, y) =>
-          [...row].map((ch, x) => <use href={`#tile-${ch.charCodeAt(0)}`} x={x * 16} y={y * 16} width="16" height="16" />),
+          [...row].map((ch, x) => <use href={`#tile-${ch.charCodeAt(0)}`} x={x * TILE} y={y * TILE} width={TILE} height={TILE} />),
         )
       }
     </svg>
@@ -92,7 +82,7 @@ const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black",
       data-out={String(poster.out)}
       data-resting-until={poster.restingUntil}
     >
-      <svg viewBox="0 0 16 16" aria-hidden="true">
+      <svg viewBox={`0 0 ${TILE} ${TILE}`} aria-hidden="true">
         <use href={poster.out ? "#poster-empty" : "#poster-full"} />
         {!poster.out && <use href="#poster-glint" class="glint" />}
         {
@@ -176,9 +166,9 @@ const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black",
     <defs>
       {
         Object.entries(POSTER).map(([name, grid]) => (
-          <symbol id={`poster-${name}`} viewBox="0 0 16 16">
-            {posterArt(grid).map((r) => (
-              <rect x={r.x} y={r.y} width={r.w} height="1" fill={r.fill} />
+          <symbol id={`poster-${name}`} viewBox={`0 0 ${TILE} ${TILE}`}>
+            {posterArt(grid).map((p) => (
+              <path fill={p.fill} d={p.d} />
             ))}
           </symbol>
         ))
@@ -191,24 +181,25 @@ const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black",
 
 <style is:global>
   /* ---------- the gym map (GYM-1) ----------
-     10 x 10 tiles of 16 px, drawn at --s, the largest whole number that fits
-     (the room's script sets it; these media queries are the no-JS fallback) */
+     10 x 10 tiles of 32 px (ADR 0005), drawn at --s, the largest whole
+     number that fits: 1 (320 px) on a phone, 2 (640 px) where that fits. The
+     room's script sets it; these media queries are the no-JS fallback */
   /* specific enough to beat the room's .gym .panel padding */
   .gym .panel.map-panel {
     margin-bottom: 1.5rem;
     padding: 1rem var(--px) var(--px);
   }
   .map-panel .map {
-    --s: 2;
-    --t: calc(16px * var(--s));
+    --s: 1;
+    --t: calc(32px * var(--s));
     position: relative;
     width: calc(var(--t) * 10);
     height: calc(var(--t) * 10);
     margin: 0 auto;
   }
-  @media (min-width: 900px) and (min-height: 600px) {
+  @media (min-width: 1120px) and (min-height: 760px) {
     .map-panel .map {
-      --s: 3;
+      --s: 2;
     }
   }
   .map-panel .map svg {
@@ -302,9 +293,10 @@ const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black",
   .map-panel .avatar .pose-sit .pw {
     animation: av-glow 800ms steps(1) infinite;
   }
+  /* in sprite units: 2 of 32 is one pixel of the 16 x 16 drawing */
   @keyframes av-bob {
     50% {
-      transform: translateY(1px);
+      transform: translateY(2px);
     }
   }
   @keyframes av-glow {

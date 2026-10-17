@@ -1,7 +1,7 @@
 ---
-// Draws a sprite grid as crisp SVG rects, one per run of a colour in a row.
+// Draws a sprite grid as crisp SVG, one path per colour.
 // Size it with `scale` (whole numbers only) or with CSS on the class.
-import type { Sprite } from "../sprites/sprite.ts";
+import { paths, type Sprite } from "../sprites/sprite.ts";
 
 interface Props {
   sprite: Sprite;
@@ -13,19 +13,9 @@ interface Props {
 const { sprite, scale, class: className, split = 0 } = Astro.props;
 const w = sprite.grid[0].length;
 const h = sprite.grid.length;
-const runs = sprite.grid.flatMap((row, y) => {
-  const out: { x: number; y: number; w: number; fill: string }[] = [];
-  for (let x = 0; x < row.length; ) {
-    const ch = row[x];
-    let end = x + 1;
-    while (row[end] === ch) end++;
-    if (ch !== ".") out.push({ x, y, w: end - x, fill: ch === "c" ? "currentColor" : sprite.palette[ch] });
-    x = end;
-  }
-  return out;
-});
-const top = runs.filter((r) => r.y < split);
-const rest = runs.filter((r) => r.y >= split);
+const fill = (ch: string) => (ch === "c" ? "currentColor" : sprite.palette[ch]);
+const top = [...paths(sprite.grid, 0, split)];
+const rest = [...paths(sprite.grid, split)];
 ---
 
 <svg
@@ -36,6 +26,6 @@ const rest = runs.filter((r) => r.y >= split);
   shape-rendering="crispEdges"
   aria-hidden="true"
 >
-  {top.length > 0 && <g class="sprite-top">{top.map((r) => <rect x={r.x} y={r.y} width={r.w} height="1" fill={r.fill} />)}</g>}
-  {rest.map((r) => <rect x={r.x} y={r.y} width={r.w} height="1" fill={r.fill} />)}
+  {top.length > 0 && <g class="sprite-top">{top.map(([ch, d]) => <path fill={fill(ch)} d={d} />)}</g>}
+  {rest.map(([ch, d]) => <path fill={fill(ch)} d={d} />)}
 </svg>

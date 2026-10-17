@@ -1,11 +1,12 @@
 ---
 // One person's avatar as crisp SVG (AV-2): the body in a pose, with the hair
 // drawn over the head inside the bobbing group (g.av-top). Each pixel carries
-// its slot as a class (k, s, t, h; pm, pw, pr for the gym's props) rather
+// its slot as a class (k, s, t, h, the shades S, T, H; pm, pw, pr for the gym's props) rather
 // than a fill, and the look's colours arrive as custom properties, so a
 // palette swap is three variables.
 import { AVATAR_UPPER_ROWS, HAIR, HAIR_STYLES, lookVars, poseOf, type HairStyle, type Look, type Pose } from "../sprites/avatar.ts";
 import { DONY_VARS, donyFrame, type DonyFrame } from "../sprites/dony.ts";
+import { paths, TILE } from "../sprites/sprite.ts";
 
 interface Props {
   // Dony's own sprite and colours in this frame, instead of a look (BOT-2)
@@ -25,51 +26,43 @@ interface Props {
 }
 const { dony, look, pose = "stand", head = false, allHair = false, vars = !!look, class: className } = Astro.props;
 
-type Run = { x: number; y: number; w: number; slot: string };
+// one path per slot; a prop's m, w and r are drawn in the gym's colours, and
+// any body letter in the props (the lift's arms) keeps its slot
 const PROP: Record<string, string> = { m: "pm", w: "pw", r: "pr" };
-function runs(grid: readonly string[], dy = 0, prop = false): Run[] {
-  const out: Run[] = [];
-  grid.forEach((row, y) => {
-    for (let x = 0; x < row.length; ) {
-      const ch = row[x];
-      let end = x + 1;
-      while (row[end] === ch) end++;
-      if (ch !== ".") out.push({ x, y: y + dy, w: end - x, slot: prop ? (PROP[ch] ?? ch) : ch });
-      x = end;
-    }
-  });
-  return out;
-}
+const slotted = (map: Map<string, string>, prop = false) =>
+  [...map].map(([ch, d]) => ({ slot: prop ? (PROP[ch] ?? ch) : ch, d }));
 const { body: grid, hairRow, props } = dony ? { ...donyFrame(dony), hairRow: 0 } : poseOf(pose);
-const body = runs(grid);
+const top = slotted(paths(grid, 0, AVATAR_UPPER_ROWS));
+const bottom = slotted(paths(grid, AVATAR_UPPER_ROWS));
 const styles: HairStyle[] = dony || !look ? [] : allHair ? HAIR_STYLES.map((s) => s.id) : [look.hair];
-const hair = styles.map((style) => ({ style, runs: runs(HAIR[style], hairRow) }));
-const extra = runs(props, 0, true);
+const hair = styles.map((style) => ({ style, parts: slotted(paths(HAIR[style], 0, Infinity, hairRow)) }));
+const propsTop = slotted(paths(props, 0, AVATAR_UPPER_ROWS), true);
+const propsBottom = slotted(paths(props, AVATAR_UPPER_ROWS), true);
 ---
 
 <svg
   class:list={["av", `pose-${dony === "sit" ? "sit" : dony?.startsWith("lift") ? "lift" : dony ? "stand" : pose}`, className]}
-  viewBox={head ? "1 0 14 11" : "0 0 16 16"}
+  viewBox={head ? "2 0 28 22" : `0 0 ${TILE} ${TILE}`}
   shape-rendering="crispEdges"
   aria-hidden="true"
   data-hair={allHair && look && !dony ? look.hair : undefined}
   style={dony ? DONY_VARS : vars && look ? lookVars(look) : undefined}
 >
   <g class="av-top">
-    {body.filter((r) => r.y < AVATAR_UPPER_ROWS).map((r) => <rect x={r.x} y={r.y} width={r.w} height="1" class={r.slot} />)}
+    {top.map((p) => <path class={p.slot} d={p.d} />)}
     {
       hair.map((h) => (
         <g class={`hair hair-${h.style}`}>
-          {h.runs.map((r) => (
-            <rect x={r.x} y={r.y} width={r.w} height="1" class={r.slot} />
+          {h.parts.map((p) => (
+            <path class={p.slot} d={p.d} />
           ))}
         </g>
       ))
     }
-    {extra.filter((r) => r.y < AVATAR_UPPER_ROWS).map((r) => <rect x={r.x} y={r.y} width={r.w} height="1" class={r.slot} />)}
+    {propsTop.map((p) => <path class={p.slot} d={p.d} />)}
   </g>
-  {!head && body.filter((r) => r.y >= AVATAR_UPPER_ROWS).map((r) => <rect x={r.x} y={r.y} width={r.w} height="1" class={r.slot} />)}
-  {!head && extra.filter((r) => r.y >= AVATAR_UPPER_ROWS).map((r) => <rect x={r.x} y={r.y} width={r.w} height="1" class={r.slot} />)}
+  {!head && bottom.map((p) => <path class={p.slot} d={p.d} />)}
+  {!head && propsBottom.map((p) => <path class={p.slot} d={p.d} />)}
 </svg>
 
 <style is:global>
@@ -89,6 +82,17 @@ const extra = runs(props, 0, true);
   }
   .av .t {
     fill: var(--av-shirt);
+  }
+  /* the shades (ADR 0005): a palette's own shade when it has one, else its
+     colour mixed a third of the way to ink */
+  .av .S {
+    fill: var(--av-skin-2, color-mix(in srgb, var(--av-skin), var(--ink) 30%));
+  }
+  .av .H {
+    fill: var(--av-hair-2, color-mix(in srgb, var(--av-hair), var(--ink) 30%));
+  }
+  .av .T {
+    fill: var(--av-shirt-2, color-mix(in srgb, var(--av-shirt), var(--ink) 30%));
   }
   /* the gym's props: the bar, the bottle, the phone's glow */
   .av .pm {
@@ -114,6 +118,8 @@ const extra = runs(props, 0, true);
   .av.ghost {
     --av-skin: var(--card);
     --av-shirt: var(--card);
+    --av-skin-2: var(--card);
+    --av-shirt-2: var(--card);
   }
   .av.ghost .k {
     fill: var(--muted);

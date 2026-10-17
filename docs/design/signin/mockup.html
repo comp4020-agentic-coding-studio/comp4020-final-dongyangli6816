@@ -403,8 +403,8 @@
   .entry-door {
     flex: none;
     display: block;
-    width: 80px; /* 16 px sprite at a whole 5x */
-    height: 80px;
+    width: 96px; /* 32 px sprite at a whole 3x */
+    height: 96px;
     image-rendering: pixelated;
   }
   .entry-head h1 {
@@ -539,9 +539,8 @@
 </style>
   </head>
   <body>
-    <!-- the door sprite, defined once for the mockup; the build inlines it -->
+    <!-- the 32 x 32 door (ADR 0005), drawn here until src/sprites/door.ts has it; then use /sprites.svg#door -->
     <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-      
     </svg>
 
     <header class="topbar">
@@ -560,7 +559,7 @@
       <p class="state-label">Default <span>/signin, straight from home</span></p>
       <div class="card">
         <div class="entry-head">
-          <svg class="entry-door" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><use href="/sprites.svg#door" /></svg>
+          <svg class="entry-door" viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><use href="/sprites.svg#door"/></svg>
           <div>
             <h1>Sign in</h1>
             <p class="entry-where">Welcome back. The weights missed you.</p>
@@ -586,7 +585,7 @@
       <p class="state-label">Heading to a gym <span>/signin?next=/rooms/12, from an invite in the group chat</span></p>
       <div class="card">
         <div class="entry-head">
-          <svg class="entry-door" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><use href="/sprites.svg#door" /></svg>
+          <svg class="entry-door" viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><use href="/sprites.svg#door"/></svg>
           <div>
             <h1>Sign in</h1>
             <p class="entry-where">Sign in and you'll walk straight into the gym.</p>
@@ -612,7 +611,7 @@
       <p class="state-label">Error <span>wrong password, email kept, password focused</span></p>
       <div class="card">
         <div class="entry-head">
-          <svg class="entry-door" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><use href="/sprites.svg#door" /></svg>
+          <svg class="entry-door" viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><use href="/sprites.svg#door"/></svg>
           <div>
             <h1>Sign in</h1>
             <p class="entry-where">Sign in and you'll walk straight into the gym.</p>
@@ -639,7 +638,7 @@
       <p class="state-label">Pending <span>tapped Sign in, slow gym wifi</span></p>
       <div class="card">
         <div class="entry-head">
-          <svg class="entry-door" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><use href="/sprites.svg#door" /></svg>
+          <svg class="entry-door" viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true"><use href="/sprites.svg#door"/></svg>
           <div>
             <h1>Sign in</h1>
             <p class="entry-where">Sign in to open your logbook.</p>

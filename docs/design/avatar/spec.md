@@ -16,8 +16,10 @@ This section is identical in all three Lobby specs.
   the person's own avatar on `.floor` (the gym-floor patch signup introduced:
   a `--deep` wall with a green skirting line over the page's checker), name
   tag above (`.nametag`), bobbing in the two-frame idle loop (400 ms a frame,
-  `steps(1)`, frozen under reduced motion). Sprites are 4× (64 px) except in
-  the editor, where you're the subject (6× on phones, 7× from 900 px).
+  `steps(1)`, frozen under reduced motion; the upper body moves 2 sprite
+  pixels). Sprites are 32 × 32 (ADR 0005), shown at 2× (64 px) except in the
+  editor, where you're the subject (3×, 96 px, on phones; 4×, 128 px, from
+  900 px). A list's head crop is `viewBox="2 0 28 22"` at 2× (56 × 44 px).
   - home: a 9 rem tile beside `Hi, Mia`, with **Edit avatar** under the
     greeting;
   - join: the floor sits under the `h1` and lead, with the gym's open
@@ -166,8 +168,11 @@ from `<style id="page">`.
         - `svg.floor-prop.kettlebell`, then `div.stand` > `span.nametag`
           {displayName} + the avatar `svg.av` with **all four** hair groups
           and `data-hair="{saved style}"`, then `svg.floor-prop.dumbbell`.
-        - `--s` is 6px on phones and 7px from 900 px. The props scale with
-          it.
+        - `--s` is 3px on phones (96 px) and 4px from 900 px (128 px). The
+          props scale with it: the kettlebell is 12 × 12 sprite pixels with
+          its left edge at `50% - 26 * --s`, the dumbbell 16 × 8 at
+          `50% + 14 * --s`, one sprite pixel beyond each hand (the body
+          spans columns 3 to 28).
         - `position: sticky; top: 0` on phones, so the preview stays in view
           while you scroll the swatches. Not sticky from 900 px.
       - `button.button.secondary.`**`shuffle`** `type="submit"
@@ -186,7 +191,7 @@ from `<style id="page">`.
           The skin group is one row of 6 at both widths.
         - **Hair** (`div.`**`styles`**, a 2 × 2 grid): each choice is
           `label.`**`pick style`** containing the radio, then `span.face`
-          holding a head-only `svg.av` (`viewBox="1 0 14 11"`, 56 × 44 px,
+          holding a head-only `svg.av` (`viewBox="2 0 28 22"`, 2×, 56 × 44 px,
           only that style's hair group) and the visible name (`Crop`,
           `Curls`, `Long`, `Ponytail`), then `svg.tick`. A chosen tile
           fills `--leaf`.
@@ -201,37 +206,18 @@ from `<style id="page">`.
 3. *(new account only)* `div.lobby-alt` > `p.hint` `Change it any time from
    home.` + `a.button.secondary[href={next}]` `Later`.
 
-### The sprite (proposed `src/sprites/avatar.ts`)
+### The sprite (`src/sprites/avatar.ts`)
 
-Replace the placeholder `avatar` with a body grid with no hair, plus four
-hair overlays. Slot letters: `k` ink, `s` skin, `t` shirt, `h` hair.
-
-Eyes are two pixels tall, Game Boy style; rows 0 to 12 bob in the idle loop
-(`AVATAR_UPPER_ROWS = 13`). The exact strings, checked to be 16 wide:
-
-```ts
-export const BODY = [
-  "................", ".....kkkkkk.....", "....kssssssk....", "...kssssssssk...",
-  "...kssssssssk...", "...kskssssksk...", "...kskssssksk...", "...kssssssssk...",
-  "....kssssssk....", "...kkttttttkk...", "..kttttttttttk..", "..ktkttttttktk..",
-  "..kskttttttksk..", "...kkkkkkkkkk...", "...kssk..kssk...", "...kkkk..kkkk...",
-];
-// overlays start at row 0, column 0 (the head anchor for the front-facing
-// idle frames; walking frames add their own anchor offset)
-export const HAIR = {
-  crop: [".....kkkkkk.....", "....khhhhhhk....", "...khhhhhhhhk...", "...khhhhhhhhk...", "...kh......hk..."],
-  curls: ["....kkkkkkkk....", "...khhhhhhhhk...", "..khhhkhhkhhhk..", "..khhhhhhhhhhk..",
-          "..khkhhhhhhkhk..", "..khh......hhk..", "..kh........hk.."],
-  long: [".....kkkkkk.....", "....khhhhhhk....", "...khhhhhhhhk...", "...khhhhhhhhk...",
-         "...khh....hhk...", "..kh........hk..", "..kh........hk..", "..kh........hk..",
-         "..kh........hk..", "..khh......hhk..", "..kkk......kkk.."],
-  ponytail: [".....kkkkkk.....", "....khhhhhhkk...", "...khhhhhhhhhk..", "...khhhhhhhhhhk.",
-             "...kh......hhhk.", "............khk.", "............khk.", ".............k.."],
-};
-```
+One body grid with no hair, plus four hair overlays drawn from row 0. Slot
+letters: `k` ink, `s` skin, `t` shirt, `h` hair, and `S`, `T`, `H` for the
+darker shade of each. The 32 × 32 grids, the shades and the prop and doorway
+art are in "Appendix: 32 × 32 art (ADR 0005)" at the end of this spec, the
+only copy.
 
 The palettes are ordered as they appear. `id` is the stored value and
 `name` the accessible name.
+
+Each swatch also has a hand-picked shade (`shade`), listed in the appendix.
 
 | `skin` | hex | `hair_colour` | hex | `shirt` | hex |
 | --- | --- | --- | --- | --- | --- |
@@ -258,19 +244,22 @@ Mockup people, so every page draws them the same:
 
 - **Props:** `avatar` (the JSON), `editor?: boolean`, `head?: boolean`,
   `class`.
-- **Output:** `svg.av` with `viewBox="0 0 16 16"` (or `"1 0 14 11"` for
-  `head`). It contains `g.av-top`, holding the body rows 0 to 12 and the
-  hair group or groups (`g.hair.hair-{style}`), followed by body rows 13 to
-  15.
-- **Rects carry a class per slot** (`k`, `s`, `t`, `h`), never a `fill`.
+- **Output:** `svg.av` with `viewBox="0 0 32 32"` (or `"2 0 28 22"` for
+  `head`). It contains `g.av-top`, holding body rows 0 to 25 and the
+  hair group or groups (`g.hair.hair-{style}`), followed by body rows 26 to
+  31 (`AVATAR_UPPER_ROWS = 26`).
+- **Rects carry a class per slot** (`k`, `s`, `t`, `h`, `S`, `T`, `H`),
+  never a `fill`.
   The shared CSS maps them: `.av .s { fill: var(--av-skin) }` and so on.
 - **Variables:** outside the editor, the SVG gets an inline
-  `style="--av-skin:…;--av-hair:…;--av-shirt:…"`. In the editor they come
+  `style="--av-skin:…;--av-skin-2:…;--av-hair:…;…"`, each colour with
+  its shade. In the editor they come
   from the card and the `:has()` rules instead.
 - **Hair groups:** outside the editor, only the chosen one is rendered.
   With `editor`, all four are rendered, plus `data-hair`.
-- **Sizes:** whole-number multiples of 16 via CSS (`.floor .av` uses
-  `--s`).
+- **Sizes:** whole-number multiples of 32 via CSS (`.floor .av` uses
+  `--s`): 64 px on home and join, 96 or 128 px in the editor, and the head
+  crop at 56 × 44.
 
 ### Live preview with no JavaScript
 
@@ -337,7 +326,7 @@ The mockup's inline script shows the first two.
 | **Error** | POST save fails (server error, or a value not in the palette): 400/500 | `p.error` above Save: `Couldn't save your avatar. Check your connection and try again.`; the posted choices stay checked so nothing is lost; Save is `aria-describedby` the error |
 | **Signed out** | No session | 303 to `/signin?next=/avatar`; no screen |
 | **Without JS / without `:has()`** | — | Same screen. Without JS the preview still updates (CSS), Randomise posts. Without `:has()` the preview shows the saved look until Save |
-| Narrow and wide | — | Phone: one column, sticky preview at 6×. 900 px and up: preview at 7× and Randomise in a 16 rem left column, choices right, Save across the bottom |
+| Narrow and wide | — | Phone: one column, sticky preview at 3× (96 px). 900 px and up: preview at 4× (128 px) and Randomise in a 16 rem left column, choices right, Save across the bottom |
 
 ## 5. Departures
 
@@ -345,8 +334,12 @@ The mockup's inline script shows the first two.
   Sprite.astro's `fill` attributes. The hex values still come only from the
   sprite palette module (system 5 allows hex there). This is what makes the
   palette swap and the no-JS preview possible.
-- **7× on laptops, not 8×.** At 8× the kettlebell and dumbbell no longer
-  fit on a 16 rem floor. 7× is still a whole number.
+- **4× (128 px) on laptops, not 5×.** At 5× the kettlebell and dumbbell no
+  longer fit on a 16 rem floor beside the 26-pixel-wide body. 4× is a whole
+  number (ADR 0005).
+- **Hand-picked shades, not the ink mix** (ADR 0005 allows either). Mixing
+  towards the green ink turns skin olive and white, silver and blonde
+  grey-green; the appendix gives every swatch its own shade.
 - **The sticky preview on phones** is new to Paper pages. It only sticks
   inside the editor form, and it is never over a button the person needs.
 - **Skin tone 6 is dark enough that the ink eyes are low-contrast**
@@ -365,3 +358,280 @@ The mockup's inline script shows the first two.
   `avatar.ts` changes, it should draw the new body with a neutral hair and
   palette, or the roll that sign up will store. That's a one-line change to
   the sprite it passes, with no new design.
+
+## Appendix: 32 × 32 art (ADR 0005)
+
+The only copy of this group's art. Every grid was checked by script to be
+exactly 32 wide (the props 12 and 16) and is ready to paste into
+`src/sprites/`, replacing the 16 × 16 grid and its `upscale()` call. After
+that, the mockups' `#doorway32`, `#kettlebell32` and `#dumbbell32`
+symbols go back to `/sprites.svg#doorway`, `#kettlebell` and `#dumbbell`.
+
+### The person
+
+Front-facing, 26 pixels wide (columns 3 to 28) and 31 tall (rows 1 to 31).
+A big head (rows 1 to 16, two thirds of the height, Pokémon-overworld
+proportions), eyes 2 × 3 pixels with a mouth, the shirt's sides and hem in
+`T`, the skin's jaw and cheek edge in `S`, trainers in `T` so shoes
+follow the shirt. The hair overlays draw their own ink outline over the
+head's and keep their lower layer and fringe tips in `H`.
+
+`src/sprites/avatar.ts`, replacing `BODY16`, `HAIR16` and the
+`upscale` calls for them (`BODY` and `HAIR` become these directly):
+
+```ts
+// Rows 0 to 25 bob in the idle loop: everything above the belt (row 26).
+export const AVATAR_UPPER_ROWS = 26;
+
+export const BODY = [
+  "................................",
+  "..........kkkkkkkkkkkk..........",
+  "........kksssssssssssskk........",
+  ".......kssssssssssssssssk.......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  "......kssssssssssssssssssk......",
+  ".....ksssskksssssssskkssssk.....",
+  ".....kSssskksssssssskksssSk.....",
+  ".....ksssskksssssssskkssssk.....",
+  "......kSssssssssssssssssSk......",
+  "......kSssssssssssssssssSk......",
+  ".......kSsssssskkssssssSk.......",
+  "........kksssssssssssskk........",
+  "..........kkkSSSSSSkkk..........",
+  "......kkkktttTTTTTTtttkkkk......",
+  "....kkTttttttttttttttttttTkk....",
+  "...kTttkTttttttttttttttTkttTk...",
+  "...kTttkTttttttttttttttTkttTk...",
+  "...kssskTttttttttttttttTksssk...",
+  "...kssskTttttttttttttttTksssk...",
+  "...kSSSkTttttttttttttttTkSSSk...",
+  "....kkkkkTTTTTTTTTTTTTTkkkkk....",
+  ".......kkkkkkkkkkkkkkkkkk.......",
+  ".......kkkkkkk....kkkkkkk.......",
+  "........kssssk....kssssk........",
+  "........kSsssk....ksssSk........",
+  ".......kTTTTTk....kTTTTTk.......",
+  ".......kkkkkkk....kkkkkkk.......",
+];
+
+// Overlays start at row 0, column 0: the head anchor of the front-facing idle
+// frames. They draw over the head's outline, never inside the face (rows
+// 10 to 16, columns 8 to 23).
+export const HAIR = {
+  crop: [
+    "..........kkkkkkkkkkkk..........",
+    "........kkhhhhhhhhhhhhkk........",
+    ".......khhhhhhhhhhhhhhhhk.......",
+    "......khhhhhhhhhhhhhhhhhhk......",
+    "......khhhhhhhhhhhhhhhhhhk......",
+    "......khhhhhhhhhhhhhhhhhhk......",
+    "......khHhhhhhhhhhhhhhhHhk......",
+    "......kHHHhHHhhHHhhHHhHHHk......",
+    "......kH..H...H..H...H..Hk......",
+  ],
+  curls: [
+    "........kkk.kkkkkkkk.kkk........",
+    "......kkhhhkhhhhhhhhkhhhkk......",
+    ".....khhhhhhhhhhhhhhhhhhhhk.....",
+    "....khhHhhhhHhhhhhhHhhhhHhhk....",
+    "....khhhhhhhhhhhhhhhhhhhhhhk....",
+    "...khhHhhhhHhhhhhhhhHhhhhHhhk...",
+    "...khhhhhhhhhhhhhhhhhhhhhhhhk...",
+    "...khHhhHhhhHhhHHhhHhhhHhhHhk...",
+    "...khhhHH.HHH.HHHH.HHH.HHhhhk...",
+    "...kHhhH...H........H...HhhHk...",
+    "...khHhk................khHhk...",
+    "...kHhhk................khhHk...",
+    "...khHhk................khHhk...",
+    "....kHk..................kHk....",
+  ],
+  long: [
+    "..........kkkkkkkkkkkk..........",
+    "........kkhhhhhhhhhhhhkk........",
+    ".......khhhhhhhhhhhhhhhhk.......",
+    "......khhhhhhhhhhhhhhhhhhk......",
+    ".....khhhhhhhhhhhhhhhhhhhhk.....",
+    ".....khhhhhhhhhhhhhhhhhhhhk.....",
+    "....khhhhhhhhhhhhhhhhhhhhhhk....",
+    "....khhhHhhhhhhHHhhhhhhHhhhk....",
+    "....khhHHH.HHHHHHHHHH.HHHhhk....",
+    "....khhH................Hhhk....",
+    "....khHk................kHhk....",
+    "....khHk................kHhk....",
+    "....khHk................kHhk....",
+    "....khHk................kHhk....",
+    "....khHk................kHhk....",
+    "....khHk................kHhk....",
+    "....khHk................kHhk....",
+    "....khHk................kHhk....",
+    "....khHk................kHhk....",
+    "....kHHk................kHHk....",
+    "....kkkk................kkkk....",
+  ],
+  ponytail: [
+    "..........kkkkkkkkkkkk..........",
+    "........kkhhhhhhhhhhhhkk.kkk....",
+    ".......khhhhhhhhhhhhhhhhkhhhk...",
+    "......khhhhhhhhhhhhhhhhhhkkkkk..",
+    "......khhhhhhhhhhhhhhhhhhkhhhk..",
+    "......khhhhhhhhhhhhhhhhhhkhhHk..",
+    "......khHhhhhhhhhhhhhhhHhkhhHk..",
+    "......kHHHhHHhhHHhhHHhHHHkhhHk..",
+    "......kH..H...H..H...H..HkhHHk..",
+    ".........................khHk...",
+    ".........................kHHk...",
+    "..........................kk....",
+  ],
+} as const;
+```
+
+Head crop: `viewBox="2 0 28 22"` (columns 2 to 29, rows 0 to 21: the
+whole head and every hair style, the curls and ponytail included, plus the
+shoulders), shown at 2×, 56 × 44 px, in home's squad list and the editor's
+hair tiles. Every overlay ends by row 20, so nothing is cut.
+
+### Shades
+
+Hand-picked for every swatch: the 30 % ink mix in `Avatar.astro` is not good
+enough for any palette (it turns light skin olive, white and silver
+grey-green, since ink is green). Add each as `shade` on its swatch in
+`src/sprites/avatar.ts`; `lookVars()` and `editorCss()` already emit
+`--av-*-2` when it's set. Keep the mix only as the fallback.
+
+- **SKINS**: a step down, warmed towards red-brown. `#f6d7bd` → `#e0b69a`, `#e9bd94` → `#cf9a73`, `#d09a68` → `#b37a4f`, `#ad7447` → `#8f5a36`, `#8a5532` → `#6e4026`, `#6e4429` → `#55311d`.
+- **HAIR_COLOURS**: a step down, cooled slightly. `#1d1714` → `#3a2e28`, `#4a2c1a` → `#33190f`, `#7d4e2b` → `#5a3319`, `#b5552a` → `#873a1d`, `#d6ad55` → `#ad7f37`, `#c3c7bd` → `#8f929a`, `#e46fae` → `#b4488a`, `#4d6bd6` → `#3446a3`. Black's
+  shade is *lighter* than the hair on purpose: a darker black vanishes into
+  the ink outline, and a lighter lower layer reads as sheen.
+- **SHIRTS**: a step down, cooled slightly. `#6a4c93` → `#4c3470`, `#2e3f7f` → `#1f2a5c`, `#1f8a86` → `#156663`, `#3b3b45` → `#282832`, `#e07b28` → `#b0561a`, `#d65a9a` → `#a83c76`, `#eeeee6` → `#bdbcc4`, `#8c8f94` → `#66686f`.
+
+Against the state colours (AV-1): every shade is darker and less saturated
+than its own swatch, so none moves towards `--leaf`, `--resting`,
+`--slacking` or `--finished`; the lightest, white's `#bdbcc4`, is a grey
+that sits next to the Idle chip's paper without matching it, and no shade is
+red. The ghost (`.av.ghost`) sets `--av-skin-2` and `--av-shirt-2` to
+`--card` as well, so it stays a clean outline.
+
+### The doorway
+
+`src/sprites/door.ts`, replacing `doorway`'s grid. The lintel carries the
+dumbbell sign on a lit panel, the opening shows a lit gym with a squat rack
+and its floor, the green door is swung in against the right post, and a mat
+lies at the threshold. Same palette as today, plus `p`, five colours:
+
+```ts
+export const doorway: Sprite = {
+  grid: [
+    "................................",
+    ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+    ".kggggggggggggggggggggggggggggk.",
+    ".kggkkkkkkkkkkkkkkkkkkkkkkkkggk.",
+    ".kggkllkkllllllllllllllkkllkggk.",
+    ".kggklkkkkkkkkkkkkkkkkkkkklkggk.",
+    ".kggkllkkllllllllllllllkkllkggk.",
+    ".kggkkkkkkkkkkkkkkkkkkkkkkkkggk.",
+    ".kggggggggggggggggggggggggggggk.",
+    ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+    "..kgkaaaaaaaaaaaaaaaaaaaaaakgk..",
+    "..kgkllllllllllllllkkkkkkkkkgk..",
+    "..kgkllllllllllllllkagggggkkgk..",
+    "..kgklllgllllllglllkagggggkkgk..",
+    "..kgklglgllllllglglkagaaagkkgk..",
+    "..kgklgggggggggggglkagaaagkkgk..",
+    "..kgklglgllllllglglkagggggkkgk..",
+    "..kgklllgllllllglllkagggggkkgk..",
+    "..kgklllgllllllglllkaglgggkkgk..",
+    "..kgklllgllllllglllkagggggkkgk..",
+    "..kgklllgllllllglllkagggggkkgk..",
+    "..kgklllgllllllglllkagaaagkkgk..",
+    "..kgkggggggggggggggkagaaagkkgk..",
+    "..kgkppppppppppppppkagaaagkkgk..",
+    "..kgkppppppppppppppkagggggkkgk..",
+    "..kgkppppppppppppppkagggggkkgk..",
+    "..kgkppppppppppppppkagggggkkgk..",
+    "..kgkppppppppppppppkkkkkkkkkgk..",
+    "kkkkaaaaaaaaaaaaaaaaaaaaaaaakkkk",
+    "kkkkaaggggggggggggggggggggaakkkk",
+    "kkkkaaaaaaaaaaaaaaaaaaaaaaaakkkk",
+    ".kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.",
+  ],
+  palette: { k: INK, l: "#c8e66b", g: "#1f6b3a", a: "#0f3d22", p: "#e8f0d8" },
+};
+```
+
+### The floor props
+
+`src/sprites/props.ts`, replacing `kettlebell` and `dumbbell`. Same sizes
+as today's doubled art (12 × 12 and 16 × 8), redrawn with a handle you can
+see through and a highlight and shadow. Two new colours, both darker or
+lighter steps of `--muted` so the props stay quieter than the person:
+
+```ts
+export const kettlebell: Sprite = {
+  grid: [
+    "...kkkkkk...",
+    "..kaaaaaak..",
+    ".kak....kak.",
+    ".kak....kak.",
+    ".kkkkkkkkkk.",
+    "kaeeaaaaaaak",
+    "kaeaaaaaaaak",
+    "kaeaaaaaaaak",
+    "kaaaaaaaaaak",
+    "kaaaaaaaaadk",
+    ".kddddddddk.",
+    "..kkkkkkkk..",
+  ],
+  palette: { k: INK, a: "#3d5a45", e: "#6f8f78", d: "#2a4232" },
+};
+
+export const dumbbell: Sprite = {
+  grid: [
+    ".kkk........kkk.",
+    "keaak......keaak",
+    "keaakkkkkkkkeaak",
+    "keaakeeeeeekeaak",
+    "kaaakeeeeeekaaak",
+    "kaaakkkkkkkkaaak",
+    "kddak......kdddk",
+    ".kkk........kkk.",
+  ],
+  palette: { k: INK, a: "#3d5a45", e: "#6f8f78", d: "#2a4232" },
+};
+```
+
+### For the Gym group: building the poses from this body
+
+Coordinates are (column, row), 0-based, in the 32 × 32 grid.
+
+- **Head**: rows 1 to 16, outline at columns 6 and 25 for rows 4 to 9 and
+  at 5 and 26 for the cheeks (rows 10 to 12, the widest); chin row 16, neck
+  row 17 (columns 13 to 18, `S`). Eyes in ink at columns 10 to 11 and 20 to
+  21, rows 10 to 12; mouth at columns 15 to 16, row 15. The hair overlay anchors at row 0 of whatever row the head starts
+  on (`hairRow`).
+- **Shoulders**: row 18 is the collar (outline columns 6 to 9 and 22 to 25);
+  the shoulder line is row 19, outline at columns 4 to 5 and 26 to 27.
+- **Arms**: hanging at the sides, sleeves rows 20 to 21 (columns 4 to 6 and
+  25 to 27), outlined at columns 3 and 7 (left) and 24 and 28 (right).
+- **Hands**: rows 22 to 24, columns 4 to 6 (left) and 25 to 27 (right),
+  rows 22 and 23 in `s`, row 24 in `S`; outlined at columns 3 and 7, and 24
+  and 28. A held prop's grip point is the hand's centre: (5, 23) left and
+  (26, 23) right. For **rest**, the bottle stands with its base on row 25 and
+  overlaps the right hand at (25 to 27, 21 to 24).
+- **Torso**: rows 18 to 25, columns 8 to 23 inside the outline at 7 and
+  24; hem row 25 in `T`.
+- **Hips and shorts**: dark shorts in ink, row 26 across columns 7 to 24
+  (the belt line and the upper-rows split) and row 27 split into two legs
+  (columns 7 to 13 and 18 to 24).
+- **Legs and feet**: bare legs rows 28 to 29 at columns 9 to 12 and 19 to
+  22 (row 29 in `S`), trainers row 30 (`T`, columns 8 to 12 and 19 to 23), sole row 31.
+- **Sit**: drop the head and torso 2 rows as today, replace rows 26 to 31
+  with thighs drawn forward (the knees at about columns 7 and 24) so the
+  figure ends near row 31.
+- **Lift**: raise the arms from row 19 to rows 2 to 18 at columns 3 to 7
+  and 24 to 28, the hands at rows 2 to 4 (wider than the head's 6 to 25),
+  and the bar across row 1; the hair overlay still starts at row 0.
+- **Stand**: this body unchanged.
