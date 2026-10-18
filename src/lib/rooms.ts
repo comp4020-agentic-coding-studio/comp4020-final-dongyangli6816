@@ -1,8 +1,9 @@
 import { and, count, eq, isNull, lt, ne } from "drizzle-orm";
 import { db } from "./db.ts";
+import { log } from "./log.ts";
 import { newPasscode } from "./passcode.ts";
 import { clearPresence } from "./presence.ts";
-import { broadcast } from "./realtime.ts";
+import { broadcast, drop } from "./realtime.ts";
 import { releaseStation, seedStations } from "./stations.ts";
 import { roomMembers, rooms, workouts } from "./schema.ts";
 import { finishWorkout, openWorkout } from "./workouts.ts";
@@ -100,6 +101,7 @@ export function leaveRoom(userId: number, roomId: number): number | undefined {
     return workoutId;
   });
   broadcast(roomId);
+  drop(roomId, userId);
   return workoutId;
 }
 
@@ -154,6 +156,7 @@ export function sweepIdleRooms(now = Date.now()): void {
     .all();
   for (const r of idle) {
     closeRoom(r.id);
+    log("room.idle_close", { room: r.id });
     broadcast(r.id);
   }
 }

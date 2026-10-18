@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { log, who } from "../../../lib/log.ts";
 import { subscribe } from "../../../lib/realtime.ts";
 import { isMember } from "../../../lib/rooms.ts";
 
@@ -8,6 +9,7 @@ import { isMember } from "../../../lib/rooms.ts";
 export const GET: APIRoute = ({ params, locals, request }) => {
   const roomId = Number(params.id);
   if (!locals.user || !Number.isInteger(roomId) || !isMember(roomId, locals.user.id)) {
+    log("stream.denied", { ...who(locals.user), room: params.id });
     return new Response("Not found", { status: 404 });
   }
   return new Response(subscribe(roomId, locals.user.id, request.signal), {

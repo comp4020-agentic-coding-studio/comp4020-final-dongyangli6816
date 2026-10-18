@@ -6,6 +6,7 @@ import Layout from "../../layouts/Layout.astro";
 import { dayLabel, distanceKm, km, timeRange, volume } from "../../lib/logbook.ts";
 import Avatar from "../../components/Avatar.astro";
 import { lookOf } from "../../lib/avatars.ts";
+import { log, who } from "../../lib/log.ts";
 import { workoutSummary } from "../../lib/workouts.ts";
 import { trophyIcon } from "../../sprites/icons.ts";
 
@@ -16,7 +17,10 @@ if (!user) return Astro.redirect(`/signin?next=${encodeURIComponent(Astro.url.pa
 const id = Number(Astro.params.id);
 const w = Number.isInteger(id) ? workoutSummary(user.id, id) : undefined;
 // someone else's workout looks the same as no workout
-if (!w) return new Response("Not found", { status: 404 });
+if (!w) {
+  log("workout.denied", { ...who(user), workout: Astro.params.id });
+  return new Response("Not found", { status: 404 });
+}
 if (w.endedAt === null) return Astro.redirect(w.roomId ? `/rooms/${w.roomId}` : "/history", 303);
 
 const now = Date.now();

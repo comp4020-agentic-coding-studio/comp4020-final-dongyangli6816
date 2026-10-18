@@ -5,7 +5,9 @@
 import Avatar from "../components/Avatar.astro";
 import Sprite from "../components/Sprite.astro";
 import Layout from "../layouts/Layout.astro";
+import { safeNext } from "../lib/auth.ts";
 import { lookOf, saveLook } from "../lib/avatars.ts";
+import { log, who } from "../lib/log.ts";
 import { asLook, CHOICES, editorCss, lookVars, randomLook, type Look } from "../sprites/avatar.ts";
 import { dieIcon, tickIcon } from "../sprites/icons.ts";
 import { dumbbell, kettlebell } from "../sprites/props.ts";
@@ -31,13 +33,14 @@ if (Astro.request.method === "POST") {
     const posted = asLook(Object.fromEntries(CHOICES.map((c) => [c.key, form.get(c.field)])));
     if (posted) {
       saveLook(user.id, posted);
-      return Astro.redirect(next.startsWith("/") ? next : "/avatar?saved=1", 303);
+      log("avatar.save", who(user));
+      return Astro.redirect(safeNext(next, "/avatar?saved=1"), 303);
     }
     error = true;
     Astro.response.status = 400;
   }
 }
-if (!next.startsWith("/")) next = "";
+next = safeNext(next, "");
 const isNew = param("new") === "1" && !!next;
 ---
 

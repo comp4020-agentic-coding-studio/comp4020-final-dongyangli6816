@@ -343,8 +343,8 @@ that the crit can read.
 | --- | --- | --- | --- |
 | 9 | **Crit 8**, Wed 7 Oct, 07:00 | Placeholder deployed first, then: ACC-1 to 4, ROOM-1 and 2, LOG-1 to 4 and LOG-7 in plain pages, no gym yet. A stranger signs up, creates a room, logs a set, and finds it in their history next time | README v1 (what "good" means), PROCESS.md v1 with the stack ADR, `reflections/crit-8.md`, repo public |
 | 10 | **Crit 9**, Wed 14 Oct, 07:00 | The gym: tiles, avatar sprites, AV-1 to 3, GYM-1 to 5 and 8 to 15, ROOM-3 to 6, LOG-5 and 6; real-time over SSE. New equipment simply appears on its station this week | One written decision about how the app behaves with several people in it (GYM-5, two people wanting the same station at once, is a natural one), PROCESS.md rewritten, `reflections/crit-9.md`; start reading for the research note |
-| 11 | **Crit 10**, Wed 21 Oct, 07:00 | The gym worker and its delivery and swap animations (GYM-6 and 7), INT-1 to 5, OPS-1 and 2 | Server-side logging in place, PROCESS.md rewritten, `reflections/crit-10.md` |
-| 12 | Studio session, Wed 28 Oct | P1 items in order of how much they serve README's "good", BOT-1 to 5 among them; keyboard, resize and slow-connection passes; showcase rehearsal with several browsers | Research note drafted |
+| 11 | **Crit 10**, Wed 21 Oct, 07:00 | OPS-1 and 2, ROOM-7; who can see and change what, decided on the server (ADR 0006) | Server-side logging in place, PROCESS.md rewritten, `reflections/crit-10.md` |
+| 12 | Studio session, Wed 28 Oct | The gym worker and its delivery and swap animations (GYM-6 and 7), INT-1 to 5, moved from week 11 so Crit 10 could go to access and logging; then P1 items in order of how much they serve README's "good", BOT-1 to 5 among them; keyboard, resize and slow-connection passes; showcase rehearsal with several browsers | Research note drafted |
 | — | **Submission**, Mon 9 Nov, 12:00 | Frozen | README (400–600 words), PROCESS.md (900–1100), CLAUDE.md, spec/, three reflections, `research-note.md` (600–800) |
 | — | Showcase, Wed 11 Nov | — | — |
 
