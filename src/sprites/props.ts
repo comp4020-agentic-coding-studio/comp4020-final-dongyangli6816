@@ -4,33 +4,33 @@ import { INK, type Sprite } from "./sprite.ts";
 export const kettlebell: Sprite = {
   grid: [
     "...kkkkkk...",
-    "..kaaaaaak..",
-    ".kak....kak.",
-    ".kak....kak.",
-    ".kkkkkkkkkk.",
-    "kaeeaaaaaaak",
-    "kaeaaaaaaaak",
-    "kaeaaaaaaaak",
-    "kaaaaaaaaaak",
+    "..kewaaadk..",
+    ".kewk..kadk.",
+    ".kek....kdk.",
+    ".kak....kdk.",
+    "..kkkkkkkk..",
+    ".kewwaaaaadk",
+    "kewaaaaaaadk",
+    "kewaaddaaadk",
     "kaaaaaaaaadk",
-    ".kddddddddk.",
+    ".kaaaaaaddk.",
     "..kkkkkkkk..",
   ],
-  palette: { k: INK, a: "#3d5a45", e: "#6f8f78", d: "#2a4232" },
+  palette: { k: INK, a: "#3d5a45", e: "#6f8f78", d: "#2a4232", w: "#a9c4b0" },
 };
 
 export const dumbbell: Sprite = {
   grid: [
-    ".kkk........kkk.",
-    "keaak......keaak",
-    "keaakkkkkkkkeaak",
-    "keaakeeeeeekeaak",
-    "kaaakeeeeeekaaak",
-    "kaaakkkkkkkkaaak",
-    "kddak......kdddk",
-    ".kkk........kkk.",
+    ".kkkk......kkkk.",
+    "kwwadk....kwwadk",
+    "kwwadkkkkkkwwadk",
+    "kwaadkeaeakwaadk",
+    "kwaadkaaaakwaadk",
+    "kwaadkkkkkkwaadk",
+    "kaaddk....kaaddk",
+    ".kkkk......kkkk.",
   ],
-  palette: { k: INK, a: "#3d5a45", e: "#6f8f78", d: "#2a4232" },
+  palette: { k: INK, a: "#3d5a45", e: "#6f8f78", d: "#2a4232", w: "#a9c4b0" },
 };
 
 // The logo's dumbbell in green and ink: the empty logbook. 32 × 16, drawn at
@@ -39,14 +39,14 @@ export const bigDumbbell: Sprite = {
   grid: [
     "....kkkk................kkkk....",
     "...kllllk..............kllllk...",
-    "...klgggk..............kggglk...",
-    ".kkklgggk..............kggglkkk.",
-    "kllklgggkkk..........kkkggglkllk",
-    "klgklgggkmk..........kmkggglkglk",
-    "klgklgggkmkkkkkkkkkkkkmkggglkglk",
-    "klgklgggkmkmmmkmmkmmmkmkggglkglk",
-    "kdgkdgggkmkmkmmmmmmkmkmkgggdkgdk",
-    "kddkdgggkmkkkkkkkkkkkkmkgggdkddk",
+    "...kllggk..............kllggk...",
+    ".kkklgggk..............klgggkkk.",
+    "kllklgggkkk..........kkklgggklk.",
+    "klgklgggkek..........kekgggdkglk",
+    "klgklgggkekkkkkkkkkkkkekgggdkglk",
+    "klgklgggkekemeemeemeemekgggdkglk",
+    "kdgkdgggkmkmmmmmmmmmmmkmgggdkgdk",
+    "kddkdgggkmkkkkkkkkkkkkkmgggdkddk",
     "kddkdgggkmk..........kmkgggdkddk",
     "kddkddddkkk..........kkkddddkddk",
     ".kkkddddk..............kddddkkk.",
@@ -60,5 +60,6 @@ export const bigDumbbell: Sprite = {
     d: "#0f3d22", // --deep, plate shade
     l: "#c8e66b", // --leaf, plate highlight (the logo's plate colour)
     m: "#3d5a45", // --muted, bar and collar
+    e: "#6f8f78", // the bar's lit line
   },
 };

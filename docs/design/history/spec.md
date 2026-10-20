@@ -304,3 +304,7 @@ person). 64 px on phones and 96 px from 421 px are 2× and 3× of 32, so both
 stay whole-number and need no change. The CSS comment there still says
 "4× on phones, 6× from 421 px", which was true of the 16 px grid; it should
 read "2× on phones, 3× from 421 px".
+
+## Detail pass, Oct 18
+
+The `bigDumbbell` (empty logbook) was redrawn at its current 32 x 16 size with the same palette plus one extra bar grey for a lit bar: plates now have a top-left leaf highlight and a deep right-hand shade, and the bar has a highlighted collar and knurling. `dumbbell` and `kettlebell` in `props.ts` gained a lighter highlight tone, a clear top-left light edge, and a shaded lower right; the kettlebell handle now reads as a loop with a visible hole. No layout, size or class changes.

@@ -3233,3 +3233,30 @@ export function bay(slot: number): string[] {
   return g.map((r) => r.join(""));
 }
 ```
+
+## Detail pass, Oct 18
+
+Scenery and equipment redrawn at real 32 px detail (ADR 0005); layout, MAP,
+STATIONS, palette letters and the people are unchanged. The art is in
+`src/sprites/gym.ts`, and the poster's frames in `src/sprites/dony.ts`.
+
+- **Light** comes from the top left everywhere: lit edges on top and left, shade
+  below and right, one-pixel ink outlines, and a dark contact shadow under each
+  machine's feet.
+- **Floor** stays nearly flat (a few faint flecks, a quiet cross-hatch in the
+  aisles) so avatars and state colours stay the loudest thing. Walls gained
+  brick courses with a lit rail and a shaded edge; side walls are mirrored so
+  both face the light correctly. Mirrors have a frame, a recess, a dithered
+  reflection and diagonal glints. The clock is a round bezel with tick marks.
+  The door mat has a raised border, tread dots and a clear arrow.
+- **Scenery**: the cooler has a jug with a water level, a tap panel and a grille;
+  one locker is shut with louvres and a handle, one is ajar with a hoodie on its
+  hook.
+- **Gear** is drawn so each reads by silhouette at 1x: a console and side rails
+  on the treadmill, a stack with pulleys and handles on the cable machine, a
+  tall frame with a thick bar and braces on the pull-up bar, a loaded bar on the
+  platform, J-hooks and safety arms on the rack.
+- **Poster**: tape on the top corners and a pin; the art is unchanged.
+- **Split for avatars**: see the comments in the built file's report; each machine
+  separates into a back layer (pad, belt, stack, platform) and a front layer (rails,
+  uprights, bar, shelves, posts).
