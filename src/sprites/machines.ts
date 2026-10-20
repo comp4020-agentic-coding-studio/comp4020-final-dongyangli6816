@@ -2091,7 +2091,8 @@ const CABLE_MACHINE: Animation = {
 // the back widening down the mat, the head nearest us. F1 (still): arms
 // straight, hairRow 11 (head rows 12-25), the arms from the shoulders (row
 // 14) to the hands on the mat (row 28) at columns 2-6 and 25-29. F2: chest
-// down, hairRow 13 (head rows 14-27), elbows out to columns 0-4 and 27-31.
+// down, hairRow 13 (head rows 14-27), elbows out to columns 0-4 and 27-31;
+// the soles stay put, so the legs stretch 2 rows to meet the lowered back.
 // The arms are in the body layer, so every hair style draws over them: the
 // long style's flicks and the ponytail's tail fall over the arms, and the
 // face, seen from above as the standing face is, stays clear.
@@ -2215,10 +2216,10 @@ const EXERCISE_MAT: Animation = {
         "...........kwwwkkwwwk...........",
         "............kTTkkTTk............",
         "............kTTkkTTk............",
+        "............kTTkkTTk............",
+        "............kTTkkTTk............",
         "...........ktTTkkTTTk...........",
         "...........kkkkkkkkkk...........",
-        "................................",
-        "................................",
         "..........kTtttttttTk...........",
         ".........kttttttttttTk..........",
         "........kttttttttttttTk.........",
