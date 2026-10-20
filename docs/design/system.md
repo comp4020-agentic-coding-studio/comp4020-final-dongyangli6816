@@ -18,6 +18,14 @@ Pokémon remakes, so pixel art reads to them as warm and playful rather than
 old. They live in group chats, screenshot things to send to each other, and
 switch off quickly when an app feels corporate, preachy or like a template.
 
+**Gen Z is the audience; friends are where it starts.** The vision
+(`docs/product/vision.md`) is a social space for people who train, where
+strangers from an online community, or the shy person on the next bench,
+meet in the same gym. Today's rooms are still friends-only, but nothing
+should be drawn so that it only makes sense between friends: a page that
+would read as hostile or confusing from a stranger says so under
+Departures.
+
 Design for two situations at once (from `docs/product/spec-4-weeks.md`):
 
 1. **Between sets at the gym.** A phone in one sweaty hand, 60 to 180 seconds
