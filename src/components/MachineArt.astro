@@ -1,0 +1,37 @@
+---
+// A machine on the gym map (GYM-10.12, GYM-10.13; src/sprites/machines.ts).
+// part "idle" is the station's drawing while nobody is on it, with the bar or
+// handle as its own g.bar, so it can leave with whoever uses it. part "back"
+// or "front" is the layer drawn under or over the person, both frames as
+// g.frame-1 and g.frame-2, swapping in step with them (GymMap.astro).
+import type { Equipment } from "../lib/exercises.ts";
+import { GYM_PALETTE } from "../sprites/gym.ts";
+import { MACHINES } from "../sprites/machines.ts";
+import { barOf } from "../sprites/poses.ts";
+import { paths, TILE } from "../sprites/sprite.ts";
+
+interface Props {
+  e: Equipment;
+  part: "idle" | "back" | "front";
+}
+const { e, part } = Astro.props;
+
+const filled = (grid: readonly string[]) => [...paths(grid)].map(([ch, d]) => ({ fill: GYM_PALETTE[ch], d }));
+const { rest, bar } = barOf(e);
+const groups =
+  part === "idle"
+    ? [{ cls: undefined, grid: rest }, { cls: "bar", grid: bar }]
+    : MACHINES[e].frames.map((f, i) => ({ cls: `frame-${i + 1}`, grid: f[part] }));
+---
+
+<svg class:list={["machine", part !== "idle" && part]} viewBox={`0 0 ${TILE} ${TILE}`} shape-rendering="crispEdges" aria-hidden="true">
+  {
+    groups.map((g) => (
+      <g class={g.cls}>
+        {filled(g.grid).map((p) => (
+          <path fill={p.fill} d={p.d} />
+        ))}
+      </g>
+    ))
+  }
+</svg>

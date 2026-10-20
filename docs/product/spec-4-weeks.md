@@ -151,13 +151,13 @@ equipment.
 
 | Equipment | On the floor when a room opens | Exercises | Exercise animation |
 | --- | --- | --- | --- |
-| Treadmill | Yes | Run, incline walk | Legs pumping on the belt |
+| Treadmill | Yes | Run, incline walk | Running on the belt, mid-stride then mirrored |
 | Flat bench | Yes | Bench press, incline bench press | Bar up, bar down |
-| Squat rack | Yes | Back squat, overhead press | Stand, squat |
-| Dumbbell rack | Yes | Dumbbell curl, lateral raise | Arms down, arms up |
+| Squat rack | Yes | Back squat, overhead press | Bar on the shoulders: squat, stand |
+| Dumbbell rack | Yes | Dumbbell curl, lateral raise | Arms up, arms down |
 | Lifting platform | No | Deadlift, Romanian deadlift | Bent over, standing |
-| Pull-up bar | No | Pull-up, hanging leg raise | Hanging, chin over bar |
-| Cable machine | No | Lat pulldown, seated cable row | Handle up, handle in |
+| Pull-up bar | No | Pull-up, hanging leg raise | Chin over bar, hanging |
+| Cable machine | No | Lat pulldown, seated cable row | Seated: handle in, handle up |
 | Exercise mat | No | Push-ups, plank | Arms straight, chest down |
 
 **Requirements**
@@ -199,7 +199,7 @@ equipment.
 | ID | Pri | Requirement |
 | --- | --- | --- |
 | BOT-1 | P1 | The back wall's poster is "Member of the month: Dony". Anyone in the room can tap it (by touch, click or keyboard) to summon Dony: on every screen the poster goes empty and he hops down onto the walkway. The server records the summon (when, by whom). He can be summoned again any number of times after being sent back; each summon is a fresh visit with a new schedule. |
-| BOT-2 | P1 | Dony is drawn with his own 32 × 32 sprite (an Asian character with glasses and a cool outfit) in every pose a person has, plus the poster's full and empty frames, within the art rules. He can't be picked in the avatar editor. |
+| BOT-2 | P1 | Dony is drawn on the people's body frames, so he has every pose and animation a person has, with his own head (an Asian character's hair and glasses) over them and his fixed violet colours; his hop is his only frame of his own. Plus the poster's full and empty frames, within the art rules. He can't be picked in the avatar editor. |
 | BOT-3 | P1 | Dony trains by a schedule worked out from the room and his summon time: blocks of 4 to 6 lifts over 45 to 60 minutes, 3 to 5 sets each, realistic set lengths and rests, 3 to 6 minutes Idle between blocks, mostly on equipment already on the floor (at most two deliveries a block). He goes Idle, Lifting, Resting and Slacking (about one rest in eight, at most twice a block) through the same station rules (GYM-4), never Finished, and every screen sees each change within about a second (GYM-13). |
 | BOT-4 | P1 | Anyone in the room can tap the empty poster to send Dony back: he stops whatever he's doing, frees his station, walks back and hops into the poster. He can be sent back at any moment; after a send back the poster rests for 30 seconds before he can be summoned again. A tap only acts if the poster is still as its tapper saw it (full for a summon, empty for a send back) and, for a summon, isn't resting; otherwise it does nothing, silently. |
 | BOT-5 | P1 | Dony appears on the map and in the squad list like a person, with no bot marker. He never counts as a member, toward the 12, as host or as room activity. A station he holds is always free for a person to take. The room closes when the last real person leaves, as now, and he goes with it. He appears in no logbook, summary, history or friends list. |
@@ -240,7 +240,7 @@ const frame = [
   applied, then reuses it. Recolouring an avatar is a palette change, not a new
   drawing.
 - Hair and accessories are overlay layers drawn at a head anchor that each body
-  frame defines, so one hair sprite per direction fits every animation.
+  frame defines, so one hair sprite fits every animation.
 - At most 7 colours per sprite plus transparency (ADR 0005): the look's
   three colours, a darker shade of each, and the ink outline.
 
@@ -248,8 +248,8 @@ const frame = [
 
 | Subject | Frames |
 | --- | --- |
-| Avatar body | Walk in 4 directions × 2; 8 exercise loops × 2; resting with a bottle × 2; slacking with a phone × 2; slapped, poked and cheered reactions × 2 each |
-| Hair | 4 styles × 4 directions |
+| Avatar body | Walk facing the viewer × 2; 8 exercise animations × 2; resting with a bottle × 2; slacking with a phone × 2. Slapped, poked and cheered reactions are effects drawn over any pose, not body frames |
+| Hair | 4 styles, facing the viewer only |
 | Gym worker | Walk carrying in 4 directions × 2; put down × 1 |
 | Equipment | 8 pieces, each in place and being carried |
 | Tiles | Floor, wall, entrance, aisle, empty-station marker, water cooler |

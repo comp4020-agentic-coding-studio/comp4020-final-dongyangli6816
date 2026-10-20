@@ -1,16 +1,20 @@
 ---
 // One person's avatar as crisp SVG (AV-2): the body in a pose, with the hair
-// drawn over the head inside the bobbing group (g.av-top). Each pixel carries
-// its slot as a class (k, s, t, h, the shades S, T, H; pm, pw, pr for the gym's props) rather
-// than a fill, and the look's colours arrive as custom properties, so a
-// palette swap is three variables.
-import { AVATAR_UPPER_ROWS, HAIR, HAIR_STYLES, lookVars, poseOf, type HairStyle, type Look, type Pose } from "../sprites/avatar.ts";
-import { DONY_VARS, donyFrame, type DonyFrame } from "../sprites/dony.ts";
+// (or Dony's head) drawn over it and props over both, inside the bobbing
+// group (g.av-top). Each pixel carries its slot as a class (k, s, t, h, the
+// shades S, T, H; pm, pw, pr for the fixed colours) rather than a fill, and
+// the look's colours arrive as custom properties, so a palette swap is three
+// variables. A pose with two drawings (a machine's frames, the walk) draws
+// both, as g.frame-1 and g.frame-2, and CSS swaps them (GymMap.astro). On a
+// machine the machine's own layers are drawn by the station, around this.
+import { AVATAR_UPPER_ROWS, HAIR_STYLES, HEAD_CROP, lookVars, type HairStyle, type Look } from "../sprites/avatar.ts";
+import { DONY_VARS } from "../sprites/dony.ts";
+import { drawingsOf, headOf, isMachine, type Pose } from "../sprites/poses.ts";
 import { paths, TILE } from "../sprites/sprite.ts";
 
 interface Props {
-  // Dony's own sprite and colours in this frame, instead of a look (BOT-2)
-  dony?: DonyFrame;
+  // Dony's head and colours instead of a look (BOT-2, D2)
+  dony?: boolean;
   // no look draws the body alone, as the invite's empty spot (with class "ghost")
   look?: Look | null;
   // the gym's poses (GYM-10); standing everywhere else
@@ -24,45 +28,63 @@ interface Props {
   vars?: boolean;
   class?: string;
 }
-const { dony, look, pose = "stand", head = false, allHair = false, vars = !!look, class: className } = Astro.props;
+const { dony = false, look, pose = "stand", head = false, allHair = false, vars = !!look, class: className } = Astro.props;
 
-// one path per slot; a prop's m, w and r are drawn in the gym's colours, and
-// any body letter in the props (the lift's arms) keeps its slot
-const PROP: Record<string, string> = { m: "pm", w: "pw", r: "pr" };
-const slotted = (map: Map<string, string>, prop = false) =>
-  [...map].map(([ch, d]) => ({ slot: prop ? (PROP[ch] ?? ch) : ch, d }));
-const { body: grid, hairRow, props } = dony ? { ...donyFrame(dony), hairRow: 0 } : poseOf(pose);
-const top = slotted(paths(grid, 0, AVATAR_UPPER_ROWS));
-const bottom = slotted(paths(grid, AVATAR_UPPER_ROWS));
-const styles: HairStyle[] = dony || !look ? [] : allHair ? HAIR_STYLES.map((s) => s.id) : [look.hair];
-const hair = styles.map((style) => ({ style, parts: slotted(paths(HAIR[style], 0, Infinity, hairRow)) }));
-const propsTop = slotted(paths(props, 0, AVATAR_UPPER_ROWS), true);
-const propsBottom = slotted(paths(props, AVATAR_UPPER_ROWS), true);
+// one path per slot; m, w and r are the fixed colours, in the body as in the
+// props, and any body letter in the props (the fingers round the bottle)
+// keeps its slot. The sitting figure's phone screen is its props' only paper,
+// so it also carries .glow, which blinks.
+const FIXED: Record<string, string> = { m: "pm", w: "pw", r: "pr" };
+const slotted = (map: Map<string, string>, glow = false) =>
+  [...map].map(([ch, d]) => ({ slot: (FIXED[ch] ?? ch) + (glow && ch === "w" ? " glow" : ""), d }));
+const styles: (HairStyle | "dony")[] = dony ? ["dony"] : !look ? [] : allHair ? HAIR_STYLES.map((s) => s.id) : [look.hair];
+// rows above the split bob, the rest stay planted; a machine's people, the
+// walk and the slacker don't bob, so their whole body goes under the hair
+const bobs = !isMachine(pose) && pose !== "sit" && pose !== "walk";
+const split = bobs ? AVATAR_UPPER_ROWS : TILE;
+const drawings = drawingsOf(pose).map((d, i, all) => {
+  return {
+    frame: all.length > 1 ? `frame-${i + 1}` : undefined,
+    top: slotted(paths(d.body, 0, split)),
+    bottom: slotted(paths(d.body, split)),
+    hair: styles.map((style) => ({ style, parts: slotted(paths(headOf(style), 0, Infinity, d.hairRow)) })),
+    propsTop: slotted(paths(d.props, 0, split), pose === "sit"),
+    propsBottom: slotted(paths(d.props, split), pose === "sit"),
+  };
+});
 ---
 
 <svg
-  class:list={["av", `pose-${dony === "sit" ? "sit" : dony?.startsWith("lift") ? "lift" : dony ? "stand" : pose}`, className]}
-  viewBox={head ? "2 0 28 22" : `0 0 ${TILE} ${TILE}`}
+  class:list={["av", `pose-${pose}`, className]}
+  viewBox={head ? HEAD_CROP : `0 0 ${TILE} ${TILE}`}
   shape-rendering="crispEdges"
   aria-hidden="true"
   data-hair={allHair && look && !dony ? look.hair : undefined}
   style={dony ? DONY_VARS : vars && look ? lookVars(look) : undefined}
 >
-  <g class="av-top">
-    {top.map((p) => <path class={p.slot} d={p.d} />)}
-    {
-      hair.map((h) => (
-        <g class={`hair hair-${h.style}`}>
-          {h.parts.map((p) => (
+  {
+    drawings.map((d) => (
+      <g class={d.frame}>
+        <g class="av-top">
+          {d.top.map((p) => (
+            <path class={p.slot} d={p.d} />
+          ))}
+          {d.hair.map((h) => (
+            <g class={h.style === "dony" ? "head-dony" : `hair hair-${h.style}`}>
+              {h.parts.map((p) => (
+                <path class={p.slot} d={p.d} />
+              ))}
+            </g>
+          ))}
+          {d.propsTop.map((p) => (
             <path class={p.slot} d={p.d} />
           ))}
         </g>
-      ))
-    }
-    {propsTop.map((p) => <path class={p.slot} d={p.d} />)}
-  </g>
-  {!head && bottom.map((p) => <path class={p.slot} d={p.d} />)}
-  {!head && propsBottom.map((p) => <path class={p.slot} d={p.d} />)}
+        {!head && d.bottom.map((p) => <path class={p.slot} d={p.d} />)}
+        {!head && d.propsBottom.map((p) => <path class={p.slot} d={p.d} />)}
+      </g>
+    ))
+  }
 </svg>
 
 <style is:global>
@@ -94,7 +116,7 @@ const propsBottom = slotted(paths(props, AVATAR_UPPER_ROWS), true);
   .av .T {
     fill: var(--av-shirt-2, color-mix(in srgb, var(--av-shirt), var(--ink) 30%));
   }
-  /* the gym's props: the bar, the bottle, the phone's glow */
+  /* the fixed colours: catchlights, sneakers, the bar, the bottle, the phone */
   .av .pm {
     fill: var(--dim);
   }
@@ -114,6 +136,10 @@ const propsBottom = slotted(paths(props, AVATAR_UPPER_ROWS), true);
   .av[data-hair="ponytail"] .hair-ponytail {
     display: inline;
   }
+  /* two drawings: the first shows until something swaps them (GymMap.astro) */
+  .av .frame-2 {
+    display: none;
+  }
   /* the invite's empty spot: the body as an outline in the muted ink */
   .av.ghost {
     --av-skin: var(--card);
@@ -123,5 +149,9 @@ const propsBottom = slotted(paths(props, AVATAR_UPPER_ROWS), true);
   }
   .av.ghost .k {
     fill: var(--muted);
+  }
+  .av.ghost .pw,
+  .av.ghost .pm {
+    fill: var(--card);
   }
 </style>

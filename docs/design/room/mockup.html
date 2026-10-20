@@ -781,9 +781,14 @@
         width: var(--t);
         height: var(--t);
       }
-      /* on a station the avatar stands in front of the equipment: its feet
-         drop 12 sprite pixels into the aisle, and the tag stays in the row
-         above, so the top of the equipment shows between them */
+      /* Slacking (.on-station) sits in front of the machine: its feet drop
+         12 sprite pixels into the aisle, and the tag stays in the row above,
+         so the idle machine shows between them. Lifting (.on-machine) needs
+         no rule: the default placement puts the sprite on the station's own
+         tile and the tag just above it, the same for all eight machines
+         (GYM-15.5). Its svg stacks the person's frame and the machine's
+         front-<n> over the station's back-<n> (room spec, "Exercise
+         animations, Oct 19"), plus the claim corners on your own station. */
       .map .avatar.on-station {
         top: calc((var(--y) + 1.375) * var(--t));
       }
@@ -1874,9 +1879,9 @@
             <div class="map">
               <svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="/sprites.svg#map-tiles" /></svg>
               <button type="submit" form="dony" name="intent" value="summon" class="poster" aria-label="Call Dony out of his poster"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-full" /><use href="/sprites.svg#poster-glint" class="glint" /></svg></button>
-              <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
+              <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill-back-1" /></svg></div>
               <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div>
-              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
+              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack-back-1" /></svg></div>
               <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
               <div class="station mine" style="--x: 1; --y: 3" data-slot="5" data-equipment="lifting-platform"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-lifting-platform" /></svg><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#claim" /></svg></div>
               <div class="station" style="--x: 3; --y: 3" data-slot="6" data-equipment="exercise-mat"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-exercise-mat" /></svg></div>
@@ -1886,17 +1891,17 @@
               <div class="station" style="--x: 3; --y: 5" data-slot="10"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-10" /></svg></div>
               <div class="station" style="--x: 6; --y: 5" data-slot="11"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-11" /></svg></div>
               <div class="station" style="--x: 8; --y: 5" data-slot="12"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-12" /></svg></div>
-              <button type="button" class="avatar on-station" style="--x: 6; --y: 1" data-state="lifting" aria-label="Mia, lifting, back squat on squat rack 3">
+              <button type="button" class="avatar on-machine" style="--x: 6; --y: 1" data-state="lifting" aria-label="Mia, lifting, back squat on squat rack 3">
                 <span class="tag state-lifting"><span class="nm">Mia</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-lift-long"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-squat-rack-1-long"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg>
               </button>
               <button type="button" class="avatar on-station" style="--x: 3; --y: 1" data-state="slacking" aria-label="Ji-woo, slacking, flat bench 2">
                 <span class="tag state-slacking"><span class="nm">Ji-woo</span></span>
                 <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><use href="/sprites.svg#av-sit-ponytail"/></svg>
               </button>
-              <button type="button" class="avatar on-station" style="--x: 1; --y: 1" data-state="lifting" aria-label="Kai, lifting, run on treadmill 1">
+              <button type="button" class="avatar on-machine" style="--x: 1; --y: 1" data-state="lifting" aria-label="Kai, lifting, run on treadmill 1">
                 <span class="tag state-lifting"><span class="nm">Kai</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #ad7447; --av-skin-2: #8f5a36; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #3b3b45; --av-shirt-2: #282832"><use href="/sprites.svg#av-stand-crop"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #ad7447; --av-skin-2: #8f5a36; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #3b3b45; --av-shirt-2: #282832"><use href="/sprites.svg#av-treadmill-1-crop"/><use href="/sprites.svg#eq-treadmill-front-1"/></svg>
               </button>
               <button type="button" class="avatar me" style="--x: 1; --y: 7" data-state="resting" aria-label="Priya (you), resting, lifting platform 5">
                 <span class="tag state-resting"><span class="nm">Priya</span></span>
@@ -2621,7 +2626,7 @@
               <button type="submit" form="dony" name="intent" value="send-back" class="poster" aria-label="Send Dony back to his poster"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-empty" /></svg></button>
               <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
               <div class="station mine" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#claim" /></svg></div>
-              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
+              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack-back-1" /></svg></div>
               <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
               <div class="station" style="--x: 1; --y: 3" data-slot="5"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-5" /></svg></div>
               <div class="station" style="--x: 3; --y: 3" data-slot="6"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-6" /></svg></div>
@@ -2635,9 +2640,9 @@
                 <span class="tag state-resting"><span class="nm">Mia</span></span>
                 <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-rest-long"/></svg>
               </button>
-              <button type="button" class="avatar on-station" style="--x: 6; --y: 1" data-state="lifting" aria-label="Dony, lifting, back squat on squat rack 3">
+              <button type="button" class="avatar on-machine" style="--x: 6; --y: 1" data-state="lifting" aria-label="Dony, lifting, back squat on squat rack 3">
                 <span class="tag state-lifting"><span class="nm">Dony</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8"><use href="/sprites.svg#dony-lift"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8"><use href="/sprites.svg#dony-squat-rack-1"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg>
               </button>
             </div>
           </section>
@@ -2671,7 +2676,7 @@
               <svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="/sprites.svg#map-tiles" /></svg>
               <button type="submit" form="dony" name="intent" value="send-back" class="poster" aria-label="Send Dony back to his poster"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-empty" /></svg></button>
               <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
-              <div class="station mine" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#claim" /></svg></div>
+              <div class="station mine" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench-back-1" /></svg><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#claim" /></svg></div>
               <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
               <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
               <div class="station" style="--x: 1; --y: 3" data-slot="5"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-5" /></svg></div>
@@ -2682,9 +2687,9 @@
               <div class="station" style="--x: 3; --y: 5" data-slot="10"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-10" /></svg></div>
               <div class="station" style="--x: 6; --y: 5" data-slot="11"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-11" /></svg></div>
               <div class="station" style="--x: 8; --y: 5" data-slot="12"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-12" /></svg></div>
-              <button type="button" class="avatar on-station me" style="--x: 3; --y: 1" data-state="lifting" aria-label="Mia (you), lifting, bench press on flat bench 2">
+              <button type="button" class="avatar on-machine me" style="--x: 3; --y: 1" data-state="lifting" aria-label="Mia (you), lifting, bench press on flat bench 2">
                 <span class="tag state-lifting"><span class="nm">Mia</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-lift-long"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-flat-bench-1-long"/><use href="/sprites.svg#eq-flat-bench-front-1"/><use href="/sprites.svg#claim"/></svg>
               </button>
               <button type="button" class="avatar" style="--x: 1; --y: 7" data-state="resting" aria-label="Dony, resting, squat rack 3">
                 <span class="tag state-resting"><span class="nm">Dony</span></span>
@@ -2773,8 +2778,8 @@
               <svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="/sprites.svg#map-tiles" /></svg>
               <button type="submit" form="dony" name="intent" value="send-back" class="poster" aria-label="Send Dony back to his poster"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-empty" /></svg></button>
               <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
-              <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div>
-              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
+              <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench-back-1" /></svg></div>
+              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack-back-1" /></svg></div>
               <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
               <div class="station mine" style="--x: 1; --y: 3" data-slot="5" data-equipment="lifting-platform"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-lifting-platform" /></svg><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#claim" /></svg></div>
               <div class="station" style="--x: 3; --y: 3" data-slot="6"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-6" /></svg></div>
@@ -2784,13 +2789,13 @@
               <div class="station" style="--x: 3; --y: 5" data-slot="10"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-10" /></svg></div>
               <div class="station" style="--x: 6; --y: 5" data-slot="11"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-11" /></svg></div>
               <div class="station" style="--x: 8; --y: 5" data-slot="12"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-12" /></svg></div>
-              <button type="button" class="avatar on-station" style="--x: 3; --y: 1" data-state="lifting" aria-label="Mia, lifting, bench press on flat bench 2">
+              <button type="button" class="avatar on-machine" style="--x: 3; --y: 1" data-state="lifting" aria-label="Mia, lifting, bench press on flat bench 2">
                 <span class="tag state-lifting"><span class="nm">Mia</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-lift-long"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-flat-bench-1-long"/><use href="/sprites.svg#eq-flat-bench-front-1"/></svg>
               </button>
-              <button type="button" class="avatar on-station" style="--x: 6; --y: 1" data-state="lifting" aria-label="Dony, lifting, back squat on squat rack 3">
+              <button type="button" class="avatar on-machine" style="--x: 6; --y: 1" data-state="lifting" aria-label="Dony, lifting, back squat on squat rack 3">
                 <span class="tag state-lifting"><span class="nm">Dony</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8"><use href="/sprites.svg#dony-lift"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8"><use href="/sprites.svg#dony-squat-rack-1"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg>
               </button>
               <button type="button" class="avatar me" style="--x: 1; --y: 7" data-state="resting" aria-label="Priya (you), resting, lifting platform 5">
                 <span class="tag state-resting"><span class="nm">Priya</span></span>
@@ -2929,8 +2934,8 @@
               <button type="submit" form="dony" name="intent" value="send-back" class="poster" aria-label="Send Dony back to his poster"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-empty" /></svg></button>
               <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
               <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div>
-              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
-              <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
+              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack-back-1" /></svg></div>
+              <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack-back-1" /></svg></div>
               <div class="station" style="--x: 1; --y: 3" data-slot="5"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-5" /></svg></div>
               <div class="station" style="--x: 3; --y: 3" data-slot="6"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-6" /></svg></div>
               <div class="station" style="--x: 6; --y: 3" data-slot="7"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-7" /></svg></div>
@@ -2939,13 +2944,13 @@
               <div class="station" style="--x: 3; --y: 5" data-slot="10"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-10" /></svg></div>
               <div class="station" style="--x: 6; --y: 5" data-slot="11"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-11" /></svg></div>
               <div class="station" style="--x: 8; --y: 5" data-slot="12"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-12" /></svg></div>
-              <button type="button" class="avatar on-station" style="--x: 8; --y: 1" data-state="lifting" aria-label="Tom, lifting, dumbbell curl on dumbbell rack 4">
+              <button type="button" class="avatar on-machine" style="--x: 8; --y: 1" data-state="lifting" aria-label="Tom, lifting, dumbbell curl on dumbbell rack 4">
                 <span class="tag state-lifting"><span class="nm">Tom</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #f6d7bd; --av-skin-2: #e0b69a; --av-hair: #b5552a; --av-hair-2: #873a1d; --av-shirt: #2e3f7f; --av-shirt-2: #1f2a5c"><use href="/sprites.svg#av-lift-crop"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #f6d7bd; --av-skin-2: #e0b69a; --av-hair: #b5552a; --av-hair-2: #873a1d; --av-shirt: #2e3f7f; --av-shirt-2: #1f2a5c"><use href="/sprites.svg#av-dumbbell-rack-1-crop"/><use href="/sprites.svg#eq-dumbbell-rack-front-1"/></svg>
               </button>
-              <button type="button" class="avatar on-station" style="--x: 6; --y: 1" data-state="lifting" aria-label="Dony, lifting, back squat on squat rack 3">
+              <button type="button" class="avatar on-machine" style="--x: 6; --y: 1" data-state="lifting" aria-label="Dony, lifting, back squat on squat rack 3">
                 <span class="tag state-lifting"><span class="nm">Dony</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8"><use href="/sprites.svg#dony-lift"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8"><use href="/sprites.svg#dony-squat-rack-1"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg>
               </button>
               </div>
             </div>
@@ -2958,8 +2963,8 @@
               <button type="submit" form="dony" name="intent" value="send-back" class="poster" aria-label="Send Dony back to his poster"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-empty" /></svg></button>
               <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
               <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div>
-              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
-              <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
+              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack-back-1" /></svg></div>
+              <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack-back-1" /></svg></div>
               <div class="station" style="--x: 1; --y: 3" data-slot="5"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-5" /></svg></div>
               <div class="station" style="--x: 3; --y: 3" data-slot="6"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-6" /></svg></div>
               <div class="station" style="--x: 6; --y: 3" data-slot="7"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-7" /></svg></div>
@@ -2968,9 +2973,9 @@
               <div class="station" style="--x: 3; --y: 5" data-slot="10"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-10" /></svg></div>
               <div class="station" style="--x: 6; --y: 5" data-slot="11"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-11" /></svg></div>
               <div class="station" style="--x: 8; --y: 5" data-slot="12"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-12" /></svg></div>
-              <button type="button" class="avatar on-station" style="--x: 8; --y: 1" data-state="lifting" aria-label="Tom, lifting, dumbbell curl on dumbbell rack 4">
+              <button type="button" class="avatar on-machine" style="--x: 8; --y: 1" data-state="lifting" aria-label="Tom, lifting, dumbbell curl on dumbbell rack 4">
                 <span class="tag state-lifting"><span class="nm">Tom</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #f6d7bd; --av-skin-2: #e0b69a; --av-hair: #b5552a; --av-hair-2: #873a1d; --av-shirt: #2e3f7f; --av-shirt-2: #1f2a5c"><use href="/sprites.svg#av-lift-crop"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #f6d7bd; --av-skin-2: #e0b69a; --av-hair: #b5552a; --av-hair-2: #873a1d; --av-shirt: #2e3f7f; --av-shirt-2: #1f2a5c"><use href="/sprites.svg#av-dumbbell-rack-1-crop"/><use href="/sprites.svg#eq-dumbbell-rack-front-1"/></svg>
               </button>
               <button type="button" class="avatar" style="--x: 6; --y: 2" data-state="idle" aria-label="Dony, idle" inert>
                 <span class="tag state-idle"><span class="nm">Dony</span></span>
@@ -2987,8 +2992,8 @@
               <button type="submit" form="dony" name="intent" value="send-back" class="poster" aria-label="Send Dony back to his poster"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-empty" /></svg></button>
               <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
               <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div>
-              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
-              <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
+              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack-back-1" /></svg></div>
+              <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack-back-1" /></svg></div>
               <div class="station" style="--x: 1; --y: 3" data-slot="5"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-5" /></svg></div>
               <div class="station" style="--x: 3; --y: 3" data-slot="6"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-6" /></svg></div>
               <div class="station" style="--x: 6; --y: 3" data-slot="7"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-7" /></svg></div>
@@ -2997,9 +3002,9 @@
               <div class="station" style="--x: 3; --y: 5" data-slot="10"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-10" /></svg></div>
               <div class="station" style="--x: 6; --y: 5" data-slot="11"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-11" /></svg></div>
               <div class="station" style="--x: 8; --y: 5" data-slot="12"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-12" /></svg></div>
-              <button type="button" class="avatar on-station" style="--x: 8; --y: 1" data-state="lifting" aria-label="Tom, lifting, dumbbell curl on dumbbell rack 4">
+              <button type="button" class="avatar on-machine" style="--x: 8; --y: 1" data-state="lifting" aria-label="Tom, lifting, dumbbell curl on dumbbell rack 4">
                 <span class="tag state-lifting"><span class="nm">Tom</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #f6d7bd; --av-skin-2: #e0b69a; --av-hair: #b5552a; --av-hair-2: #873a1d; --av-shirt: #2e3f7f; --av-shirt-2: #1f2a5c"><use href="/sprites.svg#av-lift-crop"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #f6d7bd; --av-skin-2: #e0b69a; --av-hair: #b5552a; --av-hair-2: #873a1d; --av-shirt: #2e3f7f; --av-shirt-2: #1f2a5c"><use href="/sprites.svg#av-dumbbell-rack-1-crop"/><use href="/sprites.svg#eq-dumbbell-rack-front-1"/></svg>
               </button>
               <button type="button" class="avatar hop" style="--x: 5; --y: 1" data-state="idle" aria-label="Dony, idle, no station yet" inert>
                 <span class="tag state-idle"><span class="nm">Dony</span></span>
@@ -3016,8 +3021,8 @@
               <button type="submit" form="dony" name="intent" value="summon" class="poster resting shake" aria-disabled="true" aria-label="Call Dony out of his poster (not ready yet)"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-full" /><use href="/sprites.svg#poster-glint" class="glint" /></svg></button>
               <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
               <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div>
-              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
-              <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
+              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack-back-1" /></svg></div>
+              <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack-back-1" /></svg></div>
               <div class="station" style="--x: 1; --y: 3" data-slot="5"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-5" /></svg></div>
               <div class="station" style="--x: 3; --y: 3" data-slot="6"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-6" /></svg></div>
               <div class="station" style="--x: 6; --y: 3" data-slot="7"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-7" /></svg></div>
@@ -3026,9 +3031,9 @@
               <div class="station" style="--x: 3; --y: 5" data-slot="10"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-10" /></svg></div>
               <div class="station" style="--x: 6; --y: 5" data-slot="11"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-11" /></svg></div>
               <div class="station" style="--x: 8; --y: 5" data-slot="12"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-12" /></svg></div>
-              <button type="button" class="avatar on-station" style="--x: 8; --y: 1" data-state="lifting" aria-label="Tom, lifting, dumbbell curl on dumbbell rack 4">
+              <button type="button" class="avatar on-machine" style="--x: 8; --y: 1" data-state="lifting" aria-label="Tom, lifting, dumbbell curl on dumbbell rack 4">
                 <span class="tag state-lifting"><span class="nm">Tom</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #f6d7bd; --av-skin-2: #e0b69a; --av-hair: #b5552a; --av-hair-2: #873a1d; --av-shirt: #2e3f7f; --av-shirt-2: #1f2a5c"><use href="/sprites.svg#av-lift-crop"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #f6d7bd; --av-skin-2: #e0b69a; --av-hair: #b5552a; --av-hair-2: #873a1d; --av-shirt: #2e3f7f; --av-shirt-2: #1f2a5c"><use href="/sprites.svg#av-dumbbell-rack-1-crop"/><use href="/sprites.svg#eq-dumbbell-rack-front-1"/></svg>
               </button>
               </div>
             </div>
@@ -3050,7 +3055,7 @@
               <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
               <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div>
               <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
-              <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
+              <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack-back-1" /></svg></div>
               <div class="station" style="--x: 1; --y: 3" data-slot="5"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-5" /></svg></div>
               <div class="station" style="--x: 3; --y: 3" data-slot="6"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-6" /></svg></div>
               <div class="station" style="--x: 6; --y: 3" data-slot="7"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-7" /></svg></div>
@@ -3059,9 +3064,9 @@
               <div class="station" style="--x: 3; --y: 5" data-slot="10"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-10" /></svg></div>
               <div class="station" style="--x: 6; --y: 5" data-slot="11"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-11" /></svg></div>
               <div class="station" style="--x: 8; --y: 5" data-slot="12"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-12" /></svg></div>
-              <button type="button" class="avatar on-station" style="--x: 8; --y: 1" data-state="lifting" aria-label="Tom, lifting, dumbbell curl on dumbbell rack 4">
+              <button type="button" class="avatar on-machine" style="--x: 8; --y: 1" data-state="lifting" aria-label="Tom, lifting, dumbbell curl on dumbbell rack 4">
                 <span class="tag state-lifting"><span class="nm">Tom</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #f6d7bd; --av-skin-2: #e0b69a; --av-hair: #b5552a; --av-hair-2: #873a1d; --av-shirt: #2e3f7f; --av-shirt-2: #1f2a5c"><use href="/sprites.svg#av-lift-crop"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #f6d7bd; --av-skin-2: #e0b69a; --av-hair: #b5552a; --av-hair-2: #873a1d; --av-shirt: #2e3f7f; --av-shirt-2: #1f2a5c"><use href="/sprites.svg#av-dumbbell-rack-1-crop"/><use href="/sprites.svg#eq-dumbbell-rack-front-1"/></svg>
               </button>
               <button type="button" class="avatar me" style="--x: 8; --y: 7" data-state="idle" aria-label="Priya (you), idle, no station yet">
                 <span class="tag state-idle"><span class="nm">Priya</span></span>
@@ -3100,7 +3105,7 @@
               <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
               <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div>
               <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
-              <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
+              <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack-back-1" /></svg></div>
               <div class="station" style="--x: 1; --y: 3" data-slot="5"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-5" /></svg></div>
               <div class="station" style="--x: 3; --y: 3" data-slot="6"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-6" /></svg></div>
               <div class="station" style="--x: 6; --y: 3" data-slot="7"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-7" /></svg></div>
@@ -3109,9 +3114,9 @@
               <div class="station" style="--x: 3; --y: 5" data-slot="10"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-10" /></svg></div>
               <div class="station" style="--x: 6; --y: 5" data-slot="11"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-11" /></svg></div>
               <div class="station" style="--x: 8; --y: 5" data-slot="12"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-12" /></svg></div>
-              <button type="button" class="avatar on-station" style="--x: 8; --y: 1" data-state="lifting" aria-label="Tom, lifting, dumbbell curl on dumbbell rack 4">
+              <button type="button" class="avatar on-machine" style="--x: 8; --y: 1" data-state="lifting" aria-label="Tom, lifting, dumbbell curl on dumbbell rack 4">
                 <span class="tag state-lifting"><span class="nm">Tom</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #f6d7bd; --av-skin-2: #e0b69a; --av-hair: #b5552a; --av-hair-2: #873a1d; --av-shirt: #2e3f7f; --av-shirt-2: #1f2a5c"><use href="/sprites.svg#av-lift-crop"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #f6d7bd; --av-skin-2: #e0b69a; --av-hair: #b5552a; --av-hair-2: #873a1d; --av-shirt: #2e3f7f; --av-shirt-2: #1f2a5c"><use href="/sprites.svg#av-dumbbell-rack-1-crop"/><use href="/sprites.svg#eq-dumbbell-rack-front-1"/></svg>
               </button>
               <button type="button" class="avatar me" style="--x: 8; --y: 7" data-state="idle" aria-label="Priya (you), idle, no station yet">
                 <span class="tag state-idle"><span class="nm">Priya</span></span>
@@ -3157,7 +3162,7 @@
               <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
               <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div>
               <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
-              <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
+              <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack-back-1" /></svg></div>
               <div class="station" style="--x: 1; --y: 3" data-slot="5"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-5" /></svg></div>
               <div class="station" style="--x: 3; --y: 3" data-slot="6"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-6" /></svg></div>
               <div class="station" style="--x: 6; --y: 3" data-slot="7"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-7" /></svg></div>
@@ -3166,9 +3171,9 @@
               <div class="station" style="--x: 3; --y: 5" data-slot="10"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-10" /></svg></div>
               <div class="station" style="--x: 6; --y: 5" data-slot="11"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-11" /></svg></div>
               <div class="station" style="--x: 8; --y: 5" data-slot="12"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-12" /></svg></div>
-              <button type="button" class="avatar on-station" style="--x: 8; --y: 1" data-state="lifting" aria-label="Tom, lifting, dumbbell curl on dumbbell rack 4">
+              <button type="button" class="avatar on-machine" style="--x: 8; --y: 1" data-state="lifting" aria-label="Tom, lifting, dumbbell curl on dumbbell rack 4">
                 <span class="tag state-lifting"><span class="nm">Tom</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #f6d7bd; --av-skin-2: #e0b69a; --av-hair: #b5552a; --av-hair-2: #873a1d; --av-shirt: #2e3f7f; --av-shirt-2: #1f2a5c"><use href="/sprites.svg#av-lift-crop"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #f6d7bd; --av-skin-2: #e0b69a; --av-hair: #b5552a; --av-hair-2: #873a1d; --av-shirt: #2e3f7f; --av-shirt-2: #1f2a5c"><use href="/sprites.svg#av-dumbbell-rack-1-crop"/><use href="/sprites.svg#eq-dumbbell-rack-front-1"/></svg>
               </button>
               </div>
             </div>
@@ -3182,7 +3187,7 @@
               <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
               <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div>
               <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
-              <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
+              <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack-back-1" /></svg></div>
               <div class="station" style="--x: 1; --y: 3" data-slot="5"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-5" /></svg></div>
               <div class="station" style="--x: 3; --y: 3" data-slot="6"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-6" /></svg></div>
               <div class="station" style="--x: 6; --y: 3" data-slot="7"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-7" /></svg></div>
@@ -3191,9 +3196,9 @@
               <div class="station" style="--x: 3; --y: 5" data-slot="10"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-10" /></svg></div>
               <div class="station" style="--x: 6; --y: 5" data-slot="11"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-11" /></svg></div>
               <div class="station" style="--x: 8; --y: 5" data-slot="12"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-12" /></svg></div>
-              <button type="button" class="avatar on-station" style="--x: 8; --y: 1" data-state="lifting" aria-label="Tom, lifting, dumbbell curl on dumbbell rack 4">
+              <button type="button" class="avatar on-machine" style="--x: 8; --y: 1" data-state="lifting" aria-label="Tom, lifting, dumbbell curl on dumbbell rack 4">
                 <span class="tag state-lifting"><span class="nm">Tom</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #f6d7bd; --av-skin-2: #e0b69a; --av-hair: #b5552a; --av-hair-2: #873a1d; --av-shirt: #2e3f7f; --av-shirt-2: #1f2a5c"><use href="/sprites.svg#av-lift-crop"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #f6d7bd; --av-skin-2: #e0b69a; --av-hair: #b5552a; --av-hair-2: #873a1d; --av-shirt: #2e3f7f; --av-shirt-2: #1f2a5c"><use href="/sprites.svg#av-dumbbell-rack-1-crop"/><use href="/sprites.svg#eq-dumbbell-rack-front-1"/></svg>
               </button>
               <button type="button" class="avatar hop" style="--x: 5; --y: 1" data-state="idle" aria-label="Dony, idle, no station yet">
                 <span class="tag state-idle"><span class="nm">Dony</span></span>
@@ -3216,7 +3221,7 @@
               <button type="submit" form="dony" name="intent" value="summon" class="poster pending" aria-disabled="true" aria-label="Call Dony out of his poster"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-full" /><use href="/sprites.svg#poster-glint" class="glint" /></svg></button>
               <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
               <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div>
-              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
+              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack-back-1" /></svg></div>
               <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
               <div class="station" style="--x: 1; --y: 3" data-slot="5"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-5" /></svg></div>
               <div class="station" style="--x: 3; --y: 3" data-slot="6"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-6" /></svg></div>
@@ -3241,7 +3246,7 @@
               <button type="submit" form="dony" name="intent" value="send-back" class="poster" aria-label="Send Dony back to his poster"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-empty" /></svg></button>
               <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
               <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div>
-              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
+              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack-back-1" /></svg></div>
               <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
               <div class="station" style="--x: 1; --y: 3" data-slot="5"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-5" /></svg></div>
               <div class="station" style="--x: 3; --y: 3" data-slot="6"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-6" /></svg></div>
@@ -3270,7 +3275,7 @@
               <button type="submit" form="dony" name="intent" value="send-back" class="poster" aria-label="Send Dony back to his poster"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-empty" /></svg></button>
               <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
               <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div>
-              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
+              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack-back-1" /></svg></div>
               <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
               <div class="station" style="--x: 1; --y: 3" data-slot="5"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-5" /></svg></div>
               <div class="station" style="--x: 3; --y: 3" data-slot="6"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-6" /></svg></div>
@@ -3284,9 +3289,9 @@
                 <span class="tag state-idle"><span class="nm">Priya</span></span>
                 <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #1d1714; --av-hair-2: #3a2e28; --av-shirt: #e07b28; --av-shirt-2: #b0561a"><use href="/sprites.svg#av-stand-curls"/></svg>
               </button>
-              <button type="button" class="avatar on-station" style="--x: 6; --y: 1" data-state="lifting" aria-label="Dony, lifting, back squat on squat rack 3">
+              <button type="button" class="avatar on-machine" style="--x: 6; --y: 1" data-state="lifting" aria-label="Dony, lifting, back squat on squat rack 3">
                 <span class="tag state-lifting"><span class="nm">Dony</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8"><use href="/sprites.svg#dony-lift"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8"><use href="/sprites.svg#dony-squat-rack-1"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg>
               </button>
               </div>
             </div>
@@ -3299,7 +3304,7 @@
               <button type="submit" form="dony" name="intent" value="summon" class="poster resting" aria-disabled="true" aria-label="Call Dony out of his poster (not ready yet)"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-full" /><use href="/sprites.svg#poster-glint" class="glint" /></svg></button>
               <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
               <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div>
-              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
+              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack-back-1" /></svg></div>
               <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
               <div class="station" style="--x: 1; --y: 3" data-slot="5"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-5" /></svg></div>
               <div class="station" style="--x: 3; --y: 3" data-slot="6"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-6" /></svg></div>
@@ -3331,9 +3336,9 @@
             <div class="map">
               <svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="/sprites.svg#map-tiles" /></svg>
               <button type="submit" form="dony" name="intent" value="summon" class="poster" aria-label="Call Dony out of his poster"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-full" /><use href="/sprites.svg#poster-glint" class="glint" /></svg></button>
-              <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
+              <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill-back-1" /></svg></div>
               <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div>
-              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
+              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack-back-1" /></svg></div>
               <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
               <div class="station" style="--x: 1; --y: 3" data-slot="5" data-equipment="lifting-platform"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-lifting-platform" /></svg></div>
               <div class="station" style="--x: 3; --y: 3" data-slot="6" data-equipment="exercise-mat"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-exercise-mat" /></svg></div>
@@ -3343,17 +3348,17 @@
               <div class="station" style="--x: 3; --y: 5" data-slot="10"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-10" /></svg></div>
               <div class="station" style="--x: 6; --y: 5" data-slot="11"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-11" /></svg></div>
               <div class="station" style="--x: 8; --y: 5" data-slot="12"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-12" /></svg></div>
-              <button type="button" class="avatar on-station" style="--x: 6; --y: 1" data-state="lifting" aria-label="Mia, lifting, back squat on squat rack 3">
+              <button type="button" class="avatar on-machine" style="--x: 6; --y: 1" data-state="lifting" aria-label="Mia, lifting, back squat on squat rack 3">
                 <span class="tag state-lifting"><span class="nm">Mia</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-lift-long"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-squat-rack-1-long"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg>
               </button>
               <button type="button" class="avatar on-station" style="--x: 3; --y: 1" data-state="slacking" aria-label="Ji-woo, slacking, flat bench 2">
                 <span class="tag state-slacking"><span class="nm">Ji-woo</span></span>
                 <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><use href="/sprites.svg#av-sit-ponytail"/></svg>
               </button>
-              <button type="button" class="avatar on-station" style="--x: 1; --y: 1" data-state="lifting" aria-label="Kai, lifting, run on treadmill 1">
+              <button type="button" class="avatar on-machine" style="--x: 1; --y: 1" data-state="lifting" aria-label="Kai, lifting, run on treadmill 1">
                 <span class="tag state-lifting"><span class="nm">Kai</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #ad7447; --av-skin-2: #8f5a36; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #3b3b45; --av-shirt-2: #282832"><use href="/sprites.svg#av-stand-crop"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #ad7447; --av-skin-2: #8f5a36; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #3b3b45; --av-shirt-2: #282832"><use href="/sprites.svg#av-treadmill-1-crop"/><use href="/sprites.svg#eq-treadmill-front-1"/></svg>
               </button>
               <button type="button" class="avatar me" style="--x: 6; --y: 7" data-state="idle" aria-label="Priya (you), idle, no station yet">
                 <span class="tag state-idle"><span class="nm">Priya</span></span>
@@ -3454,9 +3459,9 @@
             <div class="map">
               <svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="/sprites.svg#map-tiles" /></svg>
               <button type="submit" form="dony" name="intent" value="summon" class="poster" aria-label="Call Dony out of his poster"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-full" /><use href="/sprites.svg#poster-glint" class="glint" /></svg></button>
-              <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
+              <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill-back-1" /></svg></div>
               <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div>
-              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
+              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack-back-1" /></svg></div>
               <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
               <div class="station mine" style="--x: 1; --y: 3" data-slot="5" data-equipment="lifting-platform"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-lifting-platform" /></svg><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#claim" /></svg></div>
               <div class="station" style="--x: 3; --y: 3" data-slot="6" data-equipment="exercise-mat"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-exercise-mat" /></svg></div>
@@ -3466,17 +3471,17 @@
               <div class="station" style="--x: 3; --y: 5" data-slot="10"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-10" /></svg></div>
               <div class="station" style="--x: 6; --y: 5" data-slot="11"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-11" /></svg></div>
               <div class="station" style="--x: 8; --y: 5" data-slot="12"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-12" /></svg></div>
-              <button type="button" class="avatar on-station" style="--x: 6; --y: 1" data-state="lifting" aria-label="Mia, lifting, back squat on squat rack 3">
+              <button type="button" class="avatar on-machine" style="--x: 6; --y: 1" data-state="lifting" aria-label="Mia, lifting, back squat on squat rack 3">
                 <span class="tag state-lifting"><span class="nm">Mia</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-lift-long"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-squat-rack-1-long"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg>
               </button>
               <button type="button" class="avatar on-station" style="--x: 3; --y: 1" data-state="slacking" aria-label="Ji-woo, slacking, flat bench 2">
                 <span class="tag state-slacking"><span class="nm">Ji-woo</span></span>
                 <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><use href="/sprites.svg#av-sit-ponytail"/></svg>
               </button>
-              <button type="button" class="avatar on-station" style="--x: 1; --y: 1" data-state="lifting" aria-label="Kai, lifting, run on treadmill 1">
+              <button type="button" class="avatar on-machine" style="--x: 1; --y: 1" data-state="lifting" aria-label="Kai, lifting, run on treadmill 1">
                 <span class="tag state-lifting"><span class="nm">Kai</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #ad7447; --av-skin-2: #8f5a36; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #3b3b45; --av-shirt-2: #282832"><use href="/sprites.svg#av-stand-crop"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #ad7447; --av-skin-2: #8f5a36; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #3b3b45; --av-shirt-2: #282832"><use href="/sprites.svg#av-treadmill-1-crop"/><use href="/sprites.svg#eq-treadmill-front-1"/></svg>
               </button>
               <button type="button" class="avatar me" style="--x: 1; --y: 7" data-state="resting" aria-label="Priya (you), resting, lifting platform 5">
                 <span class="tag state-resting"><span class="nm">Priya</span></span>
@@ -3617,9 +3622,9 @@
             <div class="map">
               <svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="/sprites.svg#map-tiles" /></svg>
               <button type="submit" form="dony" name="intent" value="summon" class="poster" aria-label="Call Dony out of his poster"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-full" /><use href="/sprites.svg#poster-glint" class="glint" /></svg></button>
-              <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
-              <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div>
-              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
+              <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill-back-1" /></svg></div>
+              <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench-back-1" /></svg></div>
+              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack-back-1" /></svg></div>
               <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
               <div class="station mine" style="--x: 1; --y: 3" data-slot="5" data-equipment="lifting-platform"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-lifting-platform" /></svg><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#claim" /></svg></div>
               <div class="station" style="--x: 3; --y: 3" data-slot="6" data-equipment="exercise-mat"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-exercise-mat" /></svg></div>
@@ -3629,17 +3634,17 @@
               <div class="station" style="--x: 3; --y: 5" data-slot="10"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-10" /></svg></div>
               <div class="station" style="--x: 6; --y: 5" data-slot="11"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-11" /></svg></div>
               <div class="station" style="--x: 8; --y: 5" data-slot="12"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-12" /></svg></div>
-              <button type="button" class="avatar on-station" style="--x: 6; --y: 1" data-state="lifting" aria-label="Mia, lifting, back squat on squat rack 3">
+              <button type="button" class="avatar on-machine" style="--x: 6; --y: 1" data-state="lifting" aria-label="Mia, lifting, back squat on squat rack 3">
                 <span class="tag state-lifting"><span class="nm">Mia</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-lift-long"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-squat-rack-1-long"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg>
               </button>
-              <button type="button" class="avatar on-station" style="--x: 3; --y: 1" data-state="lifting" aria-label="Ji-woo, lifting, bench press on flat bench 2">
+              <button type="button" class="avatar on-machine" style="--x: 3; --y: 1" data-state="lifting" aria-label="Ji-woo, lifting, bench press on flat bench 2">
                 <span class="tag state-lifting"><span class="nm">Ji-woo</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><use href="/sprites.svg#av-lift-ponytail"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><use href="/sprites.svg#av-flat-bench-1-ponytail"/><use href="/sprites.svg#eq-flat-bench-front-1"/></svg>
               </button>
-              <button type="button" class="avatar on-station" style="--x: 1; --y: 1" data-state="lifting" aria-label="Kai, lifting, run on treadmill 1">
+              <button type="button" class="avatar on-machine" style="--x: 1; --y: 1" data-state="lifting" aria-label="Kai, lifting, run on treadmill 1">
                 <span class="tag state-lifting"><span class="nm">Kai</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #ad7447; --av-skin-2: #8f5a36; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #3b3b45; --av-shirt-2: #282832"><use href="/sprites.svg#av-stand-crop"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #ad7447; --av-skin-2: #8f5a36; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #3b3b45; --av-shirt-2: #282832"><use href="/sprites.svg#av-treadmill-1-crop"/><use href="/sprites.svg#eq-treadmill-front-1"/></svg>
               </button>
               <button type="button" class="avatar on-station me" style="--x: 1; --y: 3" data-state="slacking" aria-label="Priya (you), slacking, lifting platform 5">
                 <span class="tag state-slacking"><span class="nm">Priya</span></span>
@@ -3753,9 +3758,9 @@
             <div class="map">
               <svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="/sprites.svg#map-tiles" /></svg>
               <button type="submit" form="dony" name="intent" value="summon" class="poster" aria-label="Call Dony out of his poster"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-full" /><use href="/sprites.svg#poster-glint" class="glint" /></svg></button>
-              <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
+              <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill-back-1" /></svg></div>
               <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div>
-              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
+              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack-back-1" /></svg></div>
               <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
               <div class="station mine" style="--x: 1; --y: 3" data-slot="5" data-equipment="lifting-platform"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-lifting-platform" /></svg><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#claim" /></svg></div>
               <div class="station" style="--x: 3; --y: 3" data-slot="6" data-equipment="exercise-mat"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-exercise-mat" /></svg></div>
@@ -3765,17 +3770,17 @@
               <div class="station" style="--x: 3; --y: 5" data-slot="10"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-10" /></svg></div>
               <div class="station" style="--x: 6; --y: 5" data-slot="11"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-11" /></svg></div>
               <div class="station" style="--x: 8; --y: 5" data-slot="12"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-12" /></svg></div>
-              <button type="button" class="avatar on-station" style="--x: 6; --y: 1" data-state="lifting" aria-label="Mia, lifting, back squat on squat rack 3">
+              <button type="button" class="avatar on-machine" style="--x: 6; --y: 1" data-state="lifting" aria-label="Mia, lifting, back squat on squat rack 3">
                 <span class="tag state-lifting"><span class="nm">Mia</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-lift-long"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-squat-rack-1-long"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg>
               </button>
               <button type="button" class="avatar on-station" style="--x: 3; --y: 1" data-state="slacking" aria-label="Ji-woo, slacking, flat bench 2">
                 <span class="tag state-slacking"><span class="nm">Ji-woo</span></span>
                 <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><use href="/sprites.svg#av-sit-ponytail"/></svg>
               </button>
-              <button type="button" class="avatar on-station" style="--x: 1; --y: 1" data-state="lifting" aria-label="Kai, lifting, run on treadmill 1">
+              <button type="button" class="avatar on-machine" style="--x: 1; --y: 1" data-state="lifting" aria-label="Kai, lifting, run on treadmill 1">
                 <span class="tag state-lifting"><span class="nm">Kai</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #ad7447; --av-skin-2: #8f5a36; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #3b3b45; --av-shirt-2: #282832"><use href="/sprites.svg#av-stand-crop"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #ad7447; --av-skin-2: #8f5a36; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #3b3b45; --av-shirt-2: #282832"><use href="/sprites.svg#av-treadmill-1-crop"/><use href="/sprites.svg#eq-treadmill-front-1"/></svg>
               </button>
               <button type="button" class="avatar me" style="--x: 1; --y: 7" data-state="resting" aria-label="Priya (you), resting, lifting platform 5">
                 <span class="tag state-resting"><span class="nm">Priya</span></span>
@@ -3903,9 +3908,9 @@
             <div class="map">
               <svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="/sprites.svg#map-tiles" /></svg>
               <button type="submit" form="dony" name="intent" value="summon" class="poster" aria-label="Call Dony out of his poster"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-full" /><use href="/sprites.svg#poster-glint" class="glint" /></svg></button>
-              <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
+              <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill-back-1" /></svg></div>
               <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div>
-              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
+              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack-back-1" /></svg></div>
               <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
               <div class="station mine" style="--x: 1; --y: 3" data-slot="5" data-equipment="lifting-platform"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-lifting-platform" /></svg><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#claim" /></svg></div>
               <div class="station" style="--x: 3; --y: 3" data-slot="6" data-equipment="exercise-mat"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-exercise-mat" /></svg></div>
@@ -3915,17 +3920,17 @@
               <div class="station" style="--x: 3; --y: 5" data-slot="10"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-10" /></svg></div>
               <div class="station" style="--x: 6; --y: 5" data-slot="11"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-11" /></svg></div>
               <div class="station" style="--x: 8; --y: 5" data-slot="12"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-12" /></svg></div>
-              <button type="button" class="avatar on-station" style="--x: 6; --y: 1" data-state="lifting" aria-label="Mia, lifting, back squat on squat rack 3">
+              <button type="button" class="avatar on-machine" style="--x: 6; --y: 1" data-state="lifting" aria-label="Mia, lifting, back squat on squat rack 3">
                 <span class="tag state-lifting"><span class="nm">Mia</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-lift-long"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-squat-rack-1-long"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg>
               </button>
               <button type="button" class="avatar on-station" style="--x: 3; --y: 1" data-state="slacking" aria-label="Ji-woo, slacking, flat bench 2">
                 <span class="tag state-slacking"><span class="nm">Ji-woo</span></span>
                 <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><use href="/sprites.svg#av-sit-ponytail"/></svg>
               </button>
-              <button type="button" class="avatar on-station" style="--x: 1; --y: 1" data-state="lifting" aria-label="Kai, lifting, run on treadmill 1">
+              <button type="button" class="avatar on-machine" style="--x: 1; --y: 1" data-state="lifting" aria-label="Kai, lifting, run on treadmill 1">
                 <span class="tag state-lifting"><span class="nm">Kai</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #ad7447; --av-skin-2: #8f5a36; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #3b3b45; --av-shirt-2: #282832"><use href="/sprites.svg#av-stand-crop"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #ad7447; --av-skin-2: #8f5a36; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #3b3b45; --av-shirt-2: #282832"><use href="/sprites.svg#av-treadmill-1-crop"/><use href="/sprites.svg#eq-treadmill-front-1"/></svg>
               </button>
               <button type="button" class="avatar me" style="--x: 1; --y: 7" data-state="resting" aria-label="Priya (you), resting, lifting platform 5">
                 <span class="tag state-resting"><span class="nm">Priya</span></span>
@@ -4056,9 +4061,9 @@
             <div class="map">
               <svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="/sprites.svg#map-tiles" /></svg>
               <button type="submit" form="dony" name="intent" value="summon" class="poster" aria-label="Call Dony out of his poster"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-full" /><use href="/sprites.svg#poster-glint" class="glint" /></svg></button>
-              <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
+              <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill-back-1" /></svg></div>
               <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div>
-              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
+              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack-back-1" /></svg></div>
               <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
               <div class="station" style="--x: 1; --y: 3" data-slot="5" data-equipment="lifting-platform"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-lifting-platform" /></svg></div>
               <div class="station" style="--x: 3; --y: 3" data-slot="6" data-equipment="exercise-mat"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-exercise-mat" /></svg></div>
@@ -4068,17 +4073,17 @@
               <div class="station" style="--x: 3; --y: 5" data-slot="10"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-10" /></svg></div>
               <div class="station" style="--x: 6; --y: 5" data-slot="11"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-11" /></svg></div>
               <div class="station" style="--x: 8; --y: 5" data-slot="12"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-12" /></svg></div>
-              <button type="button" class="avatar on-station" style="--x: 6; --y: 1" data-state="lifting" aria-label="Mia, lifting, back squat on squat rack 3">
+              <button type="button" class="avatar on-machine" style="--x: 6; --y: 1" data-state="lifting" aria-label="Mia, lifting, back squat on squat rack 3">
                 <span class="tag state-lifting"><span class="nm">Mia</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-lift-long"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-squat-rack-1-long"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg>
               </button>
               <button type="button" class="avatar on-station" style="--x: 3; --y: 1" data-state="slacking" aria-label="Ji-woo, slacking, flat bench 2">
                 <span class="tag state-slacking"><span class="nm">Ji-woo</span></span>
                 <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><use href="/sprites.svg#av-sit-ponytail"/></svg>
               </button>
-              <button type="button" class="avatar on-station" style="--x: 1; --y: 1" data-state="lifting" aria-label="Kai, lifting, run on treadmill 1">
+              <button type="button" class="avatar on-machine" style="--x: 1; --y: 1" data-state="lifting" aria-label="Kai, lifting, run on treadmill 1">
                 <span class="tag state-lifting"><span class="nm">Kai</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #ad7447; --av-skin-2: #8f5a36; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #3b3b45; --av-shirt-2: #282832"><use href="/sprites.svg#av-stand-crop"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #ad7447; --av-skin-2: #8f5a36; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #3b3b45; --av-shirt-2: #282832"><use href="/sprites.svg#av-treadmill-1-crop"/><use href="/sprites.svg#eq-treadmill-front-1"/></svg>
               </button>
               <button type="button" class="avatar me" style="--x: 6; --y: 7" data-state="idle" aria-label="Priya (you), idle, no station yet">
                 <span class="tag state-idle"><span class="nm">Priya</span></span>
@@ -4197,9 +4202,9 @@
             <div class="map">
               <svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="/sprites.svg#map-tiles" /></svg>
               <button type="submit" form="dony" name="intent" value="summon" class="poster" aria-label="Call Dony out of his poster"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-full" /><use href="/sprites.svg#poster-glint" class="glint" /></svg></button>
-              <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
+              <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill-back-1" /></svg></div>
               <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div>
-              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
+              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack-back-1" /></svg></div>
               <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
               <div class="station mine" style="--x: 1; --y: 3" data-slot="5" data-equipment="lifting-platform"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-lifting-platform" /></svg><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#claim" /></svg></div>
               <div class="station" style="--x: 3; --y: 3" data-slot="6" data-equipment="exercise-mat"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-exercise-mat" /></svg></div>
@@ -4209,17 +4214,17 @@
               <div class="station" style="--x: 3; --y: 5" data-slot="10"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-10" /></svg></div>
               <div class="station" style="--x: 6; --y: 5" data-slot="11"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-11" /></svg></div>
               <div class="station" style="--x: 8; --y: 5" data-slot="12"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-12" /></svg></div>
-              <button type="button" class="avatar on-station" style="--x: 6; --y: 1" data-state="lifting" aria-label="Mia, lifting, back squat on squat rack 3">
+              <button type="button" class="avatar on-machine" style="--x: 6; --y: 1" data-state="lifting" aria-label="Mia, lifting, back squat on squat rack 3">
                 <span class="tag state-lifting"><span class="nm">Mia</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-lift-long"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-squat-rack-1-long"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg>
               </button>
               <button type="button" class="avatar on-station" style="--x: 3; --y: 1" data-state="slacking" aria-label="Ji-woo, slacking, flat bench 2">
                 <span class="tag state-slacking"><span class="nm">Ji-woo</span></span>
                 <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><use href="/sprites.svg#av-sit-ponytail"/></svg>
               </button>
-              <button type="button" class="avatar on-station" style="--x: 1; --y: 1" data-state="lifting" aria-label="Kai, lifting, run on treadmill 1">
+              <button type="button" class="avatar on-machine" style="--x: 1; --y: 1" data-state="lifting" aria-label="Kai, lifting, run on treadmill 1">
                 <span class="tag state-lifting"><span class="nm">Kai</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #ad7447; --av-skin-2: #8f5a36; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #3b3b45; --av-shirt-2: #282832"><use href="/sprites.svg#av-stand-crop"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #ad7447; --av-skin-2: #8f5a36; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #3b3b45; --av-shirt-2: #282832"><use href="/sprites.svg#av-treadmill-1-crop"/><use href="/sprites.svg#eq-treadmill-front-1"/></svg>
               </button>
               <button type="button" class="avatar me" style="--x: 1; --y: 7" data-state="resting" aria-label="Priya (you), resting, lifting platform 5">
                 <span class="tag state-resting"><span class="nm">Priya</span></span>
@@ -4350,9 +4355,9 @@
             <div class="map">
               <svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="/sprites.svg#map-tiles" /></svg>
               <button type="submit" form="dony" name="intent" value="summon" class="poster" aria-label="Call Dony out of his poster"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-full" /><use href="/sprites.svg#poster-glint" class="glint" /></svg></button>
-              <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
+              <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill-back-1" /></svg></div>
               <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div>
-              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
+              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack-back-1" /></svg></div>
               <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
               <div class="station mine" style="--x: 1; --y: 3" data-slot="5" data-equipment="lifting-platform"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-lifting-platform" /></svg><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#claim" /></svg></div>
               <div class="station" style="--x: 3; --y: 3" data-slot="6" data-equipment="exercise-mat"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-exercise-mat" /></svg></div>
@@ -4362,17 +4367,17 @@
               <div class="station" style="--x: 3; --y: 5" data-slot="10"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-10" /></svg></div>
               <div class="station" style="--x: 6; --y: 5" data-slot="11"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-11" /></svg></div>
               <div class="station" style="--x: 8; --y: 5" data-slot="12"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-12" /></svg></div>
-              <button type="button" class="avatar on-station" style="--x: 6; --y: 1" data-state="lifting" aria-label="Mia, lifting, back squat on squat rack 3">
+              <button type="button" class="avatar on-machine" style="--x: 6; --y: 1" data-state="lifting" aria-label="Mia, lifting, back squat on squat rack 3">
                 <span class="tag state-lifting"><span class="nm">Mia</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-lift-long"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-squat-rack-1-long"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg>
               </button>
               <button type="button" class="avatar on-station" style="--x: 3; --y: 1" data-state="slacking" aria-label="Ji-woo, slacking, flat bench 2">
                 <span class="tag state-slacking"><span class="nm">Ji-woo</span></span>
                 <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><use href="/sprites.svg#av-sit-ponytail"/></svg>
               </button>
-              <button type="button" class="avatar on-station" style="--x: 1; --y: 1" data-state="lifting" aria-label="Kai, lifting, run on treadmill 1">
+              <button type="button" class="avatar on-machine" style="--x: 1; --y: 1" data-state="lifting" aria-label="Kai, lifting, run on treadmill 1">
                 <span class="tag state-lifting"><span class="nm">Kai</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #ad7447; --av-skin-2: #8f5a36; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #3b3b45; --av-shirt-2: #282832"><use href="/sprites.svg#av-stand-crop"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #ad7447; --av-skin-2: #8f5a36; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #3b3b45; --av-shirt-2: #282832"><use href="/sprites.svg#av-treadmill-1-crop"/><use href="/sprites.svg#eq-treadmill-front-1"/></svg>
               </button>
               <button type="button" class="avatar me" style="--x: 1; --y: 7" data-state="resting" aria-label="Priya (you), resting, lifting platform 5">
                 <span class="tag state-resting"><span class="nm">Priya</span></span>
@@ -4495,8 +4500,8 @@
               <button type="submit" form="dony" name="intent" value="summon" class="poster" aria-label="Call Dony out of his poster"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-full" /><use href="/sprites.svg#poster-glint" class="glint" /></svg></button>
               <div class="station" style="--x: 1; --y: 1" data-slot="1" data-equipment="treadmill"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div>
               <div class="station" style="--x: 3; --y: 1" data-slot="2" data-equipment="flat-bench"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div>
-              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div>
-              <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div>
+              <div class="station" style="--x: 6; --y: 1" data-slot="3" data-equipment="squat-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack-back-1" /></svg></div>
+              <div class="station" style="--x: 8; --y: 1" data-slot="4" data-equipment="dumbbell-rack"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack-back-1" /></svg></div>
               <div class="station mine" style="--x: 1; --y: 3" data-slot="5" data-equipment="lifting-platform"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-lifting-platform" /></svg><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#claim" /></svg></div>
               <div class="station" style="--x: 3; --y: 3" data-slot="6" data-equipment="exercise-mat"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-exercise-mat" /></svg></div>
               <div class="station" style="--x: 6; --y: 3" data-slot="7"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-7" /></svg></div>
@@ -4505,17 +4510,17 @@
               <div class="station" style="--x: 3; --y: 5" data-slot="10"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-10" /></svg></div>
               <div class="station" style="--x: 6; --y: 5" data-slot="11"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-11" /></svg></div>
               <div class="station" style="--x: 8; --y: 5" data-slot="12"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-12" /></svg></div>
-              <button type="button" class="avatar on-station" style="--x: 6; --y: 1" data-state="lifting" aria-label="Mia, lifting, back squat on squat rack 3">
+              <button type="button" class="avatar on-machine" style="--x: 6; --y: 1" data-state="lifting" aria-label="Mia, lifting, back squat on squat rack 3">
                 <span class="tag state-lifting"><span class="nm">Mia</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-lift-long"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-squat-rack-1-long"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg>
               </button>
               <button type="button" class="avatar on-station" style="--x: 3; --y: 1" data-state="slacking" aria-label="Ji-woo, slacking, flat bench 2">
                 <span class="tag state-slacking"><span class="nm">Ji-woo</span></span>
                 <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><use href="/sprites.svg#av-sit-ponytail"/></svg>
               </button>
-              <button type="button" class="avatar on-station" style="--x: 8; --y: 1" data-state="lifting" aria-label="Kai, lifting, dumbbell curl on dumbbell rack 4">
+              <button type="button" class="avatar on-machine" style="--x: 8; --y: 1" data-state="lifting" aria-label="Kai, lifting, dumbbell curl on dumbbell rack 4">
                 <span class="tag state-lifting"><span class="nm">Kai</span></span>
-                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #ad7447; --av-skin-2: #8f5a36; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #3b3b45; --av-shirt-2: #282832"><use href="/sprites.svg#av-stand-crop"/></svg>
+                <svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #ad7447; --av-skin-2: #8f5a36; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #3b3b45; --av-shirt-2: #282832"><use href="/sprites.svg#av-dumbbell-rack-1-crop"/><use href="/sprites.svg#eq-dumbbell-rack-front-1"/></svg>
               </button>
               <button type="button" class="avatar me on-station" style="--x: 1; --y: 1" data-state="lifting" aria-label="Priya (you), lifting, run on treadmill 1">
                 <span class="tag state-lifting"><span class="nm">Priya</span></span>
@@ -5283,7 +5288,7 @@
       <!-- state: art sheet (reference, not a page state) -->
       <section class="state">
         <p class="state-label">Art sheet · mockup only: the tiles and scenery, then the equipment, bays and poses, at 2× (64 px) over the floor; then Dony's frames, and his poster over the wall tile</p>
-        <div class="art-sheet"><!-- room-32 sheet --><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-46" /></svg></div><figcaption>Rubber floor</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-58" /></svg></div><figcaption>Aisle</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-87" /></svg></div><figcaption>Wall</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-77" /></svg></div><figcaption>Mirror</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-75" /></svg></div><figcaption>Clock</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-91" /></svg></div><figcaption>Side wall</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-95" /></svg></div><figcaption>Front wall</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-69" /></svg></div><figcaption>Entrance, left</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-101" /></svg></div><figcaption>Entrance, right</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-67" /></svg></div><figcaption>Water cooler</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-76" /></svg></div><figcaption>Lockers</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-12" /></svg></div><figcaption>Empty bay 12</figcaption></figure><!-- /room-32 sheet --><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div><figcaption>Treadmill</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div><figcaption>Flat bench</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div><figcaption>Squat rack</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div><figcaption>Dumbbell rack</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-lifting-platform" /></svg></div><figcaption>Lifting platform</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-pull-up-bar" /></svg></div><figcaption>Pull-up bar</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-cable-machine" /></svg></div><figcaption>Cable machine</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-exercise-mat" /></svg></div><figcaption>Exercise mat</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-7" /></svg></div><figcaption>Empty bay 7</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-lifting-platform" /></svg><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#claim" /></svg></div><figcaption>Your station</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #1d1714; --av-hair-2: #3a2e28; --av-shirt: #e07b28; --av-shirt-2: #b0561a"><use href="/sprites.svg#av-stand-curls"/></svg></div><figcaption>Idle (and treadmill)</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #1d1714; --av-hair-2: #3a2e28; --av-shirt: #e07b28; --av-shirt-2: #b0561a"><use href="/sprites.svg#av-lift-curls"/></svg></div><figcaption>Lifting</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #1d1714; --av-hair-2: #3a2e28; --av-shirt: #e07b28; --av-shirt-2: #b0561a"><use href="/sprites.svg#av-rest-curls"/></svg></div><figcaption>Resting</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #1d1714; --av-hair-2: #3a2e28; --av-shirt: #e07b28; --av-shirt-2: #b0561a"><use href="/sprites.svg#av-sit-curls"/></svg></div><figcaption>Slacking</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-stand-long"/></svg></div><figcaption>Mia, long</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #f6d7bd; --av-skin-2: #e0b69a; --av-hair: #b5552a; --av-hair-2: #873a1d; --av-shirt: #2e3f7f; --av-shirt-2: #1f2a5c"><use href="/sprites.svg#av-stand-crop"/></svg></div><figcaption>Tom, crop</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><use href="/sprites.svg#av-stand-ponytail"/></svg></div><figcaption>Ji-woo, ponytail</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #ad7447; --av-skin-2: #8f5a36; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #3b3b45; --av-shirt-2: #282832"><use href="/sprites.svg#av-stand-crop"/></svg></div><figcaption>Kai, crop</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #6e4429; --av-skin-2: #55311d; --av-hair: #d6ad55; --av-hair-2: #ad7f37; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-ponytail"/></svg></div><figcaption>Sam, ponytail</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8"><use href="/sprites.svg#dony-stand"/></svg></div><figcaption>Dony, stand</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8"><use href="/sprites.svg#dony-walk1"/></svg></div><figcaption>Dony, walk 1</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8"><use href="/sprites.svg#dony-walk2"/></svg></div><figcaption>Dony, walk 2</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8"><use href="/sprites.svg#dony-lift"/></svg></div><figcaption>Dony, lift</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8"><use href="/sprites.svg#dony-lift2"/></svg></div><figcaption>Dony, lift 2</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8"><use href="/sprites.svg#dony-rest"/></svg></div><figcaption>Dony, rest</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8"><use href="/sprites.svg#dony-sit"/></svg></div><figcaption>Dony, sit</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8"><use href="/sprites.svg#dony-hop"/></svg></div><figcaption>Dony, hop</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-87" /></svg><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-full" /></svg></div><figcaption>Poster, full</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-87" /></svg><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-glint" /></svg></div><figcaption>Poster, glint</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-87" /></svg><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-empty" /></svg></div><figcaption>Poster, empty</figcaption></figure></div>
+        <div class="art-sheet"><!-- room-32 sheet --><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-46" /></svg></div><figcaption>Rubber floor</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-58" /></svg></div><figcaption>Aisle</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-87" /></svg></div><figcaption>Wall</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-77" /></svg></div><figcaption>Mirror</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-75" /></svg></div><figcaption>Clock</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-91" /></svg></div><figcaption>Side wall</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-95" /></svg></div><figcaption>Front wall</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-69" /></svg></div><figcaption>Entrance, left</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-101" /></svg></div><figcaption>Entrance, right</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-67" /></svg></div><figcaption>Water cooler</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-76" /></svg></div><figcaption>Lockers</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-12" /></svg></div><figcaption>Empty bay 12</figcaption></figure><!-- /room-32 sheet --><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg></div><figcaption>Treadmill</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg></div><figcaption>Flat bench</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg></div><figcaption>Squat rack</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg></div><figcaption>Dumbbell rack</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-lifting-platform" /></svg></div><figcaption>Lifting platform</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-pull-up-bar" /></svg></div><figcaption>Pull-up bar</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-cable-machine" /></svg></div><figcaption>Cable machine</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-exercise-mat" /></svg></div><figcaption>Exercise mat</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#bay-7" /></svg></div><figcaption>Empty bay 7</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-lifting-platform" /></svg><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#claim" /></svg></div><figcaption>Your station</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #1d1714; --av-hair-2: #3a2e28; --av-shirt: #e07b28; --av-shirt-2: #b0561a"><use href="/sprites.svg#av-stand-curls"/></svg></div><figcaption>Idle</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #1d1714; --av-hair-2: #3a2e28; --av-shirt: #e07b28; --av-shirt-2: #b0561a"><use href="/sprites.svg#eq-squat-rack-back-1"/><use href="/sprites.svg#av-squat-rack-1-curls"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg></div><figcaption>Lifting, squat rack F1</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #1d1714; --av-hair-2: #3a2e28; --av-shirt: #e07b28; --av-shirt-2: #b0561a"><use href="/sprites.svg#av-rest-curls"/></svg></div><figcaption>Resting</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #1d1714; --av-hair-2: #3a2e28; --av-shirt: #e07b28; --av-shirt-2: #b0561a"><use href="/sprites.svg#av-sit-curls"/></svg></div><figcaption>Slacking</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #d09a68; --av-skin-2: #b37a4f; --av-hair: #4a2c1a; --av-hair-2: #33190f; --av-shirt: #1f8a86; --av-shirt-2: #156663"><use href="/sprites.svg#av-stand-long"/></svg></div><figcaption>Mia, long</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #f6d7bd; --av-skin-2: #e0b69a; --av-hair: #b5552a; --av-hair-2: #873a1d; --av-shirt: #2e3f7f; --av-shirt-2: #1f2a5c"><use href="/sprites.svg#av-stand-crop"/></svg></div><figcaption>Tom, crop</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><use href="/sprites.svg#av-stand-ponytail"/></svg></div><figcaption>Ji-woo, ponytail</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #ad7447; --av-skin-2: #8f5a36; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #3b3b45; --av-shirt-2: #282832"><use href="/sprites.svg#av-stand-crop"/></svg></div><figcaption>Kai, crop</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #6e4429; --av-skin-2: #55311d; --av-hair: #d6ad55; --av-hair-2: #ad7f37; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-ponytail"/></svg></div><figcaption>Sam, ponytail</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8"><use href="/sprites.svg#dony-stand"/></svg></div><figcaption>Dony, stand</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8"><use href="/sprites.svg#dony-walk1"/></svg></div><figcaption>Dony, walk 1</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8"><use href="/sprites.svg#dony-walk2"/></svg></div><figcaption>Dony, walk 2</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8"><use href="/sprites.svg#eq-squat-rack-back-1"/><use href="/sprites.svg#dony-squat-rack-1"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg></div><figcaption>Dony, squat rack F1</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8"><use href="/sprites.svg#eq-squat-rack-back-2"/><use href="/sprites.svg#dony-squat-rack-2"/><use href="/sprites.svg#eq-squat-rack-front-2"/></svg></div><figcaption>Dony, squat rack F2</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8"><use href="/sprites.svg#dony-rest"/></svg></div><figcaption>Dony, rest</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8"><use href="/sprites.svg#dony-sit"/></svg></div><figcaption>Dony, sit</figcaption></figure><figure class="art"><div class="art-tile"><svg class="av" viewBox="0 0 32 32" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #2e3046; --av-hair-2: #4a4e6e; --av-shirt: #8b6cf2; --av-shirt-2: #6650c8"><use href="/sprites.svg#dony-hop"/></svg></div><figcaption>Dony, hop</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-87" /></svg><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-full" /></svg></div><figcaption>Poster, full</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-87" /></svg><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-glint" /></svg></div><figcaption>Poster, glint</figcaption></figure><figure class="art"><div class="art-tile"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#tile-87" /></svg><svg viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#poster-empty" /></svg></div><figcaption>Poster, empty</figcaption></figure></div>
       </section>
     </main>
     <footer>

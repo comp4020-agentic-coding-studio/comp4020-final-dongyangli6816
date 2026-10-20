@@ -5,7 +5,7 @@
 import { EQUIPMENT, type Equipment } from "./exercises.ts";
 import type { MemberView, RoomView, State } from "./presence.ts";
 import { STATIONS } from "../sprites/gym.ts";
-import type { Pose } from "../sprites/avatar.ts";
+import type { Pose } from "../sprites/poses.ts";
 
 export type Tile = [number, number];
 export type Spot = { id: number; tile: Tile; onStation: boolean; pose: Pose; state: State };
@@ -25,9 +25,9 @@ const IDLE_SPOTS: Tile[] = [[8, 7], [6, 7], [7, 8], [8, 8], [6, 8], [7, 7], [8, 
 const stateAt = (m: MemberView, now: number): State =>
   m.state === "resting" && m.slackAt !== null && now >= m.slackAt ? "slacking" : m.state;
 
-// Lifting and Slacking are on their station; Resting at the cooler; Idle and
-// Finished by the lockers. Spots go by join order within a state, with Dony,
-// while he's out, after every person (BOT-5).
+// Lifting is on their station's machine, Slacking in front of it; Resting at
+// the cooler; Idle and Finished by the lockers. Spots go by join order within
+// a state, with Dony, while he's out, after every person (BOT-5).
 export function spots(view: RoomView, now: number): Spot[] {
   let rest = 0;
   let idle = 0;
@@ -35,7 +35,8 @@ export function spots(view: RoomView, now: number): Spot[] {
     const state = stateAt(m, now);
     if ((state === "lifting" || state === "slacking") && m.station) {
       const equipment = view.stations.find((s) => s.slot === m.station!.slot)?.equipment;
-      const pose: Pose = state === "slacking" ? "sit" : equipment === "treadmill" ? "stand" : "lift";
+      // Lifting plays the machine's animation (GYM-10.1); Slacking sits in front of it (D3)
+      const pose: Pose = state === "slacking" || !equipment ? "sit" : equipment;
       return { id: m.id, tile: STATIONS[m.station.slot - 1], onStation: true, pose, state };
     }
     if (state === "resting" || state === "slacking") {

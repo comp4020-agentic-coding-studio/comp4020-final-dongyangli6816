@@ -1,18 +1,23 @@
 ---
 // The gym map (GYM-1, GYM-2, GYM-9, GYM-10, GYM-15; docs/design/room/spec.md
-// 3.2): the room's sign, the live badge, the floor, its twelve stations and
-// everyone on it. The server draws the room as it is (so it works without
+// 3.2 and "Exercise animations, Oct 19"): the room's sign, the live badge,
+// the floor, its twelve stations and everyone on it. Someone on a machine is
+// drawn inside their avatar button, bottom up: the machine's back layer, the
+// person, its front layer; the station's own drawing hides meanwhile, its bar
+// with it (GYM-10.13). The server draws the room as it is (so it works without
 // JavaScript and after a reload, GYM-8); the room's script keeps it live.
 // Its styles are global under .map-panel because the script adds avatars
 // and stations that a scoped style wouldn't reach.
 import Avatar from "./Avatar.astro";
+import MachineArt from "./MachineArt.astro";
 import Sprite from "./Sprite.astro";
 import { avatarLabel, everyone, floorLine, spots } from "../lib/floor.ts";
 import type { RoomView } from "../lib/presence.ts";
 import { EQUIPMENT, type Equipment } from "../lib/exercises.ts";
-import { HAIR_STYLES, lookKey, type Look, type Pose } from "../sprites/avatar.ts";
-import { bay, CLAIM, GEAR, GYM_PALETTE, MAP, SCENERY, STATIONS, TILES } from "../sprites/gym.ts";
-import { POSTER, POSTER_PALETTE, type DonyFrame } from "../sprites/dony.ts";
+import { HAIR_STYLES, lookKey, type Look } from "../sprites/avatar.ts";
+import { bay, CLAIM, GYM_PALETTE, MAP, SCENERY, STATIONS, TILES } from "../sprites/gym.ts";
+import { POSTER, POSTER_PALETTE } from "../sprites/dony.ts";
+import { isMachine, type Pose } from "../sprites/poses.ts";
 import { phoneOffIcon } from "../sprites/icons.ts";
 import { paths, TILE } from "../sprites/sprite.ts";
 
@@ -38,12 +43,14 @@ const resting = view.now < poster.restingUntil;
 const posterLabel =
   (poster.out ? "Send Dony back to his poster" : "Call Dony out of his poster") + (resting ? " (not ready yet)" : "");
 const posterArt = (grid: readonly string[]) => filled(grid, POSTER_PALETTE);
-const donyPose = (pose: Pose): DonyFrame => pose;
-const DONY_FRAMES: DonyFrame[] = ["stand", "lift", "rest", "sit", "walk1", "walk2", "hop"];
 const mine = view.members.find((m) => m.id === me)?.station?.slot;
 const placed = spots(view, view.now);
 const byId = new Map(everyone(view).map((m) => [m.id, m]));
-const POSES: Pose[] = ["stand", "lift", "rest", "sit"];
+const MACHINE_IDS = Object.keys(EQUIPMENT) as Equipment[];
+const POSES: Pose[] = ["stand", "rest", "sit", "walk", ...MACHINE_IDS];
+// the stations someone is on, using the machine (the first render: nobody walks)
+const slotAt = ([x, y]: [number, number]) => STATIONS.findIndex(([sx, sy]) => sx === x && sy === y) + 1;
+const occupied = new Set(placed.filter((p) => isMachine(p.pose)).map((p) => slotAt(p.tile)));
 const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black", shirt: "teal" };
 ---
 
@@ -98,13 +105,13 @@ const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black",
     {
       view.stations.map((s) => (
         <div
-          class:list={["station", { mine: s.slot === mine }]}
+          class:list={["station", { mine: s.slot === mine, occupied: occupied.has(s.slot) }]}
           style={`--x: ${STATIONS[s.slot - 1][0]}; --y: ${STATIONS[s.slot - 1][1]}`}
           data-slot={s.slot}
           data-equipment={s.equipment ?? undefined}
           aria-hidden="true"
         >
-          <Sprite sprite={art(s.equipment ? GEAR[s.equipment] : bay(s.slot))} />
+          {s.equipment ? <MachineArt e={s.equipment} part="idle" /> : <Sprite sprite={art(bay(s.slot))} />}
           {s.slot === mine && <Sprite sprite={art(CLAIM)} class="claim" />}
         </div>
       ))
@@ -115,7 +122,7 @@ const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black",
         return (
           <button
             type="button"
-            class:list={["avatar", { "on-station": p.onStation, me: m.id === me, away: m.away }]}
+            class:list={["avatar", { "on-station": p.onStation, "on-machine": isMachine(p.pose), me: m.id === me, away: m.away }]}
             style={`--x: ${p.tile[0]}; --y: ${p.tile[1]}`}
             data-id={m.id}
             data-state={p.state}
@@ -127,7 +134,9 @@ const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black",
               <span class="nm">{m.name}</span>
               {m.away && <Sprite sprite={phoneOffIcon} scale={2} />}
             </span>
-            {"dony" in m ? <Avatar dony={donyPose(p.pose)} /> : <Avatar look={m.look} pose={p.pose} />}
+            {isMachine(p.pose) && <MachineArt e={p.pose} part="back" />}
+            {"dony" in m ? <Avatar dony pose={p.pose} /> : <Avatar look={m.look} pose={p.pose} />}
+            {isMachine(p.pose) && <MachineArt e={p.pose} part="front" />}
           </button>
         );
       })
@@ -142,23 +151,30 @@ const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black",
     ))
   }
   {
-    (Object.keys(EQUIPMENT) as Equipment[]).map((e) => (
-      <template data-gear={e}>
-        <Sprite sprite={art(GEAR[e])} />
+    POSES.map((pose) => (
+      <template data-dony={pose}>
+        <Avatar dony pose={pose} />
       </template>
+    ))
+  }
+  <template data-dony="hop"><Avatar dony pose="hop" /></template>
+  {
+    MACHINE_IDS.map((e) => (
+      <>
+        <template data-gear={e}>
+          <MachineArt e={e} part="idle" />
+        </template>
+        <template data-layers={e}>
+          <MachineArt e={e} part="back" />
+          <MachineArt e={e} part="front" />
+        </template>
+      </>
     ))
   }
   {
     STATIONS.map((_, i) => (
       <template data-bay={i + 1}>
         <Sprite sprite={art(bay(i + 1))} />
-      </template>
-    ))
-  }
-  {
-    DONY_FRAMES.map((frame) => (
-      <template data-dony={frame}>
-        <Avatar dony={frame} />
       </template>
     ))
   }
@@ -276,27 +292,76 @@ const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black",
     z-index: 15;
   }
   .map-panel .avatar .av {
+    position: relative;
+    z-index: 1;
     width: var(--t);
     height: var(--t);
   }
-  /* two-frame loops (system 11): standing, resting and lifting bob a pixel;
-     slacking's phone glow blinks */
-  .map-panel .avatar .av-top {
+  /* a machine's layers, on the same tile as the person: the back under, the
+     front over (GYM-10.12), inside the button so a tap on either selects
+     them (GYM-15.3) */
+  .map-panel .avatar .machine {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: var(--t);
+    height: var(--t);
+    transform: translateX(-50%);
+  }
+  .map-panel .avatar .machine.front {
+    z-index: 2;
+  }
+  /* the station's own drawing steps aside while someone is on the machine,
+     its bar with it (GYM-10.13); your claim corners stay over them (GYM-9.4) */
+  .map-panel .station.occupied .machine {
+    visibility: hidden;
+  }
+  .map-panel .station .claim {
+    z-index: calc(var(--y) + 1);
+  }
+  /* motion (system 11): standing and resting bob a pixel; a machine's two
+     frames and the walk's two strides swap, person and machine together, at
+     the pose's pace (D4); slacking doesn't bob, and its phone glows */
+  .map-panel .avatar {
+    --frame: 400ms;
+  }
+  .map-panel .avatar[data-pose="treadmill"] {
+    --frame: 250ms;
+  }
+  .map-panel .avatar[data-pose="walk"] {
+    --frame: 125ms;
+  }
+  .map-panel .avatar .pose-stand .av-top,
+  .map-panel .avatar .pose-rest .av-top {
     animation: av-bob 800ms steps(1) infinite;
   }
-  .map-panel .avatar .pose-lift .av-top {
-    animation-duration: 500ms;
+  .map-panel .avatar .frame-2 {
+    display: inline;
+    visibility: hidden;
   }
-  .map-panel .avatar .pose-sit .av-top {
-    animation: none;
+  .map-panel .avatar .frame-1 {
+    animation: av-frame-1 calc(var(--frame) * 2) steps(1) infinite;
   }
-  .map-panel .avatar .pose-sit .pw {
+  .map-panel .avatar .frame-2 {
+    animation: av-frame-2 calc(var(--frame) * 2) steps(1) infinite;
+  }
+  .map-panel .avatar .pose-sit .glow {
     animation: av-glow 800ms steps(1) infinite;
   }
-  /* in sprite units: 2 of 32 is one pixel of the 16 x 16 drawing */
+  /* in sprite units */
   @keyframes av-bob {
     50% {
       transform: translateY(2px);
+    }
+  }
+  @keyframes av-frame-1 {
+    50% {
+      visibility: hidden;
+    }
+  }
+  @keyframes av-frame-2 {
+    50% {
+      visibility: visible;
     }
   }
   @keyframes av-glow {
@@ -304,16 +369,17 @@ const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black",
       fill: var(--dim);
     }
   }
-  /* on a station the avatar stands in front of the equipment: its feet drop
-     6 sprite pixels into the aisle, and the tag stays in the row above, so
-     the top of the equipment shows between them */
-  .map-panel .avatar.on-station {
+  /* slacking sits in front of the machine (D3): the feet drop 12 sprite
+     pixels into the aisle, and the tag stays in the row above, so the top of
+     the machine shows between them. On the machine, the person is on its
+     tile, the tag just above it, the same for every machine (GYM-15.5). */
+  .map-panel .avatar.on-station:not(.on-machine) {
     top: calc((var(--y) + 1.375) * var(--t));
   }
-  .map-panel .avatar.on-station .tag {
+  .map-panel .avatar.on-station:not(.on-machine) .tag {
     margin-bottom: calc(var(--t) * 0.375);
   }
-  /* Away (GYM-14): the sprite fades; the tag stays readable */
+  /* Away (GYM-14): the person fades, never the machine; the tag stays readable */
   .map-panel .avatar.away .av {
     opacity: 0.5;
   }
@@ -339,9 +405,13 @@ const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black",
       0 0 0 2px var(--ink),
       0 0 0 4px var(--leaf);
   }
+  /* reduced motion: the still frame (Frame 1), no bob, the phone lit (GYM-10.23) */
   @media (prefers-reduced-motion: reduce) {
-    .map-panel .avatar .av-top,
-    .map-panel .avatar .pose-sit .pw {
+    .map-panel .avatar .pose-stand .av-top,
+    .map-panel .avatar .pose-rest .av-top,
+    .map-panel .avatar .frame-1,
+    .map-panel .avatar .frame-2,
+    .map-panel .avatar .pose-sit .glow {
       animation: none;
     }
   }

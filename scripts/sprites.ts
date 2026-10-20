@@ -5,14 +5,20 @@
 //   node scripts/sprites.ts            prints the sheet
 //   node scripts/sprites.ts --ids      lists the ids, one per line
 //
-// Ids: av-<pose> (body, slots k s t on --ink, --av-skin, --av-shirt), with
-// av-<pose>-<hair> drawing the same pose with that hair over it; dony-<frame>;
-// tile-<char> and map-tiles (the whole floor); eq-<equipment>, bay-<slot> and
-// claim; poster-<name>; i-<name> for the 8 x 8 icons in currentColor; and the
-// sprites of props.ts and door.ts by their export names.
-import { BODY, HAIR, HAIR_STYLES, poseOf, type Pose } from "../src/sprites/avatar.ts";
-import { donyFrame, DONY_VARS, POSTER, POSTER_PALETTE, type DonyFrame } from "../src/sprites/dony.ts";
-import { bay, CLAIM, GEAR, GYM_PALETTE, MAP, SCENERY, STATIONS, TILES } from "../src/sprites/gym.ts";
+// Ids: av-<figure> (stand, rest, sit, walk1, walk2; body in the slots on
+// --ink, --av-skin, --av-shirt), with av-<figure>-<hair> drawing it with that
+// hair over it, and dony-<figure> plus dony-hop with his head; eq-<machine>
+// (idle), with eq-<machine>-back-<n> and eq-<machine>-front-<n> for frame n
+// and av-<machine>-<n>-<hair> and dony-<machine>-<n> for the person on it,
+// to stack back, person, front; tile-<char> and map-tiles (the whole floor);
+// bay-<slot> and claim; poster-<name>; i-<name> for the 8 x 8 icons in
+// currentColor; and the sprites of props.ts and door.ts by their export names.
+import type { Equipment } from "../src/lib/exercises.ts";
+import { BODY, FIGURES, HAIR_STYLES, type Drawing, type Figure, type HairStyle } from "../src/sprites/avatar.ts";
+import { DONY_HOP, DONY_VARS, POSTER, POSTER_PALETTE } from "../src/sprites/dony.ts";
+import { bay, CLAIM, GYM_PALETTE, MAP, SCENERY, STATIONS, TILES } from "../src/sprites/gym.ts";
+import { MACHINES } from "../src/sprites/machines.ts";
+import { headOf } from "../src/sprites/poses.ts";
 import * as icons from "../src/sprites/icons.ts";
 import * as props from "../src/sprites/props.ts";
 import * as door from "../src/sprites/door.ts";
@@ -56,19 +62,26 @@ const slots = (grid: readonly string[], dy = 0) => paths(grid, (ch) => SLOT[ch],
 
 export function sheet(): string[] {
   const out: string[] = [];
-  const poses: Pose[] = ["stand", "lift", "rest", "sit"];
-  for (const pose of poses) {
-    const { body, hairRow, props: extra } = poseOf(pose);
-    out.push(symbol(`av-${pose}`, TILE, TILE, slots(body) + slots(extra)));
-    for (const { id } of HAIR_STYLES) {
-      out.push(symbol(`av-${pose}-${id}`, TILE, TILE, slots(body) + slots(HAIR[id], hairRow) + slots(extra)));
-    }
+  // a person: body, then hair (or Dony's head), then props
+  const person = (d: Drawing, style?: HairStyle | "dony") =>
+    slots(d.body) + (style ? slots(headOf(style), d.hairRow) : "") + slots(d.props);
+  const dony = (d: Drawing) => `<g style="${DONY_VARS}">${person(d, "dony")}</g>`;
+  for (const [figure, d] of Object.entries(FIGURES) as [Figure, Drawing][]) {
+    out.push(symbol(`av-${figure}`, TILE, TILE, person(d)));
+    for (const { id } of HAIR_STYLES) out.push(symbol(`av-${figure}-${id}`, TILE, TILE, person(d, id)));
+    out.push(symbol(`dony-${figure}`, TILE, TILE, dony(d)));
   }
+  out.push(symbol("dony-hop", TILE, TILE, dony(DONY_HOP)));
   out.push(symbol("av-ghost", TILE, TILE, slots(BODY)));
-  const frames: DonyFrame[] = ["stand", "lift", "lift2", "rest", "sit", "walk1", "walk2", "hop"];
-  for (const frame of frames) {
-    const { body, props: extra } = donyFrame(frame);
-    out.push(symbol(`dony-${frame}`, TILE, TILE, `<g style="${DONY_VARS}">${slots(body) + slots(extra)}</g>`));
+  for (const [machine, { idle, frames }] of Object.entries(MACHINES) as [Equipment, (typeof MACHINES)[Equipment]][]) {
+    out.push(symbol(`eq-${machine}`, TILE, TILE, gym(idle)));
+    frames.forEach((f, i) => {
+      const n = i + 1;
+      out.push(symbol(`eq-${machine}-back-${n}`, TILE, TILE, gym(f.back)));
+      out.push(symbol(`eq-${machine}-front-${n}`, TILE, TILE, gym(f.front)));
+      for (const { id } of HAIR_STYLES) out.push(symbol(`av-${machine}-${n}-${id}`, TILE, TILE, person(f, id)));
+      out.push(symbol(`dony-${machine}-${n}`, TILE, TILE, dony(f)));
+    });
   }
 
   // the floor as GymMap draws it: the poster's place is plain wall
@@ -81,7 +94,6 @@ export function sheet(): string[] {
     [...row].map((ch, x) => `<use href="#tile-${ch.charCodeAt(0)}" x="${x * TILE}" y="${y * TILE}" width="${TILE}" height="${TILE}"/>`),
   );
   out.push(symbol("map-tiles", 10 * TILE, 10 * TILE, floor.join("")));
-  for (const [name, grid] of Object.entries(GEAR)) out.push(symbol(`eq-${name}`, TILE, TILE, gym(grid)));
   STATIONS.forEach((_, i) => out.push(symbol(`bay-${i + 1}`, TILE, TILE, gym(bay(i + 1)))));
   out.push(symbol("claim", TILE, TILE, gym(CLAIM)));
   for (const [name, grid] of Object.entries(POSTER)) {

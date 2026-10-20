@@ -93,7 +93,7 @@ The Gym group is this page alone. It sits beside Lobby (`home`, `join`,
   (`svg.av`, slot classes `k s t h`, colours from `--av-skin`, `--av-hair`,
   `--av-shirt`; `docs/design/avatar/spec.md`). The map uses the whole 32 × 32
   sprite at the map's scale; the people list uses the same head crop as
-  home's squad rows (`viewBox="2 0 28 22"`, 56 × 44 px, 2×). Mia, Tom, Ji-woo and
+  home's squad rows (`viewBox="0 0 32 20"`, 64 × 40 px, 2×). Mia, Tom, Ji-woo and
   Priya wear the looks the avatar spec gives them.
 - **A squad row is home's "What your squad sees" row**: head, name over a
   dim "what they're doing" line, state chip on the right.
@@ -234,9 +234,9 @@ page. Swap the colours and that's any "who's online" widget. What changed:
   middle. Twelve stations in two bays of two either side of it, like rows of
   racks.
 - **Where you stand says what you're doing.** Lifting: on your equipment,
-  bar overhead. Resting: at the cooler with a blue bottle. Slacking: sitting
-  *on* your bench with your phone, hogging it, which is the joke a lifter
-  recognises. Idle: by the lockers, just in. Away: faded where you were.
+  using it. Resting: at the cooler with a blue bottle. Slacking: sitting
+  in front of your machine with your phone, hogging it, which is the joke a
+  lifter recognises. Idle: by the lockers, just in. Away: faded where you were.
 - **Name tags are the state colour**, so the map reads like the squad list's
   chips: a glance across the room is a glance at the state.
 - **Empty stations are numbered bays**, like rack numbers in a real gym, so
@@ -540,7 +540,7 @@ month poster only make sense on a gym wall.
 | GYM-2 "A new room starts with the treadmill, flat bench, squat rack and dumbbell rack on four stations, and eight empty stations" | Slots 1 to 4 (the row along the mirrors) hold those four; slots 5 to 12 are numbered empty bays. State "Room alone". |
 | GYM-4 / brief: "you are told which station you claimed" | `.station.mine` (leaf corners), the leaf ring on your tag, `p.spot` "Your spot: Lifting platform 5" in the sheet, and your row in the list. Choosing posts `action=choose` (as the server now expects). |
 | Brief: "Equipment that is delivered this week simply appears on its station" | A station's equipment is drawn from the room's layout; a change arrives over SSE and the sprite is swapped in place. No animation, no message. |
-| GYM-9, GYM-10 (states on the map) | Lifting: on the station, lift pose. Resting: rest spots by the cooler, bottle. Slacking: on the station, sitting with phone. Idle: idle spots by the lockers. Finished: idle spots, trophy-yellow tag. Positions in 3.2. |
+| GYM-9, GYM-10 (states on the map) | Lifting: on the machine, in that machine's two-frame animation ("Exercise animations, Oct 19"). Resting: rest spots by the cooler, bottle. Slacking: in front of the machine, sitting with phone. Idle: idle spots by the lockers. Finished: idle spots, trophy-yellow tag. Positions in 3.2. |
 | GYM-10 "Avatars walk between stations along the aisles" | Route in 3.2; one tile per 125 ms in `steps()`; reduced motion jumps. |
 | GYM-10 "**Start set** plays the equipment's exercise loop. **Done** sends the avatar to the water cooler"; system 2.1 "a normal set is two taps: Start set, then Done" | While a rest runs (Resting, Rest up, Slacking) the dock's button is **Start set**: it ends the rest and makes you Lifting the same exercise, so your avatar walks from the cooler (or stands up) to your station and plays the loop. Then the dock's button is **Done**, which logs and sends you back to the cooler. State "Lifting (after Start set)". |
 | GYM-11 "their own screen says 'your squad can see you'" | `.rest.over.slacking .rest-say` "Your squad can see you 👀", chip Slacking, red count-up, from the server's `slackAt` (30 s over). State "You slacking". |
@@ -561,7 +561,7 @@ month poster only make sense on a gym wall.
 | LOG-3 "Each pre-fills from the person's last set of that exercise", **changed for timed kinds** (user, 8 Oct) | Weight and bodyweight pre-fill as before. Duration and cardio open and come back empty (placeholders `0` / `00`), with `p.last` as the reference. See Departure 15: the build updates LOG-3 in `docs/product/spec-4-weeks.md`. |
 | BOT-1 "The back wall's poster is 'Member of the month: Dony'. Anyone in the room can tap it (by touch, click or keyboard) to summon Dony: on every screen the poster goes empty and he hops down onto the walkway" (4-week, Dony) | `button.poster` on tile (5,0): a real `<button>` (so touch, click, Enter and Space all work), submitting `form#dony` with `action=dony&intent=summon`. On the room's update, every screen plays the shake, swaps to the empty frame and plays the hop and the walk (3.2a). States "Summon", "Dony just in". |
 | BOT-1 "He can be summoned again any number of times after being sent back; each summon is a fresh visit" | The same button and the same animation once the rest is over. State "Summoned again": he starts Idle at the lockers again. |
-| BOT-2 "his own 16 × 16 sprite (an Asian character with glasses and a cool outfit) in every pose a person has, plus the poster's full and empty frames, within the art rules" | Appendix "32 × 32 art, people" (ADR 0005 moved every sprite to 32 × 32): stand, walk × 2, lift × 2, rest, sit, hop, plus the poster's full, glint and empty frames over the wall tile. Seven colours plus props, ink outline, whole-number scale. Not in the avatar editor (nothing in the Lobby group changes). |
+| BOT-2 "drawn on the people's body frames … with his own head … and his fixed violet colours; his hop is his only frame of his own, plus the poster's full and empty frames, within the art rules" | "Exercise animations, Oct 19", Dony (D2): every figure and machine animation a person has, with `DONY_HEAD` over it and `DONY_VARS` on the svg; `hop` his own; plus the poster's full, glint and empty frames over the wall tile. Seven colours plus props, ink outline, whole-number scale. Not in the avatar editor (nothing in the Lobby group changes). |
 | BOT-3 "He goes Idle, Lifting, Resting and Slacking … never Finished, and every screen sees each change within about a second" | Dony is one more entry in the room's view, drawn by the same code as people: same spots, same poses, same tags, same rows (3.2a, 3.4). States "Dony · Idle", "· Lifting", "· Resting", "· Slacking", at 390 and 1280 px. |
 | BOT-4 "Anyone in the room can tap the empty poster to send Dony back: he stops whatever he's doing, frees his station, walks back and hops into the poster" | The empty poster's button submits `intent=send-back`. State "Send back" (Tom sends back the Dony that Priya summoned), and "Sent back". |
 | BOT-4 (14 Oct) "sending Dony back has no wait … the 30 s rest applies only to summoning him again after a send back" | `.poster.resting` on the full poster only: art at 50%, `aria-disabled`, "(not ready yet)" in its name; no countdown (system 14). The empty poster is never `.resting`. |
@@ -679,11 +679,11 @@ y 9    _ _ _ _ E e _ _ _ _     front wall; the entrance is (4,9) and (5,9)
 
 | State | Tile | Pose | Tag |
 | --- | --- | --- | --- |
-| Lifting | their station, `.on-station` | `lift` (bar overhead); `stand` on the treadmill (the run loop's first frame) | `state-lifting` |
+| Lifting | their station, `.on-station` | on the machine, in that machine's animation | `state-lifting` |
 | Resting | the next free rest spot | `rest` (blue bottle) | `state-resting` |
 | Slacking | their station, `.on-station` | `sit` (phone, glow) | `state-slacking` |
 | Idle | the next free idle spot | `stand` | `state-idle` |
-| Finished | the next free idle spot | `stand` (flex and wave later) | `state-finished` |
+| Finished | the next free idle spot | `stand` | `state-finished` |
 | Away (flag) | wherever their state puts them | that pose, sprite at 50% | that state's, plus the phone-off icon after the name |
 
 - **Rest spots**, in fill order: (1,7), (3,7), (2,8), then (1,8), (3,8),
@@ -695,9 +695,10 @@ y 9    _ _ _ _ E e _ _ _ _     front wall; the entrance is (4,9) and (5,9)
   the same state, and the list is the readable view.
 - **Spots are given out by join order** among the people in that state, so
   every screen puts everyone in the same place with no server state.
-- **On a station** the avatar's feet drop 12 sprite pixels (of 32) into the
-  aisle below (`top: (y + 1.375) × --t`) and the tag keeps a 12-pixel gap
-  above the head, so the top of the equipment shows between them.
+- **Slacking on a station**: the avatar's feet drop 12 sprite pixels (of
+  32) into the aisle below (`top: (y + 1.375) × --t`) and the tag keeps a
+  12-pixel gap above the head, so the top of the equipment shows between
+  them.
 - **Stacking**: `z-index: y`, so lower rows draw over higher ones; a hovered
   or focused avatar goes to 15, so its tag is never hidden.
 
@@ -818,13 +819,13 @@ send back), `posterRestingUntil`, and Dony's state while out (below).
 Dony is one more member in the view the page already draws, with three
 differences:
 
-1. **His sprite is his own.** Render `svg.av` from `donyFrame(frame)` (appendix,
-   people) instead of `poseOf(pose)` plus a hair overlay, with `DONY_VARS`
-   on the svg (his fixed palette and its shades). Pose names
-   match people's: `stand`, `lift`, `rest`, `sit`, plus `walk1`, `walk2`,
-   `hop`. The idle bob, the lift loop (`lift` and `lift2`) and the phone glow
-   work on his grids exactly as on people's: rows 0 to 25 bob
-   (`AVATAR_UPPER_ROWS`).
+1. **His body is the people's, his head is his own** (D2). Render `svg.av`
+   from the same frames as a person, with `DONY_HEAD` (his hair and glasses)
+   as the overlay instead of a hair style, and `DONY_VARS` on the svg (his
+   fixed violet palette and its shades). So every figure and every machine
+   animation a person has is his too; `hop` is his only frame of his own.
+   The idle bob and the phone glow work exactly as on people's: rows 0 to
+   23 bob (`AVATAR_UPPER_ROWS`).
 2. **He is last.** In the squad list, after every person (people stay in
    join order). Among the people in his state, he takes the spot after the
    last person: with Priya Idle, Priya is at (8,7) and Dony at (6,7).
@@ -1072,7 +1073,7 @@ them).
 
 ```html
 <li class="me">                                   <!-- .me for you, .away when Away -->
-  <svg class="av" viewBox="2 0 28 22" style="--av-…">…</svg>
+  <svg class="av" viewBox="0 0 32 20" style="--av-…">…</svg>
   <span class="who">Priya <span class="badge">You</span> <span class="badge host">Host</span>
     <span class="what">Rest <span class="n">1:24 left</span> · lifting platform 5</span></span>
   <span class="chips"><span class="chip state-resting"><svg…/>Resting</span></span>
@@ -1181,7 +1182,7 @@ stations, avatars and rows from it.
 
 | State | Trigger | What changes |
 | --- | --- | --- |
-| **Busy room** (default) | Six in: you resting, two lifting, one slacking, one resting and Away, one Idle | All of the above at once. Your station 5 has leaf corners while you stand at the cooler; Ji-woo sits on the bench with her phone; Tom is faded at the cooler with the phone-off icon; Sam stands by the lockers. |
+| **Busy room** (default) | Six in: you resting, two lifting, one slacking, one resting and Away, one Idle | All of the above at once. Your station 5 has leaf corners while you stand at the cooler; Ji-woo sits in front of the bench with her phone; Tom is faded at the cooler with the phone-off icon; Sam stands by the lockers. |
 | **Room alone** (empty) | You are the only member | The opening four on slots 1 to 4, bays 5 to 12 empty, you Idle by the lockers. The Idle sheet with the claim hint and Choose. Squad: your row and `.alone`. Room: 1 of 12, the leave-closes note, no End. |
 | **You slacking** | The server's `slackAt` passes | Your tag goes red, you sit on your station with your phone (on every screen); the sheet's rest block, tab and line as in 3.3 step 6; your row reads "2:47 over rest". |
 | **Rest up** | 0 to 30 s past the rest's end | Blue border, paper count-up, Resting tab, "Rest's up. Back under the bar 🔔", Start set in the dock. On the map you're still at the cooler. |
@@ -1208,7 +1209,7 @@ stations, avatars and rows from it.
 | **Poster error** | The post failed (no connection, 5xx) | The poster stays as it was; `p.error.poster-error` "Dony didn't hear you. Try again." under the map, in the map panel. Not a banner, not near the dock. Goes on the next tap or after 8 s. |
 | **Summon** (storyboard) | Anyone taps the full poster; the room's update arrives | Tap (pressed), shake, empty poster plus the hop to (5,1), the walk to the lockers. His row appears with the hop. No banner. About 2 s. |
 | **Dony just in** | Right after a summon, Priya alone | Priya and Dony both Idle by the lockers (his 3 s warm-up); the poster empty and ready (no dim, no bulbs); the squad list Priya then Dony; `p.alone` reworded; "1 of 12 in"; the sheet is untouched (Idle, Pick a lift). |
-| **Dony · Idle / Lifting / Resting / Slacking** | His schedule | As a person in that state: Idle at an idle spot with a paper tag; Lifting on squat rack 3 with the bar overhead and a leaf tag, row "Back squat · squat rack 3"; Resting at the cooler with the blue bottle, row "Rest 2:28 left · squat rack 3"; Slacking sitting on his rack with his phone, red tag, row "1:12 over rest · squat rack 3". Drawn beside Mia (you), at both widths. |
+| **Dony · Idle / Lifting / Resting / Slacking** | His schedule | As a person in that state: Idle at an idle spot with a paper tag; Lifting on squat rack 3 in the rack's animation (bar on his shoulders, squat and stand) and a leaf tag, row "Back squat · squat rack 3"; Resting at the cooler with the blue bottle, row "Rest 2:28 left · squat rack 3"; Slacking sitting in front of his rack with his phone, red tag, row "1:12 over rest · squat rack 3". Drawn beside Mia (you), at both widths. |
 | **Busy room with Dony** | Priya (you, host), Mia, Tom and Dony | Dony squatting on rack 3, last in the list as an ordinary row, no badge. "3 of 12 in"; End room's confirm names Mia and Tom only. |
 | **Send back** (storyboard) | Tom taps the empty poster (Priya summoned him) | Dony mid-set; his row leaves the list, his tag turns Idle, he walks to (5,1), hops, and the poster shakes and fills, then rests. The rack stays on station 3. |
 | **Sent back** | After the send back | No Dony on the map or in the list; squat rack 3 free with its rack; the poster full and resting. |
@@ -1296,7 +1297,10 @@ stations, avatars and rows from it.
     four, but his grids are his own (not `BODY` plus a hair overlay) and his
     colours are fixed (BOT-2). His jacket violet (`#8b6cf2`) and charcoal
     (`#2e3046`) are new raw hex values, allowed only inside sprite palettes
-    (system 5).
+    (system 5). *Superseded 19 Oct by D2* ("Exercise animations, Oct 19",
+    Dony): his grids are no longer his own; he is drawn on the people's
+    body frames with his own head overlay and fixed colours, and only `hop`
+    is his.
 20. **An error on Night under the map** (14 Oct). The layout's `.error`
     (white on `--error`) is used as is; it is the gym's first page-level
     error outside the sheet. It sits in the map panel because the map is
@@ -1353,10 +1357,8 @@ stations, avatars and rows from it.
   not distracting during a heavy set"; drop it if it catches eyes.
 
 - None on map size: 10 × 10 is confirmed by the user.
-- **Exercise loops.** The 4-week spec asks for eight two-frame loops. The
-  mockup draws one lift pose (bar overhead) and the treadmill's standing
-  frame. If time is short this week, one shared two-frame lift loop for
-  every piece of equipment is a reasonable first cut.
+- **Exercise loops.** *Settled 19 Oct (D1)*: eight animations, one per
+  machine, two frames each, drawn in "Exercise animations, Oct 19".
 - **Opening a timed lift empty** (8 Oct). Recommended and drawn (3.3 item
   10): one rule for every timed set. If the user would rather a fresh Run
   pre-filled its distance (an interval runner repeats 1 km), the cheapest
@@ -1373,8 +1375,9 @@ stations, avatars and rows from it.
   (appendix). All are drawn with `Sprite.astro`-style rects, crisp edges,
   whole-number scale.
 - Two-frame loops (system 11): Idle and Resting bob the upper body (rows 0
-  to 25, `AVATAR_UPPER_ROWS`) 2 sprite pixels every 400 ms; Lifting alternates the lift pose with the bar
-  at shoulder height every 250 ms; Slacking alternates the phone glow on
+  to 23, `AVATAR_UPPER_ROWS`) 2 sprite pixels every 400 ms; Lifting swaps
+  the machine's two frames every 250 ms on the treadmill and 400 ms on the
+  other seven ("Exercise animations, Oct 19"); Slacking alternates the phone glow on
   and off every 400 ms. Freeze on frame one under reduced motion.
 - Keep the old ids for everything the spec tests touch: `class="passcode"`,
   `?edit=` links, `name` before `value` on `weight_kg` and `reps`.
@@ -1437,8 +1440,8 @@ Coordinates are (column, row), 0-based.
 - **The poster's palette** gains `T` (`#6650c8`, the frame's shadow side and
   the bomber's shade) and `w` (paper, the photo's background and the
   plate). Six colours plus the bulbs' `currentColor`.
-- **Head crop** in the squad list: `viewBox="2 0 28 22"` at 56 × 44 px (2×),
-  as home's; the list's first column grows from 42 px to 56 px. The old
+- **Head crop** in the squad list: `viewBox="0 0 32 20"` at 64 × 40 px (2×),
+  as home's; the list's first column grows from 42 px to 64 px. The old
   42 × 33 px would be a 1.5× scale.
 - **The mockup art sheet** shows sprites at 64 px (2×); its old 48 px was
   3× of 16 and would be 1.5× of 32.
@@ -1455,7 +1458,8 @@ Coordinates are (column, row), 0-based.
 - **The idle bob: 2 sprite pixels**, confirmed (`translateY(2px)` in sprite
   units, 800 ms `steps(1)`). One pixel of 32 is too small to read at 1×
   (320 px map), and 2 is what the Lobby floor and editor already use.
-- **The station drop: 0.375 of a tile (12 of 32 px)**, confirmed. The feet
+- **The station drop: 0.375 of a tile (12 of 32 px)**, confirmed, for
+  Slacking only since 19 Oct (a Lifting person is on the machine). The feet
   (soles on row 31) land 12 px into the aisle tile below the station, so
   the sprite covers the station tile from its row 12 down and the tag ends
   at the tile's top edge: the machine's top 12 rows show between them (13
@@ -1678,6 +1682,10 @@ export const poseOf = (pose: Pose) => POSES[pose];
 ```
 
 ### `src/sprites/dony.ts`: Dony
+
+*Superseded 19 Oct by D2* ("Exercise animations, Oct 19", Dony): he is now
+drawn on the people's frames with his own head overlay, and of the frames
+below only `hop` survives as his own.
 
 His own grids, not `BODY` plus hair, on the same head shape, shoulders and
 legs as the person so he stands beside them as an equal. Black hair, a
@@ -2438,6 +2446,10 @@ Coordinates are (column, row), 0-based.
 
 An avatar on a station covers the tile from row 12 down (15 behind someone
 sitting), so the top 12 rows of each machine have to say what it is.
+
+*Since 19 Oct* this holds only behind a slacker: a Lifting person is drawn
+on the machine, between its back and front layers ("Exercise animations,
+Oct 19").
 
 | Machine | Rows 0 to 11 |
 | --- | --- |
@@ -3260,3 +3272,169 @@ STATIONS, palette letters and the people are unchanged. The art is in
 - **Split for avatars**: see the comments in the built file's report; each machine
   separates into a back layer (pad, belt, stack, platform) and a front layer (rails,
   uprights, bar, shelves, posts).
+
+## Detail pass, Oct 18: poses and Dony
+
+*Superseded 19 Oct* by the Gen Z redesign (avatar spec) and "Exercise
+animations, Oct 19" below.
+
+The people's gym poses and Dony's frames redrawn on the new person; the
+poses are in `src/sprites/avatar.ts` and Dony's frames in `src/sprites/dony.ts`. What each pose means, the
+slots, the prop letters (m, w, r plus body slots), `AVATAR_UPPER_ROWS` (26) and
+the animations in GymMap.astro are unchanged. The poster is not part of this
+pass.
+
+- **lift** (hair row 2): the head two rows down under a bar on row 1, plates at
+  the edges. The arms are props (fists, skin forearms, a sleeve hem, then
+  sleeve to the shoulder), so they stand in front of the sides of the curls,
+  long and ponytail styles on purpose, as before; the face is never covered.
+- **rest** (hair row 0): the standing body with a bottle at the right hand. Its
+  cap and neck sit one column further out than the hand, so the long style's
+  outline is never covered; the fingers wrap the bottle.
+- **sit** (hair row 2): the head two rows down, sleeves ending at the elbows,
+  forearms coming in to a phone at the lap, the screen (w) blinking as before,
+  knees and shoes towards us.
+- **Dony** keeps his identity on the new proportions: the same skull, ears,
+  nose, mouth and hands as everyone, black hair parted on his right and swept
+  across with lighter streaks, glasses with rims, a bridge and temples, one
+  glint pixel per lens, the violet bomber open over a black tee, dark trousers
+  and violet shoes, in his DONY_VARS colours. He has no separate brows: the
+  rims' top line does that job. lift and hop raise his arms as the person's
+  lift does; lift2 and sit lower the head two rows like the person's sit.
+
+## Exercise animations, Oct 19
+
+Every figure the gym shows, redrawn on the Gen Z person
+(`.shots/genz/person.ts`), plus one two-frame animation per machine where
+the person really uses it, as `docs/product/criteria/animations.md` decides
+(GYM-9, GYM-10, GYM-11, GYM-14, GYM-15, BOT-2, D1 to D8). The grids are in
+`.shots/anim/` (`figures.ts`, `exercises.ts`, `dony.ts`), each with its
+anchors in its top comment; the review images are `sheet-desktop.png`,
+`floor-desktop.png` and `figures-desktop.png` beside them. The data replaces
+`POSES` in `avatar.ts`, `GEAR` in `gym.ts` and Dony's frames in `dony.ts`.
+
+### What changes on the map
+
+- **On the machine.** A Lifting person is drawn on the station's own tile,
+  using the machine, not standing in the aisle in front of it: there is no
+  12-row drop for Lifting any more, and the "top 12 rows" table above no
+  longer applies to them. Only Slacking keeps the old placement: the `sit`
+  figure in front of the machine, 12 sprite rows into the aisle, with the
+  machine drawn idle behind (D3, GYM-11.1).
+- **Idle machines.** Each machine's `idle` grid is the whole machine with its
+  bar at rest. It is drawn whenever nobody is on it, including while its
+  holder is Resting, Slacking or walking (GYM-9.3, GYM-10.13). When someone
+  is on it, `idle` is not drawn: their frame's `back` and `front` are.
+- **Frames swap, they don't bob.** On a machine the two frames swap whole
+  (body, hair row, props, back and front together), 250 ms a frame on the
+  treadmill and 400 ms on the other seven (D4). Under reduced motion only
+  Frame 1 shows (GYM-10.23). Standing, resting and the editor keep the bob
+  (rows 0 to 23, `AVATAR_UPPER_ROWS = 24`); sit and the walk don't bob.
+- **The walk.** `walk1` and `walk2` swap once per tile stepped, nothing held
+  (GYM-10.17). The state's figure or animation starts on arrival. If the
+  walk is cut (D1), show `stand` without the bob while walking.
+
+### How the build layers a person on a machine
+
+Bottom to top, in one svg the size of the tile:
+
+1. **back** (GYM_PALETTE): the parts behind the person: the pad, the belt,
+   the deck, the stacks, the platform, the beam, and the bar when it passes
+   behind the head (the pull-up's Frame 2).
+2. **body** (people's slots, plus m, w, r as `pm pw pr`).
+3. **hair**: the look's `HAIR` overlay at (column 0, row `hairRow`). For
+   Dony, `DONY_HEAD` at the same anchor instead.
+4. **props** (people's slots plus m, w, r): the bar, dumbbells and handles
+   in her hands, and arms drawn over the hair where the arms are raised.
+5. **front** (GYM_PALETTE): the parts that pass in front of her: the
+   treadmill's handrails, the rack's lower uprights, the pull-up tower's
+   posts, and the cable machine's knee roller.
+
+Away (D5, GYM-14.1) fades layers 2 to 4 only, never back or front, and the
+animation keeps playing. The claim corners (system 9) draw over all five
+layers, so your own station stays marked while you're on it (GYM-9.4).
+
+### The tag and the hit area
+
+- **The tag sits just above the station's tile**, centred on it, for all
+  eight machines and both frames, and for the slacker too: it never moves
+  with the animation or with the slacker's 12-row drop (GYM-15.5). It draws
+  over every layer of every neighbour.
+- **Hit area**: the avatar button covers the tag and the whole tile, so a
+  tap on any front part over her selects her (GYM-15.3); its focus ring
+  draws over the front layer (GYM-15.4).
+
+### Hair in every frame
+
+The PM asked for the lying and push-up frames to be prototyped first, in
+all four styles. **The four standing overlays work in every frame at a
+shifted `hairRow`**, with no column shift and no extra hair drawings. Every
+machine is drawn front-facing: the push-up, seen head-first, shows the
+standing front face, and the bench uses the pixel-RPG "in bed" convention
+(head and shoulders upright and front-facing on the pad).
+
+| Machine | hairRow F1 / F2 | What the hair meets |
+| --- | --- | --- |
+| treadmill | 0 / 0 | the handrails pass over the long style's flicks |
+| flat bench | 4 / 4 | lies on the pad's head end; the F1 bar crosses the long style's ends; the ponytail lies along the right upright |
+| squat rack | 9 / 0 | the bar at the shoulders crosses the long flicks |
+| dumbbell rack | 0 / 0 | the F1 dumbbells cover the flicks and the ponytail's tip |
+| lifting platform | 6 / 0 | the F1 arms stand in front of the long style's ends |
+| pull-up bar | 0 / 4 | the ponytail tucks behind the right post |
+| cable machine | 4 / 4 | the F2 arms stand in front of the sides of the curls, Wolf cut and ponytail on purpose |
+| exercise mat | 11 / 13 | the arms are body, so every style falls over them |
+
+Every face stays clear in both frames (GYM-10.11). The hair reaches at most
+row 29 (the mat's Frame 2 long style), inside the tile (GYM-10.14).
+
+### The machines redrawn (C)
+
+- **Squat rack**: a deep cage, a lit crossbar, punched uprights, J-hooks,
+  safety arms, plate horns. It reads as a box with a bar across it.
+- **Pull-up bar**: now a power tower: tall posts with caps, a top beam, a
+  padded back, a thick bar with black foam grips, dip handles. It reads as a
+  tall padded column, open above the bar and with no plates.
+- **Cable machine**: a lat-pulldown: two striped weight stacks either side,
+  a beam and pulley, the bar on its cable, the seat and its knee roller. It
+  reads as a wide frame with two stacks.
+- **Flat bench** (revised twice on Oct 19 after the user's reviews):
+  front-facing, the pixel-RPG "in bed" convention. The pad runs away from us
+  (seen from above at 3/4), wider and longer than her, with its head end at
+  the top and the uprights and J-hooks at the sides. She lies on it with her
+  head and shoulders upright and front-facing, the torso shortened, the legs
+  along the pad and the sneakers poking up at the foot end, so the pad shows
+  round her. The barbell runs across the whole tile with plates at both
+  ends: high at her chin with straight arms in Frame 1, lowered to her chest
+  with the elbows out in Frame 2. The idle grid has the bar on the hooks. A
+  side view was tried and dropped: a front-facing head on a body in profile
+  clashed with the other six.
+- **Lifting platform** (revised the same way): front-facing on the wood, no
+  uprights, the barbell across the whole tile and always in her hands below
+  her shoulders. Frame 1 is the bottom of the deadlift (head well down,
+  straight arms to the bar at her shins, plates on the floor); Frame 2 is
+  standing tall with the bar at her hips. The idle grid has the bar lying on
+  the platform. It differs from the squat by having no rack and by the bar
+  being in her hands below, never on her shoulders.
+- The treadmill, dumbbell rack and mat keep their look; the mat is unrolled
+  flat while in use.
+- **What the eye catches at 1×**: the moving object is the brightest thing in
+  each frame (paper-lit plates, dumbbells and bars), and the machines around
+  it are quieter (the cable stacks and knee roller are now green, and the
+  rack's safety arms are dim and behind her).
+- **Moving parts** (GYM-10.15): the belt's light stripes shift 2 rows between
+  the treadmill's frames, and the top two plates of each cable stack lift 4
+  rows in Frame 1. Both move only while someone is on the machine, and stop on
+  Frame 1 under reduced motion.
+- **Dumbbells** stay on the rack while someone curls (GYM-10.13 leaves this
+  to the designer): a full rack reads better at 1× than a gap.
+
+### Dony (D2)
+
+Dony is drawn on the people's frames, every figure and both frames of
+every machine, with `DONY_HEAD` (black side-part hair, glasses with a glint
+per lens) as his overlay and `DONY_VARS` on the svg: skin `s`/`S`, hair
+`h`/`H`, and the violet as the shirt slots `t`/`T`. So the shared tee,
+cargos and sneaker accents are his violet top and trousers, and the open
+bomber is gone. His only own frame is `hop` (arms up, knees tucked), drawn on
+the shared body with his head. BOT-2's "his own sprite" now means his own
+head and colours.
