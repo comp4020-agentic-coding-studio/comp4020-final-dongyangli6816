@@ -1,0 +1,10 @@
+{"t":"2026-10-20T00:09:48.436Z","method":"GET","path":"/rooms/112","status":200}
+{"t":"2026-10-20T00:09:48.447Z","method":"POST","path":"/rooms/112","status":303}
+{"t":"2026-10-20T00:09:48.449Z","method":"POST","path":"/rooms/112","status":303}
+{"t":"2026-10-20T00:09:48.561Z","method":"GET","path":"/rooms/112","status":200}
+{"t":"2026-10-20T00:09:48.601Z","method":"GET","path":"/rooms/112/events","status":200}
+{"t":"2026-10-20T00:09:49.667Z","method":"GET","path":"/rooms/112","status":200}
+{"t":"2026-10-20T00:09:49.706Z","method":"GET","path":"/rooms/112/events","status":200}
+{"t":"2026-10-20T00:09:50.768Z","method":"GET","path":"/rooms/112","status":200}
+{"t":"2026-10-20T00:09:50.810Z","method":"GET","path":"/rooms/112/events","status":-1}
+{"t":"2026-10-20T00:09:50.833Z","method":"POST","path":"/rooms/112","status":303}
