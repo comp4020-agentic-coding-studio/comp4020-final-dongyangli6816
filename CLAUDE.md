@@ -36,6 +36,8 @@ scripts/                     repo tools; shot.mjs takes every screenshot and
                              hooks/ holds the scripts .claude/settings.json runs
 docs/product/                idea.md, spec-4-weeks.md (directs the build),
                              spec-mvp.md (full spec, reference only)
+docs/product/criteria/       <area>.md: acceptance criteria per spec area,
+                             written by the pm agent, settled by me
 docs/adr/                    NNNN-<slug>.md, one decision each
 docs/design/                 system.md (design rules); <page>/ holds that
                              page's mockup.html and spec.md; no images
@@ -53,6 +55,31 @@ docs/evidence/               YYYY-MM-DD-<slug>/, one per episode PROCESS.md cite
   commit; the map lists folders and kinds of file, not single files. A folder
   that needs more than a line of rules gets its own `CLAUDE.md`, with one line
   left here.
+
+## Deciding and testing features
+
+A feature that adds or changes behaviour a person can see is decided before
+it is designed, and tested by someone who didn't build it:
+
+1. **`pm`** turns its requirements into acceptance criteria in
+   `docs/product/criteria/<area>.md`, plus open questions, each with a
+   recommended answer. Show me the questions; I settle them; send my answers
+   back to the same `pm` to finalise the file.
+2. **`designer`**, if a page changes (see below), designs from the agreed
+   criteria.
+3. **`qa`**, round one, writes the tests from the criteria and the designs,
+   before the build.
+4. Build until those tests pass. **Don't edit the tests to make them pass**:
+   if one looks wrong, send it back to `qa` or ask me.
+5. **`qa`**, round two (the same agent, continued), runs, reruns and
+   screenshots, and reports code bugs, test bugs and gaps in the criteria.
+
+While building, any behaviour a person can see that the criteria don't
+decide is mine to decide: stop and ask, add the answer to the criteria
+through `pm`, and have `qa` cover it. Internal details stay yours.
+
+Server logic, fixes, docs and anything with no visible behaviour skip this.
+Say in one line whether a request goes through `pm` and why.
 
 ## Designing pages
 
