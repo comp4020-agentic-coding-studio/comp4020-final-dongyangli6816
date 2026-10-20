@@ -406,7 +406,10 @@ to 32 px and says why.
   hair and shirt. A shade comes with its colour choice, so a look is still
   three choices and recolouring stays a palette swap. Props a pose holds (the
   bar, the bottle, the phone's glow) are drawn over it in interface tokens
-  and don't count.
+  and don't count. The avatar's body may use the same three fixed tokens,
+  `--dim`, `--paper` and `--resting`, which don't count either: the eye
+  catchlights and the white sneakers are what make the figure read as a
+  person at 1×.
 - **32 × 32 per sprite and tile.** The 8 × 8 interface icons, the logo and the
   Paper checker are interface, not art, and stay as they are.
 - **Outlines are `--ink`** on every sprite, so sprites stay readable on the
@@ -419,7 +422,7 @@ to 32 px and says why.
   distinguishable from the state colours when it sits next to a state chip.
 - **State in the scene**: Lifting plays the equipment's loop; Resting stands
   at the water cooler with a bottle; Slacking sits and scrolls a phone, with a
-  small pixel phone glow; Finished does a flex then waves; Away is faded to
+  small pixel phone glow; Finished stands with its tag; Away is faded to
   50% with the phone-off icon above the head.
 - **The gym worker** (GYM-6) is visibly different from members: a staff
   uniform in a fixed palette nobody can pick, and bigger shoulders. The worker
@@ -436,7 +439,7 @@ Pixel games move in steps, so Spotter does too.
 - **Every animation uses `steps()`**, never a smooth ease. The button press is
   60 ms `steps(1)`.
 - **Sprite frames**: two frames per loop, about 400 ms per frame when idle or
-  resting, 250 ms when lifting.
+  resting; when lifting, 250 ms on the treadmill and 400 ms elsewhere.
 - **Walking** moves a tile at a time along the aisles at about 8 tiles a
   second.
 - **Banners** slide in over 160 ms in 4 steps and leave the same way.

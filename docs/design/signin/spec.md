@@ -334,3 +334,7 @@ designer's art; at today's doubled grids the kettlebell (12 × 12) is 24 px and
 the dumbbell (16 × 8) is 32 × 16 px, both 2×. If Lobby changes their grid
 sizes, keep them at 2×.
 
+
+## Detail pass, Oct 18
+
+The `door` and `doorway` sprites were redrawn at their current 32 x 32 size with the same palette plus one muted grey for hinges and mat studs. The door gains a lit pane highlight, panel bevels and a kick plate under the handle; the doorway gains a window frame highlight, a doormat with a woven edge and a brighter door glint. Outline, light direction and footprint are unchanged, so no layout or CSS change is needed.

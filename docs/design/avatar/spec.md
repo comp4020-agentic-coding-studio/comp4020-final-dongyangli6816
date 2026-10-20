@@ -19,7 +19,7 @@ This section is identical in all three Lobby specs.
   `steps(1)`, frozen under reduced motion; the upper body moves 2 sprite
   pixels). Sprites are 32 × 32 (ADR 0005), shown at 2× (64 px) except in the
   editor, where you're the subject (3×, 96 px, on phones; 4×, 128 px, from
-  900 px). A list's head crop is `viewBox="2 0 28 22"` at 2× (56 × 44 px).
+  900 px). A list's head crop is `viewBox="0 0 32 20"` at 2× (64 × 40 px).
   - home: a 9 rem tile beside `Hi, Mia`, with **Edit avatar** under the
     greeting;
   - join: the floor sits under the `h1` and lead, with the gym's open
@@ -191,9 +191,9 @@ from `<style id="page">`.
           The skin group is one row of 6 at both widths.
         - **Hair** (`div.`**`styles`**, a 2 × 2 grid): each choice is
           `label.`**`pick style`** containing the radio, then `span.face`
-          holding a head-only `svg.av` (`viewBox="2 0 28 22"`, 2×, 56 × 44 px,
+          holding a head-only `svg.av` (`viewBox="0 0 32 20"`, 2×, 64 × 40 px,
           only that style's hair group) and the visible name (`Crop`,
-          `Curls`, `Long`, `Ponytail`), then `svg.tick`. A chosen tile
+          `Curls`, `Wolf cut`, `Ponytail`), then `svg.tick`. A chosen tile
           fills `--leaf`.
       - *(error only)* `p.error#save-error`.
       - `div.actions` > `button.wide[type=submit]` `Save` (no `name`; an
@@ -244,10 +244,10 @@ Mockup people, so every page draws them the same:
 
 - **Props:** `avatar` (the JSON), `editor?: boolean`, `head?: boolean`,
   `class`.
-- **Output:** `svg.av` with `viewBox="0 0 32 32"` (or `"2 0 28 22"` for
-  `head`). It contains `g.av-top`, holding body rows 0 to 25 and the
-  hair group or groups (`g.hair.hair-{style}`), followed by body rows 26 to
-  31 (`AVATAR_UPPER_ROWS = 26`).
+- **Output:** `svg.av` with `viewBox="0 0 32 32"` (or `"0 0 32 20"` for
+  `head`). It contains `g.av-top`, holding body rows 0 to 23 and the
+  hair group or groups (`g.hair.hair-{style}`), followed by body rows 24 to
+  31 (`AVATAR_UPPER_ROWS = 24`).
 - **Rects carry a class per slot** (`k`, `s`, `t`, `h`, `S`, `T`, `H`),
   never a `fill`.
   The shared CSS maps them: `.av .s { fill: var(--av-skin) }` and so on.
@@ -259,7 +259,7 @@ Mockup people, so every page draws them the same:
   With `editor`, all four are rendered, plus `data-hair`.
 - **Sizes:** whole-number multiples of 32 via CSS (`.floor .av` uses
   `--s`): 64 px on home and join, 96 or 128 px in the editor, and the head
-  crop at 56 × 44.
+  crop at 64 × 40.
 
 ### Live preview with no JavaScript
 
@@ -489,10 +489,10 @@ export const HAIR = {
 } as const;
 ```
 
-Head crop: `viewBox="2 0 28 22"` (columns 2 to 29, rows 0 to 21: the
-whole head and every hair style, the curls and ponytail included, plus the
-shoulders), shown at 2×, 56 × 44 px, in home's squad list and the editor's
-hair tiles. Every overlay ends by row 20, so nothing is cut.
+Head crop: `viewBox="0 0 32 20"` (columns 0 to 31, rows 0 to 19: the
+whole head and every style's hair, the ponytail's tail included, plus the
+face and the shoulders), shown at 2×, 64 × 40 px, in home's squad list and
+the editor's hair tiles (the Gen Z redesign, Oct 19).
 
 ### Shades
 
@@ -605,6 +605,9 @@ export const dumbbell: Sprite = {
 
 ### For the Gym group: building the poses from this body
 
+*Superseded 19 Oct* by the Gen Z anchors below and the room spec's
+"Exercise animations, Oct 19".
+
 Coordinates are (column, row), 0-based, in the 32 × 32 grid.
 
 - **Head**: rows 1 to 16, outline at columns 6 and 25 for rows 4 to 9 and
@@ -635,3 +638,54 @@ Coordinates are (column, row), 0-based, in the 32 × 32 grid.
   and 24 to 28, the hands at rows 2 to 4 (wider than the head's 6 to 25),
   and the bar across row 1; the hair overlay still starts at row 0.
 - **Stand**: this body unchanged.
+
+## Gen Z redesign, Oct 19
+
+**What.** The person is redrawn as a cute but cool figure for an 18 to 29
+audience raised on Stardew Valley and the Pokémon remakes, approved by the
+user. The head is rounder and smaller (18 × 14, no ears), and the space it
+frees goes to the body: an oversized boxy tee with dropped shoulders, short
+wide-leg cargos in the shirt's shade, and chunky white sneakers. The face sits
+low and close: 2 × 3 eyes 4 pixels apart, each with a paper catchlight, blush
+in the skin shade, and a 2-pixel mouth. The four hair styles keep their stored
+ids, redrawn on the bald body: `crop` is a short crop with a textured
+fringe; `curls` a round cloud, the widest silhouette; `long` a middle-parted
+wolf cut whose layers flick over the shoulders; `ponytail` a high, full tail
+swinging out to the right, with a scrunchie in the shirt colour. The editor's
+label for `long` becomes **Wolf cut**; the id stays `long`.
+
+**Why.** The Oct 18 figure read as a potato: a box of a head, blank
+wide-set dot eyes, a plain box of a body. Nobody would pick it as
+themselves or screenshot it. The new one has a person's silhouette at 1×:
+the white sneakers, the tee wider than the head and the hair shapes make
+each figure distinct on the 320 px map.
+
+**Rule changes** (system section 10, approved): the body may use the fixed
+colours `m`, `w` and `r` (the catchlights, sneaker uppers and soles), so
+`Avatar.astro` maps them to `pm`, `pw` and `pr` for the body as for props.
+`AVATAR_UPPER_ROWS` becomes 24.
+
+**New anchors**, (column, row), 0-based. These replace the person grid in the
+appendix and "For the Gym group" above; the grids live in
+`src/sprites/avatar.ts` once built.
+
+- Head: outline rows 1 to 14, widest at columns 7 and 24 (rows 3 to 11); chin
+  row 14 (columns 11 to 20). Neck row 15, columns 14 to 17.
+- Face, which no overlay may touch: columns 11 to 20, rows 8 to 12. Eyes at
+  columns 12 to 13 and 18 to 19, rows 8 to 10; blush row 11; mouth columns
+  15 to 16, row 12.
+- Shoulder line row 16 (dropped shoulders, outline at columns 4 to 5 and 26
+  to 27); full width row 17, outline at columns 3 and 28.
+- Sleeves rows 16 to 20, hem row 20; hands rows 21 to 22 at columns 4 to 6 and
+  25 to 27. Grip points (5, 22) and (26, 22).
+- Tee rows 16 to 22, hem row 22; belt line row 23, the bob split (rows 0 to 23
+  bob).
+- Cargos rows 24 to 27, legs split at columns 15 to 16; sneakers rows 28 to
+  31, columns 5 to 14 and 17 to 26.
+- Hair overlays anchor at row 0, column 0 of the pose's head (`hairRow`) and
+  reach at most row 16 (`long`) and column 31 (the ponytail's tail).
+
+**Head crop**: `viewBox="0 0 32 20"`, at 2× 64 × 40 px, replacing
+`"2 0 28 22"` (56 × 44) wherever a list or the editor's hair tiles draw a
+head. The full width is needed for the ponytail's tail; rows 0 to 19 frame
+every style's hair, the face and the shoulders.

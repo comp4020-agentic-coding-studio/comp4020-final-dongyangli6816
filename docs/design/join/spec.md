@@ -19,7 +19,7 @@ This section is identical in all three Lobby specs.
   `steps(1)`, frozen under reduced motion; the upper body moves 2 sprite
   pixels). Sprites are 32 × 32 (ADR 0005), shown at 2× (64 px) except in the
   editor, where you're the subject (3×, 96 px, on phones; 4×, 128 px, from
-  900 px). A list's head crop is `viewBox="2 0 28 22"` at 2× (56 × 44 px).
+  900 px). A list's head crop is `viewBox="0 0 32 20"` at 2× (64 × 40 px).
   - home: a 9 rem tile beside `Hi, Mia`, with **Edit avatar** under the
     greeting;
   - join: the floor sits under the `h1` and lead, with the gym's open

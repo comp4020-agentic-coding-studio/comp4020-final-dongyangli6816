@@ -607,7 +607,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
         {
           squad.map((m) => (
             <li class:list={{ me: m.id === user.id, away: m.away }} data-id={m.id} data-look={"dony" in m ? "dony" : lookKey(m.look)}>
-              {"dony" in m ? <Avatar dony="stand" head /> : <Avatar look={m.look} head />}
+              {"dony" in m ? <Avatar dony head /> : <Avatar look={m.look} head />}
               <span class="who">
                 {m.name}
                 {m.id === user.id && <span class="badge">You</span>}
@@ -637,7 +637,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       </p>
       {/* what the script builds rows and the connection badge from */}
       <template data-part="head"><Avatar look={lookOf(user.id)} head allHair vars={false} /></template>
-      <template data-part="dony-head"><Avatar dony="stand" head /></template>
+      <template data-part="dony-head"><Avatar dony head /></template>
       {
         (Object.keys(STATE_WORD) as State[]).map((s) => (
           <template data-part={s}>
@@ -801,6 +801,8 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   import { STATE_WORD, stateAt, whatParts } from "../../lib/squad.ts";
   import { avatarLabel, DOOR, everyone, floorLine, route, spots, UNDER_POSTER, type Tile } from "../../lib/floor.ts";
   import { lookKey, lookVars } from "../../sprites/avatar.ts";
+  import { STATIONS } from "../../sprites/gym.ts";
+  import { isMachine } from "../../sprites/poses.ts";
   import { TILE } from "../../sprites/sprite.ts";
 
   // Every timer here is worked out from Date.now() on each tick, never
@@ -1082,11 +1084,15 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
         return navigate(location.pathname);
       }
       liveTick();
+      catchingUp = false;
     });
     source.addEventListener("open", () => {
       clearTimeout(lostTimer);
       lostTimer = undefined;
       connected = true;
+      // the first message on a new stream is news we missed: everyone is put
+      // where it says, with no walk replayed (GYM-10.21)
+      catchingUp = true;
       liveTick();
     });
     source.addEventListener("error", () => {
@@ -1209,9 +1215,15 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   // ---------- the map (GYM-1, GYM-9, GYM-10) ----------
   // Stations and avatars are patched from the newest message, like the list:
   // equipment is swapped when a station's changes, an avatar's sprite when
-  // its pose or look does, and an avatar whose tile changes walks there.
+  // its pose or look does, and an avatar whose tile changes walks there,
+  // showing the walk, and takes its pose when it arrives (GYM-10.17). Someone
+  // on a machine carries its back and front layers, and the station's own
+  // drawing steps aside until they get off (GYM-10.13).
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
   const STEP_MS = 125; // about 8 tiles a second
+  let catchingUp = false; // a stream just (re)opened: place, don't walk
+  // Dony mid-hop out of his poster, and where he goes once he lands
+  const landing = new WeakMap<HTMLElement, { tile: Tile; onStation: boolean; pose: string }>();
 
   function drawMap(now: number) {
     const map = document.querySelector<HTMLElement>(".map-panel .map");
@@ -1261,12 +1273,21 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
         b.append(Object.assign(document.createElement("span"), { className: "tag" }));
         place(b, dony && !reducedMotion.matches ? UNDER_POSTER : dony ? p.tile : DOOR);
         if (dony && !reducedMotion.matches && posterDrawn === false) {
+          // hidden while the poster shakes, then one hop frame, then he walks
+          // to wherever the newest message puts him (landing holds it)
           b.hidden = true;
           const arriving = b;
+          landing.set(arriving, { tile: p.tile, onStation: p.onStation, pose: p.pose });
           setTimeout(() => {
             arriving.hidden = false;
+            show(arriving, "hop");
             arriving.classList.add("hop");
-            setTimeout(() => arriving.classList.remove("hop"), STEP_MS);
+            setTimeout(() => {
+              arriving.classList.remove("hop");
+              const to = landing.get(arriving)!;
+              landing.delete(arriving);
+              walk(arriving, to.tile, to.onStation, to.pose);
+            }, STEP_MS);
           }, 250);
         }
         map.append(b);
@@ -1284,34 +1305,31 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
         tag.dataset.key = tagKey;
       }
       const look = dony ? "dony" : lookKey(m.look);
-      if (b.dataset.pose !== p.pose || b.dataset.look !== look || !b.querySelector(".av")) {
-        const sprite = copy(dony ? `data-dony="${p.pose}"` : `data-pose="${p.pose}"`);
-        if (!dony) {
-          const svg = sprite.querySelector("svg")!;
-          svg.setAttribute("style", lookVars(m.look));
-          svg.dataset.hair = m.look.hair;
-        }
-        b.querySelector(".av")?.remove();
-        b.append(sprite);
-        b.dataset.pose = p.pose;
+      if (b.dataset.look !== look) {
         b.dataset.look = look;
+        delete b.dataset.pose; // redraw in the new look
       }
       // he waits on the walkway until the hop, then walks like anyone
-      if (b.hidden) {
-        const going = b;
-        setTimeout(() => walk(going, p.tile, p.onStation), 250 + STEP_MS);
-      } else walk(b, p.tile, p.onStation);
+      if (landing.has(b)) {
+        landing.set(b, { tile: p.tile, onStation: p.onStation, pose: p.pose });
+        if (!b.querySelector(".av")) show(b, "stand");
+      } else {
+        if (!b.querySelector(".av")) show(b, p.pose);
+        walk(b, p.tile, p.onStation, p.pose);
+      }
     }
     for (const b of left.values()) {
       if (b.dataset.look !== "dony" || reducedMotion.matches) {
         b.remove();
         continue;
       }
-      // Dony sent back: he walks to the walkway under his poster and hops in;
-      // his row has already gone, and the poster fills once he's in (3.2a)
+      // Dony sent back: he gets off any machine at once (BOT-2.5), walks to
+      // the walkway under his poster and hops in; his row has already gone,
+      // and the poster fills once he's in (3.2a)
       b.classList.add("leaving");
       b.inert = true;
-      walk(b, UNDER_POSTER, false, () => {
+      walk(b, UNDER_POSTER, false, "stand", () => {
+        show(b, "hop");
         b.classList.add("hop");
         setTimeout(() => {
           b.remove();
@@ -1319,6 +1337,49 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
         }, STEP_MS);
       });
     }
+    drawStations();
+  }
+
+  // A station hides its machine while someone is on it, not while they walk
+  // to it or from it.
+  function drawStations() {
+    const map = document.querySelector<HTMLElement>(".map-panel .map");
+    if (!map) return;
+    const using = new Set(
+      [...map.querySelectorAll<HTMLElement>(".avatar:not(.leaving)")]
+        .filter((b) => isMachine(b.dataset.pose ?? ""))
+        .map((b) => STATIONS.findIndex(([x, y]) => tileOf(b).join(",") === `${x},${y}`) + 1),
+    );
+    for (const div of map.querySelectorAll<HTMLElement>(".station")) {
+      div.classList.toggle("occupied", using.has(Number(div.dataset.slot)));
+    }
+  }
+
+  // An avatar's sprite in a pose, with the machine's layers round it on a
+  // machine. Same pose, same look: nothing redrawn, so the frames keep their
+  // beat (GYM-10.20).
+  function show(b: HTMLElement, pose: string) {
+    if (b.dataset.pose === pose && b.querySelector(".av")) return;
+    const panel = b.closest(".map-panel")!;
+    const copy = (attr: string) =>
+      panel.querySelector<HTMLTemplateElement>(`template[${attr}]`)!.content.cloneNode(true) as DocumentFragment;
+    const dony = b.dataset.look === "dony";
+    const sprite = copy(dony ? `data-dony="${pose}"` : `data-pose="${pose}"`);
+    if (!dony) {
+      const m = view && everyone(view).find((x) => String(x.id) === b.dataset.id);
+      const svg = sprite.querySelector("svg")!;
+      if (m && !("dony" in m)) {
+        svg.setAttribute("style", lookVars(m.look));
+        svg.dataset.hair = m.look.hair;
+      }
+    }
+    b.querySelectorAll(".av, .machine").forEach((el) => el.remove());
+    if (isMachine(pose)) {
+      const [back, front] = copy(`data-layers="${pose}"`).querySelectorAll("svg");
+      b.append(back, sprite, front);
+    } else b.append(sprite);
+    b.dataset.pose = pose;
+    b.classList.toggle("on-machine", isMachine(pose));
   }
 
   // ---------- Dony's poster (BOT-1, BOT-4; spec 3.2a) ----------
@@ -1413,23 +1474,38 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     b.style.setProperty("--x", String(x));
     b.style.setProperty("--y", String(y));
   }
-  // Steps an avatar along the aisles to its tile, one tile a step; a new
-  // target mid-walk sets off again from wherever it has got to.
-  const walks = new WeakMap<HTMLElement, { to: string; timer: ReturnType<typeof setInterval> }>();
-  function walk(b: HTMLElement, to: Tile, onStation: boolean, then?: () => void) {
+  // Steps an avatar along the aisles to its tile, one tile a step, showing the
+  // walk and holding nothing, and puts it in its pose when it arrives; a new
+  // target mid-walk sets off again from wherever it has got to (GYM-10.17,
+  // GYM-10.18).
+  const walks = new WeakMap<HTMLElement, { to: string; pose: string; timer: ReturnType<typeof setInterval> }>();
+  function walk(b: HTMLElement, to: Tile, onStation: boolean, pose: string, then?: () => void) {
     const key = to.join(",");
     const going = walks.get(b);
-    if (going?.to === key) return;
+    if (going?.to === key) {
+      going.pose = pose; // same place, new pose: taken on arrival
+      return;
+    }
     if (going) clearInterval(going.timer);
     const arrive = () => {
       place(b, to);
       b.classList.toggle("on-station", onStation);
+      show(b, walks.get(b)?.pose ?? pose);
       walks.delete(b);
       then?.();
+      drawStations();
     };
     const path = route(tileOf(b), to);
-    if (path.length === 0 || reducedMotion.matches) return arrive();
+    if (path.length === 0 || reducedMotion.matches || catchingUp) {
+      walks.delete(b);
+      place(b, to);
+      b.classList.toggle("on-station", onStation);
+      show(b, pose);
+      then?.();
+      return;
+    }
     b.classList.remove("on-station");
+    show(b, "walk");
     const timer = setInterval(() => {
       const next = path.shift();
       if (next) place(b, next);
@@ -1438,7 +1514,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
         arrive();
       }
     }, STEP_MS);
-    walks.set(b, { to: key, timer });
+    walks.set(b, { to: key, pose, timer });
   }
 
   // GYM-1: the map at the largest whole-number scale that fits the panel and
@@ -1490,6 +1566,17 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     const next = new DOMParser().parseFromString(await res.text(), "text/html");
     const gym = next.querySelector(".gym");
     if (!gym) return navigate(res.url);
+    // the map carries on as it is: everyone walks on from where they are
+    // (GYM-10.16) rather than jumping to where the new page draws them
+    const oldMap = document.querySelector(".gym .map-panel .map");
+    const newMap = gym.querySelector(".map-panel .map");
+    if (oldMap && newMap) {
+      newMap.querySelectorAll(".avatar").forEach((b) => b.remove());
+      newMap.append(...oldMap.querySelectorAll(".avatar"));
+      for (const div of oldMap.querySelectorAll<HTMLElement>(".station")) {
+        newMap.querySelector(`.station[data-slot="${div.dataset.slot}"]`)?.replaceWith(div);
+      }
+    }
     document.querySelector(".gym")!.replaceWith(document.adoptNode(gym));
     document.title = next.title;
     // keep the router's own history state, so Back still works
@@ -1780,10 +1867,10 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   .people :global(li:last-child) {
     padding-bottom: 0;
   }
-  /* the head crop of the avatar, as on home: 28 x 22 sprite pixels at 2x */
+  /* the head crop of the avatar, as on home: 32 x 20 sprite pixels at 2x */
   .people :global(.av) {
-    width: 56px;
-    height: 44px;
+    width: 64px;
+    height: 40px;
   }
   .people :global(li.away .av) {
     opacity: 0.5;
