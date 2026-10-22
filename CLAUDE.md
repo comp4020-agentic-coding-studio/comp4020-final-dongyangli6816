@@ -68,7 +68,8 @@ it is designed, and tested by someone who didn't build it:
 2. **`designer`**, if a page changes (see below), designs from the agreed
    criteria.
 3. **`qa`**, round one, writes the tests from the criteria and the designs,
-   before the build.
+   before the build. Brief it with the sections of the design spec to read,
+   by heading or line range, not the whole spec and mockup.
 4. Build until those tests pass. **Don't edit the tests to make them pass**:
    if one looks wrong, send it back to `qa` or ask me.
 5. **`qa`**, round two (the same agent, continued), runs, reruns and
