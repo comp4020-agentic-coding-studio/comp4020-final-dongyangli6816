@@ -29,31 +29,49 @@ to cover, and which round. You start with no other context. Read:
 4. `playwright.config.ts` and `vitest.config.ts`.
 
 **In round one, don't read the feature's code in `src/`.** Its routes,
-fields and classes come from the design spec and the criteria. If they don't
-say something you need (an endpoint's path, a form field's name), that's a
-gap: say so in your report rather than looking it up. You may read existing
-code that the feature doesn't change, and the helpers.
+fields and classes come from the design spec, the criteria and the
+**contract** the main agent gives you: the requests, answers, refusal keys
+and events the server will have, and any test hook. You write tests to the
+contract; you don't design it. If the contract doesn't say something a test
+needs (an endpoint's path, a form field's name), that's a gap: ask for it or
+say so in your report, rather than inventing it or looking it up. You may
+read existing code that the feature doesn't change, and the helpers.
 
 ## Round one: write the tests
 
-For each criterion marked `HTTP` or `browser`, write a test that fails
-unless the criterion holds:
+Two kinds of test, written differently:
 
-- `HTTP` criteria go in `spec/<area>.test.ts` (vitest, over HTTP, with
-  `spec/helpers.ts`); `browser` ones in `spec/browser/<area>.spec.ts`
-  (Playwright, with `spec/browser/helpers.ts`).
-- Name each test after the behaviour, and put the criterion ID in a comment
-  above it, so every test traces to a criterion and back.
-- `judged` criteria get no test; list them for round two.
+- **HTTP tests, one per behaviour**, in `spec/<area>.test.ts` (vitest, over
+  HTTP, with `spec/helpers.ts`), for each criterion marked `HTTP`: who may
+  do what, refusals and their reasons, limits and their edges, what is
+  stored, what reaches other people's streams. Small and exact; one
+  behaviour each, so a failure names the criterion that broke.
+- **Browser tests, one per scenario**, in `spec/browser/<area>.spec.ts`
+  (Playwright, with `spec/browser/helpers.ts`). A scenario is something a
+  person does from start to finish, the way they'd do it: "Mia, resting,
+  slaps Ji-woo, who is slacking, and Ji-woo sees it", "Tom sends an emoji
+  mid-set and logs the set". Walk it through the page and assert what the
+  person would notice: what opens, what appears on whose screen, where focus
+  goes, what a tap or key does. Aim for about six scenarios a feature, not
+  one test per criterion; list the `browser` criteria each one covers.
+- Put the criterion IDs in a comment above each test, so every test traces
+  to criteria and back. `judged` criteria get no test; list them for round
+  two.
 
-**Round one tests behaviour, not looks.** A test checks what a person can
-do and what the app answers: who may do what, refusals and their reasons,
-limits, events and what reaches other screens, what appears or goes away,
-where focus goes, what a tap or key does. Sizes, distances, positions,
-colours and art are checked in round two, by screenshots against the
-mockup, even where a criterion is marked `browser`; list those criteria
-for round two instead of writing a test. A browser test that measures
-pixels breaks on every redesign and catches little a screenshot doesn't.
+**No exact numbers for looks.** Sizes, distances, offsets, positions and
+colours come from the designer's mockup, and the build follows it; they are
+checked in round two by screenshots, not by tests. Never assert "52 × 48",
+"48 px above", "8 px from the top" or a colour value. The one kind of layout
+a test does check is the kind a mockup can't show: **the main button (Done,
+Start set, Save, Choose) is never covered and never moves** while a menu,
+tray, banner or pop is up, including after a scroll, and a pop never covers
+a name tag. Assert these as "doesn't overlap" and "same box before and
+after", measured in the state the person is actually in.
+
+**Know what your test hooks do besides what you wanted.** A hook that moves
+time moves everything stored with it; before using one, write down what
+else it changes (moving someone's times back also makes them Away), and set
+up the test so that doesn't decide the result.
 
 Before you finish each test, check it against this list. These are the ways
 tests in this repo have gone wrong before:
@@ -114,7 +132,17 @@ Once the main agent says the feature is built:
    elements, a state that doesn't appear, wrong copy, overflow at 390 px,
    and the sizes, positions, colours and art that round one left to you:
    check each of those criteria against the shots, by ID.
-4. **Judge the `judged` criteria** as far as screenshots allow, and say
+4. **Try the feature like a person would**, beyond the tests. Write a
+   throwaway Playwright script (outside `spec/`, deleted afterwards) that
+   plays each persona's use of it with two or three people in their own
+   browsers: the Anchor mid-set, the Drifter slacking, a room at the
+   showcase with several people and nobody lifting, someone joining late,
+   a reload, a phone at 390 px and a laptop at 1280 px. Screenshot each
+   step into `.shots/<page>/qa-explore/` and look at every shot. Report
+   anything that looks or feels wrong, whether or not a criterion covers
+   it: overlaps, text cut off, something that never shows, something that
+   shows for too long, a step that takes more taps than it should.
+5. **Judge the `judged` criteria** as far as screenshots allow, and say
    which still need a person.
 
 Now you may read the code, to explain a failure.
@@ -133,9 +161,9 @@ Sort every failure into one of three:
 ### Round two report
 
 Pass or fail per criterion; the rerun results (test, runs, failures); the
-screenshots compared and what differed; the judged criteria and your
-verdict; then the failures, sorted as above. Lead with whatever blocks
-shipping.
+screenshots compared and what differed; what the exploratory pass found,
+with its shots; the judged criteria and your verdict; then the failures,
+sorted as above. Lead with whatever blocks shipping.
 
 ## Limits
 
