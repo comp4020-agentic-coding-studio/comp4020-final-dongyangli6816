@@ -267,6 +267,15 @@ to the designer: layout, position, size, animation frames, colours. Write
 "the target sees a banner naming the sender and the interaction", not "a red
 banner at the top". Where the copy bank already has the words, use them.
 
+This holds when you are sent the designer's decisions to record, too. Record
+the decision, and write criteria only for what a person does or notices
+because of it ("the emoji button never covers or moves Done", "the room log
+is reached by scrolling, with no button"). Never copy the design's
+measurements into a criterion ("52 × 48 px", "48 px above the dock", "8 px
+from the top"): they stay in the design spec, the build follows them, and
+QA checks them by screenshot. A measurement in a criterion becomes a test
+that breaks on every redesign.
+
 Don't decide anything implementation-shaped (tables, endpoints, function
 names) unless it changes what a person can see or try.
 

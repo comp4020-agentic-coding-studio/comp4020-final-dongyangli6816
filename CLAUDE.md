@@ -67,12 +67,21 @@ it is designed, and tested by someone who didn't build it:
    back to the same `pm` to finalise the file.
 2. **`designer`**, if a page changes (see below), designs from the agreed
    criteria.
-3. **`qa`**, round one, writes the tests from the criteria and the designs,
-   before the build.
-4. Build until those tests pass. **Don't edit the tests to make them pass**:
+3. **The contract**: before `qa` starts, I write down what the server will
+   offer for the feature: the requests and fields, the answers and refusal
+   keys, the live events, and any test hook (with what else it changes).
+   Designing it is my job, not `qa`'s.
+4. **`qa`**, round one, writes the tests from the criteria, the designs and
+   the contract, before the build: exact HTTP tests per behaviour, and
+   browser tests per scenario, with no pixel measurements. Brief it with the
+   sections of the design spec to read, by heading or line range, not the
+   whole spec and mockup.
+5. Build until those tests pass. **Don't edit the tests to make them pass**:
    if one looks wrong, send it back to `qa` or ask me.
-5. **`qa`**, round two (the same agent, continued), runs, reruns and
-   screenshots, and reports code bugs, test bugs and gaps in the criteria.
+6. **`qa`**, round two (the same agent, continued), runs, reruns and
+   screenshots, tries the feature like a person across the personas and
+   both widths, and reports code bugs, test bugs, gaps in the criteria, and
+   anything that looked wrong.
 
 While building, any behaviour a person can see that the criteria don't
 decide is mine to decide: stop and ask, add the answer to the criteria
