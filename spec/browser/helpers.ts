@@ -28,3 +28,14 @@ export const join = (who: BrowserContext, passcode: string) => who.request.get(`
 
 export const post = (who: BrowserContext, path: string, form: Record<string, string>) =>
   who.request.post(path, { form, headers: { origin: origin() }, maxRedirects: 0 });
+
+// The test hook (contract at the top of spec/interactions.test.ts), through a
+// person's own request context: as if everything one member did in the room,
+// or the room's own events and Dony's summon, had happened ms earlier.
+export async function backdate(who: BrowserContext, path: string, target: { user: number } | { room: true }, ms: number) {
+  const form: Record<string, string> = { op: "backdate", ms: String(Math.round(ms)) };
+  if ("user" in target) form.user = String(target.user);
+  else form.room = "1";
+  const res = await who.request.post(`${path}/qa`, { form, headers: { origin: origin() }, maxRedirects: 0 });
+  expect(res.status(), "the test hook (SPOTTER_TEST_HOOKS=1, spec/interactions.test.ts)").toBe(204);
+}

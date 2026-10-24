@@ -348,7 +348,7 @@ test("someone who chooses a lift plays its machine's animation on every screen o
 
   // deadlift: the lifting platform isn't on the floor, so it's delivered to station 5
   await miaPage.selectOption("#exercise", "9");
-  await miaPage.locator(".dock button").click();
+  await miaPage.locator(".dock button.wide").click();
 
   for (const page of [miaPage, tomPage]) {
     await onMachine(page, "Mia", "lifting-platform");
@@ -439,20 +439,20 @@ test("Start set turns her Lifting at once, and her avatar walks from the cooler 
   const miaPage = await screen(mia, path);
   const tomPage = await screen(tom, path);
   await miaPage.selectOption("#exercise", "7"); // dumbbell curl: station 4
-  await miaPage.locator(".dock button").click();
+  await miaPage.locator(".dock button.wide").click();
   await miaPage.fill("#weight_kg", "12");
-  await miaPage.locator(".dock button").click();
-  await expect(miaPage.locator(".dock button")).toHaveText("Start set");
+  await miaPage.locator(".dock button.wide").click();
+  await expect(miaPage.locator(".dock button.wide")).toHaveText("Start set");
   await atTile(tomPage, "Mia", COOLER);
   await atTile(miaPage, "Mia", COOLER);
   await clearSamples(tomPage);
 
   await clearSamples(miaPage);
-  await miaPage.locator(".dock button").click();
+  await miaPage.locator(".dock button.wide").click();
   // her own sheet at once: Done is there to tap before her avatar arrives
   await expect(miaPage.locator(".sheet .tab")).toContainText("Lifting", { timeout: 1000 });
-  await expect(miaPage.locator(".dock button")).toHaveText("Done", { timeout: 1000 });
-  await expect(miaPage.locator(".dock button")).toBeEnabled();
+  await expect(miaPage.locator(".dock button.wide")).toHaveText("Done", { timeout: 1000 });
+  await expect(miaPage.locator(".dock button.wide")).toBeEnabled();
   const doneAt = Date.now();
   // everyone else within a second
   await expect(avatar(tomPage, "Mia").locator(".tag")).toHaveClass(/state-lifting/, { timeout: 1000 });
@@ -698,12 +698,12 @@ test("with twelve avatars animating on a phone, nothing on the map covers the do
   const dockHeight = (await page.locator(".dock").boundingBox())!.height;
   await page.setViewportSize({ width: 390, height: Math.round(mapTop + 5.5 * 32 + dockHeight) });
   await expect(page.locator(".map-panel .map")).toHaveCSS("width", "320px");
-  const dock = (await page.locator(".dock button").boundingBox())!;
+  const dock = (await page.locator(".dock button.wide").boundingBox())!;
   expect(await coveredDuring(page, ".dock", pointsIn(dock, 6), 1500)).toEqual([]);
   // and Done answers
   await page.fill("#distance_km", "1");
   await page.fill("#minutes", "5");
-  await page.locator(".dock button").click();
+  await page.locator(".dock button.wide").click();
   await expect(page.locator(".dock .stamp")).toContainText("Set 1 logged", { timeout: 2000 });
 });
 
@@ -762,7 +762,7 @@ test("a station held from the cooler shows unoccupied, bar in place, and still m
   await expect(page.locator('.map .station[data-slot="3"] .bar')).toBeHidden();
 
   await page.fill("#weight_kg", "80");
-  await page.locator(".dock button").click(); // Done
+  await page.locator(".dock button.wide").click(); // Done
   await atTile(page, "Mia", COOLER);
   await expect(avatar(page, "Mia")).toHaveAttribute("data-pose", "rest");
   const station = page.locator('.map .station[data-slot="3"]');

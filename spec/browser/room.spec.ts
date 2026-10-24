@@ -12,7 +12,7 @@ test("the stopwatch runs after choosing a run (it broke after in-place swaps, 3b
   await page.goto(path);
   // choosing swaps the sheet in place, as a person would do it
   await page.selectOption("#exercise", "1");
-  await page.locator(".dock button").click();
+  await page.locator(".dock button.wide").click();
   await page.locator(".sw-toggle").click();
   await page.waitForTimeout(2200);
   const seconds = Number(await page.inputValue("#minutes")) * 60 + Number(await page.inputValue("#seconds"));
@@ -30,9 +30,9 @@ test("a set logged in one browser shows in the other within a second", async ({ 
   await expect(tomPage.locator(".map-panel .conn .badge")).toHaveText("Live");
 
   await miaPage.selectOption("#exercise", "3"); // bench press
-  await miaPage.locator(".dock button").click();
+  await miaPage.locator(".dock button.wide").click();
   await miaPage.fill("#weight_kg", "60");
-  await miaPage.locator(".dock button").click();
+  await miaPage.locator(".dock button.wide").click();
 
   await expect(tomPage.locator(".people li", { hasText: "Mia" })).toContainText("Resting", { timeout: 1500 });
   // and on the map she heads for the water cooler
@@ -70,10 +70,10 @@ test("Done says what it logged, and a run comes back empty", async ({ browser })
   const page = await mia.newPage();
   await page.goto(path);
   await page.selectOption("#exercise", "1"); // run
-  await page.locator(".dock button").click();
+  await page.locator(".dock button.wide").click();
   await page.fill("#distance_km", "2");
   await page.fill("#minutes", "10");
-  await page.locator(".dock button").click();
+  await page.locator(".dock button.wide").click();
 
   await expect(page.locator(".dock .stamp")).toContainText("Set 1 logged");
   await expect(page.locator(".set-done")).toContainText("Set 1 logged");
@@ -98,16 +98,16 @@ test("Start set ends the rest and brings Done back", async ({ browser }) => {
   const page = await mia.newPage();
   await page.goto(path);
   await page.selectOption("#exercise", "3");
-  await page.locator(".dock button").click();
+  await page.locator(".dock button.wide").click();
   await page.fill("#weight_kg", "60");
-  await page.locator(".dock button").click();
+  await page.locator(".dock button.wide").click();
   await expect(page.locator(".rest .timer")).toBeVisible();
-  await expect(page.locator(".dock button")).toHaveText("Start set");
+  await expect(page.locator(".dock button.wide")).toHaveText("Start set");
 
-  await page.locator(".dock button").click();
+  await page.locator(".dock button.wide").click();
   await expect(page.locator(".rest")).toHaveCount(0);
   await expect(page.locator(".sheet .tab")).toContainText("Lifting");
-  await expect(page.locator(".dock button")).toHaveText("Done");
+  await expect(page.locator(".dock button.wide")).toHaveText("Done");
 });
 
 test("people arriving and leaving show on the map and in the list, live", async ({ browser }) => {
@@ -166,8 +166,8 @@ test("a dropped connection says Reconnecting, and logging still works", async ({
   await page.goto(path);
   await expect(page.locator(".map-panel .conn")).toContainText("Reconnecting", { timeout: 6000 });
   await page.selectOption("#exercise", "3");
-  await page.locator(".dock button").click();
-  await expect(page.locator(".dock button")).toHaveText("Done");
+  await page.locator(".dock button.wide").click();
+  await expect(page.locator(".dock button.wide")).toHaveText("Done");
 });
 
 test("your own avatar is a shortcut to the sheet's button", async ({ browser }) => {
@@ -176,7 +176,7 @@ test("your own avatar is a shortcut to the sheet's button", async ({ browser }) 
   const page = await mia.newPage();
   await page.goto(path);
   await page.locator(".map .avatar.me").click();
-  await expect(page.locator(".dock button")).toBeFocused();
+  await expect(page.locator(".dock button.wide")).toBeFocused();
 });
 
 test("tapping Dony's poster brings him out on every screen, and sends him back", async ({ browser }) => {
