@@ -186,13 +186,14 @@ equipment.
 
 | ID | Pri | Requirement |
 | --- | --- | --- |
-| INT-1 | P0 | Selecting another person's avatar (by tap, click or keyboard) opens a menu: **Cheer**, **Poke**, **Slap**, **Message**. |
-| INT-2 | P0 | **Cheer** is always allowed. **Poke** and **Slap** are only allowed when the target is Resting or Slacking, never while they are Lifting. |
-| INT-3 | P0 | An interaction plays an animation on the target's avatar on every screen in the room, and shows the target a banner ("Mia slapped you back to work"). |
-| INT-4 | P0 | One interaction per sender per target every 10 s. |
-| INT-5 | P0 | About 10 preset messages in two groups, hype ("One more rep!") and nudge ("Put the phone down"), shown as a speech bubble for 5 s and kept in a room message log. |
+| INT-1 | P0 | Selecting another person's avatar (by tap, click or keyboard) opens a menu: **Cheer**, **Poke**, **Slap**, **Message**, usable in any state, mid-set included. Your own avatar and your own squad row open nothing. |
+| INT-2 | P0 | **Cheer**, **Poke** and every preset are allowed on anyone in any state. **Slap** is allowed unless the target is Lifting or Finished. What the sender is doing never matters (changed 22 Oct: interaction is an any-time social layer, not a response to slacking). |
+| INT-3 | P0 | An interaction plays an animation on the target's avatar on every screen in the room, and shows the target a banner ("Mia slapped you back to work"). Poke's banner reads "Mia poked you. Rest's over? 👉" if the target is Resting or Slacking, otherwise "Mia poked you 👉". A newer banner replaces the current one. |
+| INT-4 | P0 | One interaction per sender per target every 10 s; one preset per sender every 2 s; one emoji per sender every 1 s. The limits are separate. |
+| INT-5 | P0 | About 10 preset messages in two groups, hype ("One more rep!") and nudge ("Put the phone down"), addressed to one person, shown as a speech bubble above the sender for 5 s, and kept, with interactions, in a room log of the newest 50 entries. Both groups go to anyone. |
 | INT-6 | P1 | Free-text messages up to 140 characters, sent to the room, rate-limited to one every 2 s. Text is always escaped, never rendered as HTML. |
 | INT-7 | P1 | A per-person setting to turn slaps off. |
+| INT-8 | P0 | From a button beside the dock, in every state including mid-set, send one of eight fixed pixel emoji (Hi, Flex, Fire, Clap, Haha, Dead, Eyes, Love) in at most two taps. It pops above your own avatar on every screen in the room for 3 s. Never covers or moves Start set or Done. Not stored, not in the room log. |
 
 ### Dony
 
@@ -200,9 +201,10 @@ equipment.
 | --- | --- | --- |
 | BOT-1 | P1 | The back wall's poster is "Member of the month: Dony". Anyone in the room can tap it (by touch, click or keyboard) to summon Dony: on every screen the poster goes empty and he hops down onto the walkway. The server records the summon (when, by whom). He can be summoned again any number of times after being sent back; each summon is a fresh visit with a new schedule. |
 | BOT-2 | P1 | Dony is drawn on the people's body frames, so he has every pose and animation a person has, with his own head (an Asian character's hair and glasses) over them and his fixed violet colours; his hop is his only frame of his own. Plus the poster's full and empty frames, within the art rules. He can't be picked in the avatar editor. |
-| BOT-3 | P1 | Dony trains by a schedule worked out from the room and his summon time: blocks of 4 to 6 lifts over 45 to 60 minutes, 3 to 5 sets each, realistic set lengths and rests, 3 to 6 minutes Idle between blocks, mostly on equipment already on the floor (at most two deliveries a block). He goes Idle, Lifting, Resting and Slacking (about one rest in eight, at most twice a block) through the same station rules (GYM-4), never Finished, and every screen sees each change within about a second (GYM-13). |
+| BOT-3 | P1 | Dony trains by a schedule worked out from the room and his summon time: blocks of 4 to 6 lifts over 45 to 60 minutes, 3 to 5 sets each, realistic set lengths and rests, 3 to 6 minutes Idle between blocks, mostly on equipment already on the floor (at most two deliveries a block). He goes Idle, Lifting, Resting and Slacking (about one rest in eight, at most twice a block) through the same station rules (GYM-4), never Finished, and every screen sees each change within about a second (GYM-13). His emoji (BOT-6) are part of the same schedule. |
 | BOT-4 | P1 | Anyone in the room can tap the empty poster to send Dony back: he stops whatever he's doing, frees his station, walks back and hops into the poster. He can be sent back at any moment; after a send back the poster rests for 30 seconds before he can be summoned again. A tap only acts if the poster is still as its tapper saw it (full for a summon, empty for a send back) and, for a summon, isn't resting; otherwise it does nothing, silently. |
-| BOT-5 | P1 | Dony appears on the map and in the squad list like a person, with no bot marker. He never counts as a member, toward the 12, as host or as room activity. A station he holds is always free for a person to take. The room closes when the last real person leaves, as now, and he goes with it. He appears in no logbook, summary, history or friends list. |
+| BOT-5 | P1 | Dony appears on the map and in the squad list like a person, with no bot marker. He never counts as a member, toward the 12, as host or as room activity. A station he holds is always free for a person to take. The room closes when the last real person leaves, as now, and he goes with it. He appears in no logbook, summary, history or friends list, and nothing he does, his emoji included, counts as room activity. |
+| BOT-6 | P1 | While he's out, Dony sends the same emoji as people (INT-8): 👋 when he lands, then about one every 2 minutes (never two within 60 s) fitting his state, and an answer about a second after a Cheer, Poke or Slap aimed at him (at most one answer every 10 s, never to presets). Planned from the room, his summon time and the stored interactions, like the rest of his schedule. |
 
 ### Operations (Crit 10)
 
@@ -324,6 +326,9 @@ The gym's bottom panel, by state:
   **Start set**.
 - **Slacking:** the same as Resting, but the timer counts up in red.
 
+In every state, the emoji button sits beside the dock and never moves the
+main button (INT-8).
+
 Layout rules, because markers check both viewports, a resize mid-use and a
 keyboard-only pass:
 
@@ -370,9 +375,12 @@ argument, the rules in `CLAUDE.md` and the checks can line up.
   ends up on a station with that exercise's equipment.
 - A person whose rest has run 30 s over its target is reported as Slacking by
   the server, with no client involved.
-- A slap or poke aimed at someone who is Lifting is refused.
+- A slap aimed at someone who is Lifting or Finished is refused.
 - A second interaction from the same sender to the same target within 10 s is
   refused.
+- A second emoji from the same sender within 1 s is refused.
+- Dony's emoji arrive at the same server time on two streams, before and
+  after a restart.
 - A state change made through one session arrives on another session's event
   stream within a second.
 - Passwords are not returned by any endpoint, and the stored value is not the
@@ -389,7 +397,8 @@ between sets. README should say how those were judged.
 | --- | --- |
 | Friends rarely train at the same time, so rooms are usually one person | Out of scope to solve in four weeks; README can name it honestly. History still makes solo use worthwhile |
 | False slacking when someone forgets to tap Start set | Done still logs the set while Slacking; slacking time is shown, not punished |
-| Slapping reads as mean | Only allowed on Resting or Slacking people, rate-limited, cartoonish, and (P1) can be turned off |
+| Slapping reads as mean | Never on someone Lifting or Finished, rate-limited, cartoonish, and (P1) can be turned off |
+| Emoji floods at the showcase | One emoji per second per sender (Dony included), each shown above its own sender and replacing that sender's last one; nothing stored |
 | The machine stops while idle and in-memory timers vanish | GYM-12: state derived from stored timestamps; SSE clients reconnect and re-read the room |
 | SQLite and concurrent writes | One process, WAL mode, short transactions; the load is a dozen people |
 | Code-drawn sprites take longer than planned (about 60 small grids) | Draw the avatar and the four opening pieces first; the other four can start as simple shapes; the worker waits until week 11 |
@@ -400,8 +409,9 @@ between sets. README should say how those were judged.
 ## Open questions
 
 - [ ] Final name (Spotter is still a working title).
-- [ ] Keep the slap, or replace it with something softer after the Crit 9 pod
-      has used it?
+- [x] Keep the slap, or replace it with something softer after the Crit 9 pod
+      has used it? Kept for this build, refused while the target is Lifting
+      or Finished (`criteria/int.md`, D5, 22 Oct).
 - [ ] Does equipment ever leave on its own (for example when nobody has used it
       for 30 minutes), or only when a swap needs its station?
 - [ ] Does a room ever need history ("who trained together last Tuesday"), or
