@@ -12,7 +12,9 @@
 // and av-<machine>-<n>-<hair> and dony-<machine>-<n> for the person on it,
 // to stack back, person, front; tile-<char> and map-tiles (the whole floor);
 // bay-<slot> and claim; poster-<name>; i-<name> for the 8 x 8 icons in
-// currentColor; and the sprites of props.ts and door.ts by their export names.
+// currentColor; the sprites of props.ts and door.ts by their export names;
+// em-<key> for the eight emoji and fx-<kind>-<n> for reaction frames
+// (emoji.ts).
 import type { Equipment } from "../src/lib/exercises.ts";
 import { BODY, FIGURES, HAIR_STYLES, type Drawing, type Figure, type HairStyle } from "../src/sprites/avatar.ts";
 import { DONY_HOP, DONY_VARS, POSTER, POSTER_PALETTE } from "../src/sprites/dony.ts";
@@ -22,6 +24,7 @@ import { headOf } from "../src/sprites/poses.ts";
 import * as icons from "../src/sprites/icons.ts";
 import * as props from "../src/sprites/props.ts";
 import * as door from "../src/sprites/door.ts";
+import * as emoji from "../src/sprites/emoji.ts";
 import { TILE, type Sprite } from "../src/sprites/sprite.ts";
 
 // the avatar's slots as Avatar.astro colours them
@@ -102,6 +105,12 @@ export function sheet(): string[] {
 
   for (const [name, s] of Object.entries(icons)) out.push(sprite(`i-${name.replace(/Icon$/, "").replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`, s));
   for (const [name, s] of Object.entries({ ...props, ...door })) out.push(sprite(name, s as Sprite));
+  // emoji as em-<key>, reaction frames as fx-<kind>-<n> (cheerFx1 -> fx-cheer-1)
+  for (const { key, sprite: s } of emoji.EMOJI) out.push(sprite(`em-${key}`, s));
+  for (const [name, s] of Object.entries(emoji)) {
+    const m = name.match(/^(\w+)Fx(\d)$/);
+    if (m) out.push(sprite(`fx-${m[1]}-${m[2]}`, s as Sprite));
+  }
   // the top bar's dumbbell, as Layout.astro draws it
   const logo = ["..ll........ll..", "..ll........ll..", "llll........llll", "llllwwwwwwwwllll"];
   out.push(sprite("logo", { grid: [...logo, ...logo.toReversed()], palette: { l: "#c8e66b", w: "#e8f0d8" } }));

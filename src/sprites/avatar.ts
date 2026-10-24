@@ -489,6 +489,12 @@ const withShade = (prop: string, o: Swatch) => `${prop}: ${o.hex}` + (o.shade ? 
 // One string per look, to tell whether a drawn avatar is still right.
 export const lookKey = (look: Look): string => `${look.skin}|${look.hair}|${look.hairColour}|${look.shirt}`;
 
+// And back, from a key the page carries (data-look), or no look.
+export function lookFromKey(key: string | undefined): Look | null {
+  const [skin, hair, hairColour, shirt] = (key ?? "").split("|");
+  return asLook({ skin, hair, hairColour, shirt });
+}
+
 // The look's three colours, as the custom properties .av reads.
 export const lookVars = (look: Look): string =>
   [
