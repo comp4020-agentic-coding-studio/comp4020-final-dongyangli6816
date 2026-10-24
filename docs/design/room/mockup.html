@@ -1624,6 +1624,695 @@
         }
       }
 
+      /* ===== interactions, presets, emoji (22 Oct; criteria/int.md) ===== */
+
+      /* ---------- who the menu is for: a paper ring on their tag ---------- */
+      .map .avatar[aria-expanded="true"] .tag {
+        outline: 2px solid var(--paper);
+        outline-offset: 2px;
+      }
+
+      /* ---------- the menu (INT-1): the game's START menu ----------
+         A box with the person (head, name, state chip) and four 48 px rows,
+         a ▶ cursor on the fitting move. Laptop: beside the avatar or the
+         squad row it came from. Phone: pinned just above the dock, in the
+         thumb zone, never over it. */
+      .menu {
+        position: absolute;
+        z-index: 25;
+        width: 20rem;
+        max-width: calc(100vw - 2rem);
+        margin: 0;
+        padding: 0.75rem;
+        background: var(--panel);
+        border: var(--px) solid var(--paper);
+        box-shadow: var(--px) var(--px) 0 #000;
+      }
+      @media (max-width: 899px) {
+        .menu {
+          position: fixed;
+          right: 1rem;
+          bottom: calc(var(--dock-h, 92px) + 56px);
+          left: 1rem;
+          z-index: 35;
+          width: auto;
+          max-width: none;
+          max-height: calc(100dvh - var(--dock-h, 92px) - 64px);
+          overflow-y: auto;
+        }
+      }
+      .menu-who {
+        display: grid;
+        grid-template-columns: 56px minmax(0, 1fr);
+        align-items: center;
+        gap: 0 0.75rem;
+        margin: 0 0 0.75rem;
+      }
+      .menu-who .av {
+        width: 56px;
+        height: 44px;
+      }
+      .menu-name {
+        display: block;
+        font-size: 26px;
+        line-height: 1;
+        color: var(--paper);
+      }
+      .menu-who .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--px);
+        margin-top: var(--px);
+      }
+      .menu-acts {
+        display: grid;
+        gap: var(--px);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .night .menu .act {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 0.5rem;
+        width: 100%;
+        min-height: 48px;
+        margin: 0;
+        padding: 0 0.75rem 0 0.5rem;
+        font: 16px/1 var(--display);
+        color: var(--paper);
+        background: var(--night);
+        border: 2px solid var(--edge);
+        box-shadow: none;
+        transform: none;
+      }
+      .night .menu .act:hover {
+        background: var(--floor);
+      }
+      .night .menu .act:active {
+        transform: translateY(2px);
+      }
+      /* the cursor: shown on the fitting move (INT-2.14), kept as a slot
+         on the others so the labels line up */
+      .menu .act .cur {
+        visibility: hidden;
+      }
+      .night .menu .act.hot {
+        color: var(--ink);
+        background: var(--leaf);
+        border-color: var(--ink);
+      }
+      .menu .act.hot .cur {
+        visibility: visible;
+      }
+      /* not now: Slap on someone mid-set or done, or all three during the
+         10 s. Still focusable (aria-disabled), dashed, the reason under it */
+      .night .menu .act[aria-disabled="true"] {
+        color: var(--dim);
+        background: transparent;
+        border-style: dashed;
+        border-color: var(--dim);
+        cursor: not-allowed;
+      }
+      .night .menu .act[aria-disabled="true"] .cur {
+        visibility: hidden;
+      }
+      .menu-why {
+        margin: 0.5rem 0 0;
+        color: var(--dim);
+      }
+      /* Message: the same box, its rows swapped for the ten presets */
+      .menu-sub {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin: 0 0 0.75rem;
+      }
+      .night .menu .back {
+        width: auto;
+        min-height: 44px;
+        padding: 0 0.75rem 0 0.5rem;
+        font-size: 8px;
+      }
+      .menu .back .cur {
+        visibility: visible;
+        transform: scaleX(-1);
+      }
+      .menu-to {
+        margin: 0;
+        font-size: 24px;
+        line-height: 1;
+        color: var(--paper);
+      }
+      .menu-group {
+        margin: 0.75rem 0 0.5rem;
+        font: 8px/1 var(--display);
+        text-transform: uppercase;
+        color: var(--leaf);
+      }
+      .menu-sub + .menu-group {
+        margin-top: 0;
+      }
+      .presets {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--px);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .night .menu .preset {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        width: 100%;
+        height: 100%;
+        min-height: 52px;
+        margin: 0;
+        padding: var(--px) 0.5rem;
+        font: 20px/1 var(--body);
+        text-align: left;
+        text-transform: none;
+        color: var(--paper);
+        background: var(--night);
+        border: 2px solid var(--edge);
+        box-shadow: none;
+        transform: none;
+      }
+      .night .menu .preset:hover {
+        background: var(--floor);
+      }
+
+      /* ---------- the squad list opens the same menu (INT-1.10) ----------
+         Each other person's row is one button; yours stays plain text. */
+      .people li:has(> .person) {
+        display: block;
+      }
+      .night .people .person {
+        display: grid;
+        grid-template-columns: 56px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 0 0.75rem;
+        width: 100%;
+        min-height: 44px;
+        margin: 0;
+        padding: 0;
+        font: inherit;
+        text-align: left;
+        text-transform: none;
+        color: inherit;
+        background: none;
+        box-shadow: none;
+        transform: none;
+      }
+      .night .people .person:hover,
+      .night .people .person[aria-expanded="true"] {
+        background: var(--night);
+        box-shadow: 0 0 0 var(--px) var(--night);
+      }
+
+      /* ---------- reactions (INT-3): effects over any pose ----------
+         One 32 x 32 svg over the sprite's tile, its frames one <use> each,
+         shown one after another; the pose under it keeps playing. */
+      .avatar .fx {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        width: var(--t);
+        height: var(--t);
+        overflow: visible;
+        transform: translateX(-50%);
+        pointer-events: none;
+      }
+      .avatar.on-station .fx {
+        bottom: 0;
+      }
+      .fx use {
+        visibility: hidden;
+        animation: fx-frame var(--f) steps(1) forwards;
+      }
+      .fx use:nth-child(2) {
+        animation-delay: var(--f);
+      }
+      .fx use:nth-child(3) {
+        animation-delay: calc(var(--f) * 2);
+      }
+      .fx use:nth-child(4) {
+        animation-delay: calc(var(--f) * 3);
+      }
+      .fx-cheer {
+        --f: 200ms; /* 3 frames, 600 ms */
+      }
+      .fx-poke {
+        --f: 240ms; /* 3 frames, 720 ms */
+      }
+      .fx-slap {
+        --f: 200ms; /* 4 frames, 800 ms */
+      }
+      @keyframes fx-frame {
+        0% {
+          visibility: visible;
+        }
+        100% {
+          visibility: hidden;
+        }
+      }
+      /* reduced motion: the middle frame, still, for 800 ms */
+      @media (prefers-reduced-motion: reduce) {
+        .fx use {
+          animation: none;
+        }
+        .fx use:nth-child(2) {
+          animation: fx-frame 800ms steps(1) forwards;
+          animation-delay: 0s;
+        }
+      }
+
+      /* ---------- the banner (INT-3): what someone did to you ----------
+         A game text box: ink on paper, the sender's head, 4 s. Laptop: the
+         top of the map. Phone: the top of the screen, wherever you've
+         scrolled; never near the dock. */
+      .banner-slot {
+        position: absolute;
+        top: 1.25rem;
+        left: 50%;
+        z-index: 24;
+        width: max-content;
+        max-width: calc(100% - 2rem);
+        transform: translateX(-50%);
+        pointer-events: none;
+      }
+      @media (max-width: 899px) {
+        .banner-slot {
+          position: fixed;
+          top: 0.5rem;
+          right: 0.5rem;
+          left: 0.5rem;
+          z-index: 40;
+          width: auto;
+          max-width: none;
+          transform: none;
+        }
+      }
+      .banner {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0;
+        padding: var(--px) 0.75rem var(--px) var(--px);
+        font: 22px/1.1 var(--body);
+        color: var(--ink);
+        background: var(--paper);
+        border: var(--px) solid var(--ink);
+        box-shadow: 0 0 0 var(--px) var(--edge), var(--px) calc(var(--px) * 2) 0 var(--px) #000;
+        animation: banner 4s steps(4) forwards;
+      }
+      .banner .av {
+        flex: none;
+        width: 56px;
+        height: 44px;
+      }
+      @keyframes banner {
+        0% {
+          clip-path: inset(0 -16px 100% -16px);
+        }
+        4%,
+        96% {
+          clip-path: inset(-16px);
+        }
+        100% {
+          clip-path: inset(0 -16px 100% -16px);
+          visibility: hidden;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .banner {
+          animation-name: stamp-still;
+          animation-timing-function: steps(1);
+        }
+      }
+
+      /* ---------- what the sender sees when it doesn't land ----------
+         A refusal is news, not an error: dashed, like Reconnecting. A send
+         that failed is an error. Where the menu was: beside the avatar on
+         a laptop, just above the dock on a phone. 4 s, role="status". */
+      .note {
+        width: max-content;
+        max-width: 18rem;
+        margin: 0;
+        padding: 0.25rem 0.5rem;
+        font: 20px/1.1 var(--body);
+        color: var(--paper);
+        background: var(--night);
+        border: 2px dashed var(--dim);
+        box-shadow: 0 0 0 var(--px) var(--panel);
+      }
+      .map .note,
+      .map .error {
+        position: absolute;
+        z-index: 24;
+      }
+      .dock .note,
+      .dock .error {
+        position: absolute;
+        bottom: calc(100% + 1rem);
+        left: 0.75rem;
+        z-index: 3;
+        max-width: calc(100% - 5.5rem);
+        margin: 0;
+        pointer-events: none;
+      }
+
+      /* ---------- bubbles and pops: two layers over the map ----------
+         Each sits in its own layer, positioned by the sender's tile like an
+         avatar (--x, --y; --dy for the slacker's drop), so a pop never
+         lifts its sender over a neighbour's tag. Pops (.pops) draw under
+         every avatar: a name tag is never covered, however busy the room
+         (INT-8.18). Bubbles (.says) draw over avatars: a line someone chose
+         to send stays readable for its 5 s. Neither takes taps. */
+      .map .says,
+      .map .pops {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      .map .pops {
+        z-index: 0;
+      }
+      .map .says {
+        z-index: 18;
+      }
+      /* the anchor: the top of the sender's tag (tag 24 px over the tile) */
+      .map .say,
+      .map .pop {
+        --top: calc((var(--y) + var(--dy, 0)) * var(--t) - 24px);
+        position: absolute;
+        left: calc((var(--x) + 0.5) * var(--t));
+      }
+
+      /* the preset bubble (INT-5): above the sender, 5 s. Leaf, like the
+         layout's .bubble; the addressee first, as "@Ji-woo". */
+      .map .say {
+        bottom: calc(100% - var(--top) + 0.75rem);
+        width: max-content;
+        max-width: min(9.5rem, calc(var(--t) * 4));
+        margin: 0;
+        padding: 2px 0.5rem;
+        font: 20px/1 var(--body);
+        color: var(--ink);
+        background: var(--leaf);
+        border: 2px solid var(--ink);
+        transform: translateX(-50%);
+        animation: stamp-still 5s steps(1) forwards;
+      }
+      .say .to {
+        display: block;
+        color: var(--deep);
+      }
+      /* a stepped pixel tail under the middle */
+      .say::after,
+      .say::before {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: calc(50% - 4px);
+        width: 8px;
+        height: 4px;
+        background: var(--ink);
+      }
+      .say::before {
+        top: calc(100% + 4px);
+        left: calc(50% - 2px);
+        width: 4px;
+      }
+      /* near a side wall the bubble hangs inwards, its tail over the sender */
+      .map .say.west {
+        transform: translateX(-16px);
+      }
+      .map .say.east {
+        transform: translateX(calc(-100% + 16px));
+      }
+      .say.west::after,
+      .say.east::after {
+        left: 10px;
+      }
+      .say.west::before,
+      .say.east::before {
+        left: 12px;
+      }
+      .say.east::after {
+        right: 10px;
+        left: auto;
+      }
+      .say.east::before {
+        right: 12px;
+        left: auto;
+      }
+      /* the back row (y = 1) has no room above at 1x: the bubble hangs
+         under the sender's tile, over the aisle, its tail pointing up */
+      .map .say.below {
+        top: calc((var(--y) + 1 + var(--dy, 0)) * var(--t) + 0.5rem);
+        bottom: auto;
+      }
+      .say.below::after {
+        top: auto;
+        bottom: 100%;
+      }
+      .say.below::before {
+        top: auto;
+        bottom: calc(100% + 4px);
+      }
+      /* with a pop showing above the same person, the bubble steps up over it */
+      .map .say.over-pop {
+        bottom: calc(100% - var(--top) + 32px + 1rem);
+      }
+
+      /* the emoji pop (INT-8, BOT-6): above the sender, 3 s. 16 x 16 pixel
+         art at 2 px a pixel (32 px), the map's own density at 2x and twice
+         it at 1x, so it reads on a phone. Rises 8 px in two steps, holds,
+         goes. A newer one from the same person replaces it. */
+      .map .pop {
+        bottom: calc(100% - var(--top) + var(--px));
+        width: 32px;
+        height: 32px;
+        translate: -50% 0;
+        animation: pop 3s steps(1, end) forwards;
+      }
+      /* the back row: beside the tag, on the side away from the wall */
+      .map .pop.beside {
+        bottom: calc(100% - var(--top) - 28px);
+        translate: calc(var(--t) / 2 + 2px) 0;
+      }
+      .map .pop.beside.west-side {
+        translate: calc(-100% - var(--t) / 2 - 2px) 0;
+      }
+      @keyframes pop {
+        0% {
+          transform: translateY(8px);
+        }
+        3% {
+          transform: translateY(4px);
+        }
+        6%,
+        99% {
+          transform: none;
+        }
+        100% {
+          transform: none;
+          visibility: hidden;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .map .pop {
+          animation-name: stamp-still;
+        }
+      }
+
+      /* ---------- the emoji tab and tray (INT-8) ----------
+         A tab rising from the dock's top border on the right, so it takes no
+         width from Done and never touches it; the tray opens upwards from
+         it, at least 44 px clear of the dock. */
+      .night .dock .emote {
+        position: absolute;
+        right: 0.75rem;
+        bottom: calc(100% - var(--px));
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 52px;
+        height: 48px;
+        min-height: 44px;
+        margin: 0;
+        padding: 0 0 var(--px);
+        color: var(--leaf);
+        background: var(--panel);
+        border: var(--px) solid var(--leaf);
+        border-bottom: 0;
+        box-shadow: none;
+        transform: none;
+      }
+      .night .dock .emote:hover {
+        background: var(--night);
+      }
+      .night .dock .emote[aria-expanded="true"] {
+        color: var(--ink);
+        background: var(--leaf);
+      }
+      /* sent: the tab wears what you just sent for the 1 s you can't send
+         another (INT-8.6, INT-8.8); pending: the same, at half */
+      .night .dock .emote[aria-disabled="true"] {
+        cursor: default;
+      }
+      .emote.pending svg {
+        opacity: 0.5;
+      }
+      @media (min-width: 900px) {
+        .dock:has(.emote) {
+          margin-top: 4rem;
+        }
+      }
+      /* the stamp stops short of the tab */
+      .dock:has(.emote) .stamp {
+        max-width: calc(100% - 5.5rem);
+      }
+      @media (max-width: 899px) {
+        /* room under the bar and its tab for the last thing on the page */
+        body:has(.dock .emote) footer {
+          padding-bottom: 10rem;
+        }
+      }
+      .tray {
+        position: absolute;
+        right: 0.75rem;
+        bottom: calc(100% + 48px);
+        z-index: 3;
+        display: grid;
+        grid-template-columns: repeat(4, 64px);
+        gap: var(--px);
+        margin: 0;
+        padding: 0.5rem;
+        list-style: none;
+        background: var(--panel);
+        border: var(--px) solid var(--leaf);
+        box-shadow: var(--px) var(--px) 0 #000;
+      }
+      .night .tray button {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        width: 64px;
+        height: 64px;
+        min-height: 0;
+        margin: 0;
+        padding: var(--px) 0 0;
+        font: 20px/1 var(--body);
+        text-transform: none;
+        color: var(--paper);
+        background: var(--night);
+        box-shadow: none;
+        transform: none;
+      }
+      .night .tray button:hover {
+        background: var(--floor);
+      }
+      .night .tray button:active {
+        transform: translateY(2px);
+      }
+      /* the second after a send: every emoji rests */
+      .night .tray[data-cooling] button {
+        color: var(--dim);
+        cursor: default;
+      }
+      .tray[data-cooling] svg {
+        opacity: 0.5;
+      }
+      .dock .emote-error {
+        right: calc(0.75rem + 60px);
+        left: auto;
+      }
+
+      /* ---------- the room log (INT-5.8): presets and interactions ----------
+         A panel under the squad, newest first: five lines, then the rest of
+         the newest 50 behind one tap. Lines that are about you wear the
+         leaf edge, as an edited log row does. */
+      .room-log ol {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .room-log li {
+        display: grid;
+        grid-template-columns: 16px minmax(0, 1fr) auto;
+        align-items: start;
+        gap: 0 0.5rem;
+        padding: 0.5rem 0;
+        border-top: 2px solid var(--night);
+      }
+      .room-log li:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+      .room-log li > svg {
+        margin-top: 4px;
+        color: var(--dim);
+      }
+      .room-log li.you {
+        padding-left: 0.5rem;
+        box-shadow: inset var(--px) 0 0 var(--leaf);
+      }
+      .room-log li.you > svg {
+        color: var(--leaf);
+      }
+      .room-log .t {
+        color: var(--dim);
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+      .room-log .to {
+        color: var(--leaf);
+      }
+      /* the moment you walked in: older lines are from before */
+      .room-log li.joined {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--dim);
+      }
+      .room-log li.joined::before,
+      .room-log li.joined::after {
+        content: "";
+        flex: 1;
+        border-top: 2px dashed var(--edge);
+      }
+      .room-log .older {
+        margin: 0.5rem 0 0;
+      }
+      .room-log .older > summary {
+        list-style: none;
+        cursor: pointer;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        color: var(--leaf);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      .room-log .older > summary::-webkit-details-marker {
+        display: none;
+      }
+      .room-log .older[open] > summary {
+        display: none;
+      }
+      .room-log .empty {
+        margin: 0;
+        color: var(--dim);
+      }
+
     </style>
     <style id="mockup">
       /* mockup scaffolding only; not part of the design */
@@ -1790,6 +2479,251 @@
         animation: none;
       }
 
+      /* ---- interactions (22 Oct): frozen so the mockup can show them ---- */
+      .fx.held use {
+        visibility: visible;
+        animation: none;
+      }
+      .banner {
+        animation-delay: -2s;
+        animation-play-state: paused;
+      }
+      .map .say {
+        animation-delay: -2s;
+        animation-play-state: paused;
+      }
+      .map .pop {
+        animation-delay: -1s;
+        animation-play-state: paused;
+      }
+      .menu .act.mock-focus {
+        outline: var(--px) solid var(--focus);
+        outline-offset: 2px;
+      }
+      /* the menu shown alone, not floating */
+      .menu-solo .menu,
+      .menu-kbd .menu {
+        position: relative;
+        inset: auto;
+        width: 20rem;
+        max-width: 100%;
+        max-height: none;
+      }
+      .menu-film {
+        grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+      }
+      .squad-menu {
+        position: relative;
+        padding-bottom: 12rem;
+      }
+      @media (max-width: 899px) {
+        .squad-menu {
+          padding-bottom: 0;
+        }
+        .squad-menu .menu {
+          position: relative;
+          inset: auto !important;
+          width: auto;
+          margin-top: -1rem;
+        }
+        /* in the long states a phone shows the map without the menu; the
+           phone frames show where it goes */
+        .state:not(.phone-only) .map .menu {
+          display: none;
+        }
+      }
+      /* banners in the long states sit in the map, as on a laptop */
+      .state:not(.phone-only) .banner-slot {
+        position: absolute;
+      }
+      @media (max-width: 899px) {
+        .state:not(.phone-only) .banner-slot {
+          top: 1.25rem;
+          right: 0.5rem;
+          left: 0.5rem;
+          width: auto;
+          transform: none;
+        }
+      }
+      .banners .banner-slot {
+        position: static;
+        width: auto;
+        max-width: 36rem;
+        margin: 0 0 1.25rem;
+        transform: none;
+      }
+      .notes {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+        gap: 1.5rem 2rem;
+      }
+      .notes .error {
+        width: max-content;
+        max-width: 18rem;
+      }
+      .reel-head {
+        margin: 1.5rem 0 0.75rem;
+        color: var(--leaf);
+      }
+      .reel-head:first-of-type {
+        margin-top: 0;
+      }
+      .fx-film {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+        gap: 1rem 2rem;
+      }
+      .art.fx-cell {
+        width: auto;
+      }
+      .fx-row {
+        display: flex;
+        gap: var(--px);
+        margin-bottom: 0.25rem;
+      }
+      .fx-row svg {
+        background: var(--floor);
+        outline: 2px solid var(--panel);
+        shape-rendering: crispEdges;
+      }
+      .emoji-art {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+      }
+      .emoji-big {
+        display: flex;
+        align-items: flex-end;
+        gap: 0.75rem;
+        min-height: 72px;
+        padding: 4px;
+        background: var(--floor);
+        outline: var(--px) solid var(--panel);
+      }
+      .emoji-big svg {
+        shape-rendering: crispEdges;
+      }
+      .emoji-big.icons {
+        align-items: center;
+        color: var(--leaf);
+      }
+      .log-solo {
+        max-width: 40rem;
+      }
+      .w360 {
+        width: 360px;
+        overflow: hidden;
+      }
+      .w360 .phone-frame {
+        margin: 0;
+      }
+      /* the interaction states' people, as classes so their markup stays
+         short (the build sets these as --av-* on each svg, as before) */
+      .lk-priya {
+        --av-skin: #8a5532;
+        --av-skin-2: #6e4026;
+        --av-hair: #1d1714;
+        --av-hair-2: #3a2e28;
+        --av-shirt: #e07b28;
+        --av-shirt-2: #b0561a;
+      }
+      .lk-mia {
+        --av-skin: #d09a68;
+        --av-skin-2: #b37a4f;
+        --av-hair: #4a2c1a;
+        --av-hair-2: #33190f;
+        --av-shirt: #1f8a86;
+        --av-shirt-2: #156663;
+      }
+      .lk-jiwoo {
+        --av-skin: #e9bd94;
+        --av-skin-2: #cf9a73;
+        --av-hair: #e46fae;
+        --av-hair-2: #b4488a;
+        --av-shirt: #eeeee6;
+        --av-shirt-2: #bdbcc4;
+      }
+      .lk-kai {
+        --av-skin: #ad7447;
+        --av-skin-2: #8f5a36;
+        --av-hair: #4d6bd6;
+        --av-hair-2: #3446a3;
+        --av-shirt: #3b3b45;
+        --av-shirt-2: #282832;
+      }
+      .lk-tom {
+        --av-skin: #f6d7bd;
+        --av-skin-2: #e0b69a;
+        --av-hair: #b5552a;
+        --av-hair-2: #873a1d;
+        --av-shirt: #2e3f7f;
+        --av-shirt-2: #1f2a5c;
+      }
+      .lk-sam {
+        --av-skin: #6e4429;
+        --av-skin-2: #55311d;
+        --av-hair: #d6ad55;
+        --av-hair-2: #ad7f37;
+        --av-shirt: #6a4c93;
+        --av-shirt-2: #4c3470;
+      }
+      .lk-lena {
+        --av-skin: #f6d7bd;
+        --av-skin-2: #e0b69a;
+        --av-hair: #c3c7bd;
+        --av-hair-2: #8f929a;
+        --av-shirt: #d65a9a;
+        --av-shirt-2: #a83c76;
+      }
+      .lk-omar {
+        --av-skin: #ad7447;
+        --av-skin-2: #8f5a36;
+        --av-hair: #1d1714;
+        --av-hair-2: #3a2e28;
+        --av-shirt: #8c8f94;
+        --av-shirt-2: #66686f;
+      }
+      .lk-hana {
+        --av-skin: #e9bd94;
+        --av-skin-2: #cf9a73;
+        --av-hair: #1d1714;
+        --av-hair-2: #3a2e28;
+        --av-shirt: #1f8a86;
+        --av-shirt-2: #156663;
+      }
+      .lk-zoe {
+        --av-skin: #d09a68;
+        --av-skin-2: #b37a4f;
+        --av-hair: #b5552a;
+        --av-hair-2: #873a1d;
+        --av-shirt: #2e3f7f;
+        --av-shirt-2: #1f2a5c;
+      }
+      .lk-ravi {
+        --av-skin: #6e4429;
+        --av-skin-2: #55311d;
+        --av-hair: #4a2c1a;
+        --av-hair-2: #33190f;
+        --av-shirt: #e07b28;
+        --av-shirt-2: #b0561a;
+      }
+      .lk-ella {
+        --av-skin: #f6d7bd;
+        --av-skin-2: #e0b69a;
+        --av-hair: #d6ad55;
+        --av-hair-2: #ad7f37;
+        --av-shirt: #6a4c93;
+        --av-shirt-2: #4c3470;
+      }
+      .lk-dony {
+        --av-skin: #e9bd94;
+        --av-skin-2: #cf9a73;
+        --av-hair: #2e3046;
+        --av-hair-2: #4a4e6e;
+        --av-shirt: #8b6cf2;
+        --av-shirt-2: #6650c8;
+      }
+
     </style>
   </head>
   <body class="night"><svg width="0" height="0" style="position: absolute" aria-hidden="true"><defs></defs></svg>
@@ -1867,6 +2801,13 @@
     <main>
       <!-- the poster's form (BOT-1, BOT-4): one per page, outside the map; every poster button points at it -->
       <form method="post" id="dony"><input type="hidden" name="action" value="dony" /></form>
+      <!-- the interaction states' floors (stations and claim corners), one symbol per layout, so each state's map stays short -->
+      <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+        <symbol id="floor-1" viewBox="0 0 320 320"><use href="/sprites.svg#eq-treadmill-back-1" x="32" y="32" width="32" height="32"/><use href="/sprites.svg#eq-flat-bench" x="96" y="32" width="32" height="32"/><use href="/sprites.svg#eq-squat-rack-back-1" x="192" y="32" width="32" height="32"/><use href="/sprites.svg#eq-dumbbell-rack" x="256" y="32" width="32" height="32"/><use href="/sprites.svg#eq-lifting-platform" x="32" y="96" width="32" height="32"/><use href="/sprites.svg#claim" x="32" y="96" width="32" height="32"/><use href="/sprites.svg#eq-exercise-mat" x="96" y="96" width="32" height="32"/><use href="/sprites.svg#bay-7" x="192" y="96" width="32" height="32"/><use href="/sprites.svg#bay-8" x="256" y="96" width="32" height="32"/><use href="/sprites.svg#bay-9" x="32" y="160" width="32" height="32"/><use href="/sprites.svg#bay-10" x="96" y="160" width="32" height="32"/><use href="/sprites.svg#bay-11" x="192" y="160" width="32" height="32"/><use href="/sprites.svg#bay-12" x="256" y="160" width="32" height="32"/></symbol>
+        <symbol id="floor-2" viewBox="0 0 320 320"><use href="/sprites.svg#eq-treadmill-back-1" x="32" y="32" width="32" height="32"/><use href="/sprites.svg#eq-flat-bench" x="96" y="32" width="32" height="32"/><use href="/sprites.svg#eq-squat-rack-back-1" x="192" y="32" width="32" height="32"/><use href="/sprites.svg#eq-dumbbell-rack" x="256" y="32" width="32" height="32"/><use href="/sprites.svg#eq-lifting-platform-back-1" x="32" y="96" width="32" height="32"/><use href="/sprites.svg#claim" x="32" y="96" width="32" height="32"/><use href="/sprites.svg#eq-exercise-mat" x="96" y="96" width="32" height="32"/><use href="/sprites.svg#bay-7" x="192" y="96" width="32" height="32"/><use href="/sprites.svg#bay-8" x="256" y="96" width="32" height="32"/><use href="/sprites.svg#bay-9" x="32" y="160" width="32" height="32"/><use href="/sprites.svg#bay-10" x="96" y="160" width="32" height="32"/><use href="/sprites.svg#bay-11" x="192" y="160" width="32" height="32"/><use href="/sprites.svg#bay-12" x="256" y="160" width="32" height="32"/></symbol>
+        <symbol id="floor-3" viewBox="0 0 320 320"><use href="/sprites.svg#eq-treadmill-back-1" x="32" y="32" width="32" height="32"/><use href="/sprites.svg#eq-flat-bench" x="96" y="32" width="32" height="32"/><use href="/sprites.svg#eq-squat-rack-back-1" x="192" y="32" width="32" height="32"/><use href="/sprites.svg#eq-dumbbell-rack" x="256" y="32" width="32" height="32"/><use href="/sprites.svg#eq-lifting-platform-back-1" x="32" y="96" width="32" height="32"/><use href="/sprites.svg#eq-exercise-mat-back-1" x="96" y="96" width="32" height="32"/><use href="/sprites.svg#eq-cable-machine" x="192" y="96" width="32" height="32"/><use href="/sprites.svg#bay-8" x="256" y="96" width="32" height="32"/><use href="/sprites.svg#bay-9" x="32" y="160" width="32" height="32"/><use href="/sprites.svg#bay-10" x="96" y="160" width="32" height="32"/><use href="/sprites.svg#bay-11" x="192" y="160" width="32" height="32"/><use href="/sprites.svg#bay-12" x="256" y="160" width="32" height="32"/></symbol>
+        <symbol id="floor-4" viewBox="0 0 320 320"><use href="/sprites.svg#bay-1" x="32" y="32" width="32" height="32"/><use href="/sprites.svg#bay-2" x="96" y="32" width="32" height="32"/><use href="/sprites.svg#eq-squat-rack" x="192" y="32" width="32" height="32"/><use href="/sprites.svg#bay-4" x="256" y="32" width="32" height="32"/><use href="/sprites.svg#bay-5" x="32" y="96" width="32" height="32"/><use href="/sprites.svg#bay-6" x="96" y="96" width="32" height="32"/><use href="/sprites.svg#bay-7" x="192" y="96" width="32" height="32"/><use href="/sprites.svg#bay-8" x="256" y="96" width="32" height="32"/><use href="/sprites.svg#bay-9" x="32" y="160" width="32" height="32"/><use href="/sprites.svg#bay-10" x="96" y="160" width="32" height="32"/><use href="/sprites.svg#bay-11" x="192" y="160" width="32" height="32"/><use href="/sprites.svg#bay-12" x="256" y="160" width="32" height="32"/></symbol>
+      </svg>
 
       <!-- state: busy room (default) -->
       <section class="state">
@@ -3324,6 +4265,169 @@
           </figure>
         </div>
       </section>
+
+      <!-- ===== interactions, presets and emoji (22 Oct; criteria/int.md; spec.md "Interactions, Oct 22") ===== -->
+      <!-- state: menu on a slacker -->
+      <section class="state"><p class="state-label">Menu · Priya taps Ji-woo, who is Slacking on the bench: her name, her state (colour, icon, word), and four moves. Poke and Slap wear the cursor (INT-2.14). Ji-woo's tag gets a paper ring so you can see who it's for. Laptop: beside her; phone: pinned over the dock (next state). Priya's own sheet doesn't change</p><div class="gym"><section class="panel map-panel" aria-labelledby="room-title-m1"><h1 class="map-sign" id="room-title-m1"><span class="vh">Room </span><span class="passcode">SB64FR</span></h1><p class="conn" role="status"><span class="badge">Live</span></p><div class="map"><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="/sprites.svg#map-tiles" /></svg><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="#floor-1"/></svg><button type="button" class="avatar me" style="--x: 1; --y: 7" data-state="resting" aria-label="Priya (you), resting, lifting platform 5"><span class="tag state-resting"><span class="nm">Priya</span></span><svg class="av lk-priya" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-rest-curls"/></svg></button><button type="button" class="avatar on-machine" style="--x: 6; --y: 1" data-state="lifting" aria-haspopup="menu" aria-expanded="false" aria-label="Mia, lifting, back squat on squat rack 3"><span class="tag state-lifting"><span class="nm">Mia</span></span><svg class="av lk-mia" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-squat-rack-1-long"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg></button><button type="button" class="avatar on-station" style="--x: 3; --y: 1" data-state="slacking" aria-haspopup="menu" aria-expanded="true" aria-label="Ji-woo, slacking, flat bench 2"><span class="tag state-slacking"><span class="nm">Ji-woo</span></span><svg class="av lk-jiwoo" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-sit-ponytail"/></svg></button><button type="button" class="avatar on-machine" style="--x: 1; --y: 1" data-state="lifting" aria-haspopup="menu" aria-expanded="false" aria-label="Kai, lifting, run on treadmill 1"><span class="tag state-lifting"><span class="nm">Kai</span></span><svg class="av lk-kai" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-treadmill-1-crop"/><use href="/sprites.svg#eq-treadmill-front-1"/></svg></button><button type="button" class="avatar away" style="--x: 3; --y: 7" data-state="resting" aria-haspopup="menu" aria-expanded="false" aria-label="Tom, resting, away, dumbbell rack 4"><span class="tag state-resting"><span class="nm">Tom</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-phone-off" /></svg></span><svg class="av lk-tom" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-rest-crop"/></svg></button><button type="button" class="avatar" style="--x: 8; --y: 7" data-state="idle" aria-haspopup="menu" aria-expanded="false" aria-label="Sam, idle, no station yet"><span class="tag state-idle"><span class="nm">Sam</span></span><svg class="av lk-sam" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail"/></svg></button><div class="menu" role="menu" aria-labelledby="menu-name-m1" id="menu-m1" style="left: calc(4.25 * var(--t)); top: calc(0.75 * var(--t))"><div class="menu-who"><svg class="av lk-jiwoo" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail" width="32" height="32"/></svg><p class="menu-name" id="menu-name-m1">Ji-woo<span class="chips"><span class="chip state-slacking"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-phone" /></svg>Slacking</span></span></p></div><ul class="menu-acts"><li><button type="button" class="act" role="menuitem" name="kind" value="cheer"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-cheer" /></svg>Cheer</button></li><li><button type="button" class="act hot" role="menuitem" name="kind" value="poke"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-poke" /></svg>Poke</button></li><li><button type="button" class="act hot" role="menuitem" name="kind" value="slap"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-slap" /></svg>Slap</button></li><li><button type="button" class="act" role="menuitem" name="kind" value="message"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-say" /></svg>Message</button></li></ul>
+      </div>
+      </div></section><section class="panel sheet" aria-labelledby="sheet-title-m1"><span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span><p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>31:42</time></p><h2 class="vh" id="sheet-title-m1">Log a set</h2><div class="rest"><div class="rest-top"><p class="timer" role="timer" aria-label="Rest left">1:24</p><p class="rest-what"><span>of <b>3:00</b> rest</span><span>after <b>140 kg × 5</b></span></p>
+      </div><form method="post" class="rest-adjust"><button type="submit" name="delta" value="-15" class="button secondary tool">-15 s</button><button type="submit" name="delta" value="15" class="button secondary tool">+15 s</button></form>
+      </div><details class="switch"><summary><span class="lift">Deadlift</span><span class="set-no">Set 3</span><span class="change">Change</span></summary></details><p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Lifting platform 5</b></span></p><div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-controls="tray" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><p class="dock-timer" aria-hidden="true" hidden>1:24</p><button type="submit" form="set-log-m1" name="action" value="start" class="wide">Start set</button>
+      </div></section>
+      </div></section>
+      <!-- state: menu variants -->
+      <section class="state"><p class="state-label">Menu, by target · the same box every time; only Slap's state and the cursor change. Slap is disabled, not hidden, with the reason in words; tapping it sends nothing. Cheer, Poke and Message always work</p><div class="film menu-film"><figure class="frame menu-solo"><div class="menu" role="menu" aria-labelledby="menu-name-v1" id="menu-v1"><div class="menu-who"><svg class="av lk-mia" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-long" width="32" height="32"/></svg><p class="menu-name" id="menu-name-v1">Mia<span class="chips"><span class="chip state-lifting"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-dumbbell" /></svg>Lifting</span></span></p></div><ul class="menu-acts"><li><button type="button" class="act hot" role="menuitem" name="kind" value="cheer"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-cheer" /></svg>Cheer</button></li><li><button type="button" class="act" role="menuitem" name="kind" value="poke"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-poke" /></svg>Poke</button></li><li><button type="button" class="act" role="menuitem" name="kind" value="slap" aria-disabled="true" aria-describedby="menu-why-v1"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-slap" /></svg>Slap</button></li><li><button type="button" class="act" role="menuitem" name="kind" value="message"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-say" /></svg>Message</button></li></ul><p class="menu-why" id="menu-why-v1">Mia is mid-set. Cheer instead?</p></div><figcaption><b>Lifting</b> · Cheer wears the cursor; Slap is dashed with "Mia is mid-set. Cheer instead?" Poke is allowed mid-set (D4)</figcaption></figure><figure class="frame menu-solo"><div class="menu" role="menu" aria-labelledby="menu-name-v2" id="menu-v2"><div class="menu-who"><svg class="av lk-sam" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail" width="32" height="32"/></svg><p class="menu-name" id="menu-name-v2">Sam<span class="chips"><span class="chip state-idle"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-idle" /></svg>Idle</span></span></p></div><ul class="menu-acts"><li><button type="button" class="act" role="menuitem" name="kind" value="cheer"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-cheer" /></svg>Cheer</button></li><li><button type="button" class="act" role="menuitem" name="kind" value="poke"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-poke" /></svg>Poke</button></li><li><button type="button" class="act" role="menuitem" name="kind" value="slap"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-slap" /></svg>Slap</button></li><li><button type="button" class="act" role="menuitem" name="kind" value="message"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-say" /></svg>Message</button></li></ul></div><figcaption><b>Idle</b> · nothing highlighted; Slap is allowed (D5)</figcaption></figure><figure class="frame menu-solo"><div class="menu" role="menu" aria-labelledby="menu-name-v3" id="menu-v3"><div class="menu-who"><svg class="av lk-tom" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-crop" width="32" height="32"/></svg><p class="menu-name" id="menu-name-v3">Tom<span class="chips"><span class="chip state-resting"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span><span class="chip away"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-phone-off" /></svg>Away</span></span></p></div><ul class="menu-acts"><li><button type="button" class="act" role="menuitem" name="kind" value="cheer"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-cheer" /></svg>Cheer</button></li><li><button type="button" class="act" role="menuitem" name="kind" value="poke"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-poke" /></svg>Poke</button></li><li><button type="button" class="act" role="menuitem" name="kind" value="slap"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-slap" /></svg>Slap</button></li><li><button type="button" class="act" role="menuitem" name="kind" value="message"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-say" /></svg>Message</button></li></ul></div><figcaption><b>Resting · Away</b> · both chips; nothing highlighted; Slap allowed. His phone is locked, so he'll find it in the room log</figcaption></figure><figure class="frame menu-solo"><div class="menu" role="menu" aria-labelledby="menu-name-v4" id="menu-v4"><div class="menu-who"><svg class="av lk-lena" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-long" width="32" height="32"/></svg><p class="menu-name" id="menu-name-v4">Lena<span class="chips"><span class="chip state-finished"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-trophy" /></svg>Finished</span></span></p></div><ul class="menu-acts"><li><button type="button" class="act" role="menuitem" name="kind" value="cheer"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-cheer" /></svg>Cheer</button></li><li><button type="button" class="act" role="menuitem" name="kind" value="poke"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-poke" /></svg>Poke</button></li><li><button type="button" class="act" role="menuitem" name="kind" value="slap" aria-disabled="true" aria-describedby="menu-why-v4"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-slap" /></svg>Slap</button></li><li><button type="button" class="act" role="menuitem" name="kind" value="message"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-say" /></svg>Message</button></li></ul><p class="menu-why" id="menu-why-v4">Lena's done for today. Cheer instead?</p></div><figcaption><b>Finished</b> · Slap is dashed with "Lena's done for today. Cheer instead?"</figcaption></figure><figure class="frame menu-solo"><div class="menu" role="menu" aria-labelledby="menu-name-v5" id="menu-v5"><div class="menu-who"><svg class="av lk-jiwoo" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail" width="32" height="32"/></svg><p class="menu-name" id="menu-name-v5">Ji-woo<span class="chips"><span class="chip state-slacking"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-phone" /></svg>Slacking</span></span></p></div><ul class="menu-acts"><li><button type="button" class="act" role="menuitem" name="kind" value="cheer" aria-disabled="true" aria-describedby="menu-why-v5"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-cheer" /></svg>Cheer</button></li><li><button type="button" class="act" role="menuitem" name="kind" value="poke" aria-disabled="true" aria-describedby="menu-why-v5"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-poke" /></svg>Poke</button></li><li><button type="button" class="act" role="menuitem" name="kind" value="slap" aria-disabled="true" aria-describedby="menu-why-v5"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-slap" /></svg>Slap</button></li><li><button type="button" class="act" role="menuitem" name="kind" value="message"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-say" /></svg>Message</button></li></ul><p class="menu-why" id="menu-why-v5">Easy, give them 10 seconds.</p></div><figcaption><b>Within 10 s of your last one to her</b> · Cheer, Poke, Slap all dashed with "Easy, give them 10 seconds." Message stays. They come back by themselves when the 10 s are up (INT-4.7)</figcaption></figure><figure class="frame menu-solo"><div class="menu" role="menu" aria-labelledby="menu-name-v6" id="menu-v6"><div class="menu-who"><svg class="av lk-dony" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#dony-stand" width="32" height="32"/></svg><p class="menu-name" id="menu-name-v6">Dony<span class="chips"><span class="chip state-resting"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span></span></p></div><ul class="menu-acts"><li><button type="button" class="act" role="menuitem" name="kind" value="cheer"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-cheer" /></svg>Cheer</button></li><li><button type="button" class="act" role="menuitem" name="kind" value="poke"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-poke" /></svg>Poke</button></li><li><button type="button" class="act" role="menuitem" name="kind" value="slap"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-slap" /></svg>Slap</button></li><li><button type="button" class="act" role="menuitem" name="kind" value="message"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-say" /></svg>Message</button></li></ul></div><figcaption><b>Dony</b> · the same menu, no marker (INT-1.11). His answer is an emoji, never a banner</figcaption></figure>
+      </div></section>
+      <!-- state: menu, message presets -->
+      <section class="state"><p class="state-label">Message · the same box swaps its rows for the ten presets in two groups. One tap sends; no confirm. Back (or Escape once) returns to the four moves; Escape again closes. The preset is addressed: "To Ji-woo" heads the box</p><div class="film menu-film"><figure class="frame menu-solo"><div class="menu" role="menu" aria-labelledby="menu-to-p1" id="menu-p1"><div class="menu-sub"><button type="button" class="act back" role="menuitem"><span class="cur" aria-hidden="true">▶</span>Back</button><p class="menu-to" id="menu-to-p1">To Ji-woo</p></div><p class="menu-group" id="hype-p1">Hype</p><ul class="presets" role="group" aria-labelledby="hype-p1"><li><button type="button" class="preset" role="menuitem" name="preset" value="hype-1">One more rep! 💪</button></li><li><button type="button" class="preset" role="menuitem" name="preset" value="hype-2">Light weight!</button></li><li><button type="button" class="preset" role="menuitem" name="preset" value="hype-3">Let's gooo 🔥</button></li><li><button type="button" class="preset" role="menuitem" name="preset" value="hype-4">Lock in 🔒</button></li><li><button type="button" class="preset" role="menuitem" name="preset" value="hype-5">That's a W set 🏆</button></li></ul><p class="menu-group" id="nudge-p1">Nudge</p><ul class="presets" role="group" aria-labelledby="nudge-p1"><li><button type="button" class="preset" role="menuitem" name="preset" value="nudge-1">Put the phone down 📵</button></li><li><button type="button" class="preset" role="menuitem" name="preset" value="nudge-2">Rest's over, mate ⏰</button></li><li><button type="button" class="preset" role="menuitem" name="preset" value="nudge-3">I can see you 👀</button></li><li><button type="button" class="preset" role="menuitem" name="preset" value="nudge-4">Bro is scrolling 💀</button></li><li><button type="button" class="preset" role="menuitem" name="preset" value="nudge-5">Water break or nap? 😴</button></li></ul></div><figcaption><b>Laptop and phone</b> · two columns of 52 px buttons. At 360 px wide the longest line, "Water break or nap? 😴", wraps to two lines inside its button. The group words are the copy bank's: Hype, Nudge</figcaption></figure><figure class="frame menu-solo"><div class="menu-kbd"><div class="menu" role="menu" aria-labelledby="menu-name-p2" id="menu-p2"><div class="menu-who"><svg class="av lk-jiwoo" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail" width="32" height="32"/></svg><p class="menu-name" id="menu-name-p2">Ji-woo<span class="chips"><span class="chip state-slacking"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-phone" /></svg>Slacking</span></span></p></div><ul class="menu-acts"><li><button type="button" class="act" role="menuitem" name="kind" value="cheer"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-cheer" /></svg>Cheer</button></li><li><button type="button" class="act hot mock-focus" role="menuitem" name="kind" value="poke"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-poke" /></svg>Poke</button></li><li><button type="button" class="act hot" role="menuitem" name="kind" value="slap"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-slap" /></svg>Slap</button></li><li><button type="button" class="act" role="menuitem" name="kind" value="message"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-say" /></svg>Message</button></li></ul></div></div><figcaption><b>Keyboard</b> · Enter on Ji-woo's avatar opens it with focus on the first highlighted move (here Poke); else on Cheer. Tab, Shift+Tab, ↑ and ↓ move round the rows and wrap; Enter or Space acts; Escape closes and puts focus back on her avatar (or her squad row). Focus never leaves the menu while it's open</figcaption></figure>
+      </div></section>
+      <!-- state: phone, menu open -->
+      <section class="state phone-only"><p class="state-label">Phone, menu open (390 × 660) · Priya taps Ji-woo on the map: the menu rises from just above the dock, where her thumb is, and covers the sheet's top, never the dock. Start set is still there and still one tap; tapping it closes the menu and starts the set in the same tap (INT-1.3, INT-1.4)</p><div class="phone-frame"><div class="screen"><header class="topbar"><a href="/" class="brand" aria-label="Spotter home"><svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><use href="/sprites.svg#logo"/></svg><span>Spotter</span></a><nav><a href="/history">History</a></nav></header><main><div class="gym"><section class="panel map-panel" aria-labelledby="room-title-pm"><h1 class="map-sign" id="room-title-pm"><span class="vh">Room </span><span class="passcode">SB64FR</span></h1><p class="conn" role="status"><span class="badge">Live</span></p><div class="map"><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="/sprites.svg#map-tiles" /></svg><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="#floor-1"/></svg><button type="button" class="avatar me" style="--x: 1; --y: 7" data-state="resting" aria-label="Priya (you), resting, lifting platform 5"><span class="tag state-resting"><span class="nm">Priya</span></span><svg class="av lk-priya" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-rest-curls"/></svg></button><button type="button" class="avatar on-machine" style="--x: 6; --y: 1" data-state="lifting" aria-haspopup="menu" aria-expanded="false" aria-label="Mia, lifting, back squat on squat rack 3"><span class="tag state-lifting"><span class="nm">Mia</span></span><svg class="av lk-mia" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-squat-rack-1-long"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg></button><button type="button" class="avatar on-station" style="--x: 3; --y: 1" data-state="slacking" aria-haspopup="menu" aria-expanded="true" aria-label="Ji-woo, slacking, flat bench 2"><span class="tag state-slacking"><span class="nm">Ji-woo</span></span><svg class="av lk-jiwoo" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-sit-ponytail"/></svg></button><button type="button" class="avatar on-machine" style="--x: 1; --y: 1" data-state="lifting" aria-haspopup="menu" aria-expanded="false" aria-label="Kai, lifting, run on treadmill 1"><span class="tag state-lifting"><span class="nm">Kai</span></span><svg class="av lk-kai" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-treadmill-1-crop"/><use href="/sprites.svg#eq-treadmill-front-1"/></svg></button><button type="button" class="avatar away" style="--x: 3; --y: 7" data-state="resting" aria-haspopup="menu" aria-expanded="false" aria-label="Tom, resting, away, dumbbell rack 4"><span class="tag state-resting"><span class="nm">Tom</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-phone-off" /></svg></span><svg class="av lk-tom" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-rest-crop"/></svg></button><button type="button" class="avatar" style="--x: 8; --y: 7" data-state="idle" aria-haspopup="menu" aria-expanded="false" aria-label="Sam, idle, no station yet"><span class="tag state-idle"><span class="nm">Sam</span></span><svg class="av lk-sam" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail"/></svg></button>
+      </div></section><section class="panel sheet" aria-labelledby="sheet-title-pm"><span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span><p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>31:42</time></p><h2 class="vh" id="sheet-title-pm">Log a set</h2><div class="rest"><div class="rest-top"><p class="timer" role="timer" aria-label="Rest left">1:24</p><p class="rest-what"><span>of <b>3:00</b> rest</span><span>after <b>140 kg × 5</b></span></p>
+      </div><form method="post" class="rest-adjust"><button type="submit" name="delta" value="-15" class="button secondary tool">-15 s</button><button type="submit" name="delta" value="15" class="button secondary tool">+15 s</button></form>
+      </div><details class="switch"><summary><span class="lift">Deadlift</span><span class="set-no">Set 3</span><span class="change">Change</span></summary></details><p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Lifting platform 5</b></span></p><div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-controls="tray" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><p class="dock-timer" aria-hidden="true">1:24</p><button type="submit" form="set-log-pm" name="action" value="start" class="wide">Start set</button>
+      </div></section>
+      </div><div class="menu" role="menu" aria-labelledby="menu-name-pm" id="menu-pm"><div class="menu-who"><svg class="av lk-jiwoo" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail" width="32" height="32"/></svg><p class="menu-name" id="menu-name-pm">Ji-woo<span class="chips"><span class="chip state-slacking"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-phone" /></svg>Slacking</span></span></p></div><ul class="menu-acts"><li><button type="button" class="act" role="menuitem" name="kind" value="cheer"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-cheer" /></svg>Cheer</button></li><li><button type="button" class="act hot" role="menuitem" name="kind" value="poke"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-poke" /></svg>Poke</button></li><li><button type="button" class="act hot" role="menuitem" name="kind" value="slap"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-slap" /></svg>Slap</button></li><li><button type="button" class="act" role="menuitem" name="kind" value="message"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-say" /></svg>Message</button></li></ul>
+      </div></main>
+      </div>
+      </div></section>
+      <!-- state: menu from the squad list -->
+      <section class="state"><p class="state-label">Squad row · every other person's row is one button that opens the same menu (D10); Priya's own row is plain text and opens nothing. On a laptop the menu sits under the row it came from; on a phone it rises over the dock as from the map</p><div class="squad-menu"><section class="panel" aria-labelledby="people-title-sq"><h2 class="panel-title" id="people-title-sq">Squad</h2><ul class="people"><li class="me"><svg class="av lk-priya" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-curls" width="32" height="32"/></svg><span class="who">Priya <span class="badge">You</span> <span class="badge host">Host</span><span class="what">Rest <span class="n">1:24 left</span> · lifting platform 5</span></span><span class="chips"><span class="chip state-resting"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span></span></li><li><button type="button" class="person" aria-haspopup="menu" aria-expanded="false" aria-label="Mia, lifting, back squat on squat rack 3"><svg class="av lk-mia" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-long" width="32" height="32"/></svg><span class="who">Mia<span class="what">Back squat · squat rack 3</span></span><span class="chips"><span class="chip state-lifting"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-dumbbell" /></svg>Lifting</span></span></button></li><li><button type="button" class="person" aria-haspopup="menu" aria-expanded="false" aria-label="Ji-woo, slacking, flat bench 2"><svg class="av lk-jiwoo" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail" width="32" height="32"/></svg><span class="who">Ji-woo<span class="what"><span class="n">2:40 over</span> rest · flat bench 2</span></span><span class="chips"><span class="chip state-slacking"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-phone" /></svg>Slacking</span></span></button></li><li class="away"><button type="button" class="person" aria-haspopup="menu" aria-expanded="true" aria-label="Tom, resting, away, dumbbell rack 4"><svg class="av lk-tom" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-crop" width="32" height="32"/></svg><span class="who">Tom<span class="what">Offline <span class="n">2 min</span> · dumbbell rack 4</span></span><span class="chips"><span class="chip state-resting"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span><span class="chip away"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-phone-off" /></svg>Away</span></span></button></li><li><button type="button" class="person" aria-haspopup="menu" aria-expanded="false" aria-label="Kai, lifting, run on treadmill 1"><svg class="av lk-kai" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-crop" width="32" height="32"/></svg><span class="who">Kai<span class="what">Run · treadmill 1</span></span><span class="chips"><span class="chip state-lifting"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-dumbbell" /></svg>Lifting</span></span></button></li><li><button type="button" class="person" aria-haspopup="menu" aria-expanded="false" aria-label="Sam, idle, no station yet"><svg class="av lk-sam" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail" width="32" height="32"/></svg><span class="who">Sam<span class="what">No station yet</span></span><span class="chips"><span class="chip state-idle"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-idle" /></svg>Idle</span></span></button></li></ul></section><div class="menu" role="menu" aria-labelledby="menu-name-sq" id="menu-sq" style="left: 4.5rem; top: 19.75rem"><div class="menu-who"><svg class="av lk-tom" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-crop" width="32" height="32"/></svg><p class="menu-name" id="menu-name-sq">Tom<span class="chips"><span class="chip state-resting"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span><span class="chip away"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-phone-off" /></svg>Away</span></span></p></div><ul class="menu-acts"><li><button type="button" class="act" role="menuitem" name="kind" value="cheer"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-cheer" /></svg>Cheer</button></li><li><button type="button" class="act" role="menuitem" name="kind" value="poke"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-poke" /></svg>Poke</button></li><li><button type="button" class="act" role="menuitem" name="kind" value="slap"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-slap" /></svg>Slap</button></li><li><button type="button" class="act" role="menuitem" name="kind" value="message"><span class="cur" aria-hidden="true">▶</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-say" /></svg>Message</button></li></ul>
+      </div>
+      </div></section>
+      <!-- state: reactions -->
+      <section class="state"><p class="state-label">Reactions · drawn over whatever pose the target is in (a slacker on her phone, a lifter on the bench, someone idle, Dony at the cooler); the pose keeps playing, the tag stays put. On every screen, sender's and target's included, once the server says yes. Each frame is shown held here</p><p class="reel-head">Cheer · 600 ms</p><div class="fx-film"><figure class="art fx-cell"><div class="fx-row"><svg class="lk-jiwoo" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench"/><use href="/sprites.svg#av-sit-ponytail" y="4"/><use href="/sprites.svg#fx-cheer-1"/></svg><svg class="lk-mia" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench-back-1"/><use href="/sprites.svg#av-flat-bench-1-long"/><use href="/sprites.svg#eq-flat-bench-front-1"/><use href="/sprites.svg#fx-cheer-1"/></svg><svg class="lk-sam" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail"/><use href="/sprites.svg#fx-cheer-1"/></svg><svg class="lk-dony" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#dony-rest"/><use href="/sprites.svg#fx-cheer-1"/></svg></div><figcaption><b>1 of 3</b> · 200 ms: two sparkles, a yellow one</figcaption></figure><figure class="art fx-cell"><div class="fx-row"><svg class="lk-jiwoo" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench"/><use href="/sprites.svg#av-sit-ponytail" y="4"/><use href="/sprites.svg#fx-cheer-2"/></svg><svg class="lk-mia" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench-back-1"/><use href="/sprites.svg#av-flat-bench-1-long"/><use href="/sprites.svg#eq-flat-bench-front-1"/><use href="/sprites.svg#fx-cheer-2"/></svg><svg class="lk-sam" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail"/><use href="/sprites.svg#fx-cheer-2"/></svg><svg class="lk-dony" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#dony-rest"/><use href="/sprites.svg#fx-cheer-2"/></svg></div><figcaption><b>2 of 3</b> · 200 ms: the burst</figcaption></figure><figure class="art fx-cell"><div class="fx-row"><svg class="lk-jiwoo" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench"/><use href="/sprites.svg#av-sit-ponytail" y="4"/><use href="/sprites.svg#fx-cheer-3"/></svg><svg class="lk-mia" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench-back-1"/><use href="/sprites.svg#av-flat-bench-1-long"/><use href="/sprites.svg#eq-flat-bench-front-1"/><use href="/sprites.svg#fx-cheer-3"/></svg><svg class="lk-sam" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail"/><use href="/sprites.svg#fx-cheer-3"/></svg><svg class="lk-dony" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#dony-rest"/><use href="/sprites.svg#fx-cheer-3"/></svg></div><figcaption><b>3 of 3</b> · 200 ms: specks fading</figcaption></figure></div><p class="reel-head">Poke · 720 ms</p><div class="fx-film"><figure class="art fx-cell"><div class="fx-row"><svg class="lk-jiwoo" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench"/><use href="/sprites.svg#av-sit-ponytail" y="4"/><use href="/sprites.svg#fx-poke-1"/></svg><svg class="lk-mia" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench-back-1"/><use href="/sprites.svg#av-flat-bench-1-long"/><use href="/sprites.svg#eq-flat-bench-front-1"/><use href="/sprites.svg#fx-poke-1"/></svg><svg class="lk-sam" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail"/><use href="/sprites.svg#fx-poke-1"/></svg><svg class="lk-dony" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#dony-rest"/><use href="/sprites.svg#fx-poke-1"/></svg></div><figcaption><b>1 of 3</b> · 240 ms: a finger pokes in at the ribs</figcaption></figure><figure class="art fx-cell"><div class="fx-row"><svg class="lk-jiwoo" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench"/><use href="/sprites.svg#av-sit-ponytail" y="4"/><use href="/sprites.svg#fx-poke-2"/></svg><svg class="lk-mia" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench-back-1"/><use href="/sprites.svg#av-flat-bench-1-long"/><use href="/sprites.svg#eq-flat-bench-front-1"/><use href="/sprites.svg#fx-poke-2"/></svg><svg class="lk-sam" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail"/><use href="/sprites.svg#fx-poke-2"/></svg><svg class="lk-dony" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#dony-rest"/><use href="/sprites.svg#fx-poke-2"/></svg></div><figcaption><b>2 of 3</b> · 240 ms: a "!" pops over the head</figcaption></figure><figure class="art fx-cell"><div class="fx-row"><svg class="lk-jiwoo" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench"/><use href="/sprites.svg#av-sit-ponytail" y="4"/><use href="/sprites.svg#fx-poke-3"/></svg><svg class="lk-mia" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench-back-1"/><use href="/sprites.svg#av-flat-bench-1-long"/><use href="/sprites.svg#eq-flat-bench-front-1"/><use href="/sprites.svg#fx-poke-3"/></svg><svg class="lk-sam" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail"/><use href="/sprites.svg#fx-poke-3"/></svg><svg class="lk-dony" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#dony-rest"/><use href="/sprites.svg#fx-poke-3"/></svg></div><figcaption><b>3 of 3</b> · 240 ms: the finger goes, the "!" jumps 2 px</figcaption></figure></div><p class="reel-head">Slap · 800 ms (never on someone Lifting or Finished; the bench frame is only to show it draws over a machine)</p><div class="fx-film"><figure class="art fx-cell"><div class="fx-row"><svg class="lk-jiwoo" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench"/><use href="/sprites.svg#av-sit-ponytail" y="4"/><use href="/sprites.svg#fx-slap-1"/></svg><svg class="lk-mia" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench-back-1"/><use href="/sprites.svg#av-flat-bench-1-long"/><use href="/sprites.svg#eq-flat-bench-front-1"/><use href="/sprites.svg#fx-slap-1"/></svg><svg class="lk-sam" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail"/><use href="/sprites.svg#fx-slap-1"/></svg><svg class="lk-dony" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#dony-rest"/><use href="/sprites.svg#fx-slap-1"/></svg></div><figcaption><b>1 of 4</b> · 200 ms: a cartoon glove swings in</figcaption></figure><figure class="art fx-cell"><div class="fx-row"><svg class="lk-jiwoo" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench"/><use href="/sprites.svg#av-sit-ponytail" y="4"/><use href="/sprites.svg#fx-slap-2"/></svg><svg class="lk-mia" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench-back-1"/><use href="/sprites.svg#av-flat-bench-1-long"/><use href="/sprites.svg#eq-flat-bench-front-1"/><use href="/sprites.svg#fx-slap-2"/></svg><svg class="lk-sam" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail"/><use href="/sprites.svg#fx-slap-2"/></svg><svg class="lk-dony" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#dony-rest"/><use href="/sprites.svg#fx-slap-2"/></svg></div><figcaption><b>2 of 4</b> · 200 ms: pow at the cheek</figcaption></figure><figure class="art fx-cell"><div class="fx-row"><svg class="lk-jiwoo" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench"/><use href="/sprites.svg#av-sit-ponytail" y="4"/><use href="/sprites.svg#fx-slap-3"/></svg><svg class="lk-mia" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench-back-1"/><use href="/sprites.svg#av-flat-bench-1-long"/><use href="/sprites.svg#eq-flat-bench-front-1"/><use href="/sprites.svg#fx-slap-3"/></svg><svg class="lk-sam" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail"/><use href="/sprites.svg#fx-slap-3"/></svg><svg class="lk-dony" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#dony-rest"/><use href="/sprites.svg#fx-slap-3"/></svg></div><figcaption><b>3 of 4</b> · 200 ms: dizzy stars</figcaption></figure><figure class="art fx-cell"><div class="fx-row"><svg class="lk-jiwoo" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench"/><use href="/sprites.svg#av-sit-ponytail" y="4"/><use href="/sprites.svg#fx-slap-4"/></svg><svg class="lk-mia" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench-back-1"/><use href="/sprites.svg#av-flat-bench-1-long"/><use href="/sprites.svg#eq-flat-bench-front-1"/><use href="/sprites.svg#fx-slap-4"/></svg><svg class="lk-sam" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail"/><use href="/sprites.svg#fx-slap-4"/></svg><svg class="lk-dony" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#dony-rest"/><use href="/sprites.svg#fx-slap-4"/></svg></div><figcaption><b>4 of 4</b> · 200 ms: the stars go round</figcaption></figure></div></section>
+      <!-- state: banners -->
+      <section class="state"><p class="state-label">Banners · only on the target's screen, 4 s, role="status", never over the dock, never takes focus. The sender's head, then the copy bank's line. A newer one replaces it; no queue (D9). Laptop: the top of the map (default state shows it in place); here, each wording</p><div class="banners"><div class="banner-slot"><p class="banner" role="status"><svg class="av lk-mia" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-long" width="32" height="32"/></svg><span>Mia is hyping you up 🔥</span></p></div><div class="banner-slot"><p class="banner" role="status"><svg class="av lk-tom" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-crop" width="32" height="32"/></svg><span>Tom poked you. Rest's over? 👉</span></p></div><div class="banner-slot"><p class="banner" role="status"><svg class="av lk-tom" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-crop" width="32" height="32"/></svg><span>Tom poked you 👉</span></p></div><div class="banner-slot"><p class="banner" role="status"><svg class="av lk-jiwoo" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail" width="32" height="32"/></svg><span>Ji-woo slapped you back to work 👋</span></p></div><p class="hint">Poke reads "Rest's over?" only if you were Resting or Slacking when it landed; in any other state (Idle, Lifting, Finished) it's just "poked you" (D4). Reduced motion: the banner appears and goes with no slide; the reaction holds its middle frame for 800 ms.</p>
+      </div></section>
+      <!-- state: slapped (target's screen) -->
+      <section class="state"><p class="state-label">Slapped · Priya's own screen: Ji-woo slapped her while she was Slacking. The slap plays on her avatar; the banner sits at the top of the map, not over the sheet; Start set is untouched and her rest keeps counting (INT-2.12, INT-3.4)</p><div class="gym"><section class="panel map-panel" aria-labelledby="room-title-sl"><h1 class="map-sign" id="room-title-sl"><span class="vh">Room </span><span class="passcode">SB64FR</span></h1><p class="conn" role="status"><span class="badge">Live</span></p><div class="map"><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="/sprites.svg#map-tiles" /></svg><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="#floor-1"/></svg><button type="button" class="avatar on-station me" style="--x: 1; --y: 3" data-state="slacking" aria-label="Priya (you), slacking, lifting platform 5"><span class="tag state-slacking"><span class="nm">Priya</span></span><svg class="av lk-priya" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-sit-curls"/></svg><svg class="fx fx-slap held" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#fx-slap-2"/></svg></button><button type="button" class="avatar on-machine" style="--x: 6; --y: 1" data-state="lifting" aria-haspopup="menu" aria-expanded="false" aria-label="Mia, lifting, back squat on squat rack 3"><span class="tag state-lifting"><span class="nm">Mia</span></span><svg class="av lk-mia" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-squat-rack-1-long"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg></button><button type="button" class="avatar" style="--x: 3; --y: 7" data-state="resting" aria-haspopup="menu" aria-expanded="false" aria-label="Ji-woo, resting, flat bench 2"><span class="tag state-resting"><span class="nm">Ji-woo</span></span><svg class="av lk-jiwoo" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-rest-ponytail"/></svg></button><button type="button" class="avatar on-machine" style="--x: 1; --y: 1" data-state="lifting" aria-haspopup="menu" aria-expanded="false" aria-label="Kai, lifting, run on treadmill 1"><span class="tag state-lifting"><span class="nm">Kai</span></span><svg class="av lk-kai" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-treadmill-1-crop"/><use href="/sprites.svg#eq-treadmill-front-1"/></svg></button><button type="button" class="avatar away" style="--x: 2; --y: 8" data-state="resting" aria-haspopup="menu" aria-expanded="false" aria-label="Tom, resting, away, dumbbell rack 4"><span class="tag state-resting"><span class="nm">Tom</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-phone-off" /></svg></span><svg class="av lk-tom" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-rest-crop"/></svg></button><button type="button" class="avatar" style="--x: 8; --y: 7" data-state="idle" aria-haspopup="menu" aria-expanded="false" aria-label="Sam, idle, no station yet"><span class="tag state-idle"><span class="nm">Sam</span></span><svg class="av lk-sam" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail"/></svg></button><div class="banner-slot"><p class="banner" role="status"><svg class="av lk-jiwoo" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail" width="32" height="32"/></svg><span>Ji-woo slapped you back to work 👋</span></p></div>
+      </div></section><section class="panel sheet" aria-labelledby="sheet-title-sl"><span class="chip state-slacking tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-phone" /></svg>Slacking</span><p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>35:53</time></p><h2 class="vh" id="sheet-title-sl">Log a set</h2><div class="rest over slacking"><p class="rest-say" role="status">Your squad can see you 👀</p><div class="rest-top"><p class="timer" role="timer" aria-label="Over your rest by">+2:47</p><p class="rest-what"><span>over a <b>3:00</b> rest</span><span>after <b>140 kg × 5</b></span></p>
+      </div><form method="post" class="rest-adjust"><button type="submit" name="delta" value="-15" class="button secondary tool">-15 s</button><button type="submit" name="delta" value="15" class="button secondary tool">+15 s</button></form>
+      </div><details class="switch"><summary><span class="lift">Deadlift</span><span class="set-no">Set 3</span><span class="change">Change</span></summary></details><p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Lifting platform 5</b></span></p><div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-controls="tray" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><p class="dock-timer" aria-hidden="true" hidden>+2:47</p><button type="submit" form="set-log-sl" name="action" value="start" class="wide">Start set</button>
+      </div></section>
+      </div></section>
+      <!-- state: phone, poked mid-set -->
+      <section class="state phone-only"><p class="state-label">Phone, poked mid-set (390 × 660) · Priya is Lifting, scrolled to her numbers. Tom pokes her: the banner drops in at the top of her screen, wherever she's scrolled, and says just "poked you" because she isn't resting. Done keeps its place and size; her set doesn't change</p><div class="phone-frame at-sheet" style="--to-sheet: -300px"><div class="screen"><header class="topbar"><a href="/" class="brand" aria-label="Spotter home"><svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><use href="/sprites.svg#logo"/></svg><span>Spotter</span></a><nav><a href="/history">History</a></nav></header><main><div class="gym"><section class="panel map-panel" aria-labelledby="room-title-pk"><h1 class="map-sign" id="room-title-pk"><span class="vh">Room </span><span class="passcode">SB64FR</span></h1><p class="conn" role="status"><span class="badge">Live</span></p><div class="map"><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="/sprites.svg#map-tiles" /></svg><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="#floor-2"/></svg><button type="button" class="avatar on-machine me" style="--x: 1; --y: 3" data-state="lifting" aria-label="Priya (you), lifting, deadlift on lifting platform 5"><span class="tag state-lifting"><span class="nm">Priya</span></span><svg class="av lk-priya" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-lifting-platform-1-curls"/><use href="/sprites.svg#eq-lifting-platform-front-1"/></svg><svg class="fx fx-poke held" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#fx-poke-2"/></svg></button><button type="button" class="avatar on-machine" style="--x: 6; --y: 1" data-state="lifting" aria-haspopup="menu" aria-expanded="false" aria-label="Mia, lifting, back squat on squat rack 3"><span class="tag state-lifting"><span class="nm">Mia</span></span><svg class="av lk-mia" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-squat-rack-1-long"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg></button><button type="button" class="avatar on-station" style="--x: 3; --y: 1" data-state="slacking" aria-haspopup="menu" aria-expanded="false" aria-label="Ji-woo, slacking, flat bench 2"><span class="tag state-slacking"><span class="nm">Ji-woo</span></span><svg class="av lk-jiwoo" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-sit-ponytail"/></svg></button><button type="button" class="avatar on-machine" style="--x: 1; --y: 1" data-state="lifting" aria-haspopup="menu" aria-expanded="false" aria-label="Kai, lifting, run on treadmill 1"><span class="tag state-lifting"><span class="nm">Kai</span></span><svg class="av lk-kai" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-treadmill-1-crop"/><use href="/sprites.svg#eq-treadmill-front-1"/></svg></button><button type="button" class="avatar away" style="--x: 3; --y: 7" data-state="resting" aria-haspopup="menu" aria-expanded="false" aria-label="Tom, resting, away, dumbbell rack 4"><span class="tag state-resting"><span class="nm">Tom</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-phone-off" /></svg></span><svg class="av lk-tom" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-rest-crop"/></svg></button><button type="button" class="avatar" style="--x: 8; --y: 7" data-state="idle" aria-haspopup="menu" aria-expanded="false" aria-label="Sam, idle, no station yet"><span class="tag state-idle"><span class="nm">Sam</span></span><svg class="av lk-sam" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail"/></svg></button>
+      </div></section><section class="panel sheet" aria-labelledby="sheet-title-pk"><span class="chip state-lifting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-dumbbell" /></svg>Lifting</span><p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>33:20</time></p><h2 class="vh" id="sheet-title-pk">Log a set</h2><details class="switch"><summary><span class="lift">Deadlift</span><span class="set-no">Set 3</span><span class="change">Change</span></summary></details><p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Lifting platform 5</b></span></p><p class="last">Last time <b>140 kg × 5</b></p><form method="post" class="set-form" id="set-log-pk"><div class="big-pair"><div class="big"><label for="w-pk">Weight</label><span class="field"><input id="w-pk" name="weight_kg" type="number" value="140" /><span class="unit" aria-hidden="true">kg</span></span></div><span class="times" aria-hidden="true">×</span><div class="big"><label for="r-pk">Reps</label><span class="field"><input id="r-pk" name="reps" type="number" value="5" /></span></div>
+      </div></form><div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-controls="tray" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><button type="submit" form="set-log-pk" class="wide">Done</button>
+      </div></section>
+      </div><div class="banner-slot"><p class="banner" role="status"><svg class="av lk-tom" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-crop" width="32" height="32"/></svg><span>Tom poked you 👉</span></p></div></main>
+      </div>
+      </div></section>
+      <!-- state: refused and failed -->
+      <section class="state"><p class="state-label">When it doesn't land · the menu has already closed. One line where the menu was, 4 s: beside the target on a laptop, just above the dock on a phone. Dashed and calm for a refusal (it's news); the red error only when it didn't send. Nobody else sees anything</p><div class="notes"><figure class="frame"><p class="note" role="status">Ji-woo is mid-set. Cheer instead?</p><figcaption><b>Slap refused, Lifting</b> · she started a set after your menu opened (INT-2.6)</figcaption></figure><figure class="frame"><p class="note" role="status">Lena's done for today. Cheer instead?</p><figcaption><b>Slap refused, Finished</b> (INT-2.5)</figcaption></figure><figure class="frame"><p class="note" role="status">Easy, give them 10 seconds.</p><figcaption><b>10 s limit</b> · from a second tab, or a reloaded menu (INT-4.1)</figcaption></figure><figure class="frame"><p class="note" role="status">Tom's left the gym.</p><figcaption><b>Gone</b> · he left between your tap and the server (INT-2.9)</figcaption></figure><figure class="frame"><p class="error" role="alert">That didn't send. Try again.</p><figcaption><b>No connection or server error</b> · nothing plays, nothing is logged (INT-3.10, INT-5.16)</figcaption></figure><p class="hint">A preset sent within 2 s of your last is refused silently, like a double tap: the menu has closed, and the log shows the first one. A double-tapped Cheer sends one cheer and shows nothing (INT-4.5).</p>
+      </div></section>
+      <!-- state: phone, refused -->
+      <section class="state phone-only"><p class="state-label">Phone, refused (390 × 660) · Priya tried to slap Mia just as Mia started her set. The line sits above the dock, clear of the emoji tab, for 4 s; Start set never moves</p><div class="phone-frame"><div class="screen"><header class="topbar"><a href="/" class="brand" aria-label="Spotter home"><svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><use href="/sprites.svg#logo"/></svg><span>Spotter</span></a><nav><a href="/history">History</a></nav></header><main><div class="gym"><section class="panel map-panel" aria-labelledby="room-title-rf"><h1 class="map-sign" id="room-title-rf"><span class="vh">Room </span><span class="passcode">SB64FR</span></h1><p class="conn" role="status"><span class="badge">Live</span></p><div class="map"><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="/sprites.svg#map-tiles" /></svg><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="#floor-1"/></svg><button type="button" class="avatar me" style="--x: 1; --y: 7" data-state="resting" aria-label="Priya (you), resting, lifting platform 5"><span class="tag state-resting"><span class="nm">Priya</span></span><svg class="av lk-priya" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-rest-curls"/></svg></button><button type="button" class="avatar on-machine" style="--x: 6; --y: 1" data-state="lifting" aria-haspopup="menu" aria-expanded="false" aria-label="Mia, lifting, back squat on squat rack 3"><span class="tag state-lifting"><span class="nm">Mia</span></span><svg class="av lk-mia" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-squat-rack-1-long"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg></button><button type="button" class="avatar on-station" style="--x: 3; --y: 1" data-state="slacking" aria-haspopup="menu" aria-expanded="false" aria-label="Ji-woo, slacking, flat bench 2"><span class="tag state-slacking"><span class="nm">Ji-woo</span></span><svg class="av lk-jiwoo" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-sit-ponytail"/></svg></button><button type="button" class="avatar on-machine" style="--x: 1; --y: 1" data-state="lifting" aria-haspopup="menu" aria-expanded="false" aria-label="Kai, lifting, run on treadmill 1"><span class="tag state-lifting"><span class="nm">Kai</span></span><svg class="av lk-kai" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-treadmill-1-crop"/><use href="/sprites.svg#eq-treadmill-front-1"/></svg></button><button type="button" class="avatar away" style="--x: 3; --y: 7" data-state="resting" aria-haspopup="menu" aria-expanded="false" aria-label="Tom, resting, away, dumbbell rack 4"><span class="tag state-resting"><span class="nm">Tom</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-phone-off" /></svg></span><svg class="av lk-tom" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-rest-crop"/></svg></button><button type="button" class="avatar" style="--x: 8; --y: 7" data-state="idle" aria-haspopup="menu" aria-expanded="false" aria-label="Sam, idle, no station yet"><span class="tag state-idle"><span class="nm">Sam</span></span><svg class="av lk-sam" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail"/></svg></button>
+      </div></section><section class="panel sheet" aria-labelledby="sheet-title-rf"><span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span><p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>31:42</time></p><h2 class="vh" id="sheet-title-rf">Log a set</h2><div class="rest"><div class="rest-top"><p class="timer" role="timer" aria-label="Rest left">1:24</p><p class="rest-what"><span>of <b>3:00</b> rest</span><span>after <b>140 kg × 5</b></span></p>
+      </div><form method="post" class="rest-adjust"><button type="submit" name="delta" value="-15" class="button secondary tool">-15 s</button><button type="submit" name="delta" value="15" class="button secondary tool">+15 s</button></form>
+      </div><details class="switch"><summary><span class="lift">Deadlift</span><span class="set-no">Set 3</span><span class="change">Change</span></summary></details><p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Lifting platform 5</b></span></p><div class="dock"><p class="note" role="status">Mia is mid-set. Cheer instead?</p><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-controls="tray" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><p class="dock-timer" aria-hidden="true">1:24</p><button type="submit" form="set-log-rf" name="action" value="start" class="wide">Start set</button>
+      </div></section>
+      </div></main>
+      </div>
+      </div></section>
+      <!-- state: preset bubbles -->
+      <section class="state"><p class="state-label">Preset bubbles · above the sender, 5 s, on every screen. "@Ji-woo" heads the bubble, so the room sees who it's aimed at (D8). Several people's bubbles show at once; a newer one from the same person replaces theirs, and if two overlap at 1× the newer draws on top (the log keeps both). Mia is on the back row, so hers hangs under her rack. Priya sent an emoji too: it sits under her bubble, both readable (INT-8.7)</p><div class="gym"><section class="panel map-panel" aria-labelledby="room-title-bb"><h1 class="map-sign" id="room-title-bb"><span class="vh">Room </span><span class="passcode">SB64FR</span></h1><p class="conn" role="status"><span class="badge">Live</span></p><div class="map"><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="/sprites.svg#map-tiles" /></svg><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="#floor-1"/></svg><div class="pops" aria-hidden="true"><svg class="pop" viewBox="0 0 16 16" style="--x: 1; --y: 7"><use href="/sprites.svg#em-eyes"/></svg></div><button type="button" class="avatar me" style="--x: 1; --y: 7" data-state="resting" aria-label="Priya (you), resting, lifting platform 5"><span class="tag state-resting"><span class="nm">Priya</span></span><svg class="av lk-priya" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-rest-curls"/></svg></button><button type="button" class="avatar on-machine" style="--x: 6; --y: 1" data-state="lifting" aria-haspopup="menu" aria-expanded="false" aria-label="Mia, lifting, back squat on squat rack 3"><span class="tag state-lifting"><span class="nm">Mia</span></span><svg class="av lk-mia" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-squat-rack-1-long"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg></button><button type="button" class="avatar on-station" style="--x: 3; --y: 1" data-state="slacking" aria-haspopup="menu" aria-expanded="false" aria-label="Ji-woo, slacking, flat bench 2"><span class="tag state-slacking"><span class="nm">Ji-woo</span></span><svg class="av lk-jiwoo" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-sit-ponytail"/></svg></button><button type="button" class="avatar on-machine" style="--x: 1; --y: 1" data-state="lifting" aria-haspopup="menu" aria-expanded="false" aria-label="Kai, lifting, run on treadmill 1"><span class="tag state-lifting"><span class="nm">Kai</span></span><svg class="av lk-kai" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-treadmill-1-crop"/><use href="/sprites.svg#eq-treadmill-front-1"/></svg></button><button type="button" class="avatar away" style="--x: 3; --y: 7" data-state="resting" aria-haspopup="menu" aria-expanded="false" aria-label="Tom, resting, away, dumbbell rack 4"><span class="tag state-resting"><span class="nm">Tom</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-phone-off" /></svg></span><svg class="av lk-tom" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-rest-crop"/></svg></button><button type="button" class="avatar" style="--x: 8; --y: 7" data-state="idle" aria-haspopup="menu" aria-expanded="false" aria-label="Sam, idle, no station yet"><span class="tag state-idle"><span class="nm">Sam</span></span><svg class="av lk-sam" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail"/></svg></button><div class="says"><p class="say west over-pop" style="--x: 1; --y: 7"><span class="to">@Ji-woo</span>Put the phone down 📵</p><p class="say below" style="--x: 6; --y: 1"><span class="to">@Ji-woo</span>Bro is scrolling 💀</p></div>
+      </div></section><section class="panel sheet" aria-labelledby="sheet-title-bb"><span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span><p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>31:42</time></p><h2 class="vh" id="sheet-title-bb">Log a set</h2><div class="rest"><div class="rest-top"><p class="timer" role="timer" aria-label="Rest left">1:24</p><p class="rest-what"><span>of <b>3:00</b> rest</span><span>after <b>140 kg × 5</b></span></p>
+      </div><form method="post" class="rest-adjust"><button type="submit" name="delta" value="-15" class="button secondary tool">-15 s</button><button type="submit" name="delta" value="15" class="button secondary tool">+15 s</button></form>
+      </div><details class="switch"><summary><span class="lift">Deadlift</span><span class="set-no">Set 3</span><span class="change">Change</span></summary></details><p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Lifting platform 5</b></span></p><div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-controls="tray" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><p class="dock-timer" aria-hidden="true" hidden>1:24</p><button type="submit" form="set-log-bb" name="action" value="start" class="wide">Start set</button>
+      </div></section>
+      </div></section>
+      <div class="solos">
+      <!-- state: emoji, idle (choose) -->
+      <section class="state solo emote-solo"><p class="state-label">Emoji tab · Idle · the tab rises from the dock's top border on the right: it takes no width from Choose and never touches it</p><section class="panel sheet" aria-labelledby="sheet-title-e1"><span class="chip state-idle tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-idle" /></svg>Idle</span><p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>31:42</time></p><h2 class="vh" id="sheet-title-e1">Log a set</h2><form method="post" class="pick" id="pick-e1"><h2 class="lift lift-row">Pick a lift</h2><p class="recent-label">From this workout</p><ul class="recent"><li><button type="submit" name="exercise" value="5">Back squat</button></li><li><button type="submit" name="exercise" value="9">Deadlift</button></li></ul><label for="ex-e1">Exercise</label><select id="ex-e1" name="exercise"><option>Bench press</option></select><p class="hint">Choosing one claims a station on the map.</p></form><div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-controls="tray" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><button type="submit" form="pick-e1" class="wide">Choose</button>
+      </div></section></section>
+      <!-- state: emoji tray, lifting (done) -->
+      <section class="state solo emote-solo"><p class="state-label">Emoji tray open · Lifting · the tray opens upwards from the tab, 48 px clear of Done. Done keeps its place, size and label; a tap on Done closes the tray and logs the set in the same tap (INT-8.4)</p><section class="panel sheet" aria-labelledby="sheet-title-e2"><span class="chip state-lifting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-dumbbell" /></svg>Lifting</span><p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>31:42</time></p><h2 class="vh" id="sheet-title-e2">Log a set</h2><details class="switch"><summary><span class="lift">Deadlift</span><span class="set-no">Set 3</span><span class="change">Change</span></summary></details><p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Lifting platform 5</b></span></p><p class="last">Last time <b>140 kg × 5</b></p><form method="post" class="set-form" id="set-log-e2"><div class="big-pair"><div class="big"><label for="w-e2">Weight</label><span class="field"><input id="w-e2" name="weight_kg" type="number" value="140" /><span class="unit" aria-hidden="true">kg</span></span></div><span class="times" aria-hidden="true">×</span><div class="big"><label for="r-e2">Reps</label><span class="field"><input id="r-e2" name="reps" type="number" value="5" /></span></div>
+      </div></form><div class="dock"><ul class="tray" id="tray-x" aria-label="Emoji"><li><button type="button" name="emoji" value="hi"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-hi"/></svg>Hi</button></li><li><button type="button" name="emoji" value="flex"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-flex"/></svg>Flex</button></li><li><button type="button" name="emoji" value="fire"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-fire"/></svg>Fire</button></li><li><button type="button" name="emoji" value="clap"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-clap"/></svg>Clap</button></li><li><button type="button" name="emoji" value="haha"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-haha"/></svg>Haha</button></li><li><button type="button" name="emoji" value="dead"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-dead"/></svg>Dead</button></li><li><button type="button" name="emoji" value="eyes"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-eyes"/></svg>Eyes</button></li><li><button type="button" name="emoji" value="love"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-love"/></svg>Love</button></li></ul><button type="button" class="emote" aria-haspopup="true" aria-expanded="true" aria-controls="tray" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><button type="submit" form="set-log-e2" class="wide">Done</button>
+      </div></section></section>
+      <!-- state: emoji tray, resting (start set) -->
+      <section class="state solo emote-solo"><p class="state-label">Emoji tray open · Resting · two taps to send: the tab, then an emoji. The tray closes on the send</p><section class="panel sheet" aria-labelledby="sheet-title-e3"><span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span><p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>31:42</time></p><h2 class="vh" id="sheet-title-e3">Log a set</h2><div class="rest"><div class="rest-top"><p class="timer" role="timer" aria-label="Rest left">1:24</p><p class="rest-what"><span>of <b>3:00</b> rest</span><span>after <b>140 kg × 5</b></span></p>
+      </div><form method="post" class="rest-adjust"><button type="submit" name="delta" value="-15" class="button secondary tool">-15 s</button><button type="submit" name="delta" value="15" class="button secondary tool">+15 s</button></form>
+      </div><details class="switch"><summary><span class="lift">Deadlift</span><span class="set-no">Set 3</span><span class="change">Change</span></summary></details><p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Lifting platform 5</b></span></p><form method="post" class="set-form" id="set-log-e3"><div class="big-pair"><div class="big"><label for="w-e3">Weight</label><span class="field"><input id="w-e3" name="weight_kg" type="number" value="140" /><span class="unit" aria-hidden="true">kg</span></span></div><span class="times" aria-hidden="true">×</span><div class="big"><label for="r-e3">Reps</label><span class="field"><input id="r-e3" name="reps" type="number" value="5" /></span></div>
+      </div></form><div class="dock"><ul class="tray" id="tray-x" aria-label="Emoji"><li><button type="button" name="emoji" value="hi"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-hi"/></svg>Hi</button></li><li><button type="button" name="emoji" value="flex"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-flex"/></svg>Flex</button></li><li><button type="button" name="emoji" value="fire"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-fire"/></svg>Fire</button></li><li><button type="button" name="emoji" value="clap"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-clap"/></svg>Clap</button></li><li><button type="button" name="emoji" value="haha"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-haha"/></svg>Haha</button></li><li><button type="button" name="emoji" value="dead"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-dead"/></svg>Dead</button></li><li><button type="button" name="emoji" value="eyes"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-eyes"/></svg>Eyes</button></li><li><button type="button" name="emoji" value="love"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-love"/></svg>Love</button></li></ul><button type="button" class="emote" aria-haspopup="true" aria-expanded="true" aria-controls="tray" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><p class="dock-timer" aria-hidden="true" hidden>1:24</p><button type="submit" form="set-log-e3" name="action" value="start" class="wide">Start set</button>
+      </div></section></section>
+      <!-- state: emoji tray, slacking (start set) -->
+      <section class="state solo emote-solo"><p class="state-label">Emoji tray open · Slacking · sending an emoji doesn't end the rest; only Start set does (INT-8.5)</p><section class="panel sheet" aria-labelledby="sheet-title-e4"><span class="chip state-slacking tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-phone" /></svg>Slacking</span><p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>35:53</time></p><h2 class="vh" id="sheet-title-e4">Log a set</h2><div class="rest over slacking"><p class="rest-say" role="status">Your squad can see you 👀</p><div class="rest-top"><p class="timer" role="timer" aria-label="Over your rest by">+2:47</p><p class="rest-what"><span>over a <b>3:00</b> rest</span><span>after <b>140 kg × 5</b></span></p>
+      </div><form method="post" class="rest-adjust"><button type="submit" name="delta" value="-15" class="button secondary tool">-15 s</button><button type="submit" name="delta" value="15" class="button secondary tool">+15 s</button></form>
+      </div><details class="switch"><summary><span class="lift">Deadlift</span><span class="set-no">Set 3</span><span class="change">Change</span></summary></details><p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Lifting platform 5</b></span></p><form method="post" class="set-form" id="set-log-e4"><div class="big-pair"><div class="big"><label for="w-e4">Weight</label><span class="field"><input id="w-e4" name="weight_kg" type="number" value="140" /><span class="unit" aria-hidden="true">kg</span></span></div><span class="times" aria-hidden="true">×</span><div class="big"><label for="r-e4">Reps</label><span class="field"><input id="r-e4" name="reps" type="number" value="5" /></span></div>
+      </div></form><div class="dock"><ul class="tray" id="tray-x" aria-label="Emoji"><li><button type="button" name="emoji" value="hi"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-hi"/></svg>Hi</button></li><li><button type="button" name="emoji" value="flex"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-flex"/></svg>Flex</button></li><li><button type="button" name="emoji" value="fire"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-fire"/></svg>Fire</button></li><li><button type="button" name="emoji" value="clap"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-clap"/></svg>Clap</button></li><li><button type="button" name="emoji" value="haha"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-haha"/></svg>Haha</button></li><li><button type="button" name="emoji" value="dead"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-dead"/></svg>Dead</button></li><li><button type="button" name="emoji" value="eyes"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-eyes"/></svg>Eyes</button></li><li><button type="button" name="emoji" value="love"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-love"/></svg>Love</button></li></ul><button type="button" class="emote" aria-haspopup="true" aria-expanded="true" aria-controls="tray" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><p class="dock-timer" aria-hidden="true" hidden>+2:47</p><button type="submit" form="set-log-e4" name="action" value="start" class="wide">Start set</button>
+      </div></section></section>
+      <!-- state: emoji tray, editing (save) -->
+      <section class="state solo emote-solo"><p class="state-label">Emoji tray open · Editing a set · Save stays where it was</p><section class="panel sheet" aria-labelledby="sheet-title-e5"><span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span><p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>31:54</time></p><h2 class="vh" id="sheet-title-e5">Log a set</h2><div class="lift-row"><h2 class="lift">Deadlift</h2><span class="set-no">Set 2</span><span class="badge">Editing</span><a href="?exercise=9" class="lift-cancel">Cancel</a></div><p class="hint logged-at">Logged at 6:38 pm</p><form method="post" class="set-form" id="set-edit-e5"><div class="big-pair"><div class="big"><label for="w-e5">Weight</label><span class="field"><input id="w-e5" name="weight_kg" type="number" value="140" /><span class="unit" aria-hidden="true">kg</span></span></div><span class="times" aria-hidden="true">×</span><div class="big"><label for="r-e5">Reps</label><span class="field"><input id="r-e5" name="reps" type="number" value="4" /></span></div>
+      </div></form><div class="dock"><ul class="tray" id="tray-x" aria-label="Emoji"><li><button type="button" name="emoji" value="hi"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-hi"/></svg>Hi</button></li><li><button type="button" name="emoji" value="flex"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-flex"/></svg>Flex</button></li><li><button type="button" name="emoji" value="fire"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-fire"/></svg>Fire</button></li><li><button type="button" name="emoji" value="clap"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-clap"/></svg>Clap</button></li><li><button type="button" name="emoji" value="haha"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-haha"/></svg>Haha</button></li><li><button type="button" name="emoji" value="dead"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-dead"/></svg>Dead</button></li><li><button type="button" name="emoji" value="eyes"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-eyes"/></svg>Eyes</button></li><li><button type="button" name="emoji" value="love"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-love"/></svg>Love</button></li></ul><button type="button" class="emote" aria-haspopup="true" aria-expanded="true" aria-controls="tray" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><button type="submit" form="set-edit-e5" class="wide">Save</button>
+      </div></section></section>
+      <!-- state: emoji sent (the second after) -->
+      <section class="state solo emote-solo"><p class="state-label">Emoji sent · for the 1 s you can't send another, the tab wears what you just sent (here Fire), so you know it went even with the map scrolled away (INT-8.6). The stamp is never hidden (shown together here)</p><section class="panel sheet" aria-labelledby="sheet-title-e6"><span class="chip state-lifting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-dumbbell" /></svg>Lifting</span><p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>31:42</time></p><h2 class="vh" id="sheet-title-e6">Log a set</h2><details class="switch"><summary><span class="lift">Deadlift</span><span class="set-no">Set 3</span><span class="change">Change</span></summary></details><p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Lifting platform 5</b></span></p><p class="last">Last time <b>140 kg × 5</b></p><form method="post" class="set-form" id="set-log-e6"><div class="big-pair"><div class="big"><label for="w-e6">Weight</label><span class="field"><input id="w-e6" name="weight_kg" type="number" value="140" /><span class="unit" aria-hidden="true">kg</span></span></div><span class="times" aria-hidden="true">×</span><div class="big"><label for="r-e6">Reps</label><span class="field"><input id="r-e6" name="reps" type="number" value="5" /></span></div>
+      </div></form><div class="dock"><p class="stamp"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-tick" /></svg><span>Set 2 logged: <b>140 kg × 5</b></span></p><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-controls="tray" aria-disabled="true" aria-label="Send an emoji (sent: fire)"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-fire"/></svg></button><button type="submit" form="set-log-e6" class="wide">Done</button>
+      </div></section></section>
+      <!-- state: emoji tray cooling -->
+      <section class="state solo emote-solo"><p class="state-label">Emoji tray, cooling · reopened within the second: every emoji rests at half for the rest of it, no message (INT-8.8)</p><section class="panel sheet" aria-labelledby="sheet-title-e7"><span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span><p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>31:42</time></p><h2 class="vh" id="sheet-title-e7">Log a set</h2><div class="rest"><div class="rest-top"><p class="timer" role="timer" aria-label="Rest left">1:24</p><p class="rest-what"><span>of <b>3:00</b> rest</span><span>after <b>140 kg × 5</b></span></p>
+      </div><form method="post" class="rest-adjust"><button type="submit" name="delta" value="-15" class="button secondary tool">-15 s</button><button type="submit" name="delta" value="15" class="button secondary tool">+15 s</button></form>
+      </div><details class="switch"><summary><span class="lift">Deadlift</span><span class="set-no">Set 3</span><span class="change">Change</span></summary></details><p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Lifting platform 5</b></span></p><form method="post" class="set-form" id="set-log-e7"><div class="big-pair"><div class="big"><label for="w-e7">Weight</label><span class="field"><input id="w-e7" name="weight_kg" type="number" value="140" /><span class="unit" aria-hidden="true">kg</span></span></div><span class="times" aria-hidden="true">×</span><div class="big"><label for="r-e7">Reps</label><span class="field"><input id="r-e7" name="reps" type="number" value="5" /></span></div>
+      </div></form><div class="dock"><ul class="tray" id="tray-x" aria-label="Emoji" data-cooling><li><button type="button" name="emoji" value="hi" aria-disabled="true"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-hi"/></svg>Hi</button></li><li><button type="button" name="emoji" value="flex" aria-disabled="true"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-flex"/></svg>Flex</button></li><li><button type="button" name="emoji" value="fire" aria-disabled="true"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-fire"/></svg>Fire</button></li><li><button type="button" name="emoji" value="clap" aria-disabled="true"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-clap"/></svg>Clap</button></li><li><button type="button" name="emoji" value="haha" aria-disabled="true"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-haha"/></svg>Haha</button></li><li><button type="button" name="emoji" value="dead" aria-disabled="true"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-dead"/></svg>Dead</button></li><li><button type="button" name="emoji" value="eyes" aria-disabled="true"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-eyes"/></svg>Eyes</button></li><li><button type="button" name="emoji" value="love" aria-disabled="true"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-love"/></svg>Love</button></li></ul><button type="button" class="emote" aria-haspopup="true" aria-expanded="true" aria-controls="tray" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><p class="dock-timer" aria-hidden="true" hidden>1:24</p><button type="submit" form="set-log-e7" name="action" value="start" class="wide">Start set</button>
+      </div></section></section>
+      <!-- state: emoji failed -->
+      <section class="state solo emote-solo"><p class="state-label">Emoji failed · no connection: nothing pops anywhere, and one red line by the tab, never over Done, never a dialog (INT-8.16)</p><section class="panel sheet" aria-labelledby="sheet-title-e8"><span class="chip state-lifting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-dumbbell" /></svg>Lifting</span><p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>31:42</time></p><h2 class="vh" id="sheet-title-e8">Log a set</h2><details class="switch"><summary><span class="lift">Deadlift</span><span class="set-no">Set 3</span><span class="change">Change</span></summary></details><p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Lifting platform 5</b></span></p><p class="last">Last time <b>140 kg × 5</b></p><form method="post" class="set-form" id="set-log-e8"><div class="big-pair"><div class="big"><label for="w-e8">Weight</label><span class="field"><input id="w-e8" name="weight_kg" type="number" value="140" /><span class="unit" aria-hidden="true">kg</span></span></div><span class="times" aria-hidden="true">×</span><div class="big"><label for="r-e8">Reps</label><span class="field"><input id="r-e8" name="reps" type="number" value="5" /></span></div>
+      </div></form><div class="dock"><p class="error emote-error" role="alert">That didn't send. Try again.</p><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-controls="tray" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><button type="submit" form="set-log-e8" class="wide">Done</button>
+      </div></section></section>
+      </div>
+      <!-- state: phone, emoji tray over done -->
+      <section class="state phone-only"><p class="state-label">Phone, emoji tray open while Lifting (390 × 660) · the tray sits over the sheet, never the dock: 8 emoji in a 4 × 2 grid of 64 px buttons, the thumb's reach. Done is pinned below, untouched</p><div class="phone-frame"><div class="screen"><header class="topbar"><a href="/" class="brand" aria-label="Spotter home"><svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><use href="/sprites.svg#logo"/></svg><span>Spotter</span></a><nav><a href="/history">History</a></nav></header><main><div class="gym"><section class="panel map-panel" aria-labelledby="room-title-pt"><h1 class="map-sign" id="room-title-pt"><span class="vh">Room </span><span class="passcode">SB64FR</span></h1><p class="conn" role="status"><span class="badge">Live</span></p><div class="map"><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="/sprites.svg#map-tiles" /></svg><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="#floor-2"/></svg><button type="button" class="avatar on-machine me" style="--x: 1; --y: 3" data-state="lifting" aria-label="Priya (you), lifting, deadlift on lifting platform 5"><span class="tag state-lifting"><span class="nm">Priya</span></span><svg class="av lk-priya" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-lifting-platform-1-curls"/><use href="/sprites.svg#eq-lifting-platform-front-1"/></svg></button><button type="button" class="avatar on-machine" style="--x: 6; --y: 1" data-state="lifting" aria-haspopup="menu" aria-expanded="false" aria-label="Mia, lifting, back squat on squat rack 3"><span class="tag state-lifting"><span class="nm">Mia</span></span><svg class="av lk-mia" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-squat-rack-1-long"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg></button><button type="button" class="avatar on-station" style="--x: 3; --y: 1" data-state="slacking" aria-haspopup="menu" aria-expanded="false" aria-label="Ji-woo, slacking, flat bench 2"><span class="tag state-slacking"><span class="nm">Ji-woo</span></span><svg class="av lk-jiwoo" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-sit-ponytail"/></svg></button><button type="button" class="avatar on-machine" style="--x: 1; --y: 1" data-state="lifting" aria-haspopup="menu" aria-expanded="false" aria-label="Kai, lifting, run on treadmill 1"><span class="tag state-lifting"><span class="nm">Kai</span></span><svg class="av lk-kai" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-treadmill-1-crop"/><use href="/sprites.svg#eq-treadmill-front-1"/></svg></button><button type="button" class="avatar away" style="--x: 3; --y: 7" data-state="resting" aria-haspopup="menu" aria-expanded="false" aria-label="Tom, resting, away, dumbbell rack 4"><span class="tag state-resting"><span class="nm">Tom</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-phone-off" /></svg></span><svg class="av lk-tom" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-rest-crop"/></svg></button><button type="button" class="avatar" style="--x: 8; --y: 7" data-state="idle" aria-haspopup="menu" aria-expanded="false" aria-label="Sam, idle, no station yet"><span class="tag state-idle"><span class="nm">Sam</span></span><svg class="av lk-sam" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail"/></svg></button>
+      </div></section><section class="panel sheet" aria-labelledby="sheet-title-pt"><span class="chip state-lifting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-dumbbell" /></svg>Lifting</span><p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>33:20</time></p><h2 class="vh" id="sheet-title-pt">Log a set</h2><details class="switch"><summary><span class="lift">Deadlift</span><span class="set-no">Set 3</span><span class="change">Change</span></summary></details><p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Lifting platform 5</b></span></p><p class="last">Last time <b>140 kg × 5</b></p><form method="post" class="set-form" id="set-log-pt"><div class="big-pair"><div class="big"><label for="w-pt">Weight</label><span class="field"><input id="w-pt" name="weight_kg" type="number" value="140" /><span class="unit" aria-hidden="true">kg</span></span></div><span class="times" aria-hidden="true">×</span><div class="big"><label for="r-pt">Reps</label><span class="field"><input id="r-pt" name="reps" type="number" value="5" /></span></div>
+      </div></form><div class="dock"><ul class="tray" id="tray-x" aria-label="Emoji"><li><button type="button" name="emoji" value="hi"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-hi"/></svg>Hi</button></li><li><button type="button" name="emoji" value="flex"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-flex"/></svg>Flex</button></li><li><button type="button" name="emoji" value="fire"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-fire"/></svg>Fire</button></li><li><button type="button" name="emoji" value="clap"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-clap"/></svg>Clap</button></li><li><button type="button" name="emoji" value="haha"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-haha"/></svg>Haha</button></li><li><button type="button" name="emoji" value="dead"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-dead"/></svg>Dead</button></li><li><button type="button" name="emoji" value="eyes"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-eyes"/></svg>Eyes</button></li><li><button type="button" name="emoji" value="love"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-love"/></svg>Love</button></li></ul><button type="button" class="emote" aria-haspopup="true" aria-expanded="true" aria-controls="tray" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><button type="submit" form="set-log-pt" class="wide">Done</button>
+      </div></section>
+      </div></main>
+      </div>
+      </div></section>
+      <!-- state: phone 360, emoji tray resting -->
+      <section class="state phone-only"><p class="state-label">Phone at 360 px, emoji tray open while Resting · the smallest phone: the tray (300 px) still fits, the tab still clears Start set</p><div class="w360"><div class="phone-frame"><div class="screen"><header class="topbar"><a href="/" class="brand" aria-label="Spotter home"><svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><use href="/sprites.svg#logo"/></svg><span>Spotter</span></a><nav><a href="/history">History</a></nav></header><main><div class="gym"><section class="panel map-panel" aria-labelledby="room-title-p3"><h1 class="map-sign" id="room-title-p3"><span class="vh">Room </span><span class="passcode">SB64FR</span></h1><p class="conn" role="status"><span class="badge">Live</span></p><div class="map"><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="/sprites.svg#map-tiles" /></svg><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="#floor-1"/></svg><button type="button" class="avatar me" style="--x: 1; --y: 7" data-state="resting" aria-label="Priya (you), resting, lifting platform 5"><span class="tag state-resting"><span class="nm">Priya</span></span><svg class="av lk-priya" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-rest-curls"/></svg></button><button type="button" class="avatar on-machine" style="--x: 6; --y: 1" data-state="lifting" aria-haspopup="menu" aria-expanded="false" aria-label="Mia, lifting, back squat on squat rack 3"><span class="tag state-lifting"><span class="nm">Mia</span></span><svg class="av lk-mia" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-squat-rack-1-long"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg></button><button type="button" class="avatar on-station" style="--x: 3; --y: 1" data-state="slacking" aria-haspopup="menu" aria-expanded="false" aria-label="Ji-woo, slacking, flat bench 2"><span class="tag state-slacking"><span class="nm">Ji-woo</span></span><svg class="av lk-jiwoo" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-sit-ponytail"/></svg></button><button type="button" class="avatar on-machine" style="--x: 1; --y: 1" data-state="lifting" aria-haspopup="menu" aria-expanded="false" aria-label="Kai, lifting, run on treadmill 1"><span class="tag state-lifting"><span class="nm">Kai</span></span><svg class="av lk-kai" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-treadmill-1-crop"/><use href="/sprites.svg#eq-treadmill-front-1"/></svg></button><button type="button" class="avatar away" style="--x: 3; --y: 7" data-state="resting" aria-haspopup="menu" aria-expanded="false" aria-label="Tom, resting, away, dumbbell rack 4"><span class="tag state-resting"><span class="nm">Tom</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-phone-off" /></svg></span><svg class="av lk-tom" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-rest-crop"/></svg></button><button type="button" class="avatar" style="--x: 8; --y: 7" data-state="idle" aria-haspopup="menu" aria-expanded="false" aria-label="Sam, idle, no station yet"><span class="tag state-idle"><span class="nm">Sam</span></span><svg class="av lk-sam" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail"/></svg></button>
+      </div></section><section class="panel sheet" aria-labelledby="sheet-title-p3"><span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span><p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>31:42</time></p><h2 class="vh" id="sheet-title-p3">Log a set</h2><div class="rest"><div class="rest-top"><p class="timer" role="timer" aria-label="Rest left">1:24</p><p class="rest-what"><span>of <b>3:00</b> rest</span><span>after <b>140 kg × 5</b></span></p>
+      </div><form method="post" class="rest-adjust"><button type="submit" name="delta" value="-15" class="button secondary tool">-15 s</button><button type="submit" name="delta" value="15" class="button secondary tool">+15 s</button></form>
+      </div><details class="switch"><summary><span class="lift">Deadlift</span><span class="set-no">Set 3</span><span class="change">Change</span></summary></details><p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Lifting platform 5</b></span></p><div class="dock"><ul class="tray" id="tray-x" aria-label="Emoji"><li><button type="button" name="emoji" value="hi"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-hi"/></svg>Hi</button></li><li><button type="button" name="emoji" value="flex"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-flex"/></svg>Flex</button></li><li><button type="button" name="emoji" value="fire"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-fire"/></svg>Fire</button></li><li><button type="button" name="emoji" value="clap"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-clap"/></svg>Clap</button></li><li><button type="button" name="emoji" value="haha"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-haha"/></svg>Haha</button></li><li><button type="button" name="emoji" value="dead"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-dead"/></svg>Dead</button></li><li><button type="button" name="emoji" value="eyes"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-eyes"/></svg>Eyes</button></li><li><button type="button" name="emoji" value="love"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-love"/></svg>Love</button></li></ul><button type="button" class="emote" aria-haspopup="true" aria-expanded="true" aria-controls="tray" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><p class="dock-timer" aria-hidden="true">1:24</p><button type="submit" form="set-log-p3" name="action" value="start" class="wide">Start set</button>
+      </div></section>
+      </div></main>
+      </div></div></div></section>
+      <!-- state: emoji pops, a room of 12 -->
+      <section class="state"><p class="state-label">Emoji pops, a room of 12 plus Dony · the showcase: everyone sending as fast as they're allowed (one a second each). Every pop sits in one layer under every avatar, so a pop never covers a name tag: each person can still be told apart by their tag (INT-8.18). On the back row there's no room above, so the pop sits beside the tag. Dony's pop (Flex, by the lockers) is the same as anyone's, unmarked (BOT-6.1)</p><div class="gym"><section class="panel map-panel" aria-labelledby="room-title-tw"><h1 class="map-sign" id="room-title-tw"><span class="vh">Room </span><span class="passcode">SB64FR</span></h1><p class="conn" role="status"><span class="badge">Live</span></p><div class="map"><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="/sprites.svg#map-tiles" /></svg><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="#floor-3"/></svg><div class="pops" aria-hidden="true"><svg class="pop" viewBox="0 0 16 16" style="--x: 1; --y: 7"><use href="/sprites.svg#em-hi"/></svg><svg class="pop" viewBox="0 0 16 16" style="--x: 8; --y: 7"><use href="/sprites.svg#em-haha"/></svg><svg class="pop" viewBox="0 0 16 16" style="--x: 6; --y: 7"><use href="/sprites.svg#em-fire"/></svg><svg class="pop" viewBox="0 0 16 16" style="--x: 7; --y: 8"><use href="/sprites.svg#em-love"/></svg><svg class="pop" viewBox="0 0 16 16" style="--x: 2; --y: 8"><use href="/sprites.svg#em-clap"/></svg><svg class="pop" viewBox="0 0 16 16" style="--x: 3; --y: 7"><use href="/sprites.svg#em-dead"/></svg><svg class="pop" viewBox="0 0 16 16" style="--x: 8; --y: 8"><use href="/sprites.svg#em-flex"/></svg><svg class="pop" viewBox="0 0 16 16" style="--x: 1; --y: 3"><use href="/sprites.svg#em-flex"/></svg><svg class="pop" viewBox="0 0 16 16" style="--x: 3; --y: 3"><use href="/sprites.svg#em-fire"/></svg><svg class="pop" viewBox="0 0 16 16" style="--x: 6; --y: 3"><use href="/sprites.svg#em-eyes"/></svg><svg class="pop beside" viewBox="0 0 16 16" style="--x: 1; --y: 1"><use href="/sprites.svg#em-love"/></svg><svg class="pop beside" viewBox="0 0 16 16" style="--x: 3; --y: 1"><use href="/sprites.svg#em-dead"/></svg><svg class="pop beside" viewBox="0 0 16 16" style="--x: 6; --y: 1"><use href="/sprites.svg#em-haha"/></svg></div><button type="button" class="avatar me" style="--x: 1; --y: 7" data-state="resting" aria-label="Priya (you), resting, lifting platform 5"><span class="tag state-resting"><span class="nm">Priya</span></span><svg class="av lk-priya" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-rest-curls"/></svg></button><button type="button" class="avatar on-machine" style="--x: 6; --y: 1" data-state="lifting" aria-haspopup="menu" aria-expanded="false" aria-label="Mia, lifting, back squat on squat rack 3"><span class="tag state-lifting"><span class="nm">Mia</span></span><svg class="av lk-mia" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-squat-rack-1-long"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg></button><button type="button" class="avatar on-station" style="--x: 3; --y: 1" data-state="slacking" aria-haspopup="menu" aria-expanded="false" aria-label="Ji-woo, slacking, flat bench 2"><span class="tag state-slacking"><span class="nm">Ji-woo</span></span><svg class="av lk-jiwoo" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-sit-ponytail"/></svg></button><button type="button" class="avatar on-machine" style="--x: 1; --y: 1" data-state="lifting" aria-haspopup="menu" aria-expanded="false" aria-label="Kai, lifting, run on treadmill 1"><span class="tag state-lifting"><span class="nm">Kai</span></span><svg class="av lk-kai" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-treadmill-1-crop"/><use href="/sprites.svg#eq-treadmill-front-1"/></svg></button><button type="button" class="avatar" style="--x: 3; --y: 7" data-state="resting" aria-haspopup="menu" aria-expanded="false" aria-label="Tom, resting, dumbbell rack 4"><span class="tag state-resting"><span class="nm">Tom</span></span><svg class="av lk-tom" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-rest-crop"/></svg></button><button type="button" class="avatar" style="--x: 8; --y: 7" data-state="idle" aria-haspopup="menu" aria-expanded="false" aria-label="Sam, idle, no station yet"><span class="tag state-idle"><span class="nm">Sam</span></span><svg class="av lk-sam" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail"/></svg></button><button type="button" class="avatar" style="--x: 6; --y: 7" data-state="idle" aria-haspopup="menu" aria-expanded="false" aria-label="Lena, idle"><span class="tag state-idle"><span class="nm">Lena</span></span><svg class="av lk-lena" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-stand-long"/></svg></button><button type="button" class="avatar" style="--x: 7; --y: 8" data-state="idle" aria-haspopup="menu" aria-expanded="false" aria-label="Omar, idle"><span class="tag state-idle"><span class="nm">Omar</span></span><svg class="av lk-omar" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-stand-crop"/></svg></button><button type="button" class="avatar" style="--x: 2; --y: 8" data-state="resting" aria-haspopup="menu" aria-expanded="false" aria-label="Hana, resting"><span class="tag state-resting"><span class="nm">Hana</span></span><svg class="av lk-hana" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-rest-ponytail"/></svg></button><button type="button" class="avatar on-machine" style="--x: 1; --y: 3" data-state="lifting" aria-haspopup="menu" aria-expanded="false" aria-label="Zoe, lifting"><span class="tag state-lifting"><span class="nm">Zoe</span></span><svg class="av lk-zoe" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-lifting-platform-1-curls"/><use href="/sprites.svg#eq-lifting-platform-front-1"/></svg></button><button type="button" class="avatar on-machine" style="--x: 3; --y: 3" data-state="lifting" aria-haspopup="menu" aria-expanded="false" aria-label="Ravi, lifting"><span class="tag state-lifting"><span class="nm">Ravi</span></span><svg class="av lk-ravi" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-exercise-mat-1-crop"/><use href="/sprites.svg#eq-exercise-mat-front-1"/></svg></button><button type="button" class="avatar on-station" style="--x: 6; --y: 3" data-state="slacking" aria-haspopup="menu" aria-expanded="false" aria-label="Ella, slacking"><span class="tag state-slacking"><span class="nm">Ella</span></span><svg class="av lk-ella" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-sit-long"/></svg></button><button type="button" class="avatar" style="--x: 8; --y: 8" data-state="idle" aria-haspopup="menu" aria-expanded="false" aria-label="Dony, idle, no station yet"><span class="tag state-idle"><span class="nm">Dony</span></span><svg class="av lk-dony" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#dony-stand"/></svg></button>
+      </div></section><section class="panel sheet" aria-labelledby="sheet-title-tw"><span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span><p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>31:42</time></p><h2 class="vh" id="sheet-title-tw">Log a set</h2><div class="rest"><div class="rest-top"><p class="timer" role="timer" aria-label="Rest left">1:24</p><p class="rest-what"><span>of <b>3:00</b> rest</span><span>after <b>140 kg × 5</b></span></p>
+      </div><form method="post" class="rest-adjust"><button type="submit" name="delta" value="-15" class="button secondary tool">-15 s</button><button type="submit" name="delta" value="15" class="button secondary tool">+15 s</button></form>
+      </div><details class="switch"><summary><span class="lift">Deadlift</span><span class="set-no">Set 3</span><span class="change">Change</span></summary></details><p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Lifting platform 5</b></span></p><div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-controls="tray" aria-disabled="true" aria-label="Send an emoji (sent: hi)"><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-hi"/></svg></button><p class="dock-timer" aria-hidden="true" hidden>1:24</p><button type="submit" form="set-log-tw" name="action" value="start" class="wide">Start set</button>
+      </div></section>
+      </div></section>
+      <!-- state: dony emoji -->
+      <section class="state"><p class="state-label">Dony's emoji · the same pop as a person's, from his schedule: Hi as he lands (BOT-6.2), Dead while Slacking on his own (BOT-6.4), and an answer a second after Priya cheered him (BOT-6.7). No banner, no log line, no marker</p><div class="film"><figure class="frame"><div class="frame-win" style="--rows: 3"><div class="map" style="--s: 1"><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="/sprites.svg#map-tiles" /></svg><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="#floor-4"/></svg><div class="pops" aria-hidden="true"><svg class="pop beside" viewBox="0 0 16 16" style="--x: 5; --y: 1"><use href="/sprites.svg#em-hi"/></svg></div><button type="button" class="avatar" style="--x: 5; --y: 1" data-state="idle" aria-haspopup="menu" aria-expanded="false" aria-label="Dony"><span class="tag state-idle"><span class="nm">Dony</span></span><svg class="av lk-dony" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#dony-stand"/></svg></button>
+      </div>
+      </div><figcaption><b>Landing</b> · Hi within his 3 s warm-up, every visit</figcaption></figure><figure class="frame"><div class="frame-win" style="--rows: 3"><div class="map" style="--s: 1"><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="/sprites.svg#map-tiles" /></svg><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="#floor-4"/></svg><div class="pops" aria-hidden="true"><svg class="pop beside" viewBox="0 0 16 16" style="--x: 6; --y: 1"><use href="/sprites.svg#em-dead"/></svg></div><button type="button" class="avatar on-station" style="--x: 6; --y: 1" data-state="slacking" aria-haspopup="menu" aria-expanded="false" aria-label="Dony"><span class="tag state-slacking"><span class="nm">Dony</span></span><svg class="av lk-dony" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#dony-sit"/></svg></button>
+      </div>
+      </div><figcaption><b>On his own</b> · Dead while Slacking on rack 3, about one every 2 min</figcaption></figure><figure class="frame"><div class="frame-win" style="--rows: 3"><div class="map" style="--s: 1"><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="/sprites.svg#map-tiles" /></svg><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="#floor-4"/></svg><div class="pops" aria-hidden="true"><svg class="pop" viewBox="0 0 16 16" style="--x: 1; --y: 2"><use href="/sprites.svg#em-love"/></svg></div><button type="button" class="avatar" style="--x: 1; --y: 2" data-state="resting" aria-haspopup="menu" aria-expanded="false" aria-label="Dony"><span class="tag state-resting"><span class="nm">Dony</span></span><svg class="av lk-dony" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#dony-rest"/></svg><svg class="fx fx-cheer held" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#fx-cheer-3"/></svg></button>
+      </div>
+      </div><figcaption><b>Answer</b> · Priya cheered him; the sparkles end and Love pops a second later</figcaption></figure>
+      </div></section>
+      <!-- state: emoji art -->
+      <section class="state"><p class="state-label">The eight emoji · 16 × 16 pixel art (src/sprites/emoji.ts), each with its word: here at 4× and at the 2 px a pixel they pop at. Hi is an open palm with wave arcs: yellow, fingers up, no glove; the slap is a white glove with a leaf cuff and a pow, so the two can't be confused (INT-8.19)</p><div class="emoji-art"><figure class="art"><div class="emoji-big"><svg width="64" height="64" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-hi"/></svg><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-hi"/></svg></div><figcaption>Hi</figcaption></figure><figure class="art"><div class="emoji-big"><svg width="64" height="64" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-flex"/></svg><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-flex"/></svg></div><figcaption>Flex</figcaption></figure><figure class="art"><div class="emoji-big"><svg width="64" height="64" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-fire"/></svg><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-fire"/></svg></div><figcaption>Fire</figcaption></figure><figure class="art"><div class="emoji-big"><svg width="64" height="64" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-clap"/></svg><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-clap"/></svg></div><figcaption>Clap</figcaption></figure><figure class="art"><div class="emoji-big"><svg width="64" height="64" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-haha"/></svg><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-haha"/></svg></div><figcaption>Haha</figcaption></figure><figure class="art"><div class="emoji-big"><svg width="64" height="64" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-dead"/></svg><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-dead"/></svg></div><figcaption>Dead</figcaption></figure><figure class="art"><div class="emoji-big"><svg width="64" height="64" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-eyes"/></svg><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-eyes"/></svg></div><figcaption>Eyes</figcaption></figure><figure class="art"><div class="emoji-big"><svg width="64" height="64" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-love"/></svg><svg width="32" height="32" viewBox="0 0 16 16" aria-hidden="true"><use href="/sprites.svg#em-love"/></svg></div><figcaption>Love</figcaption></figure><figure class="art"><div class="emoji-big"><svg width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#fx-slap-1"/></svg></div><figcaption>(Slap's glove, for comparison)</figcaption></figure><figure class="art"><div class="emoji-big icons"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-cheer" /></svg><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-poke" /></svg><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-slap" /></svg><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-say" /></svg><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></div><figcaption>New icons: cheer, poke, slap, say, emote</figcaption></figure>
+      </div></section>
+      <!-- state: room log -->
+      <section class="state"><p class="state-label">Room log · its own panel straight under the squad (column 1 on a laptop, after the squad on a phone): newest first, five lines, then "Show older" for the rest of the newest 50 (presets and interactions, no emoji; D7). Lines about you wear the leaf edge, like a marked log row. A dashed line marks when you walked in: lines under it are from before. Names stay after people leave, and after Dony goes back</p><div class="gym"><section class="panel map-panel" aria-labelledby="room-title-lg"><h1 class="map-sign" id="room-title-lg"><span class="vh">Room </span><span class="passcode">SB64FR</span></h1><p class="conn" role="status"><span class="badge">Live</span></p><div class="map"><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="/sprites.svg#map-tiles" /></svg><svg class="tiles" viewBox="0 0 320 320" aria-hidden="true"><use href="#floor-1"/></svg><button type="button" class="avatar me" style="--x: 1; --y: 7" data-state="resting" aria-label="Priya (you), resting, lifting platform 5"><span class="tag state-resting"><span class="nm">Priya</span></span><svg class="av lk-priya" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-rest-curls"/></svg></button><button type="button" class="avatar on-machine" style="--x: 6; --y: 1" data-state="lifting" aria-haspopup="menu" aria-expanded="false" aria-label="Mia, lifting, back squat on squat rack 3"><span class="tag state-lifting"><span class="nm">Mia</span></span><svg class="av lk-mia" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-squat-rack-1-long"/><use href="/sprites.svg#eq-squat-rack-front-1"/></svg></button><button type="button" class="avatar on-station" style="--x: 3; --y: 1" data-state="slacking" aria-haspopup="menu" aria-expanded="false" aria-label="Ji-woo, slacking, flat bench 2"><span class="tag state-slacking"><span class="nm">Ji-woo</span></span><svg class="av lk-jiwoo" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-sit-ponytail"/></svg></button><button type="button" class="avatar on-machine" style="--x: 1; --y: 1" data-state="lifting" aria-haspopup="menu" aria-expanded="false" aria-label="Kai, lifting, run on treadmill 1"><span class="tag state-lifting"><span class="nm">Kai</span></span><svg class="av lk-kai" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-treadmill-1-crop"/><use href="/sprites.svg#eq-treadmill-front-1"/></svg></button><button type="button" class="avatar away" style="--x: 3; --y: 7" data-state="resting" aria-haspopup="menu" aria-expanded="false" aria-label="Tom, resting, away, dumbbell rack 4"><span class="tag state-resting"><span class="nm">Tom</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-phone-off" /></svg></span><svg class="av lk-tom" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-rest-crop"/></svg></button><button type="button" class="avatar" style="--x: 8; --y: 7" data-state="idle" aria-haspopup="menu" aria-expanded="false" aria-label="Sam, idle, no station yet"><span class="tag state-idle"><span class="nm">Sam</span></span><svg class="av lk-sam" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail"/></svg></button>
+      </div></section><section class="panel sheet" aria-labelledby="sheet-title-lg"><span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span><p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>31:42</time></p><h2 class="vh" id="sheet-title-lg">Log a set</h2><div class="rest"><div class="rest-top"><p class="timer" role="timer" aria-label="Rest left">1:24</p><p class="rest-what"><span>of <b>3:00</b> rest</span><span>after <b>140 kg × 5</b></span></p>
+      </div><form method="post" class="rest-adjust"><button type="submit" name="delta" value="-15" class="button secondary tool">-15 s</button><button type="submit" name="delta" value="15" class="button secondary tool">+15 s</button></form>
+      </div><details class="switch"><summary><span class="lift">Deadlift</span><span class="set-no">Set 3</span><span class="change">Change</span></summary></details><p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Lifting platform 5</b></span></p><form method="post" class="set-form" id="set-log-lg"><div class="big-pair"><div class="big"><label for="w-lg">Weight</label><span class="field"><input id="w-lg" name="weight_kg" type="number" value="140" /><span class="unit" aria-hidden="true">kg</span></span></div><span class="times" aria-hidden="true">×</span><div class="big"><label for="r-lg">Reps</label><span class="field"><input id="r-lg" name="reps" type="number" value="5" /></span></div>
+      </div></form><div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-controls="tray" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><p class="dock-timer" aria-hidden="true" hidden>1:24</p><button type="submit" form="set-log-lg" name="action" value="start" class="wide">Start set</button>
+      </div></section><section class="panel" aria-labelledby="people-title-lg"><h2 class="panel-title" id="people-title-lg">Squad</h2><ul class="people"><li class="me"><svg class="av lk-priya" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-curls" width="32" height="32"/></svg><span class="who">Priya <span class="badge">You</span> <span class="badge host">Host</span><span class="what">Rest <span class="n">1:24 left</span> · lifting platform 5</span></span><span class="chips"><span class="chip state-resting"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span></span></li><li><button type="button" class="person" aria-haspopup="menu" aria-expanded="false" aria-label="Mia, lifting, back squat on squat rack 3"><svg class="av lk-mia" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-long" width="32" height="32"/></svg><span class="who">Mia<span class="what">Back squat · squat rack 3</span></span><span class="chips"><span class="chip state-lifting"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-dumbbell" /></svg>Lifting</span></span></button></li><li><button type="button" class="person" aria-haspopup="menu" aria-expanded="false" aria-label="Ji-woo, slacking, flat bench 2"><svg class="av lk-jiwoo" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail" width="32" height="32"/></svg><span class="who">Ji-woo<span class="what"><span class="n">2:40 over</span> rest · flat bench 2</span></span><span class="chips"><span class="chip state-slacking"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-phone" /></svg>Slacking</span></span></button></li><li class="away"><button type="button" class="person" aria-haspopup="menu" aria-expanded="false" aria-label="Tom, resting, away, dumbbell rack 4"><svg class="av lk-tom" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-crop" width="32" height="32"/></svg><span class="who">Tom<span class="what">Offline <span class="n">2 min</span> · dumbbell rack 4</span></span><span class="chips"><span class="chip state-resting"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span><span class="chip away"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-phone-off" /></svg>Away</span></span></button></li><li><button type="button" class="person" aria-haspopup="menu" aria-expanded="false" aria-label="Kai, lifting, run on treadmill 1"><svg class="av lk-kai" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-crop" width="32" height="32"/></svg><span class="who">Kai<span class="what">Run · treadmill 1</span></span><span class="chips"><span class="chip state-lifting"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-dumbbell" /></svg>Lifting</span></span></button></li><li><button type="button" class="person" aria-haspopup="menu" aria-expanded="false" aria-label="Sam, idle, no station yet"><svg class="av lk-sam" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail" width="32" height="32"/></svg><span class="who">Sam<span class="what">No station yet</span></span><span class="chips"><span class="chip state-idle"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-idle" /></svg>Idle</span></span></button></li></ul></section><section class="panel room-log" aria-labelledby="roomlog-title-lg"><h2 class="panel-title" id="roomlog-title-lg">Room log</h2><ol aria-live="off"><li class="you"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-say" /></svg><span>Ji-woo <span class="to">@Priya</span> "Put the phone down 📵"</span><span class="t">now</span></li><li class="you"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-slap" /></svg><span>Ji-woo slapped you</span><span class="t">now</span></li><li><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-cheer" /></svg><span>Tom cheered Dony</span><span class="t">1 min</span></li><li><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-say" /></svg><span>Mia <span class="to">@Kai</span> "Let's gooo 🔥"</span><span class="t">2 min</span></li><li><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-poke" /></svg><span>Sam poked Ji-woo</span><span class="t">4 min</span></li></ol><details class="older"><summary>Show older (12 more)</summary><ol><li class="you"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-cheer" /></svg><span>You cheered Mia</span><span class="t">6 min</span></li><li><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-say" /></svg><span>Kai <span class="to">@Sam</span> "Light weight!"</span><span class="t">9 min</span></li><li class="joined">You walked in · 6:12 pm</li><li><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-slap" /></svg><span>Mia slapped Tom</span><span class="t">14 min</span></li></ol></details></section>
+      </div></section>
+      <!-- state: room log, opened -->
+      <section class="state"><p class="state-label">Room log, "Show older" tapped · the rest unfold in place (no new page, no scroll trap). Times are relative and tick with the list's 1 s clock</p><div class="log-solo"><section class="panel room-log" aria-labelledby="roomlog-title-lo"><h2 class="panel-title" id="roomlog-title-lo">Room log</h2><ol aria-live="off"><li class="you"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-say" /></svg><span>Ji-woo <span class="to">@Priya</span> "Put the phone down 📵"</span><span class="t">now</span></li><li class="you"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-slap" /></svg><span>Ji-woo slapped you</span><span class="t">now</span></li><li><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-cheer" /></svg><span>Tom cheered Dony</span><span class="t">1 min</span></li><li><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-say" /></svg><span>Mia <span class="to">@Kai</span> "Let's gooo 🔥"</span><span class="t">2 min</span></li><li><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-poke" /></svg><span>Sam poked Ji-woo</span><span class="t">4 min</span></li></ol><details class="older" open><summary>Show older (12 more)</summary><ol><li class="you"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-cheer" /></svg><span>You cheered Mia</span><span class="t">6 min</span></li><li><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-say" /></svg><span>Kai <span class="to">@Sam</span> "Light weight!"</span><span class="t">9 min</span></li><li class="joined">You walked in · 6:12 pm</li><li><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-slap" /></svg><span>Mia slapped Tom</span><span class="t">14 min</span></li></ol></details></section></div></section>
+      <!-- state: room log, empty -->
+      <section class="state"><p class="state-label">Room log, empty · nothing sent yet: one friendly line that points to the one thing that fills it</p><div class="log-solo"><section class="panel room-log" aria-labelledby="roomlog-title-le"><h2 class="panel-title" id="roomlog-title-le">Room log</h2><p class="empty">Quiet in here. Tap someone on the map to cheer them on 👀</p></section></div></section>
+      <!-- state: phone, room log -->
+      <section class="state phone-only"><p class="state-label">Phone, scrolled to the room log (390 × 660) · it's the next panel after the squad, so it opens by scrolling, like everything else on the page; the dock and its tab stay pinned</p><div class="phone-frame at-sheet" style="--to-sheet: -1010px"><div class="screen"><header class="topbar"><a href="/" class="brand" aria-label="Spotter home"><svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><use href="/sprites.svg#logo"/></svg><span>Spotter</span></a><nav><a href="/history">History</a></nav></header><main><div class="gym"><section class="panel sheet" aria-labelledby="sheet-title-pl"><span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span><p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>31:42</time></p><h2 class="vh" id="sheet-title-pl">Log a set</h2><div class="rest"><div class="rest-top"><p class="timer" role="timer" aria-label="Rest left">1:24</p><p class="rest-what"><span>of <b>3:00</b> rest</span><span>after <b>140 kg × 5</b></span></p>
+      </div><form method="post" class="rest-adjust"><button type="submit" name="delta" value="-15" class="button secondary tool">-15 s</button><button type="submit" name="delta" value="15" class="button secondary tool">+15 s</button></form>
+      </div><details class="switch"><summary><span class="lift">Deadlift</span><span class="set-no">Set 3</span><span class="change">Change</span></summary></details><p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Lifting platform 5</b></span></p><div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-controls="tray" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><p class="dock-timer" aria-hidden="true">1:24</p><button type="submit" form="set-log-pl" name="action" value="start" class="wide">Start set</button>
+      </div></section><section class="panel" aria-labelledby="people-title-pl"><h2 class="panel-title" id="people-title-pl">Squad</h2><ul class="people"><li class="me"><svg class="av lk-priya" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-curls" width="32" height="32"/></svg><span class="who">Priya <span class="badge">You</span> <span class="badge host">Host</span><span class="what">Rest <span class="n">1:24 left</span> · lifting platform 5</span></span><span class="chips"><span class="chip state-resting"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span></span></li><li><button type="button" class="person" aria-haspopup="menu" aria-expanded="false" aria-label="Mia, lifting, back squat on squat rack 3"><svg class="av lk-mia" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-long" width="32" height="32"/></svg><span class="who">Mia<span class="what">Back squat · squat rack 3</span></span><span class="chips"><span class="chip state-lifting"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-dumbbell" /></svg>Lifting</span></span></button></li><li><button type="button" class="person" aria-haspopup="menu" aria-expanded="false" aria-label="Ji-woo, slacking, flat bench 2"><svg class="av lk-jiwoo" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail" width="32" height="32"/></svg><span class="who">Ji-woo<span class="what"><span class="n">2:40 over</span> rest · flat bench 2</span></span><span class="chips"><span class="chip state-slacking"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-phone" /></svg>Slacking</span></span></button></li><li class="away"><button type="button" class="person" aria-haspopup="menu" aria-expanded="false" aria-label="Tom, resting, away, dumbbell rack 4"><svg class="av lk-tom" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-crop" width="32" height="32"/></svg><span class="who">Tom<span class="what">Offline <span class="n">2 min</span> · dumbbell rack 4</span></span><span class="chips"><span class="chip state-resting"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span><span class="chip away"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-phone-off" /></svg>Away</span></span></button></li><li><button type="button" class="person" aria-haspopup="menu" aria-expanded="false" aria-label="Kai, lifting, run on treadmill 1"><svg class="av lk-kai" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-crop" width="32" height="32"/></svg><span class="who">Kai<span class="what">Run · treadmill 1</span></span><span class="chips"><span class="chip state-lifting"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-dumbbell" /></svg>Lifting</span></span></button></li><li><button type="button" class="person" aria-haspopup="menu" aria-expanded="false" aria-label="Sam, idle, no station yet"><svg class="av lk-sam" viewBox="2 0 28 22" aria-hidden="true"><use href="/sprites.svg#av-stand-ponytail" width="32" height="32"/></svg><span class="who">Sam<span class="what">No station yet</span></span><span class="chips"><span class="chip state-idle"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-idle" /></svg>Idle</span></span></button></li></ul></section><section class="panel room-log" aria-labelledby="roomlog-title-pl"><h2 class="panel-title" id="roomlog-title-pl">Room log</h2><ol aria-live="off"><li class="you"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-say" /></svg><span>Ji-woo <span class="to">@Priya</span> "Put the phone down 📵"</span><span class="t">now</span></li><li class="you"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-slap" /></svg><span>Ji-woo slapped you</span><span class="t">now</span></li><li><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-cheer" /></svg><span>Tom cheered Dony</span><span class="t">1 min</span></li><li><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-say" /></svg><span>Mia <span class="to">@Kai</span> "Let's gooo 🔥"</span><span class="t">2 min</span></li><li><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-poke" /></svg><span>Sam poked Ji-woo</span><span class="t">4 min</span></li></ol><details class="older"><summary>Show older (12 more)</summary><ol><li class="you"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-cheer" /></svg><span>You cheered Mia</span><span class="t">6 min</span></li><li><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-say" /></svg><span>Kai <span class="to">@Sam</span> "Light weight!"</span><span class="t">9 min</span></li><li class="joined">You walked in · 6:12 pm</li><li><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-slap" /></svg><span>Mia slapped Tom</span><span class="t">14 min</span></li></ol></details></section>
+      </div></main>
+      </div>
+      </div></section>
 
       <!-- state: no sets yet (just walked in) -->
       <section class="state">
