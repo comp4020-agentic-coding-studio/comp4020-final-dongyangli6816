@@ -298,9 +298,12 @@ describe("interactions with Dony", () => {
     const { path, b, watch } = await gym(ctx, ["Mia", "Tom", "Priya", "Sam", "Ava", "Kai"]);
     const ava = await watch("Ava");
     // a visit with none of his own emoji in the next 20 s, and him slappable
-    // (Idle, Resting or Slacking) for all of them
+    // (Idle, Resting or Slacking) for all of them. Also none in the 40 s
+    // before: moving the senders back moves his past answers back with them
+    // (about 16 s in all below) but not his own emoji, and an answer moved to
+    // within 1 s of one of his own would be dropped (BOT-6.9)
     const { visit, dony, summonedAt } = await summonFitting(b.Mia, path, (v, now) => {
-      if (ownBetween(v, now - 2 * S, now + 20 * S).length) return false;
+      if (ownBetween(v, now - 40 * S, now + 20 * S).length) return false;
       for (let t = now; t <= now + 20 * S; t += 500) if (stateAt(v, t) === "lifting") return false;
       return true;
     });
@@ -339,6 +342,14 @@ describe("interactions with Dony", () => {
       expect(move, "the hook only moves time forward").toBeGreaterThanOrEqual(0);
       for (const n of people) await backdate(b.Mia, path, { user: ids[n] }, move);
     };
+    // the hook can only move stored times into the past, so a step that comes
+    // after real waiting may already be past `ms`: then it moves nothing, and
+    // the check is that now is still past `ms` and not far beyond it
+    const nowAtLeastAfterLastAnswer = async (ms: number) => {
+      const elapsed = Date.now() - (await lastAnswer());
+      if (elapsed < ms) await nowAfterLastAnswer(ms);
+      else expect(elapsed, "still close to the 10 s edge").toBeLessThan(ms + 3_000);
+    };
 
     // 9 s after his answer: Kai cheers too. 2.5 s on, none of the four
     // (the three at once, and Kai's) has an answer
@@ -347,8 +358,9 @@ describe("interactions with Dony", () => {
     await wait(2500);
     expect(donyEmotes(ava), "no answer within 10 s of his last").toHaveLength(1);
 
-    // 10.1 s after it (Kai's cheer, unanswered, doesn't count): Priya pokes, answered
-    await nowAfterLastAnswer(10_100);
+    // past 10 s after it (about 11.5 s, after the wait above; Kai's cheer,
+    // 2.5 s ago and unanswered, doesn't count): Priya pokes, answered
+    await nowAtLeastAfterLastAnswer(10_100);
     expect((await interact(b.Priya, path, dony, "poke")).status).toBe(200);
     const poke = await ava.next("interaction", (e) => e.to.name === "Dony" && e.from.name === "Priya");
     const second = await ava.next("emote", (e) => e.from.name === "Dony", 2500);

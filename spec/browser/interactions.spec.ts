@@ -1388,13 +1388,14 @@ test("pops sit under avatars, 32 px, just over the tag or beside it on the back 
       expect([Math.round(b.width), Math.round(b.height)], `${width}: 32 x 32`).toEqual([32, 32]);
     }
     const miaTag = await box(avatar(page, "Mia").locator(".tag"));
-    const mp = await box(miaPop);
+    // measured once its 180 ms rise has finished, not on its first frame
+    const mp = await settled(page, '.map .pops svg.pop:has(use[href$="#em-hi"])');
     expect(Math.round(miaTag.y - (mp.y + mp.height)), `${width}: 4 px above her tag`).toBe(4);
     expect(Math.abs(mp.x + mp.width / 2 - (miaTag.x + miaTag.width / 2)), `${width}: centred`).toBeLessThanOrEqual(1);
     // the back row: beside Tom's tag, on the side away from the nearer wall (west, as he's in column 6)
     await expect(tomPop).toHaveClass(/\bbeside\b/);
     const tomTag = await box(avatar(page, "Tom").locator(".tag"));
-    const tp = await box(tomPop);
+    const tp = await settled(page, '.map .pops svg.pop:has(use[href$="#em-flex"])');
     expect(intersects(tp, tomTag)).toBe(false);
     expect(tp.x + tp.width).toBeLessThanOrEqual(tomTag.x + 1);
     // under every avatar: wherever a pop and an avatar overlap, the avatar is painted on top
@@ -1501,7 +1502,8 @@ test("in a room of twelve all sending emoji, nothing covers the dock and Done an
     }
   })();
   // the room fills with pops (so the check below is of a busy map, not an empty one)
-  await expect(page.locator(".map .pops svg.pop")).toHaveCount(11, { timeout: 2000 });
+  // (eleven senders' pops, plus Dony's landing Hi if it's still up)
+  await expect.poll(() => page.locator(".map .pops svg.pop").count(), { timeout: 2000 }).toBeGreaterThanOrEqual(11);
   expect(await dockHitDuring(page, 3000)).toEqual([]);
   await spam;
   expect(statuses.filter((s) => s === 200).length, "every send a second apart is accepted").toBe(44);
@@ -1530,14 +1532,15 @@ test("Dony waves Hi on landing on every screen like a person's pop, and it goes 
   const hi = '.map .pops svg.pop use[href$="#em-hi"]';
   for (const page of [mia, tom]) await expect(page.locator(hi)).toHaveCount(1, { timeout: 4000 });
   const shownAt = Date.now();
-  // above him, as a person's would be, following him as he walks
-  await onSendersTile(mia, ".map .pops svg.pop", "Dony");
-  // a screen opened while it shows doesn't show it
+  // a screen opened while it shows doesn't show it (checked first, so the
+  // 3 s it shows for isn't spent on the checks below)
   const late = await recorded(people.Tom, path);
   await late.waitForTimeout(300);
   expect(Date.now() - shownAt, "checked while his Hi still shows elsewhere").toBeLessThan(2700);
   await expect(tom.locator(hi)).toHaveCount(1);
   expect((await seenOn(late)).filter((s) => s.what === "pop")).toEqual([]);
+  // above him, as a person's would be, following him as he walks
+  await onSendersTile(mia, ".map .pops svg.pop", "Dony");
   // no banner, no announcement
   for (const page of [mia, tom]) {
     expect((await seenOn(page)).filter((s) => s.what === "banner")).toEqual([]);
@@ -1621,7 +1624,8 @@ test("Dony's emoji stays its full 3 s when what he's doing changes under it", as
     people.Mia,
     path,
     (v, now) => {
-      const changes = v.segments.flatMap((s) => [s.end, ...(s.slackAt ? [s.slackAt] : [])]);
+      // a rest's slackAt is a change only if it falls before the rest ends
+      const changes = v.segments.flatMap((s) => [s.end, ...(s.slackAt && s.slackAt < s.end ? [s.slackAt] : [])]);
       due = v.emotes.find((e) => e.why === "own" && e.at > now + 2_000 && e.at < now + 25_000 && changes.some((c) => c > e.at + 300 && c < e.at + 2_200));
       return !!due;
     },
@@ -1629,7 +1633,9 @@ test("Dony's emoji stays its full 3 s when what he's doing changes under it", as
   );
   const pop = page.locator(".map .pops svg.pop");
   await expect(pop.locator(`use[href$="#em-${due!.emoji}"]`)).toHaveCount(1, { timeout: due!.at - Date.now() + 1500 });
-  const shownAt = Date.now();
+  // when it appeared, as the page recorded it (the retrying expect above can
+  // notice it most of a second late)
+  const shownAt = (await seenOn(page)).filter((x) => x.what === "pop" && emojiOf(x) === due!.emoji).at(-1)!.t;
   const dony = page.locator('.map .avatar[data-look="dony"]');
   const before = await dony.getAttribute("data-state");
   await expect(dony, "his state changes under it").not.toHaveAttribute("data-state", before!, { timeout: 2500 });
