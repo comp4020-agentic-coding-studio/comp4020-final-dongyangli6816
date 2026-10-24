@@ -7,7 +7,7 @@
 //
 // Who may do what is decided here, on the server (ADR 0006); the page only
 // shows it.
-import { and, desc, eq, gt, inArray, isNull } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNull, max } from "drizzle-orm";
 import { db } from "./db.ts";
 import { DONY_ID } from "./dony.ts";
 import type { MemberView, RoomView, State } from "./presence.ts";
@@ -36,6 +36,18 @@ type Target = Person & { state: State };
 function targetIn(view: RoomView, to: number, now: number): Target | undefined {
   const m: MemberView | undefined = view.members.find((m) => m.id === to) ?? (view.dony.member?.id === to ? view.dony.member : undefined);
   return m && { id: m.id, name: m.name, state: stateAt(m, now) };
+}
+
+// The room log (INT-5.8) orders interactions and presets by when they were
+// stored, but they live in two tables, so two stored in the same millisecond
+// had no order between them. Each is stamped at least 1 ms after the room's
+// latest, in the same IMMEDIATE transaction, so the log's order is the order
+// they were accepted.
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+function stampAfter(tx: Tx, roomId: number, now: number): number {
+  const hit = tx.select({ at: max(interactions.createdAt) }).from(interactions).where(eq(interactions.roomId, roomId)).get()?.at;
+  const said = tx.select({ at: max(messages.createdAt) }).from(messages).where(eq(messages.roomId, roomId)).get()?.at;
+  return Math.max(now, (hit ?? -Infinity) + 1, (said ?? -Infinity) + 1);
 }
 
 // ---------- interactions ----------
@@ -75,10 +87,11 @@ export function interact(
         )
         .get();
       if (recent) return { ok: false as const, reason: "rate-limit" as const };
+      const at = stampAfter(tx, roomId, now);
       tx.insert(interactions)
-        .values({ roomId, fromUserId: from.id, toUserId: to, kind, targetState: target.state, createdAt: now })
+        .values({ roomId, fromUserId: from.id, toUserId: to, kind, targetState: target.state, createdAt: at })
         .run();
-      return { ok: true as const, event: { kind, from, to: { id: target.id, name: target.name }, targetState: target.state, at: now } };
+      return { ok: true as const, event: { kind, from, to: { id: target.id, name: target.name }, targetState: target.state, at } };
     },
     { behavior: "immediate" },
   );
@@ -121,10 +134,11 @@ export function say(
         .where(and(eq(messages.roomId, roomId), eq(messages.senderId, from.id), gt(messages.createdAt, now - PRESET_MS)))
         .get();
       if (recent) return { ok: false as const, reason: "rate-limit" as const };
-      tx.insert(messages).values({ roomId, senderId: from.id, toUserId: to, presetKey: preset, createdAt: now }).run();
+      const at = stampAfter(tx, roomId, now);
+      tx.insert(messages).values({ roomId, senderId: from.id, toUserId: to, presetKey: preset, createdAt: at }).run();
       return {
         ok: true as const,
-        event: { preset, text: PRESETS[preset], from, to: { id: target.id, name: target.name }, at: now },
+        event: { preset, text: PRESETS[preset], from, to: { id: target.id, name: target.name }, at },
       };
     },
     { behavior: "immediate" },
@@ -170,19 +184,12 @@ export function roomLog(roomId: number, limit = LOG_SIZE): LogEntry[] {
   const names = new Map<number, string>([[DONY_ID, "Dony"]]);
   if (ids.length) for (const u of db.select({ id: users.id, name: users.displayName }).from(users).where(inArray(users.id, ids)).all()) names.set(u.id, u.name);
   const person = (id: number): Person => ({ id, name: names.get(id) ?? "Someone" });
-  // ties broken so the one stored later reads as newer
-  const rows = [
-    ...hits.map((r) => ({ at: r.at, seq: r.id * 2, e: { kind: r.kind, from: person(r.from), to: person(r.to), at: r.at } as LogEntry })),
-    ...said.map((r) => ({
-      at: r.at,
-      seq: r.id * 2 + 1,
-      e: { kind: "say", from: person(r.from), to: person(r.to), text: PRESETS[r.preset as PresetKey] ?? "", at: r.at } as LogEntry,
-    })),
+  // no two share a time in a room (stampAfter), so time alone orders them
+  const rows: LogEntry[] = [
+    ...hits.map((r) => ({ kind: r.kind, from: person(r.from), to: person(r.to), at: r.at }) as LogEntry),
+    ...said.map((r) => ({ kind: "say", from: person(r.from), to: person(r.to), text: PRESETS[r.preset as PresetKey] ?? "", at: r.at }) as LogEntry),
   ];
-  return rows
-    .sort((a, b) => b.at - a.at || b.seq - a.seq)
-    .slice(0, limit)
-    .map((r) => r.e);
+  return rows.sort((a, b) => b.at - a.at).slice(0, limit);
 }
 
 // When this person last joined the room: the log's "You walked in" line (D14)

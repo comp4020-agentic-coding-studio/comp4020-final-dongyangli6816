@@ -825,7 +825,12 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     <section class="panel room-log" aria-labelledby="roomlog-title">
       <h2 class="panel-title" id="roomlog-title">Room log</h2>
       {log50.length === 0 && <p class="empty">Quiet in here. Tap someone on the map to cheer them on 👀</p>}
-      <ol class="log-lines" data-me={user.id} data-joined={walkedIn}>
+      <ol
+        class="log-lines"
+        data-me={user.id}
+        data-joined={walkedIn}
+        data-joined-text={walkedIn === undefined ? undefined : `You walked in · ${timeOfDay(walkedIn)}`}
+      >
         {logShown.map((r: LogRow) =>
             "walkedIn" in r ? (
               <li class="joined">You walked in · {timeOfDay(r.walkedIn)}</li>
@@ -2503,6 +2508,18 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     li.append(line, t);
     shown.prepend(li);
     panel.querySelector(".empty")?.remove();
+    // INT-5.23: "You walked in" once there are lines on both sides of it,
+    // above the first line from before you came
+    const joined = Number(shown.dataset.joined);
+    if (shown.dataset.joined && entry.at >= joined && !panel.querySelector("li.joined")) {
+      const before = [...panel.querySelectorAll<HTMLElement>("li[data-at]")].find((x) => Number(x.dataset.at) < joined);
+      if (before) {
+        const line = document.createElement("li");
+        line.className = "joined";
+        line.textContent = shown.dataset.joinedText ?? "";
+        before.before(line);
+      }
+    }
     // keep five showing (the "You walked in" line rides along), the rest older
     const rows = () => [...shown.children].filter((c) => !c.classList.contains("joined"));
     while (rows().length > 5) olderList.prepend(shown.lastElementChild!);
