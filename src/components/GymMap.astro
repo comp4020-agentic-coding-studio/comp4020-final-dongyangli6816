@@ -19,7 +19,8 @@ import { bay, CLAIM, GYM_PALETTE, MAP, SCENERY, STATIONS, TILES } from "../sprit
 import { POSTER, POSTER_PALETTE } from "../sprites/dony.ts";
 import { isMachine, type Pose } from "../sprites/poses.ts";
 import { phoneOffIcon } from "../sprites/icons.ts";
-import { paths, TILE } from "../sprites/sprite.ts";
+import * as emojiArt from "../sprites/emoji.ts";
+import { paths, TILE, type Sprite } from "../sprites/sprite.ts";
 
 interface Props {
   view: RoomView;
@@ -52,6 +53,16 @@ const POSES: Pose[] = ["stand", "rest", "sit", "walk", ...MACHINE_IDS];
 const slotAt = ([x, y]: [number, number]) => STATIONS.findIndex(([sx, sy]) => sx === x && sy === y) + 1;
 const occupied = new Set(placed.filter((p) => isMachine(p.pose)).map((p) => slotAt(p.tile)));
 const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black", shirt: "teal" };
+// INT-3, INT-8: the eight emoji (em-<key>) and the reactions' frames
+// (fx-<kind>-<n>), drawn once here and used by the pops, the tray and the
+// reactions (docs/design/room/spec.md I.4, I.7, I.8)
+const sym = (sprite: Sprite) =>
+  [...paths(sprite.grid)].map(([ch, d]) => ({ fill: sprite.palette[ch], d }));
+const EMOJI_SYMBOLS = emojiArt.EMOJI.map((e) => ({ id: `em-${e.key}`, size: 16, art: sym(e.sprite) }));
+const FX_SYMBOLS = Object.entries(emojiArt).flatMap(([name, s]) => {
+  const m = name.match(/^(\w+)Fx(\d)$/);
+  return m ? [{ id: `fx-${m[1]}-${m[2]}`, size: TILE, art: sym(s as Sprite) }] : [];
+});
 ---
 
 <section class="panel map-panel" aria-labelledby="room-title" aria-describedby="floor">
@@ -102,6 +113,8 @@ const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black",
         }
       </svg>
     </button>
+    {/* INT-8: emoji pops, under every avatar (I.8) */}
+    <div class="pops" aria-hidden="true"></div>
     {
       view.stations.map((s) => (
         <div
@@ -129,6 +142,8 @@ const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black",
             data-pose={p.pose}
             data-look={"dony" in m ? "dony" : lookKey(m.look)}
             aria-label={avatarLabel(m, p.state, m.id === me)}
+            aria-haspopup={m.id === me ? undefined : "menu"}
+            aria-expanded={m.id === me ? undefined : "false"}
           >
             <span class={`tag state-${p.state}`}>
               <span class="nm">{m.name}</span>
@@ -141,6 +156,9 @@ const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black",
         );
       })
     }
+    {/* INT-5: preset bubbles, over every avatar (I.6); INT-3: the target's banner (I.5) */}
+    <div class="says" aria-hidden="true"></div>
+    <div class="banner-slot"></div>
   </div>
   {/* what the script draws avatars and stations from */}
   {
@@ -180,6 +198,15 @@ const anyLook: Look = { skin: "3", hair: HAIR_STYLES[0].id, hairColour: "black",
   }
   <svg width="0" height="0" class="poster-art" aria-hidden="true">
     <defs>
+      {
+        [...EMOJI_SYMBOLS, ...FX_SYMBOLS].map((x) => (
+          <symbol id={x.id} viewBox={`0 0 ${x.size} ${x.size}`}>
+            {x.art.map((p) => (
+              <path fill={p.fill} d={p.d} />
+            ))}
+          </symbol>
+        ))
+      }
       {
         Object.entries(POSTER).map(([name, grid]) => (
           <symbol id={`poster-${name}`} viewBox={`0 0 ${TILE} ${TILE}`}>

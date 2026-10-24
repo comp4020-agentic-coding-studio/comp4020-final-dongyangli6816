@@ -5,12 +5,15 @@ import Sprite from "../../components/Sprite.astro";
 import { db } from "../../lib/db.ts";
 import { EQUIPMENT, EXERCISES, exerciseById, type Exercise } from "../../lib/exercises.ts";
 import { clock, distanceKm, kg, km, pace, setLabel, timeOfDay, volume } from "../../lib/logbook.ts";
-import { roomView, setFinished, setLifting, SLACK_GRACE_S, type State } from "../../lib/presence.ts";
+import { AWAY_MS, roomView, setFinished, setLifting, SLACK_GRACE_S, type State } from "../../lib/presence.ts";
 import { tapPoster } from "../../lib/dony.ts";
-import { everyone } from "../../lib/floor.ts";
+import { avatarLabel, everyone } from "../../lib/floor.ts";
 import { STATE_WORD, stateAt, whatParts } from "../../lib/squad.ts";
 import { log, who } from "../../lib/log.ts";
-import { broadcast } from "../../lib/realtime.ts";
+import { announce, broadcast, donyEmotes } from "../../lib/realtime.ts";
+import { emote, interact, joinedAt, limitsFrom, roomLog, say } from "../../lib/interactions.ts";
+import { EMOJI } from "../../sprites/emoji.ts";
+import { ago, isEmoji, isKind, isPreset, logLine, PRESETS, slapRefusal, type LogEntry, type Refusal } from "../../lib/moves.ts";
 import { endRoom, isMember, leaveRoom, ROOM_SIZE, touchRoom, wasMember } from "../../lib/rooms.ts";
 import { roomMembers, rooms, users, workouts } from "../../lib/schema.ts";
 import {
@@ -45,6 +48,11 @@ import {
   claimIcon,
   clockIcon,
   tickIcon,
+  cheerIcon,
+  pokeIcon,
+  slapIcon,
+  sayIcon,
+  emoteIcon,
 } from "../../sprites/icons.ts";
 
 const user = Astro.locals.user;
@@ -66,6 +74,12 @@ if (!room || !isMember(roomId, user.id)) {
   log("room.denied", { ...who(user), room: Astro.params.id, method: Astro.request.method });
   return new Response("Not found", { status: 404 });
 }
+// whether this visit brings them back from Away (GYM-14), read before it counts
+const wasAway = Date.now() - (db
+  .select({ at: roomMembers.lastSeenAt })
+  .from(roomMembers)
+  .where(and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, user.id)))
+  .get()?.at ?? 0) > AWAY_MS;
 touchRoom(roomId, user.id);
 const isHost = room.hostUserId === user.id;
 const here = Astro.url.pathname;
@@ -102,6 +116,51 @@ if (Astro.request.method === "POST") {
     if (!ex) return Astro.redirect(here, 303);
     lift(ex);
     return changed(Astro.redirect(`${here}?exercise=${ex.id}`, 303));
+  }
+  // INT-1 to INT-5, INT-8: a Cheer, Poke or Slap, a preset, or an emoji,
+  // sent by the page's script, which reads the answer as JSON: accepted, or
+  // refused with a reason it maps to the copy bank. Accepted ones go to
+  // everyone watching as their own small event; the room is only re-sent if
+  // the sender was Away, since sending brings them back (INT-5.13).
+  if (action === "interact" || action === "say" || action === "emote") {
+    const json = (status: number, body: object) =>
+      new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+    const refuse = (status: number, reason: string, fields: Parameters<typeof log>[1] = {}) => {
+      did(`${action}.refused`, { reason, ...fields });
+      return json(status, { ok: false, reason });
+    };
+    const STATUS: Record<Refusal, number> = { self: 400, gone: 409, "target-lifting": 409, "target-finished": 409, "rate-limit": 429 };
+    const me = { id: user.id, name: user.displayName };
+    // `to` is a member's id, or Dony's (0), in decimal digits
+    const toText = String(form.get("to") ?? "");
+    const to = /^\d+$/.test(toText) ? Number(toText) : NaN;
+    // touchRoom above already counted it as activity; back from Away for everyone
+    const sent = (event: "interaction" | "say" | "emote", data: { at: number }, fields: Parameters<typeof log>[1]) => {
+      did(`${action}.sent`, fields);
+      announce(roomId, event, data);
+      if (wasAway) broadcast(roomId);
+      if (event === "interaction") donyEmotes(roomId);
+      return json(200, { ok: true, at: data.at });
+    };
+    if (action === "emote") {
+      const emoji = String(form.get("emoji") ?? "");
+      if (!isEmoji(emoji)) return refuse(400, "invalid", { emoji: emoji.slice(0, 20) });
+      const r = emote(me, emoji);
+      return r.ok ? sent("emote", r.event, { emoji }) : refuse(STATUS[r.reason], r.reason, { emoji });
+    }
+    if (!Number.isSafeInteger(to)) return refuse(400, "invalid", { to: toText.slice(0, 20) });
+    if (action === "interact") {
+      const kind = String(form.get("kind") ?? "");
+      if (!isKind(kind)) return refuse(400, "invalid", { kind: kind.slice(0, 20) });
+      const r = interact(roomView(roomId), roomId, me, to, kind);
+      return r.ok
+        ? sent("interaction", r.event, { kind, to, target_state: r.event.targetState })
+        : refuse(STATUS[r.reason], r.reason, { kind, to });
+    }
+    const preset = String(form.get("preset") ?? "");
+    if (!isPreset(preset)) return refuse(400, "invalid", { preset: preset.slice(0, 20) });
+    const r = say(roomView(roomId), roomId, me, to, preset);
+    return r.ok ? sent("say", r.event, { preset, to }) : refuse(STATUS[r.reason], r.reason, { preset, to });
   }
   // BOT-1, BOT-4: a tap on Dony's poster. A tap that does nothing answers the
   // same, and the room's next update shows what really happened.
@@ -250,6 +309,26 @@ const view = roomView(roomId, now);
 // (Dony, while he's out, last of all, BOT-5)
 const squad = [...view.members].sort((a, b) => Number(b.id === user.id) - Number(a.id === user.id));
 if (view.dony.member) squad.push(view.dony.member);
+// INT-5.8: the room log, newest first, with "You walked in" where you came
+// in (D14), shown only with lines on both sides of it (INT-5.23)
+const log50 = roomLog(roomId);
+const walkedIn = joinedAt(roomId, user.id);
+const LOG_ICON = { cheer: cheerIcon, poke: pokeIcon, slap: slapIcon, say: sayIcon };
+const showWalkedIn = walkedIn !== undefined && log50.some((e) => e.at >= walkedIn) && log50.some((e) => e.at < walkedIn);
+type LogRow = { entry: LogEntry } | { walkedIn: number };
+const logRows: LogRow[] = [];
+for (const entry of log50) {
+  if (showWalkedIn && entry.at < walkedIn! && !logRows.some((r) => "walkedIn" in r)) logRows.push({ walkedIn: walkedIn! });
+  logRows.push({ entry });
+}
+// INT-4.7: when your 10 s on each person run out; INT-5.6: bubbles still
+// within their 5 s, for a page opened mid-bubble
+const limits = limitsFrom(roomId, user.id, now);
+const liveSays = log50.filter((e) => e.kind === "say" && now - e.at < 5_000).reverse();
+const LOG_SHOWN = 5;
+const logShown = logRows.slice(0, LOG_SHOWN + Number(logRows.slice(0, LOG_SHOWN).some((r) => "walkedIn" in r)));
+const logOlder = logRows.slice(logShown.length);
+const isAboutMe = (e: LogEntry) => e.from.id === user.id || e.to.id === user.id;
 // GYM-4: the station you claimed, shown in the sheet while you're on a lift
 const myStation = !editing && exercise ? view.members.find((m) => m.id === user.id)?.station : undefined;
 
@@ -303,7 +382,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
 ---
 
 <Layout title={`Room ${room.passcode}`} surface="night">
-  <div class="gym" data-room={roomId}>
+  <div class="gym" data-room={roomId} data-limits={JSON.stringify(limits)} data-says={JSON.stringify(liveSays)}>
     <GymMap view={view} me={user.id} passcode={room.passcode} />
 
     <section class="panel sheet" aria-labelledby="sheet-title" data-base-state={baseState}>
@@ -564,6 +643,24 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
           bottom of the screen, with a copy of the rest timer once the big one
           is out of view. */}
       <div class="dock">
+        {/* INT-8: the emoji tab on the dock's top border, and its tray (I.7) */}
+        <button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-controls="tray" aria-label="Send an emoji">
+          <Sprite sprite={emoteIcon} scale={3} />
+        </button>
+        <ul class="tray" id="tray" hidden>
+          {
+            EMOJI.map((e) => (
+              <li>
+                <button type="button" value={e.key}>
+                  <svg viewBox="0 0 16 16" width="32" height="32" aria-hidden="true">
+                    <use href={`#em-${e.key}`} />
+                  </svg>
+                  {e.word}
+                </button>
+              </li>
+            ))
+          }
+        </ul>
         {
           justLogged && (
             <p class="stamp">
@@ -605,31 +702,44 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       <h2 class="panel-title" id="people-title">Squad</h2>
       <ul class="people" data-me={user.id}>
         {
-          squad.map((m) => (
-            <li class:list={{ me: m.id === user.id, away: m.away }} data-id={m.id} data-look={"dony" in m ? "dony" : lookKey(m.look)}>
-              {"dony" in m ? <Avatar dony head /> : <Avatar look={m.look} head />}
-              <span class="who">
-                {m.name}
-                {m.id === user.id && <span class="badge">You</span>}
-                {m.host && <span class="badge host">Host</span>}
-                <span class="what">
-                  {whatParts(m, now).map(([text, keep]) => (keep ? <span class="n">{text}</span> : text))}
-                </span>
-              </span>
-              <span class="chips">
-                <span class={`chip state-${stateAt(m, now)}`}>
-                  <Sprite sprite={STATE_ICON[stateAt(m, now)]} scale={2} />
-                  {STATE_WORD[stateAt(m, now)]}
-                </span>
-                {m.away && (
-                  <span class="chip away">
-                    <Sprite sprite={phoneOffIcon} scale={2} />
-                    Away
+          squad.map((m) => {
+            const row = (
+              <>
+                {"dony" in m ? <Avatar dony head /> : <Avatar look={m.look} head />}
+                <span class="who">
+                  {m.name}
+                  {m.id === user.id && <span class="badge">You</span>}
+                  {m.host && <span class="badge host">Host</span>}
+                  <span class="what">
+                    {whatParts(m, now).map(([text, keep]) => (keep ? <span class="n">{text}</span> : text))}
                   </span>
+                </span>
+                <span class="chips">
+                  <span class={`chip state-${stateAt(m, now)}`}>
+                    <Sprite sprite={STATE_ICON[stateAt(m, now)]} scale={2} />
+                    {STATE_WORD[stateAt(m, now)]}
+                  </span>
+                  {m.away && (
+                    <span class="chip away">
+                      <Sprite sprite={phoneOffIcon} scale={2} />
+                      Away
+                    </span>
+                  )}
+                </span>
+              </>
+            );
+            return (
+              <li class:list={{ me: m.id === user.id, away: m.away }} data-id={m.id} data-look={"dony" in m ? "dony" : lookKey(m.look)}>
+                {m.id === user.id ? (
+                  row
+                ) : (
+                  <button type="button" class="person" aria-haspopup="menu" aria-expanded="false" aria-label={avatarLabel(m, stateAt(m, now), false)}>
+                    {row}
+                  </button>
                 )}
-              </span>
-            </li>
-          ))
+              </li>
+            );
+          })
         }
       </ul>
       <p class="alone" hidden={members.length > 1}>
@@ -646,9 +756,129 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
         ))
       }
       <template data-part="away"><Sprite sprite={phoneOffIcon} scale={2} /></template>
+      {/* INT-1: the menu (I.2), and the room log's icons (I.9) */}
+      <template data-part="menu">
+        <div class="menu" role="menu" aria-labelledby="menu-name" id="menu">
+          <div class="menu-who">
+            <p class="menu-name" id="menu-name"></p>
+          </div>
+          <ul class="menu-acts">
+            {
+              (
+                [
+                  ["cheer", cheerIcon, "Cheer"],
+                  ["poke", pokeIcon, "Poke"],
+                  ["slap", slapIcon, "Slap"],
+                  ["message", sayIcon, "Message"],
+                ] as const
+              ).map(([value, icon, word]) => (
+                <li>
+                  <button type="button" class="act" role="menuitem" value={value} aria-describedby="menu-why">
+                    <span class="cur" aria-hidden="true"></span>
+                    <Sprite sprite={icon} scale={2} />
+                    {word}
+                  </button>
+                </li>
+              ))
+            }
+          </ul>
+          <p class="menu-why" id="menu-why" hidden></p>
+          <div class="menu-message" hidden>
+            <div class="menu-sub">
+              <button type="button" class="back button secondary" role="menuitem"><span class="cur" aria-hidden="true"></span>Back</button>
+              <p class="menu-to"></p>
+            </div>
+            {
+              (
+                [
+                  ["Hype", "hype"],
+                  ["Nudge", "nudge"],
+                ] as const
+              ).map(([title, group]) => (
+                <>
+                  <p class="menu-group" id={`menu-group-${group}`}>{title}</p>
+                  <ul class="presets" role="group" aria-labelledby={`menu-group-${group}`}>
+                    {Object.entries(PRESETS)
+                      .filter(([key]) => key.startsWith(group))
+                      .map(([key, text]) => (
+                        <li>
+                          <button type="button" class="preset" role="menuitem" value={key}>{text}</button>
+                        </li>
+                      ))}
+                  </ul>
+                </>
+              ))
+            }
+          </div>
+        </div>
+      </template>
+      <template data-part="log-cheer"><Sprite sprite={cheerIcon} scale={2} /></template>
+      <template data-part="log-poke"><Sprite sprite={pokeIcon} scale={2} /></template>
+      <template data-part="log-slap"><Sprite sprite={slapIcon} scale={2} /></template>
+      <template data-part="log-say"><Sprite sprite={sayIcon} scale={2} /></template>
       <template data-part="lost">
         <span class="lost"><Sprite sprite={signalIcon} scale={2} />Reconnecting…</span>
       </template>
+    </section>
+
+
+    <section class="panel room-log" aria-labelledby="roomlog-title">
+      <h2 class="panel-title" id="roomlog-title">Room log</h2>
+      {log50.length === 0 && <p class="empty">Quiet in here. Tap someone on the map to cheer them on 👀</p>}
+      <ol
+        class="log-lines"
+        data-me={user.id}
+        data-joined={walkedIn}
+        data-joined-text={walkedIn === undefined ? undefined : `You walked in · ${timeOfDay(walkedIn)}`}
+      >
+        {logShown.map((r: LogRow) =>
+            "walkedIn" in r ? (
+              <li class="joined">You walked in · {timeOfDay(r.walkedIn)}</li>
+            ) : (
+              <li class:list={{ you: isAboutMe(r.entry) }} data-at={r.entry.at}>
+                <Sprite sprite={LOG_ICON[r.entry.kind]} scale={2} />
+                {(() => {
+                  const l = logLine(r.entry, user.id);
+                  return l.text !== undefined ? (
+                    <span class="line">
+                      {l.who} <span class="to">{l.to}</span> "{l.text}"
+                    </span>
+                  ) : (
+                    <span class="line">
+                      {l.who}
+                      {l.rest}
+                    </span>
+                  );
+                })()}
+                <span class="t">{ago(r.entry.at, now)}</span>
+              </li>
+            ))}
+      </ol>
+      <details class="older" hidden={logOlder.length === 0}>
+        <summary>Show older ({logOlder.length} more)</summary>
+        <ol class="log-lines">{logOlder.map((r: LogRow) =>
+            "walkedIn" in r ? (
+              <li class="joined">You walked in · {timeOfDay(r.walkedIn)}</li>
+            ) : (
+              <li class:list={{ you: isAboutMe(r.entry) }} data-at={r.entry.at}>
+                <Sprite sprite={LOG_ICON[r.entry.kind]} scale={2} />
+                {(() => {
+                  const l = logLine(r.entry, user.id);
+                  return l.text !== undefined ? (
+                    <span class="line">
+                      {l.who} <span class="to">{l.to}</span> "{l.text}"
+                    </span>
+                  ) : (
+                    <span class="line">
+                      {l.who}
+                      {l.rest}
+                    </span>
+                  );
+                })()}
+                <span class="t">{ago(r.entry.at, now)}</span>
+              </li>
+            ))}</ol>
+      </details>
     </section>
 
     {
@@ -800,10 +1030,12 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   import type { RoomView } from "../../lib/presence.ts";
   import { STATE_WORD, stateAt, whatParts } from "../../lib/squad.ts";
   import { avatarLabel, DOOR, everyone, floorLine, route, spots, UNDER_POSTER, type Tile } from "../../lib/floor.ts";
-  import { lookKey, lookVars } from "../../sprites/avatar.ts";
+  import { lookFromKey, lookKey, lookVars, type Look } from "../../sprites/avatar.ts";
   import { STATIONS } from "../../sprites/gym.ts";
   import { isMachine } from "../../sprites/poses.ts";
   import { TILE } from "../../sprites/sprite.ts";
+  import { ago, logLine, slapRefusal, type Kind, type LogEntry, type Refusal } from "../../lib/moves.ts";
+  import type { MemberView, State } from "../../lib/presence.ts";
 
   // Every timer here is worked out from Date.now() on each tick, never
   // counted, so a phone that slept wakes up showing the right time (GYM-12).
@@ -1086,6 +1318,9 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       liveTick();
       catchingUp = false;
     });
+    source.addEventListener("interaction", (e) => onInteraction(JSON.parse((e as MessageEvent<string>).data)));
+    source.addEventListener("say", (e) => onSay(JSON.parse((e as MessageEvent<string>).data)));
+    source.addEventListener("emote", (e) => onEmote(JSON.parse((e as MessageEvent<string>).data)));
     source.addEventListener("open", () => {
       clearTimeout(lostTimer);
       lostTimer = undefined;
@@ -1154,7 +1389,22 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       li.className = [m.id === me && "me", m.away && "away"].filter(Boolean).join(" ");
       const dony = "dony" in m;
       const look = dony ? "dony" : lookKey(m.look);
-      if (li.dataset.look !== look || !li.querySelector(".av")) {
+      // someone else's row is one button that opens the menu (INT-1.10)
+      let row: HTMLElement = li;
+      if (m.id !== me) {
+        let button = li.querySelector<HTMLButtonElement>(":scope > .person");
+        if (!button) {
+          button = el("button", "person") as HTMLButtonElement;
+          button.type = "button";
+          button.setAttribute("aria-haspopup", "menu");
+          button.setAttribute("aria-expanded", String(menuOn?.id === m.id && menuOn.from === "row"));
+          button.append(...li.childNodes);
+          li.append(button);
+        }
+        button.setAttribute("aria-label", avatarLabel(m, stateAt(m, now), false));
+        row = button;
+      }
+      if (li.dataset.look !== look || !row.querySelector(".av")) {
         // the head is drawn with every hair style; the look picks one and its
         // colours. Dony's is his own.
         const head = part(dony ? "dony-head" : "head") as DocumentFragment;
@@ -1163,14 +1413,14 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
           svg.setAttribute("style", lookVars(m.look));
           svg.dataset.hair = m.look.hair;
         }
-        li.querySelector(".av")?.remove();
-        li.prepend(head);
+        row.querySelector(".av")?.remove();
+        row.prepend(head);
         li.dataset.look = look;
       }
       const state = stateAt(m, now);
       const parts = whatParts(m, now);
       const words = [m.name, m.id === me, m.host, ...parts.flat()].join("|");
-      if (li.dataset.words !== words || !li.querySelector(".who")) {
+      if (li.dataset.words !== words || !row.querySelector(".who")) {
         const what = el("span", "what", ...parts.map(([text, keep]) => (keep ? el("span", "n", text) : text)));
         const who = el(
           "span",
@@ -1180,16 +1430,16 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
           ...(m.host ? [" ", el("span", "badge host", "Host")] : []),
           what,
         );
-        li.querySelector(".who")?.remove();
-        li.querySelector(".av")!.after(who);
+        row.querySelector(".who")?.remove();
+        row.querySelector(".av")!.after(who);
         li.dataset.words = words;
       }
       const flags = `${state}|${m.away}`;
-      if (li.dataset.flags !== flags || !li.querySelector(".chips")) {
+      if (li.dataset.flags !== flags || !row.querySelector(".chips")) {
         const chips = el("span", "chips", el("span", `chip state-${state}`, part(state), STATE_WORD[state]));
         if (m.away) chips.append(el("span", "chip away", part("away"), "Away"));
-        li.querySelector(".chips")?.remove();
-        li.append(chips);
+        row.querySelector(".chips")?.remove();
+        row.append(chips);
         li.dataset.flags = flags;
       }
       return li;
@@ -1210,6 +1460,8 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     document.querySelectorAll(".spots .pips i").forEach((pip, i) => pip.classList.toggle("in", i < people.length));
     drawMap(now);
     drawPoster();
+    drawMenu();
+    followSenders();
   }
 
   // ---------- the map (GYM-1, GYM-9, GYM-10) ----------
@@ -1294,6 +1546,12 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       }
       b.classList.toggle("me", m.id === me);
       b.classList.toggle("away", m.away);
+      // someone else opens the menu (INT-1.9); you don't (INT-1.8)
+      if (m.id === me) b.removeAttribute("aria-haspopup");
+      else {
+        b.setAttribute("aria-haspopup", "menu");
+        if (!b.hasAttribute("aria-expanded")) b.setAttribute("aria-expanded", "false");
+      }
       b.dataset.state = p.state;
       b.setAttribute("aria-label", avatarLabel(m, p.state, m.id === me));
       const tag = b.querySelector<HTMLElement>(".tag")!;
@@ -1536,7 +1794,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   // your own avatar is a shortcut to the sheet's button (Done, Start set…)
   document.addEventListener("click", (e) => {
     const b = (e.target as Element).closest?.(".map-panel .avatar.me");
-    if (b) document.querySelector<HTMLElement>(".dock button")?.focus();
+    if (b) document.querySelector<HTMLElement>(".dock button.wide")?.focus();
   });
 
   // ---------- staying in place ----------
@@ -1573,11 +1831,19 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     if (oldMap && newMap) {
       newMap.querySelectorAll(".avatar").forEach((b) => b.remove());
       newMap.append(...oldMap.querySelectorAll(".avatar"));
+      // pops, bubbles, a banner, an open menu and a refusal carry on too
+      for (const sel of [".pops", ".says", ".banner-slot"]) newMap.querySelector(sel)?.replaceWith(oldMap.querySelector(sel)!);
+      newMap.append(...oldMap.querySelectorAll(":scope > .menu, :scope > .note, :scope > .error"));
       for (const div of oldMap.querySelectorAll<HTMLElement>(".station")) {
         newMap.querySelector(`.station[data-slot="${div.dataset.slot}"]`)?.replaceWith(div);
       }
     }
+    // the room log is the server's again, with the menu's limits; an open
+    // menu on the old page goes with it
+    const opened = menuOn;
+    closeMenu(false);
     document.querySelector(".gym")!.replaceWith(document.adoptNode(gym));
+    if (opened) reopenMenu(opened);
     document.title = next.title;
     // keep the router's own history state, so Back still works
     if (res.url !== location.href) history.replaceState(history.state, "", res.url);
@@ -1648,6 +1914,645 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     },
     true,
   );
+
+  // ======================================================================
+  // Interactions, presets and emoji (criteria/int.md; room spec I.2 to I.9)
+  // ======================================================================
+  // Everything here is a second layer over the room: it never sits between
+  // the person and their set. Moves are posted in the background and answered
+  // in JSON; what plays comes from the room's stream, so a screen only ever
+  // plays what the server accepted (INT-3.10).
+
+  const meId = () => Number(document.querySelector<HTMLElement>(".map-panel .map")?.dataset.me);
+  const phone = matchMedia("(max-width: 899px)");
+  const tpl = (name: string) =>
+    document.querySelector<HTMLTemplateElement>(`template[data-part="${name}"]`)!.content.cloneNode(true) as DocumentFragment;
+  // someone in the room, from the newest message, or before the first one
+  // arrives (or with the stream down) from the room as the server drew it
+  type Someone = { id: number; name: string; state: State; away: boolean; look?: Look; dony?: true };
+  function personIn(id: number): Someone | undefined {
+    if (view) {
+      const m = everyone(view).find((m) => m.id === id) as MemberView | undefined;
+      if (!m) return undefined;
+      return { id: m.id, name: m.name, state: stateAt(m, nowServer()), away: m.away, ...("dony" in m ? { dony: true as const } : { look: m.look }) };
+    }
+    const b = avatarOf(id);
+    const row = document.querySelector<HTMLElement>(`.people li[data-id="${id}"]`);
+    if (!b) return undefined;
+    const look = row?.dataset.look ?? b.dataset.look;
+    return {
+      id,
+      name: b.querySelector(".tag .nm")?.textContent ?? "",
+      state: b.dataset.state as State,
+      away: b.classList.contains("away"),
+      ...(look === "dony" ? { dony: true as const } : { look: lookFromKey(look) ?? undefined }),
+    };
+  }
+  const avatarOf = (id: number) => document.querySelector<HTMLElement>(`.map-panel .avatar[data-id="${id}"]:not(.leaving)`);
+  const nowServer = () => Date.now() + offset;
+
+  // someone's head, as their squad row draws it
+  function head(m: Someone): DocumentFragment {
+    const h = tpl(m.dony ? "dony-head" : "head");
+    if (!m.dony && m.look) {
+      const svg = h.querySelector("svg")!;
+      svg.setAttribute("style", lookVars(m.look));
+      svg.dataset.hair = m.look.hair;
+    }
+    return h;
+  }
+
+  // the copy bank's words (system.md section 3)
+  const REFUSED: Record<Refusal, (name: string) => string> = {
+    "target-lifting": (n) => `${n} is mid-set. Cheer instead?`,
+    "target-finished": (n) => `${n}'s done for today. Cheer instead?`,
+    gone: (n) => `${n}'s left the gym.`,
+    "rate-limit": () => "Easy, give them 10 seconds.",
+    self: () => "",
+  };
+  const FAILED = "That didn't send. Try again.";
+
+  // Posts a move as the page's forms would, and reads the JSON answer.
+  async function send(fields: Record<string, string>): Promise<{ ok: true; at: number } | { ok: false; reason: Refusal | "failed" }> {
+    try {
+      const res = await fetch(location.pathname, { method: "POST", body: new URLSearchParams(fields) });
+      const body = res.headers.get("content-type")?.includes("json") ? await res.json() : null;
+      if (body && typeof body.ok === "boolean") return body;
+      return { ok: false, reason: "failed" };
+    } catch {
+      return { ok: false, reason: "failed" };
+    }
+  }
+
+  // ---------- the menu (INT-1, INT-2; I.2) ----------
+  let menuOn: { id: number; from: "map" | "row" } | undefined;
+  // INT-4.7: when your 10 s on each person run out, from the page, then
+  // from each accepted interaction
+  let limits = new Map<number, number>();
+  const readLimits = () => {
+    const gym = document.querySelector<HTMLElement>(".gym");
+    limits = new Map(Object.entries(JSON.parse(gym?.dataset.limits ?? "{}")).map(([k, v]) => [Number(k), Number(v)]));
+  };
+  let limitTimer: ReturnType<typeof setTimeout> | undefined;
+  const menuEl = () => document.querySelector<HTMLElement>(".menu");
+  const opener = () =>
+    menuOn &&
+    (menuOn.from === "row"
+      ? document.querySelector<HTMLElement>(`.people li[data-id="${menuOn.id}"] > .person`)
+      : avatarOf(menuOn.id));
+
+  // By keyboard (Enter or Space on the avatar or row), focus moves into the
+  // menu (INT-1.2); a tap or click leaves it on the avatar, as before, and the
+  // menu's own keys still work from there (INT-1.1).
+  function openMenu(id: number, from: "map" | "row", byKeyboard = true) {
+    if (id === meId() || !personIn(id)) return;
+    closeMenu(false);
+    menuOn = { id, from };
+    const menu = tpl("menu").firstElementChild as HTMLElement;
+    const map = document.querySelector<HTMLElement>(".map-panel .map")!;
+    map.append(menu);
+    drawMenu();
+    placeMenu();
+    for (const el of [avatarOf(id), document.querySelector(`.people li[data-id="${id}"] > .person`)]) el?.setAttribute("aria-expanded", "true");
+    if (byKeyboard) (menu.querySelector<HTMLElement>(".act.hot:not([aria-disabled])") ?? menu.querySelector<HTMLElement>(".act"))!.focus({ preventScroll: true });
+  }
+  // after a swap: the same person, if they're still here
+  function reopenMenu(was: { id: number; from: "map" | "row" }) {
+    if (personIn(was.id)) openMenu(was.id, was.from);
+  }
+
+  function closeMenu(refocus = true) {
+    const menu = menuEl();
+    if (!menu) return void (menuOn = undefined);
+    const back = opener();
+    menu.remove();
+    clearTimeout(limitTimer);
+    document.querySelectorAll('[aria-haspopup="menu"][aria-expanded="true"]').forEach((el) => el.setAttribute("aria-expanded", "false"));
+    menuOn = undefined;
+    if (refocus) back?.focus({ preventScroll: true });
+  }
+
+  // The menu as the newest room message has it: the person's head, name and
+  // state, which move fits, and why anything is unavailable (INT-1.6).
+  function drawMenu() {
+    const menu = menuEl();
+    if (!menu || !menuOn) return;
+    const m = personIn(menuOn.id);
+    if (!m) {
+      // they left (INT-1.7): focus the next avatar in tab order, else the dock's button
+      const avatars = [...document.querySelectorAll<HTMLElement>(".map-panel .avatar:not(.leaving):not(.me)")];
+      const was = menuOn.id;
+      closeMenu(false);
+      const next = avatars.find((a) => Number(a.dataset.id) !== was);
+      (next ?? document.querySelector<HTMLElement>(".dock button.wide"))?.focus({ preventScroll: true });
+      return;
+    }
+    const state = m.state;
+    const who = menu.querySelector<HTMLElement>(".menu-who")!;
+    const key = `${m.id}|${m.dony ? "dony" : m.look ? lookKey(m.look) : ""}`;
+    if (who.dataset.key !== key) {
+      who.querySelector(".av")?.remove();
+      who.prepend(head(m));
+      who.dataset.key = key;
+    }
+    const name = menu.querySelector<HTMLElement>(".menu-name")!;
+    const chips = document.createElement("span");
+    chips.className = "chips";
+    const chip = document.createElement("span");
+    chip.className = `chip state-${state}`;
+    chip.append(tpl(state), STATE_WORD[state]);
+    chips.append(chip);
+    if (m.away) {
+      const away = document.createElement("span");
+      away.className = "chip away";
+      away.append(tpl("away"), "Away");
+      chips.append(away);
+    }
+    name.replaceChildren(m.name, chips);
+    menu.querySelector(".menu-to")!.textContent = `To ${m.name}`;
+
+    const limited = (limits.get(m.id) ?? 0) > nowServer();
+    const slapNo = slapRefusal(state);
+    const hot = state === "slacking" ? ["poke", "slap"] : state === "lifting" ? ["cheer"] : [];
+    for (const b of menu.querySelectorAll<HTMLButtonElement>(".act")) {
+      const kind = b.value;
+      const off = kind !== "message" && (limited || (kind === "slap" && !!slapNo));
+      if (off) b.setAttribute("aria-disabled", "true");
+      else b.removeAttribute("aria-disabled");
+      b.classList.toggle("hot", hot.includes(kind) && !off);
+    }
+    const why = menu.querySelector<HTMLElement>(".menu-why")!;
+    const text = limited ? REFUSED["rate-limit"](m.name) : slapNo ? REFUSED[slapNo](m.name) : "";
+    why.textContent = text;
+    why.hidden = !text;
+    // back by themselves when the 10 s run out, without reopening
+    clearTimeout(limitTimer);
+    if (limited) limitTimer = setTimeout(drawMenu, limits.get(m.id)! - nowServer() + 20);
+  }
+
+  // Laptop: beside the avatar (the side away from the nearer wall), or
+  // under the squad row. Phone: CSS pins it above the dock.
+  function placeMenu() {
+    const menu = menuEl();
+    const from = opener();
+    if (!menu || !from || phone.matches) {
+      if (menu) {
+        menu.style.left = menu.style.top = "";
+        document.documentElement.style.setProperty("--dock-h", `${document.querySelector<HTMLElement>(".dock")?.offsetHeight ?? 92}px`);
+      }
+      return;
+    }
+    const map = menu.parentElement!.getBoundingClientRect();
+    const r = from.getBoundingClientRect();
+    if (menuOn?.from === "row") {
+      menu.style.left = `${r.left - map.left}px`;
+      menu.style.top = `${r.bottom - map.top + 8}px`;
+      return;
+    }
+    const tag = from.querySelector(".tag")?.getBoundingClientRect() ?? r;
+    const left = Math.min(r.left, tag.left);
+    const right = Math.max(r.right, tag.right);
+    const west = r.left + r.width / 2 > map.left + map.width / 2;
+    const x = west ? left - map.left - menu.offsetWidth - 16 : right - map.left + 16;
+    const top = Math.min(Math.max(0, r.top - map.top), Math.max(0, map.height - menu.offsetHeight));
+    menu.style.left = `${Math.max(-map.left + 8, x)}px`;
+    menu.style.top = `${top}px`;
+  }
+  addEventListener("resize", () => placeMenu());
+
+  // the message view, and back
+  function showMessages(on: boolean) {
+    const menu = menuEl();
+    if (!menu) return;
+    menu.querySelector<HTMLElement>(".menu-acts")!.hidden = on;
+    menu.querySelector<HTMLElement>(".menu-why")!.hidden = on || !menu.querySelector(".menu-why")!.textContent;
+    menu.querySelector<HTMLElement>(".menu-message")!.hidden = !on;
+    menu.querySelector<HTMLElement>(on ? ".preset" : '.act[value="message"]')!.focus({ preventScroll: true });
+    if (!on) drawMenu();
+  }
+
+  // A refusal (dashed) or a failure (red) where the menu was: beside the
+  // target on a laptop, just above the dock on a phone (INT-3.14).
+  function tell(text: string, failed: boolean, near: number | undefined, className = "") {
+    document.querySelectorAll(`.gym .note, .gym .error${className ? "" : ":not(.emote-error)"}`).forEach((n) => {
+      if (!className || n.classList.contains(className)) n.remove();
+    });
+    const line = document.createElement("p");
+    line.className = [failed ? "error" : "note", className].filter(Boolean).join(" ");
+    line.setAttribute("role", failed ? "alert" : "status");
+    line.textContent = text;
+    const target = near !== undefined ? avatarOf(near) : null;
+    if (!phone.matches && target && !className) {
+      const map = document.querySelector<HTMLElement>(".map-panel .map")!;
+      map.append(line);
+      const m = map.getBoundingClientRect();
+      const r = target.getBoundingClientRect();
+      const west = r.left + r.width / 2 > m.left + m.width / 2;
+      line.style.top = `${Math.max(0, r.top - m.top + 8)}px`;
+      line.style.left = west ? `${r.left - m.left - line.offsetWidth - 12}px` : `${r.right - m.left + 12}px`;
+    } else document.querySelector(".dock")!.append(line);
+    setTimeout(() => line.remove(), 4000);
+  }
+
+  let sending = false;
+  async function act(kind: string) {
+    if (!menuOn) return;
+    const id = menuOn.id;
+    const m = personIn(id);
+    closeMenu(); // at once (INT-3.10)
+    if (sending) return; // a double tap sends one (INT-4.5)
+    sending = true;
+    const r = await send({ action: "interact", to: String(id), kind });
+    sending = false;
+    if (r.ok) limits.set(id, r.at + 10_000);
+    else if (r.reason === "failed") tell(FAILED, true, id);
+    else if (r.reason !== "self") {
+      if (r.reason === "rate-limit") limits.set(id, Math.max(limits.get(id) ?? 0, nowServer() + 1000));
+      tell(REFUSED[r.reason](m?.name ?? "They"), false, id);
+    }
+  }
+
+  async function sayPreset(preset: string) {
+    if (!menuOn) return;
+    const id = menuOn.id;
+    const m = personIn(id);
+    closeMenu();
+    const r = await send({ action: "say", to: String(id), preset });
+    // a preset refused for its 2 s shows nothing: the first one went (I.3)
+    if (!r.ok && r.reason === "failed") tell(FAILED, true, id);
+    else if (!r.ok && (r.reason === "gone" || r.reason === "target-lifting" || r.reason === "target-finished")) {
+      tell(REFUSED[r.reason](m?.name ?? "They"), false, id);
+    }
+  }
+
+  document.addEventListener("click", (e) => {
+    const t = e.target as Element;
+    const menu = menuEl();
+    const actButton = t.closest?.<HTMLButtonElement>(".menu .act");
+    if (actButton) {
+      if (actButton.getAttribute("aria-disabled") === "true") return; // stays open, sends nothing
+      if (actButton.value === "message") return showMessages(true);
+      return void act(actButton.value);
+    }
+    if (t.closest?.(".menu .back")) return showMessages(false);
+    const preset = t.closest?.<HTMLButtonElement>(".menu .preset");
+    if (preset) return void sayPreset(preset.value);
+    if (t.closest?.(".menu")) return;
+    const other = t.closest?.<HTMLElement>(".map-panel .avatar:not(.me):not(.leaving)");
+    const row = t.closest?.<HTMLElement>(".people .person");
+    if (other || row) {
+      const id = Number((other ?? row!.closest("li"))!.dataset.id);
+      if (menu && menuOn?.id === id) return closeMenu();
+      // Enter or Space on a button clicks it with a detail of 0
+      return openMenu(id, other ? "map" : "row", (e as MouseEvent).detail === 0);
+    }
+  });
+  // a tap anywhere outside closes the menu, and isn't swallowed (INT-1.3)
+  document.addEventListener(
+    "pointerdown",
+    (e) => {
+      const t = e.target as Element;
+      if (menuEl() && !t.closest?.(".menu") && !t.closest?.(".map-panel .avatar:not(.me)") && !t.closest?.(".people .person")) {
+        closeMenu(false);
+      }
+      if (!t.closest?.(".tray") && !t.closest?.(".dock .emote")) closeTray(false);
+    },
+    true,
+  );
+
+  // Keyboard (INT-1.2): Tab, Shift+Tab and the arrows go round the rows and
+  // wrap; Home and End; Escape closes, from Message it goes Back first.
+  document.addEventListener("keydown", (e) => {
+    const menu = menuEl();
+    if (!menu) return;
+    if (!menu.contains(document.activeElement)) {
+      if (e.key === "Escape") closeMenu();
+      // opened by a tap, focus still on its opener: the menu's keys take it in
+      else if (document.activeElement === opener() && ["Tab", "ArrowDown", "ArrowUp"].includes(e.key)) {
+        e.preventDefault();
+        menu.querySelector<HTMLElement>(".act")!.focus({ preventScroll: true });
+      }
+      return;
+    }
+    const rows = [...menu.querySelectorAll<HTMLElement>(menu.querySelector<HTMLElement>(".menu-message")!.hidden ? ".act" : ".back, .preset")];
+    const i = rows.indexOf(document.activeElement as HTMLElement);
+    const go = (j: number) => {
+      e.preventDefault();
+      rows[(j + rows.length) % rows.length].focus({ preventScroll: true });
+    };
+    if (e.key === "Escape") {
+      e.preventDefault();
+      if (!menu.querySelector<HTMLElement>(".menu-message")!.hidden) showMessages(false);
+      else closeMenu();
+    } else if (e.key === "Tab") go(e.shiftKey ? i - 1 : i + 1);
+    else if (e.key === "ArrowDown") go(i + 1);
+    else if (e.key === "ArrowUp") go(i - 1);
+    else if (e.key === "Home") go(0);
+    else if (e.key === "End") go(rows.length - 1);
+  });
+
+  // ---------- reactions and banners (INT-3; I.4, I.5) ----------
+  const FX_FRAMES: Record<Kind, number> = { cheer: 3, poke: 3, slap: 4 };
+  const FX_MS: Record<Kind, number> = { cheer: 600, poke: 720, slap: 800 };
+  const SVG = "http://www.w3.org/2000/svg";
+  function react(id: number, kind: Kind) {
+    const b = avatarOf(id);
+    if (!b) return;
+    b.querySelector("svg.fx")?.remove();
+    const fx = document.createElementNS(SVG, "svg");
+    fx.setAttribute("class", `fx fx-${kind}`);
+    fx.setAttribute("viewBox", `0 0 ${TILE} ${TILE}`);
+    fx.setAttribute("aria-hidden", "true");
+    // reduced motion: the middle frame alone, still (INT-3.9)
+    const frames = reducedMotion.matches ? [2] : Array.from({ length: FX_FRAMES[kind] }, (_, i) => i + 1);
+    for (const n of frames) {
+      const use = document.createElementNS(SVG, "use");
+      use.setAttribute("href", `#fx-${kind}-${n}`);
+      fx.append(use);
+    }
+    b.append(fx);
+    setTimeout(() => fx.remove(), reducedMotion.matches ? 800 : FX_MS[kind]);
+  }
+
+  const BANNER: Record<Kind, (from: string, resting: boolean) => string> = {
+    cheer: (n) => `${n} is hyping you up 🔥`,
+    poke: (n, resting) => (resting ? `${n} poked you. Rest's over? 👉` : `${n} poked you 👉`),
+    slap: (n) => `${n} slapped you back to work 👋`,
+  };
+  let bannerTimer: ReturnType<typeof setTimeout> | undefined;
+  function banner(text: string, from: number) {
+    const slot = document.querySelector<HTMLElement>(".map-panel .banner-slot");
+    if (!slot) return;
+    const p = document.createElement("p");
+    p.className = "banner";
+    p.setAttribute("role", "status");
+    const sender = personIn(from);
+    if (sender) p.append(head(sender));
+    const words = document.createElement("span");
+    words.textContent = text;
+    p.append(words);
+    // the newest replaces the last and runs its own 4 s (D9); a new element,
+    // so its animation starts again
+    slot.replaceChildren(p);
+    clearTimeout(bannerTimer);
+    bannerTimer = setTimeout(() => p.remove(), 4000);
+  }
+
+  type Who = { id: number; name: string };
+  function onInteraction(e: { kind: Kind; from: Who; to: Who; targetState: string; at: number }) {
+    react(e.to.id, e.kind);
+    if (e.to.id === meId()) banner(BANNER[e.kind](e.from.name, e.targetState === "resting" || e.targetState === "slacking"), e.from.id);
+    if (e.from.id === meId()) limits.set(e.to.id, e.at + 10_000);
+    addLog({ kind: e.kind, from: e.from, to: e.to, at: e.at });
+    if (menuOn) drawMenu();
+  }
+
+  // ---------- preset bubbles (INT-5; I.6) ----------
+  const bubbleTimers = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
+  function bubble(from: number, to: string, text: string, at: number) {
+    const says = document.querySelector<HTMLElement>(".map .says");
+    const b = avatarOf(from);
+    const left = at + 5000 - nowServer();
+    if (!says || !b || left <= 0) return;
+    // a newer one from the same sender replaces theirs (INT-5.5)
+    says.querySelector(`.say[data-id="${from}"]`)?.remove();
+    const p = document.createElement("p");
+    p.className = "say";
+    p.dataset.id = String(from);
+    const name = document.createElement("span");
+    name.className = "to";
+    name.textContent = `@${to}`;
+    p.append(name, text);
+    says.append(p); // the newer draws on top (D19)
+    placeBubble(p);
+    bubbleTimers.set(p, setTimeout(() => p.remove(), left));
+  }
+  function placeBubble(p: HTMLElement) {
+    const b = avatarOf(Number(p.dataset.id));
+    if (!b) return p.remove();
+    const [x, y] = tileOf(b);
+    p.style.setProperty("--x", String(x));
+    p.style.setProperty("--y", String(y));
+    p.style.setProperty("--dy", b.classList.contains("on-station") && !b.classList.contains("on-machine") ? "0.375" : "0");
+    p.classList.toggle("below", y <= 1);
+    p.classList.toggle("west", x <= 2);
+    p.classList.toggle("east", x >= 7);
+    p.classList.toggle("over-pop", y > 1 && !!document.querySelector(`.map .pops .pop[data-id="${p.dataset.id}"]`));
+  }
+
+  function onSay(e: { preset: string; text: string; from: Who; to: Who; at: number }) {
+    const me = meId();
+    bubble(e.from.id, e.to.name, e.text, e.at);
+    addLog({ kind: "say", from: e.from, to: e.to, text: e.text, at: e.at });
+    // only the addressee hears it, once (INT-5.11); you hear your own
+    const news = document.querySelector<HTMLElement>("#sheet-news");
+    const line = e.to.id === me ? `${e.from.name}: ${e.text}` : e.from.id === me ? `Sent to ${e.to.name}: ${e.text}` : "";
+    if (news && line) {
+      news.textContent = "";
+      setTimeout(() => (news.textContent = line), 50);
+    }
+  }
+
+  // ---------- emoji pops (INT-8, BOT-6; I.8) ----------
+  function onEmote(e: { emoji: string; from: Who; at: number }) {
+    const pops = document.querySelector<HTMLElement>(".map .pops");
+    const b = avatarOf(e.from.id);
+    if (!pops || !b) return;
+    pops.querySelector(`.pop[data-id="${e.from.id}"]`)?.remove();
+    const pop = document.createElementNS(SVG, "svg");
+    pop.setAttribute("class", "pop");
+    pop.setAttribute("viewBox", "0 0 16 16");
+    pop.dataset.id = String(e.from.id);
+    const use = document.createElementNS(SVG, "use");
+    use.setAttribute("href", `#em-${e.emoji}`);
+    pop.append(use);
+    pops.append(pop);
+    placePop(pop);
+    setTimeout(() => pop.remove(), 3000);
+    document.querySelectorAll<HTMLElement>(`.map .says .say[data-id="${e.from.id}"]`).forEach(placeBubble);
+  }
+  function placePop(pop: SVGElement) {
+    const b = avatarOf(Number(pop.dataset.id));
+    if (!b) return pop.remove();
+    const [x, y] = tileOf(b);
+    pop.style.setProperty("--x", String(x));
+    pop.style.setProperty("--y", String(y));
+    pop.style.setProperty("--dy", b.classList.contains("on-station") && !b.classList.contains("on-machine") ? "0.375" : "0");
+    pop.style.setProperty("--tag-w", `${b.querySelector<HTMLElement>(".tag")?.offsetWidth ?? TILE}px`);
+    pop.classList.toggle("beside", y <= 1);
+    pop.classList.toggle("west-side", y <= 1 && x >= 6);
+  }
+  // Pops and bubbles go where their senders go, and with them (INT-8.15)
+  function followSenders() {
+    document.querySelectorAll<SVGElement>(".map .pops .pop").forEach(placePop);
+    document.querySelectorAll<HTMLElement>(".map .says .say").forEach(placeBubble);
+  }
+  // walks move avatars between room messages: keep up, cheaply
+  setInterval(() => {
+    if (document.querySelector(".map .pops .pop, .map .says .say")) followSenders();
+  }, 125);
+
+  // ---------- the emoji tab and tray (INT-8; I.7) ----------
+  const tab = () => document.querySelector<HTMLButtonElement>(".dock .emote");
+  const tray = () => document.querySelector<HTMLElement>(".tray");
+  let coolUntil = 0;
+  let coolTimer: ReturnType<typeof setTimeout> | undefined;
+  function openTray() {
+    const t = tray();
+    if (!t) return;
+    closeMenu(false);
+    t.hidden = false;
+    tab()!.setAttribute("aria-expanded", "true");
+    t.toggleAttribute("data-cooling", Date.now() < coolUntil);
+    t.querySelector<HTMLElement>("button")!.focus({ preventScroll: true });
+  }
+  function closeTray(refocus = true) {
+    const t = tray();
+    if (!t || t.hidden) return;
+    t.hidden = true;
+    tab()?.setAttribute("aria-expanded", "false");
+    if (refocus) tab()?.focus({ preventScroll: true });
+  }
+  // the tab wears what you sent for the second you can't send another
+  // (INT-8.6, INT-8.22); pending at half while the request is out
+  function wear(emoji: string | null, pending = false) {
+    const t = tab();
+    if (!t) return;
+    if (!t.dataset.icon) t.dataset.icon = t.innerHTML;
+    if (emoji) {
+      t.innerHTML = `<svg viewBox="0 0 16 16" width="32" height="32" aria-hidden="true"><use href="#em-${emoji}"/></svg>`;
+      t.setAttribute("aria-label", `Send an emoji (sent: ${emoji})`);
+      t.setAttribute("aria-disabled", "true");
+    } else {
+      t.innerHTML = t.dataset.icon;
+      t.setAttribute("aria-label", "Send an emoji");
+      t.removeAttribute("aria-disabled");
+    }
+    t.classList.toggle("pending", pending);
+  }
+  async function sendEmoji(emoji: string) {
+    if (Date.now() < coolUntil) return; // nothing within the second (INT-8.8)
+    closeTray();
+    coolUntil = Date.now() + 1000;
+    wear(emoji, true);
+    const r = await send({ action: "emote", emoji });
+    clearTimeout(coolTimer);
+    if (r.ok) {
+      wear(emoji);
+      const news = document.querySelector<HTMLElement>("#sheet-news");
+      if (news) {
+        news.textContent = "";
+        setTimeout(() => (news.textContent = `Sent: ${emoji}`), 50);
+      }
+      coolTimer = setTimeout(() => wear(null), Math.max(0, coolUntil - Date.now()));
+    } else {
+      coolUntil = 0;
+      wear(null);
+      if (r.reason === "failed") tell(FAILED, true, undefined, "emote-error");
+    }
+  }
+  document.addEventListener("click", (e) => {
+    const t = e.target as Element;
+    if (t.closest?.(".dock .emote")) {
+      if (tab()!.getAttribute("aria-disabled") === "true") return;
+      return tray()?.hidden ? openTray() : closeTray();
+    }
+    const b = t.closest?.<HTMLButtonElement>(".tray button");
+    if (b) void sendEmoji(b.value);
+  });
+  // Keyboard (INT-8.12): arrows move in the 4 x 2 grid, Escape closes
+  document.addEventListener("keydown", (e) => {
+    const t = tray();
+    if (!t || t.hidden || !t.contains(document.activeElement)) return;
+    const buttons = [...t.querySelectorAll<HTMLElement>("button")];
+    const i = buttons.indexOf(document.activeElement as HTMLElement);
+    const row = Math.floor(i / 4);
+    const go = (j: number) => {
+      e.preventDefault();
+      buttons[j].focus({ preventScroll: true });
+    };
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeTray();
+    } else if (e.key === "ArrowRight") go(row * 4 + ((i % 4) + 1) % 4);
+    else if (e.key === "ArrowLeft") go(row * 4 + ((i % 4) + 3) % 4);
+    else if (e.key === "ArrowDown" || e.key === "ArrowUp") go((i + 4) % 8);
+  });
+
+  // ---------- the room log (INT-5.8; I.9) ----------
+  // New lines arrive at the top within a second, quietly; the newest 50 are
+  // kept, five showing and the rest behind "Show older".
+  function addLog(entry: LogEntry) {
+    const panel = document.querySelector<HTMLElement>(".room-log");
+    if (!panel) return;
+    const shown = panel.querySelector<HTMLOListElement>(":scope > ol")!;
+    const older = panel.querySelector<HTMLDetailsElement>(".older")!;
+    const olderList = older.querySelector("ol")!;
+    const me = Number(shown.dataset.me);
+    const li = document.createElement("li");
+    li.dataset.at = String(entry.at);
+    li.classList.toggle("you", entry.from.id === me || entry.to.id === me);
+    li.append(tpl(`log-${entry.kind}`));
+    const l = logLine(entry, me);
+    const line = document.createElement("span");
+    line.className = "line";
+    if (l.text !== undefined) {
+      const to = document.createElement("span");
+      to.className = "to";
+      to.textContent = l.to!;
+      line.append(`${l.who} `, to, ` "${l.text}"`);
+    } else line.append(l.who + l.rest);
+    const t = document.createElement("span");
+    t.className = "t";
+    t.textContent = ago(entry.at, nowServer());
+    li.append(line, t);
+    shown.prepend(li);
+    panel.querySelector(".empty")?.remove();
+    // INT-5.23: "You walked in" once there are lines on both sides of it,
+    // above the first line from before you came
+    const joined = Number(shown.dataset.joined);
+    if (shown.dataset.joined && entry.at >= joined && !panel.querySelector("li.joined")) {
+      const before = [...panel.querySelectorAll<HTMLElement>("li[data-at]")].find((x) => Number(x.dataset.at) < joined);
+      if (before) {
+        const line = document.createElement("li");
+        line.className = "joined";
+        line.textContent = shown.dataset.joinedText ?? "";
+        before.before(line);
+      }
+    }
+    // keep five showing (the "You walked in" line rides along), the rest older
+    const rows = () => [...shown.children].filter((c) => !c.classList.contains("joined"));
+    while (rows().length > 5) olderList.prepend(shown.lastElementChild!);
+    if (shown.lastElementChild?.classList.contains("joined")) olderList.prepend(shown.lastElementChild);
+    const all = [...shown.children, ...olderList.children].filter((c) => !c.classList.contains("joined"));
+    for (const extra of all.slice(50)) extra.remove();
+    const n = [...olderList.children].filter((c) => !c.classList.contains("joined")).length;
+    older.hidden = n === 0;
+    older.querySelector("summary")!.textContent = `Show older (${n} more)`;
+  }
+  // the times on the right move on by themselves
+  setInterval(() => {
+    for (const li of document.querySelectorAll<HTMLElement>(".room-log li[data-at]")) {
+      const t = li.querySelector(".t");
+      if (t) t.textContent = ago(Number(li.dataset.at), nowServer());
+    }
+  }, 30_000);
+
+  // ---------- on each room shown ----------
+  // a bubble still within its 5 s shows for its time left (INT-5.6)
+  document.addEventListener("astro:page-load", () => {
+    readLimits();
+    closeMenu(false);
+    const gym = document.querySelector<HTMLElement>(".gym");
+    if (!gym) return;
+    for (const e of JSON.parse(gym.dataset.says ?? "[]") as Extract<LogEntry, { kind: "say" }>[]) {
+      const at = e.at;
+      // the room's people are only placed once the first message is in
+      const show = () => bubble(e.from.id, e.to.name, e.text, at);
+      if (avatarOf(e.from.id)) show();
+      else setTimeout(show, 300);
+    }
+  });
 
   document.addEventListener(
     "click",
@@ -2140,6 +3045,683 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
+  }
+
+  /* ===== interactions, presets, emoji (criteria/int.md; room spec I.1 to I.9) =====
+     Global: the script builds the menu, reactions, banners, bubbles and pops. */
+
+  /* ---------- who the menu is for: a paper ring on their tag ---------- */
+  :global(.map .avatar[aria-expanded="true"] .tag) {
+    outline: 2px solid var(--paper);
+    outline-offset: 2px;
+  }
+
+  /* ---------- the menu (INT-1): the game's START menu (I.2) ----------
+     Laptop: beside the avatar, or under the squad row. Phone: pinned 56 px
+     above the dock, in the thumb zone, never over it. */
+  :global(.menu) {
+    position: absolute;
+    z-index: 25;
+    width: 20rem;
+    max-width: calc(100vw - 2rem);
+    margin: 0;
+    padding: 0.75rem;
+    background: var(--panel);
+    border: var(--px) solid var(--paper);
+    box-shadow: var(--px) var(--px) 0 #000;
+  }
+  @media (max-width: 899px) {
+    :global(.menu) {
+      position: fixed;
+      right: 1rem;
+      bottom: calc(var(--dock-h, 92px) + 56px);
+      left: 1rem;
+      z-index: 35;
+      width: auto;
+      max-width: none;
+      max-height: calc(100dvh - var(--dock-h, 92px) - 64px);
+      overflow-y: auto;
+    }
+  }
+  :global(.menu-who) {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    align-items: center;
+    gap: 0 0.75rem;
+    margin: 0 0 0.75rem;
+  }
+  :global(.menu-who .av) {
+    width: 64px;
+    height: 40px;
+  }
+  :global(.menu-name) {
+    display: block;
+    margin: 0;
+    font-size: 26px;
+    line-height: 1;
+    color: var(--paper);
+  }
+  :global(.menu-name .chips) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--px);
+    margin-top: var(--px);
+  }
+  :global(.menu [hidden]) {
+    display: none;
+  }
+  :global(.menu-acts) {
+    display: grid;
+    gap: var(--px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  :global(.night .menu .act) {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    width: 100%;
+    min-height: 48px;
+    margin: 0;
+    padding: 0 0.75rem 0 0.5rem;
+    font: 16px/1 var(--display);
+    color: var(--paper);
+    background: var(--night);
+    border: 2px solid var(--edge);
+    box-shadow: none;
+    transform: none;
+  }
+  :global(.night .menu .act:hover) {
+    background: var(--floor);
+  }
+  :global(.night .menu .act:active) {
+    transform: translateY(2px);
+  }
+  /* the cursor on the fitting move (INT-2.14, INT-2.15); a slot elsewhere.
+     Drawn here, so a row's text is its word alone. */
+  :global(.menu .cur::before) {
+    content: "▶";
+  }
+  :global(.menu .act .cur) {
+    visibility: hidden;
+  }
+  :global(.night .menu .act.hot) {
+    color: var(--ink);
+    background: var(--leaf);
+    border-color: var(--ink);
+  }
+  :global(.menu .act.hot .cur) {
+    visibility: visible;
+  }
+  /* not now (INT-2.13, INT-4.7): focusable, dashed, the reason under it */
+  :global(.night .menu .act[aria-disabled="true"]) {
+    color: var(--dim);
+    background: transparent;
+    border-style: dashed;
+    border-color: var(--dim);
+    cursor: not-allowed;
+  }
+  :global(.night .menu .act[aria-disabled="true"] .cur) {
+    visibility: hidden;
+  }
+  :global(.menu-why) {
+    margin: 0.5rem 0 0;
+    color: var(--dim);
+  }
+  /* Message: the same box, its rows swapped for the ten presets */
+  :global(.menu-sub) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin: 0 0 0.75rem;
+  }
+  :global(.night .menu .back) {
+    width: auto;
+    min-height: 44px;
+    margin: 0;
+    padding: 0 0.75rem 0 0.5rem;
+    font-size: 8px;
+  }
+  :global(.menu .back .cur) {
+    display: inline-block;
+    visibility: visible;
+    transform: scaleX(-1);
+  }
+  :global(.menu-to) {
+    margin: 0;
+    font-size: 24px;
+    line-height: 1;
+    color: var(--paper);
+  }
+  :global(.menu-group) {
+    margin: 0.75rem 0 0.5rem;
+    font: 8px/1 var(--display);
+    text-transform: uppercase;
+    color: var(--leaf);
+  }
+  :global(.menu-sub + .menu-group) {
+    margin-top: 0;
+  }
+  :global(.presets) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  :global(.night .menu .preset) {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    height: 100%;
+    min-height: 52px;
+    margin: 0;
+    padding: var(--px) 0.5rem;
+    font: 20px/1 var(--body);
+    text-align: left;
+    text-transform: none;
+    color: var(--paper);
+    background: var(--night);
+    border: 2px solid var(--edge);
+    box-shadow: none;
+    transform: none;
+  }
+  :global(.night .menu .preset:hover) {
+    background: var(--floor);
+  }
+
+  /* ---------- the squad list opens the same menu (INT-1.10) ----------
+     Each other person's row is one button laid out as the row was. */
+  .people :global(li:has(> .person)) {
+    display: block;
+  }
+  :global(.night .people .person) {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0 0.75rem;
+    width: 100%;
+    min-height: 44px;
+    margin: 0;
+    padding: 0;
+    font: inherit;
+    text-align: left;
+    text-transform: none;
+    color: inherit;
+    background: none;
+    box-shadow: none;
+    transform: none;
+  }
+  :global(.night .people .person:hover),
+  :global(.night .people .person[aria-expanded="true"]) {
+    background: var(--night);
+    box-shadow: 0 0 0 var(--px) var(--night);
+  }
+
+  /* ---------- reactions (INT-3): one svg over the tile, frames in turn (I.4) ---------- */
+  :global(.map .avatar .fx) {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    z-index: 3;
+    width: var(--t);
+    height: var(--t);
+    overflow: visible;
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+  :global(.map .avatar.on-station:not(.on-machine) .fx) {
+    bottom: calc(var(--t) * -0.375);
+  }
+  :global(.fx use) {
+    visibility: hidden;
+    animation: fx-frame var(--f) steps(1) forwards;
+  }
+  :global(.fx use:nth-child(2)) {
+    animation-delay: var(--f);
+  }
+  :global(.fx use:nth-child(3)) {
+    animation-delay: calc(var(--f) * 2);
+  }
+  :global(.fx use:nth-child(4)) {
+    animation-delay: calc(var(--f) * 3);
+  }
+  :global(.fx-cheer) {
+    --f: 200ms;
+  }
+  :global(.fx-poke) {
+    --f: 240ms;
+  }
+  :global(.fx-slap) {
+    --f: 200ms;
+  }
+  @keyframes fx-frame {
+    0% {
+      visibility: visible;
+    }
+    100% {
+      visibility: hidden;
+    }
+  }
+  /* reduced motion: the middle frame, still (INT-3.9); the script removes it */
+  @media (prefers-reduced-motion: reduce) {
+    :global(.fx use) {
+      animation: none;
+    }
+    :global(.fx use:nth-child(2)) {
+      visibility: visible;
+    }
+  }
+
+  /* ---------- the banner (INT-3): a game text box, 4 s (I.5) ----------
+     Laptop: centred at the top of the map panel. Phone: fixed at the top of
+     the screen, wherever you've scrolled. */
+  :global(.map-panel .banner-slot) {
+    position: absolute;
+    top: 0.5rem;
+    left: 50%;
+    z-index: 24;
+    width: max-content;
+    max-width: calc(100% - 2rem);
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+  @media (max-width: 899px) {
+    :global(.map-panel .banner-slot) {
+      position: fixed;
+      top: 0.5rem;
+      right: 0.5rem;
+      left: 0.5rem;
+      z-index: 40;
+      width: auto;
+      max-width: none;
+      transform: none;
+    }
+  }
+  :global(.banner) {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    padding: var(--px) 0.75rem var(--px) var(--px);
+    font: 22px/1.1 var(--body);
+    color: var(--ink);
+    background: var(--paper);
+    border: var(--px) solid var(--ink);
+    box-shadow:
+      0 0 0 var(--px) var(--edge),
+      var(--px) calc(var(--px) * 2) 0 var(--px) #000;
+    animation: banner 4s steps(4) forwards;
+  }
+  :global(.banner .av) {
+    flex: none;
+    width: 64px;
+    height: 40px;
+  }
+  @keyframes banner {
+    0% {
+      clip-path: inset(0 -16px 100% -16px);
+    }
+    4%,
+    96% {
+      clip-path: inset(-16px);
+    }
+    100% {
+      clip-path: inset(0 -16px 100% -16px);
+      visibility: hidden;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.banner) {
+      animation: none;
+    }
+  }
+
+  /* ---------- a refusal or a failure, where the menu was (I.3) ----------
+     A refusal is news: dashed, like Reconnecting. A failure is an error. */
+  :global(.note) {
+    width: max-content;
+    max-width: 18rem;
+    margin: 0;
+    padding: 0.25rem 0.5rem;
+    font: 20px/1.1 var(--body);
+    color: var(--paper);
+    background: var(--night);
+    border: 2px dashed var(--dim);
+    box-shadow: 0 0 0 var(--px) var(--panel);
+  }
+  :global(.map .note),
+  :global(.map .error) {
+    position: absolute;
+    z-index: 24;
+    width: max-content;
+    max-width: 18rem;
+    margin: 0;
+    pointer-events: none;
+  }
+  :global(.dock .note),
+  :global(.dock .error) {
+    position: absolute;
+    bottom: calc(100% + 0.5rem);
+    left: 0.75rem;
+    z-index: 3;
+    max-width: calc(100% - 5.5rem);
+    margin: 0;
+    pointer-events: none;
+  }
+
+  /* ---------- bubbles and pops: two layers over the map (I.6, I.8) ----------
+     Each placed from its sender's tile (--x, --y; --dy for the slacker's
+     drop). Pops draw under every avatar, so a tag is never covered;
+     bubbles draw over them. Neither takes taps. */
+  :global(.map .says),
+  :global(.map .pops) {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  :global(.map .pops) {
+    z-index: 0;
+  }
+  :global(.map .says) {
+    z-index: 18;
+  }
+  /* the anchor: the top of the sender's tag (20 px of tag over the tile) */
+  :global(.map .say),
+  :global(.map .pop) {
+    --top: calc((var(--y) + 1 + var(--dy, 0)) * var(--t) - var(--t) - 24px);
+    position: absolute;
+    left: calc((var(--x) + 0.5) * var(--t));
+  }
+  /* the preset bubble (INT-5): above the sender, 5 s; "@Ji-woo" first */
+  :global(.map .say) {
+    bottom: calc(100% - var(--top) + 0.75rem);
+    width: max-content;
+    max-width: min(9.5rem, calc(var(--t) * 4));
+    margin: 0;
+    padding: 2px 0.5rem;
+    font: 20px/1 var(--body);
+    color: var(--ink);
+    background: var(--leaf);
+    border: 2px solid var(--ink);
+    transform: translateX(-50%);
+  }
+  :global(.say .to) {
+    display: block;
+    color: var(--deep);
+  }
+  :global(.say::after),
+  :global(.say::before) {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: calc(50% - 4px);
+    width: 8px;
+    height: 4px;
+    background: var(--ink);
+  }
+  :global(.say::before) {
+    top: calc(100% + 4px);
+    left: calc(50% - 2px);
+    width: 4px;
+  }
+  /* near a side wall it hangs inwards, its tail over the sender */
+  :global(.map .say.west) {
+    transform: translateX(-16px);
+  }
+  :global(.map .say.east) {
+    transform: translateX(calc(-100% + 16px));
+  }
+  :global(.say.west::after),
+  :global(.say.east::after) {
+    left: 10px;
+  }
+  :global(.say.west::before),
+  :global(.say.east::before) {
+    left: 12px;
+  }
+  :global(.say.east::after) {
+    right: 10px;
+    left: auto;
+  }
+  :global(.say.east::before) {
+    right: 12px;
+    left: auto;
+  }
+  /* the back row: no room above at 1x, so under the tile, tail up */
+  :global(.map .say.below) {
+    top: calc((var(--y) + 1 + var(--dy, 0)) * var(--t) + 0.5rem);
+    bottom: auto;
+  }
+  :global(.say.below::after) {
+    top: auto;
+    bottom: 100%;
+  }
+  :global(.say.below::before) {
+    top: auto;
+    bottom: calc(100% + 4px);
+  }
+  /* a pop above the same person: the bubble steps up over it */
+  :global(.map .say.over-pop) {
+    bottom: calc(100% - var(--top) + 32px + 1rem);
+  }
+  /* the emoji pop (INT-8, BOT-6): 32 px, 4 px above the tag, 3 s */
+  :global(.map .pop) {
+    bottom: calc(100% - var(--top) + 4px);
+    width: 32px;
+    height: 32px;
+    translate: -50% 0;
+    animation: pop 180ms steps(1, end) forwards;
+  }
+  /* the back row: beside the tag, on the side away from the nearer wall */
+  :global(.map .pop.beside) {
+    bottom: calc(100% - var(--top) - 28px);
+    translate: calc(var(--tag-w, var(--t)) / 2 + 2px) 0;
+  }
+  :global(.map .pop.beside.west-side) {
+    translate: calc(-100% - var(--tag-w, var(--t)) / 2 - 2px) 0;
+  }
+  @keyframes pop {
+    0% {
+      transform: translateY(8px);
+    }
+    50% {
+      transform: translateY(4px);
+    }
+    100% {
+      transform: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.map .pop) {
+      animation: none;
+    }
+  }
+
+  /* ---------- the emoji tab and tray (INT-8; I.7) ----------
+     The tab rises from the dock's top border on the right, so it takes no
+     width from the button; the tray opens above it, 48 px clear. */
+  :global(.night .dock .emote) {
+    position: absolute;
+    right: 0.75rem;
+    /* 100% is inside the dock's top border: the tab stands on it */
+    bottom: 100%;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 48px;
+    min-height: 44px;
+    margin: 0;
+    padding: 0 0 var(--px);
+    color: var(--leaf);
+    background: var(--panel);
+    border: var(--px) solid var(--leaf);
+    border-bottom: 0;
+    box-shadow: none;
+    transform: none;
+  }
+  :global(.night .dock .emote:hover) {
+    background: var(--night);
+  }
+  :global(.night .dock .emote[aria-expanded="true"]) {
+    color: var(--ink);
+    background: var(--leaf);
+  }
+  :global(.night .dock .emote[aria-disabled="true"]) {
+    cursor: default;
+  }
+  :global(.dock .emote.pending svg) {
+    opacity: 0.5;
+  }
+  @media (min-width: 900px) {
+    .dock {
+      margin-top: 4rem;
+    }
+  }
+  /* the stamp stops short of the tab */
+  .dock .stamp {
+    max-width: calc(100% - 5.5rem);
+  }
+  @media (max-width: 899px) {
+    :global(body:has(.dock .emote) footer) {
+      padding-bottom: 10rem;
+    }
+  }
+  .tray {
+    position: absolute;
+    right: 0.75rem;
+    /* 48 px clear of the dock's outer edge, past its top border */
+    bottom: calc(100% + 48px + var(--px));
+    z-index: 3;
+    display: grid;
+    grid-template-columns: repeat(4, 64px);
+    gap: var(--px);
+    margin: 0;
+    padding: 0.5rem;
+    list-style: none;
+    background: var(--panel);
+    border: var(--px) solid var(--leaf);
+    box-shadow: var(--px) var(--px) 0 #000;
+  }
+  .tray[hidden] {
+    display: none;
+  }
+  :global(.night) .tray button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    width: 64px;
+    height: 64px;
+    min-height: 0;
+    margin: 0;
+    padding: var(--px) 0 0;
+    font: 20px/1 var(--body);
+    text-transform: none;
+    color: var(--paper);
+    background: var(--night);
+    box-shadow: none;
+    transform: none;
+  }
+  :global(.night) .tray button:hover {
+    background: var(--floor);
+  }
+  :global(.night) .tray button:active {
+    transform: translateY(2px);
+  }
+  :global(.night) .tray[data-cooling] button {
+    color: var(--dim);
+    cursor: default;
+  }
+  .tray[data-cooling] svg {
+    opacity: 0.5;
+  }
+  :global(.dock .emote-error) {
+    right: calc(0.75rem + 60px);
+    left: auto;
+  }
+
+  /* ---------- the room log (INT-5.8; I.9): presets and interactions ----------
+     Newest first: five, then the rest of the newest 50 behind one tap.
+     Lines about you wear the leaf edge, as an edited log row does. */
+  .room-log ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .room-log :global(li) {
+    display: grid;
+    grid-template-columns: 16px minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 0 0.5rem;
+    padding: 0.5rem 0;
+    border-top: 2px solid var(--night);
+  }
+  .room-log :global(li:first-child) {
+    border-top: 0;
+    padding-top: 0;
+  }
+  .room-log :global(li > svg) {
+    margin-top: 4px;
+    color: var(--dim);
+  }
+  .room-log :global(li.you) {
+    padding-left: 0.5rem;
+    box-shadow: inset var(--px) 0 0 var(--leaf);
+  }
+  .room-log :global(li.you > svg) {
+    color: var(--leaf);
+  }
+  .room-log :global(.t) {
+    color: var(--dim);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .room-log :global(.to) {
+    color: var(--leaf);
+  }
+  .room-log :global(li.joined) {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--dim);
+  }
+  .room-log :global(li.joined::before),
+  .room-log :global(li.joined::after) {
+    content: "";
+    flex: 1;
+    border-top: 2px dashed var(--edge);
+  }
+  .room-log .older {
+    margin: 0.5rem 0 0;
+  }
+  .room-log .older > summary {
+    list-style: none;
+    cursor: pointer;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    color: var(--leaf);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .room-log .older > summary::-webkit-details-marker {
+    display: none;
+  }
+  .room-log .older[open] > summary {
+    display: none;
+  }
+  .room-log .empty {
+    margin: 0;
+    color: var(--dim);
   }
 
   /* the rest block: water blue while resting, slacking red once it's over */

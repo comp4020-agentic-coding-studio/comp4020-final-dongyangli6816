@@ -21,4 +21,11 @@ export const claimIcon = icon("cc....cc", "c......c", "........", "........", ".
 export const dieIcon = icon("ccccccc.", "c.....c.", "c.c.c.c.", "c..c..c.", "c.c.c.c.", "c.....c.", "ccccccc.", "........");
 export const tickIcon = icon("........", "......cc", ".....cc.", "c...cc..", "cc.cc...", ".ccc....", "..c.....", "........");
 // the workout clock on the sheet's border
+// interactions (docs/design/room/spec.md, "Interactions, Oct 22"): the menu's
+// rows and the room log's lines (cheer, poke, slap, say), and the emoji tab
+export const cheerIcon = icon("...c....", "...c....", "..ccc...", "ccccccc.", "..ccc...", "...c..c.", "...c.ccc", "......c.");
+export const pokeIcon = icon("...c....", "...c....", "...c....", "...cccc.", ".ccccccc", ".ccccccc", "..ccccc.", "..ccccc.");
+export const slapIcon = icon("....c.c.", "..c.c.c.", "c.cccccc", "..cccccc", "c.cccccc", "..ccccc.", "...cccc.", "........");
+export const sayIcon = icon("cccccccc", "c......c", "c.cc.c.c", "c......c", "cccccccc", ".cc.....", ".c......", "........");
+export const emoteIcon = icon(".cccccc.", "c......c", "c.c..c.c", "c......c", "c.c..c.c", "c..cc..c", ".cccccc.", "........");
 export const clockIcon = icon("..cccc..", ".c.c..c.", "c..c...c", "c..ccc.c", "c......c", ".c....c.", "..cccc..", "........");

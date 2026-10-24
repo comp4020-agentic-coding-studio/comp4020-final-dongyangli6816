@@ -89,6 +89,9 @@ Emoji are allowed anywhere they add feeling, under these rules:
   phone draws its own glossy one at a mismatched size. Put emoji in VT323 text
   (banners, bubbles, presets, empty states), where the size is close enough.
 - **State is never shown by emoji.** States use the pixel icons in section 9.
+- **The eight sent emoji are pixel art** (INT-8: Hi, Flex, Fire, Clap, Haha,
+  Dead, Eyes, Love, in `src/sprites/emoji.ts`), never the phone's glyphs.
+  Phone emoji stay only in copy, under the rules above.
 
 ### Copy bank
 
@@ -99,10 +102,15 @@ Use these, or match their voice.
 | Own screen while Slacking (GYM-11) | `Your squad can see you 👀` |
 | Rest over (LOG-5) | `Rest's up. Back under the bar 🔔` |
 | Cheered (INT-3) | `Mia is hyping you up 🔥` |
-| Poked (INT-3) | `Mia poked you. Rest's over? 👉` |
+| Poked while resting or slacking (INT-3) | `Mia poked you. Rest's over? 👉` |
+| Poked in any other state (INT-3, int.md D4) | `Mia poked you 👉` |
 | Slapped (INT-3) | `Mia slapped you back to work 👋` |
-| Poke/slap refused while target lifts | `Ji-woo is mid-set. Cheer instead?` |
+| Slap refused, target lifting (INT-2) | `Ji-woo is mid-set. Cheer instead?` |
+| Slap refused, target finished (INT-2, int.md D5) | `Ji-woo's done for today. Cheer instead?` |
+| Target has left (INT-2) | `Tom's left the gym.` |
 | Rate-limited (INT-4) | `Easy, give them 10 seconds.` |
+| An interaction, preset or emoji didn't send | `That didn't send. Try again.` |
+| Empty room log (INT-5) | `Quiet in here. Tap someone on the map to cheer them on 👀` |
 | Room full (ROOM-4) | `This gym's full: 12 of 12 are in.` |
 | Wrong passcode (ROOM-2) | `That passcode didn't work. Check it with your squad.` |
 | Empty history | `No workouts yet. Your future self is waiting 🏋️` |
@@ -371,16 +379,35 @@ names to use.
 - **`.avatar`**: a sprite inside a `<button>`. The sprite is 32 × 32 drawn at
   the map's scale, but the button's hit area is at least 44 × 44 px. A name
   tag (VT323, `--paper` on `#000` at 70%) floats above it, with a speech
-  bubble above that when the person sends a preset.
-- **`.menu`**: the interaction menu (INT-1) that opens on an avatar: the
-  person's name and state chip, then **Cheer**, **Poke**, **Slap**,
-  **Message** as 48 px rows. Poke and Slap are disabled, not hidden, while
-  the target is Lifting, with the reason shown ("Ji-woo is mid-set"). The menu
-  highlights the fitting action: Slap and Poke for a slacker, Cheer for a
-  lifter. Closes on Escape, tap outside, or after an action.
-- **`.banner`**: the message you get when someone interacts with you (INT-3).
-  Slides in from the top of the map, never covers the bottom panel, stays 4 s,
-  and is `role="status"`.
+  bubble above that when the person sends a preset, and an emoji pop when
+  they send an emoji.
+- **`.menu`**: the interaction menu (INT-1) that opens on another person's
+  avatar or squad row (Dony's too): their head, name and state chip (plus
+  Away), then **Cheer**, **Poke**, **Slap**, **Message** as 48 px rows.
+  Cheer, Poke and Message are always available (Message swaps the rows for
+  the ten presets in two groups). **Only Slap has a state rule: it is
+  disabled, not hidden, while the target is Lifting or Finished**, with the
+  reason in words under the rows ("Ji-woo is mid-set. Cheer instead?",
+  "Ji-woo's done for today. Cheer instead?"); within 10 s of your last
+  interaction with them, Cheer, Poke and Slap are disabled with "Easy, give
+  them 10 seconds." (int.md D4, D5, D6). A ▶ cursor and a leaf fill
+  highlight the fitting moves: Poke and Slap on a slacker, Cheer on a
+  lifter, nothing otherwise. Beside the avatar on a laptop; pinned just
+  above the dock on a phone, never over it. Traps focus; closes on Escape,
+  a tap outside (which still reaches what it hit), or an action.
+- **`.banner`**: the message you get when someone interacts with you (INT-3):
+  an RPG text box, ink on paper with the sender's head. At the top of the
+  map on a laptop, fixed to the top of the screen on a phone; never covers
+  the bottom panel, never takes focus, stays 4 s, a newer one replaces it,
+  `role="status"`.
+- **`.say`** (preset bubble) and **`.pop`** (emoji pop): over the sender on
+  the map, each in its own layer: bubbles over avatars for 5 s, addressed
+  "@name"; pops under avatars for 3 s, so a pop never covers a name tag.
+- **`.emote`** and **`.tray`**: the emoji tab on the dock's top border, in
+  every panel state, and the 4 × 2 tray of eight pixel emoji it opens,
+  always at least 48 px clear of the dock's button (INT-8).
+- **`.room-log`**: a panel under the squad list with the newest presets and
+  interactions (INT-5), lines about you edged in leaf; no emoji.
 - **`.code-input`**: the join screen's six large character boxes (MVP spec
   "Join with code"). Accepts paste, forces uppercase, rejects `0 O 1 I L`
   as you type.
@@ -443,8 +470,10 @@ Pixel games move in steps, so Spotter does too.
 - **Walking** moves a tile at a time along the aisles at about 8 tiles a
   second.
 - **Banners** slide in over 160 ms in 4 steps and leave the same way.
-- **Interaction reactions** (slap spin with stars, poke jump, cheer sparkle)
-  last under 1 s and play on every screen.
+- **Interaction reactions** (cheer sparkle, poke finger and "!", slap glove,
+  POW and dizzy stars) are effects drawn over any pose, last under 1 s and
+  play on every screen. Reduced motion shows one still frame for 800 ms.
+- **Emoji pops** rise 8 px in two steps and go at 3 s; bubbles go at 5 s.
 - **Rest-over flash** (LOG-5): the bottom panel's border flashes `--leaf` at
   most twice a second, three times, never the whole screen. WCAG forbids more
   than three flashes a second.
@@ -547,8 +576,9 @@ For the user to decide; the designer agent should not settle these alone.
 
 - **Final name.** "Spotter" is still a working title (spec open questions);
   the logo and copy assume it.
-- **Slap.** The copy and the menu keep the slap; revisit after the Crit 9 pod
-  has used it.
+- **Slap.** *Settled 22 Oct* (int.md D5): kept, refused while the target is
+  Lifting or Finished; INT-7 (turn slaps off) is the answer if it lands
+  badly.
 
 ## Sources
 

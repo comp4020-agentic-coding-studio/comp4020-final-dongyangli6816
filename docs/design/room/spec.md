@@ -73,6 +73,21 @@ state: "Poster hint". Changed: "Poster states" (one resting frame, not two),
 "Dony just in", the summon's hop and walk, "Summoned again", "A tap that did
 nothing" and "Reduced motion" (the empty poster no longer dimmed).
 
+**Revision, 22 Oct 2026 (interactions, presets and emoji; INT-1 to INT-5,
+INT-8, BOT-6, decided in `docs/product/criteria/int.md`).** Another person's
+avatar and their squad row open **a game-style menu** (Cheer, Poke, Slap,
+Message) with a ▶ cursor on the fitting move; Slap is dashed with its reason
+while the target is Lifting or Finished. **Reactions** are 32 × 32 effects
+over any pose; **banners** are a paper text box with the sender's head;
+**preset bubbles** hang above the sender, addressed "@Ji-woo". A new
+**emoji tab** rises from the dock's top border on the right, in every panel
+state, and opens a 4 × 2 **tray** of eight pixel emoji; the emoji **pops**
+above the sender for 3 s in a layer under every avatar, so tags stay readable
+in a room of twelve. A new **Room log** panel sits under the squad. Full
+design in "Interactions, Oct 22" at the end. No existing field, `action` or
+state changes; the only change to an existing element is that others'
+avatars and squad rows gain `aria-haspopup="menu"` and a click.
+
 The mockup suffixes ids (`weight_kg-1`, `set-log-5`, `pick-2`) only because
 it shows many states on one page. The real ids are `weight_kg`, `reps`,
 `minutes`, `seconds`, `distance_km`, `exercise`, `set-error`, `set-edit`,
@@ -734,9 +749,10 @@ straight to the target. Walking never delays anything in the sheet.
   - Resting or Slacking: `{equipment} {slot}`, e.g. "Ji-woo, slacking, flat
     bench 2".
   - Idle: `no station yet`. Finished: `finished`.
-- **What it does this week**: nothing for others' avatars beyond focus
-  (INT-1 opens the menu next week; it will add `aria-haspopup="menu"`).
-  Your own avatar moves focus to the dock's button, a shortcut to Done.
+- **What it does**: (22 Oct) others' avatars, Dony's included, open the
+  interaction menu and carry `aria-haspopup="menu"` and `aria-expanded`
+  ("Interactions, Oct 22", I.2). Your own avatar still moves focus to the
+  dock's button, a shortcut to Done, and has no `aria-haspopup`.
 - Equipment names in text: treadmill, flat bench, squat rack, dumbbell
   rack, lifting platform, pull-up bar, cable machine, exercise mat, followed
   by the slot number. Capitalised only at the start of a line.
@@ -830,8 +846,8 @@ differences:
    join order). Among the people in his state, he takes the spot after the
    last person: with Priya Idle, Priya is at (8,7) and Dony at (6,7).
 3. **He is never "you" and never host**: no `.me`, no badge. His button does
-   what anyone else's does this week (nothing beyond focus). He is never
-   Away, never Finished.
+   what anyone else's does: (22 Oct) it opens the interaction menu. He is
+   never Away, never Finished.
 
 Everything else is a person's: `button.avatar` (with `.on-station` while
 Lifting or Slacking), `span.tag.state-{state}` with "Dony", the accessible
@@ -1339,9 +1355,8 @@ stations, avatars and rows from it.
 
 ## 6. Open questions
 
-- **Tapping Dony's own avatar** (14 Oct). This week it does what anyone
-  else's does: nothing beyond focus. Once the interaction menu (INT-1) ships,
-  he should take cheers like anyone; that is a later design.
+- **Tapping Dony's own avatar** (14 Oct). *Settled 22 Oct* (int.md D11): he
+  opens the same menu as anyone ("Interactions, Oct 22").
 - **Bulbs, enough or too much?** (14 Oct). The marquee is drawn for the
   first minute and then lit and still until the first summon. If the
   showcase finds people still don't tap it, the next steps are, in order: a
@@ -3438,3 +3453,527 @@ cargos and sneaker accents are his violet top and trousers, and the open
 bomber is gone. His only own frame is `hop` (arms up, knees tucked), drawn on
 the shared body with his head. BOT-2's "his own sprite" now means his own
 head and colours.
+
+## Interactions, Oct 22
+
+From `docs/product/criteria/int.md` (agreed 22 Oct): INT-1 to INT-5, INT-8
+(emoji), BOT-6 (Dony's emoji), D1 to D13. The criteria decide behaviour;
+this section decides how it looks and where it sits. Mockup states are named
+in brackets, as in `mockup.html`.
+
+### I.1 Plan
+
+**Shared** (the Gym group is this page alone; unchanged from section 1):
+Night surface, `.panel` boxes named on their border, one primary button in
+the dock, state shown three ways, the Lobby avatar sprite everywhere, plain
+words for refusals and errors, banter in banners and presets.
+
+**Who and when.** Three people, often the same person at different moments:
+- *Between sets, phone in one hand.* Wants to fire a 🔥 at the squad without
+  leaving the set, and must never log a set by accident. Two taps, at the
+  dock, nothing near Done that a sweaty thumb would hit.
+- *The showcase.* Twelve people, nobody lifting, poking and slapping each
+  other and spamming emoji for ten minutes. The map must stay readable and
+  Start set must stay instant.
+- *Locked phone, back after a minute.* Missed the banner; finds "Ji-woo
+  slapped you" in the room log.
+- *A newcomer who knows nobody* (vision). Emoji are the low-stakes hello: 👋
+  from your own avatar, aimed at no one. The menu works the same on a
+  stranger, which is a risk (Departures, I.6).
+
+**The one job is unchanged: log the next set.** Everything here is a second
+layer that never sits between the person and Start set or Done (system
+2.1). The interaction's own job is "do something to that person in one tap"
+(menu) and "say something to the room in two" (emoji).
+
+**Hierarchy.** On the map: tags (state) first, then reactions (under 1 s, on
+the target), then bubbles (5 s, chosen words), then pops (3 s, ambient,
+drawn *under* tags). On the sheet: the dock's button stays the loudest
+thing; the emoji tab is a small leaf-edged tab on its border, quieter than
+Done and louder than the clock.
+
+**Reuse.** `.panel` for the room log; `.chip.state-*` and `.chip.away` in
+the menu; the people row for the menu's header; the layout's `.error` for
+failures; `.stamp`'s border-tab language for the emoji tab; the
+Reconnecting chip's dashed look for refusals (`.note`); the `.bubble` colours
+(leaf, ink) for the preset bubble; `steps()` motion and the stamp's
+keyframes for banner, bubble and pop. New: `.menu`, `.act`, `.presets`,
+`.fx`, `.banner-slot`/`.banner`, `.note`, `.says`/`.say`, `.pops`/`.pop`,
+`.emote`, `.tray`, `.room-log`, `.people .person`. Art: eight emoji and ten
+reaction frames in a new `src/sprites/emoji.ts`, five 8 × 8 icons in
+`icons.ts`.
+
+**Template check.** The generic version is a popover with four grey menu
+items, a toast in the corner, a chat drawer, and a floating emoji-reaction
+button with the phone's glossy emoji. Swap the colours and it's any social
+app. What changed:
+- **The menu is a game's START menu**: a paper-edged box, the person's head
+  and state chip like a Pokémon summary, and a ▶ cursor already on the move
+  that fits (Poke and Slap on a slacker, Cheer on a lifter). Cancel is
+  Escape or a tap away, as in the games.
+- **The banner is an RPG text box** (ink on paper, the speaker's face), not
+  a toast.
+- **The slap is slapstick**: a cartoon glove, a yellow POW, dizzy stars
+  round the head. Never a red mark, never on the body (INT-3.13).
+- **Emoji are pixel art in the gym's own palette**, popping over the head
+  like a game emote, never the phone's glossy set.
+- **The emoji control is a tab on the dock's border**, the same border
+  language as the stamp and the clock, so it reads as part of the logbook,
+  not a floating action button.
+- **The room log is a page of the logbook**: icons for the move, names, the
+  preset in quotes, a dashed "You walked in" line.
+
+Would a Gen Z squad screenshot it? The dizzy-stars slap on a slacker sitting
+on her bench with her phone, and a room of twelve 💀 and 🔥 over people's
+heads: yes. The gym map is still the thing on the screen.
+
+### I.2 The menu (INT-1, INT-2.13, INT-2.14)
+
+**Opens** from another person's avatar on the map or their squad row (D10),
+by tap, click, Enter or Space. Your own avatar and row open nothing (INT-1.8,
+INT-1.10). Dony opens the same menu (INT-1.11).
+
+```html
+<div class="menu" role="menu" aria-labelledby="menu-name" id="menu">
+  <div class="menu-who">
+    <svg class="av" viewBox="2 0 28 22">…head…</svg>
+    <p class="menu-name" id="menu-name">Ji-woo<span class="chips"><span class="chip state-slacking">…</span></span></p>
+  </div>
+  <ul class="menu-acts">
+    <li><button type="button" class="act" role="menuitem" name="kind" value="cheer"><span class="cur" aria-hidden="true">▶</span><svg>i-cheer</svg>Cheer</button></li>
+    <li><button … class="act hot" value="poke">…Poke</button></li>
+    <li><button … class="act hot" value="slap">…Slap</button></li>
+    <li><button … class="act" value="message">…Message</button></li>
+  </ul>
+  <p class="menu-why" id="menu-why">…only when something is unavailable…</p>
+</div>
+```
+
+- **Header**: the person's head (the squad row's crop), name in 26 px VT323,
+  state chip, plus the Away chip when Away (INT-1.1: colour, icon and word).
+- **Rows**: 48 px, Press Start 2P 16 px, 8 × 8 icon at 2×, night fill and
+  2 px edge border.
+- **Highlight** (`.hot`, INT-2.14): leaf fill, ink border, the ▶ cursor
+  visible. Slacking: Poke and Slap. Lifting: Cheer. Anyone else: none.
+- **Unavailable** (`aria-disabled="true"`, not `disabled`, so it keeps focus
+  and is announced; INT-2.13): dashed `--dim` border, dim label, no cursor,
+  and `aria-describedby` pointing at `p.menu-why`, which says why in words:
+  - Slap, target Lifting: "Ji-woo is mid-set. Cheer instead?"
+  - Slap, target Finished: "Ji-woo's done for today. Cheer instead?"
+  - Cheer, Poke and Slap within 10 s of your last accepted one to this
+    person (INT-4.7): "Easy, give them 10 seconds." They come back by
+    themselves when the 10 s run out (one `setTimeout` from the server's
+    time of your last accepted one, which the view must carry per target).
+    Message never goes unavailable.
+  - Both at once (target Lifting and the 10 s): the 10 s line; Slap stays
+    dashed after it lifts.
+  A tap on an unavailable row sends nothing and keeps the menu open.
+- **Updates in place** (INT-1.6) when the target's state changes: chip,
+  highlight, Slap's availability, the why line. It never closes for that.
+- **Message** swaps the rows in the same box for "◀ Back · To Ji-woo", then
+  the copy bank's two groups, **Hype** and **Nudge**, each a `role="group"`
+  of five `.preset` buttons in a two-column grid, 52 px tall, VT323 20 px,
+  wrapping inside the button at 360 px. One tap sends; no confirm (INT-5.1).
+  Back (or Escape) returns to the four rows.
+
+**Where.** Laptop (≥ 900 px): `position: absolute` inside `.map`, beside the
+avatar, the side away from the nearer wall and clear of its tag; from a
+squad row, under the row. Phone (< 900 px): `position: fixed`, full width
+less 16 px each side, its bottom 56 px above the dock's top (clear of the
+emoji tab), `max-height` the rest of the screen with its own scroll. So it
+always sits in the thumb zone and never covers the dock (INT-1.4).
+`--dock-h` is set by the script from the dock's height.
+
+**The target's tag** gets a 2 px paper outline while its menu is open
+(`.avatar[aria-expanded="true"] .tag`), so you can see who it's for; their
+squad row takes the night fill.
+
+**Keyboard and focus** (INT-1.2): opening moves focus to the first `.hot`
+row, else Cheer. Tab, Shift+Tab, ↑ and ↓ move round the rows and wrap; Home
+and End go to the first and last. Enter or Space acts. Escape closes (from
+Message, the first Escape goes Back). Focus is trapped while open and
+returns to the avatar or row that opened it. The rest of the page stays
+reachable by pointer: a tap outside closes the menu **and is not swallowed**
+(INT-1.3), so the menu listens for `pointerdown` outside itself, closes, and
+lets the event go on to Start set, Done, Save, Choose or whatever it hit.
+
+**Closes** on Escape, a tap outside, an action, or the target leaving
+(INT-1.7). If they left, focus goes to the next person's avatar in tab
+order, else to the dock's button. If the room closed, the page does what it
+does today.
+
+**Screen readers** (INT-1.9): the avatar keeps its accessible name ("Ji-woo,
+slacking, flat bench 2") and adds `aria-haspopup="menu"` and
+`aria-expanded`. Squad rows become one `button.person` per row with the same
+label; the row's look is unchanged (`display: grid`, same columns).
+
+### I.3 What happens after a tap (INT-3, INT-4)
+
+1. The menu closes at once (INT-3.10); focus goes back to the avatar or row.
+2. The page posts the interaction. Nothing plays yet.
+3. **Accepted**: the reaction plays on the target when the room's event
+   arrives (the sender's screen included). Nothing else on the sender's
+   screen.
+4. **Refused**: one `p.note[role=status]` for 4 s with the server's reason
+   in the copy bank's words. Laptop: absolutely placed in `.map` beside the
+   target, where the menu was. Phone: inside the dock, just above its top
+   border on the left, clear of the emoji tab (`.dock .note`). A refusal is
+   news, not a failure, so it's the dashed Reconnecting look, not red.
+   "Tom's left the gym." for a target who's gone (INT-2.9).
+5. **Failed** (no connection, 5xx): the same place, the layout's `.error`
+   with `role="alert"`: "That didn't send. Try again." Nothing plays, nothing
+   is logged.
+6. A preset refused for the 2 s limit, or a double-tapped Cheer, shows
+   nothing (INT-4.5): the first one went.
+
+### I.4 Reactions (INT-3.1, INT-3.8, INT-3.9)
+
+A `svg.fx` inside the target's `.avatar` button, the tile's size, over the
+sprite and over a machine's front layer, `pointer-events: none`. Its frames
+are `<use>`s shown one after another (CSS `fx-frame`, `steps(1)`), then the
+svg is removed. The pose and the machine underneath keep playing; the tag
+doesn't move.
+
+| Kind | Frames | Reads as |
+| --- | --- | --- |
+| Cheer | 3 × 200 ms (600 ms) | paper and yellow sparkles burst round them, then specks |
+| Poke | 3 × 240 ms (720 ms) | a pointing finger pokes in at the ribs, a "!" pops over the head and jumps: "hey" |
+| Slap | 4 × 200 ms (800 ms) | a cartoon glove swings in with speed lines, a yellow POW at the cheek, dizzy stars round the head |
+
+All under 1 s (system 11). Two arriving at once: the newer restarts the
+svg. Away targets still get the reaction on everyone else's screen
+(INT-3.7). **Reduced motion**: frame 2 alone, still, for 800 ms (the poke's
+"!", the slap's POW, the burst), so the interaction is still seen
+(INT-3.9). Art: `src/sprites/emoji.ts` (`cheerFx1`… `slapFx4`), drawn from
+the sheet as `fx-<kind>-<n>`.
+
+### I.5 Banners (INT-3.2 to INT-3.7)
+
+```html
+<div class="banner-slot"><p class="banner" role="status"><svg class="av">sender's head</svg><span>Mia is hyping you up 🔥</span></p></div>
+```
+
+- **Only on the target's own screens**, every tab of theirs (INT-3.3).
+- **Look**: an RPG text box: ink on paper, 4 px ink border with an edge
+  ring and a hard shadow, the sender's head at the squad row's crop, the
+  line in 22 px VT323.
+- **Copy** (copy bank): Cheer "Mia is hyping you up 🔥"; Slap "Mia slapped
+  you back to work 👋"; Poke "Mia poked you. Rest's over? 👉" if you were
+  Resting or Slacking when it was accepted, otherwise "Mia poked you 👉".
+  The server tells the page which (it knows the state at acceptance).
+- **Where**: laptop, centred at the top of the map panel (inside it,
+  absolute); phone, `position: fixed` at the top of the screen, 8 px in,
+  wherever you've scrolled, so it reaches someone scrolled down to their
+  fields, and is as far from the dock as it can be (INT-3.4). Never takes
+  focus, `pointer-events: none`.
+- **Time**: drops in from the top in 4 steps (160 ms), stays, leaves the
+  same way at 4 s. A new one replaces it and restarts the 4 s (D9).
+  Reduced motion: appears and goes, no slide.
+- **Never on reload** (INT-3.6): banners come only from live events.
+
+### I.6 Preset bubbles (INT-5.4 to INT-5.6, INT-5.11)
+
+All bubbles live in one `div.says` layer in `.map`, over every avatar
+(`z-index` 18), each `p.say` positioned from its sender's tile (`--x`,
+`--y`, and `--dy: 0.375` for a slacker's drop):
+
+```html
+<div class="says"><p class="say" style="--x: 1; --y: 7"><span class="to">@Ji-woo</span>Put the phone down 📵</p></div>
+```
+
+- Leaf on ink, 2 px border, a stepped pixel tail pointing at the sender,
+  20 px VT323. "@Ji-woo" on the first line in `--deep` (D8); the preset on
+  the next. At most four tiles wide at the map's scale (128 px at 1×,
+  152 px at 2×), so it wraps rather than crossing the room.
+- **Near a side wall** (columns 1 to 2 and 7 to 8) the bubble hangs inwards
+  (`.west`, `.east`) with its tail over the sender.
+- **The back row** (`y` = 1) has no room above at 1×: the bubble hangs below
+  the sender's tile, tail up (`.below`).
+- **With a pop above the same person** the bubble steps up over it
+  (`.over-pop`): both readable (INT-8.7).
+- 5 s from arrival, then gone; a newer one from the same sender replaces
+  theirs; people's bubbles show together. If two overlap at 1× the newer
+  draws on top; the log has both in full. A page opening mid-bubble shows it
+  for the time left (INT-5.6); the server sends `sentAt`.
+- `pointer-events: none`, so an avatar under it can still be tapped.
+- Screen readers: only the addressee hears it, once ("Mia: Put the phone
+  down"), through the page's existing `#sheet-news` status (INT-5.11). No
+  banner for presets.
+
+### I.7 The emoji tab and tray (INT-8.1, INT-8.2, INT-8.4, INT-8.6, INT-8.8, INT-8.12, INT-8.16)
+
+**The tab.** `button.emote`, the first child of every `.dock` (Choose, Done,
+Start set, Save, and pending), absolutely placed on the dock's top border at
+the right: 52 × 48 px, leaf border on three sides, panel fill, the 8 × 8
+`emote` icon at 3×. It rises *out of* the dock, so it takes no width from
+the main button and the button keeps its size and place in every state
+(INT-8.4). On a laptop the dock gets 4 rem of top margin, so the tab never
+sits on the fields. On a phone it sits over the bottom of the sheet, like
+the stamp.
+
+```html
+<div class="dock">
+  <button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-controls="tray" aria-label="Send an emoji"><svg>i-emote</svg></button>
+  <p class="dock-timer" …></p><button type="submit" … class="wide">Start set</button>
+</div>
+```
+
+**The tray.** `ul.tray#tray`, opened by the tab, `position: absolute` above
+it, right-aligned, its bottom 48 px above the dock's top, so the gap
+between the lowest emoji and the main button is never less than the tab's
+height. A 4 × 2 grid of 64 × 64 px buttons (300 px wide, fits 360 px), each
+the emoji at 2× (32 px) with its word under it in VT323 20 px; the word is
+the button's accessible name (INT-8.2). Order: Hi, Flex, Fire, Clap / Haha,
+Dead, Eyes, Love. Leaf border and hard shadow, like the sheet.
+
+- **Two taps**: the tab, then an emoji. The send closes the tray.
+- **A tap on the dock's button while the tray is open** closes the tray and
+  does the button's job, in the same tap (INT-8.4; the same outside-tap rule
+  as the menu). Taps anywhere else outside just close it.
+- **Never a set**: the emoji buttons are `type="button"` outside every form.
+- **After a send**: for the 1 s you can't send another, the tab shows the
+  emoji you just sent (`aria-disabled`, label "Send an emoji (sent: fire)")
+  instead of its icon, so you can tell it went even with the map scrolled
+  away (INT-8.6), and the stamp is never touched. While the request is in
+  flight, the same at half opacity (`.pending`). Reopened within the second,
+  the tray's emoji rest at half (`data-cooling`), no message (INT-8.8).
+- **Failure**: `p.error.emote-error[role=alert]` "That didn't send. Try
+  again." above the dock, to the left of the tab, 4 s; never over the
+  button, never a dialog (INT-8.16).
+- **Keyboard** (INT-8.12): Tab reaches the tab (before the dock's button);
+  Enter or Space opens the tray and focuses Hi; arrows move in the grid
+  (Left and Right wrap along a row, Up and Down switch rows); Enter or Space
+  sends; Escape closes and returns focus to the tab. No number-key
+  shortcuts.
+- **Screen reader** (INT-8.13): on acceptance, `#sheet-news` says "Sent:
+  fire". Others' emoji are not announced.
+
+### I.8 The emoji pop (INT-8.3, INT-8.7, INT-8.10, INT-8.14, INT-8.15, INT-8.18, BOT-6.1)
+
+All pops live in one `div.pops` layer in `.map`, **under every avatar**
+(`z-index` 0, above the floor and stations), each `svg.pop` positioned from
+its sender's tile:
+
+```html
+<div class="pops" aria-hidden="true"><svg class="pop" viewBox="0 0 16 16" style="--x: 1; --y: 7"><use href="#em-fire"/></svg></div>
+```
+
+- **Size**: 32 × 32 CSS px at every map scale (16 × 16 art at 2 px a
+  pixel): twice the map's pixel density at 1×, the map's own at 2×. A pop
+  fills one tile at 1×, which is what makes it readable on a phone.
+- **Place**: centred 4 px above the sender's tag. On the back row (`y` = 1)
+  there's no room above at 1×, so it sits beside the tag (`.beside`) on the
+  side away from the nearer wall (`.west-side` when the sender is in column
+  6 or more). With a bubble too, the bubble steps up over it.
+- **Motion**: rises 8 px in two 90 ms steps, holds, goes at 3 s.
+  Reduced motion: appears and goes (INT-8.14).
+- **Why a room of twelve stays readable** (INT-8.18): one pop per person at
+  most (a newer one replaces theirs, D6's 1 s keeps them from strobing);
+  pops are under every avatar, so **no pop ever covers a tag or a sprite**:
+  the tags, which carry who and what state, always win; and a pop is gone
+  in 3 s. The pops move with their sender's walk (they follow `--x`/`--y`)
+  and go when the sender leaves (INT-8.15).
+- **Dony's** are drawn exactly the same (BOT-6.1), from his schedule events.
+- **Never on reload** (INT-8.10).
+- Performance at 12/s: each pop is one small svg inserted and removed in
+  one layer; it never re-renders avatars or the sheet. Emoji travel as their
+  own small event (int.md, "Existing behaviour"), never as a room redraw.
+
+### I.9 The room log (INT-5.7, INT-5.8, INT-5.9, INT-3.7)
+
+A new `section.panel.room-log` with the title **Room log** on its border,
+straight after the Squad panel: column 1 under the squad on a laptop, after
+the squad on a phone. So it opens the way everything else on the phone
+page does, by scrolling; no drawer, no new page, no extra tap from the dock.
+
+```html
+<section class="panel room-log" aria-labelledby="roomlog-title">
+  <h2 class="panel-title" id="roomlog-title">Room log</h2>
+  <ol>
+    <li class="you"><svg>i-say</svg><span>Ji-woo <span class="to">@Priya</span> "Put the phone down 📵"</span><span class="t">now</span></li>
+    <li><svg>i-cheer</svg><span>Tom cheered Dony</span><span class="t">1 min</span></li>
+    …
+  </ol>
+  <details class="older"><summary>Show older (12 more)</summary><ol>…<li class="joined">You walked in · 6:12 pm</li>…</ol></details>
+</section>
+```
+
+- **Newest first.** The five newest show; the rest of the newest 50 are in
+  "Show older (n more)", which unfolds in place.
+- **Lines**: the move's 8 × 8 icon (cheer, poke, slap, say), then
+  "Mia slapped Ji-woo", "Tom cheered Priya", "Priya cheered Dony", or a
+  preset as sender, `@addressee` in leaf, the text in quotes; a relative
+  time on the right ("now", "1 min", "2 h"), tabular. "You" for yourself
+  ("Ji-woo slapped you", "You cheered Mia").
+- **About you** (`li.you`): a leaf edge on the left, like an edited log
+  row, and a leaf icon; this is how a locked phone finds out (INT-3.7).
+- **"You walked in · 6:12 pm"**: a dashed divider at your join time; lines
+  under it are from before you joined (D7, INT-5.8). Shown only when there
+  are lines on both sides.
+- **No emoji, people's or Dony's, ever** (D7).
+- **New entries** arrive at the top within a second, quietly
+  (`aria-live` off; your own presets are announced through `#sheet-news`).
+- **Empty** (INT-5.9): "Quiet in here. Tap someone on the map to cheer them
+  on 👀".
+- Text is always set as plain text (escaping, INT-6 later).
+
+### I.10 States (all in `mockup.html`)
+
+| State | Trigger | What it shows |
+| --- | --- | --- |
+| menu on a slacker | Priya taps Ji-woo (Slacking) | The menu beside her on a laptop, Poke and Slap highlighted, Ji-woo's tag ringed; Priya's sheet unchanged |
+| menu variants | Each kind of target | Lifting (Cheer hot, Slap dashed + reason), Idle (nothing hot, Slap allowed), Resting · Away, Finished (Slap dashed + reason), within 10 s (three dashed + "Easy…", Message on), Dony |
+| menu, message presets | Message chosen; keyboard | The presets view; the keyboard focus ring on the first highlighted row |
+| phone, menu open | Phone, a tap on Ji-woo | The menu pinned above the dock and its tab, over the sheet; Start set visible and tappable |
+| menu from the squad list | Tom's row tapped | The same menu under his row (laptop), under the list (phone); Priya's row is plain |
+| reactions | An accepted interaction | Every frame of cheer, poke, slap over a slacker, a bench lifter, someone idle and Dony |
+| banners | The target's screen | All four wordings, Poke's two included |
+| slapped (target's screen) | Ji-woo slaps Priya, Slacking | The POW on Priya, the banner at the top of the map, Start set and the red count-up untouched |
+| phone, poked mid-set | Tom pokes Priya, Lifting, scrolled to her fields | The banner fixed at the top of the screen, "Tom poked you 👉", Done untouched |
+| refused and failed | Refusals and failures | The four refusal lines (dashed) and the failure line (red) |
+| phone, refused | Slap on Mia who just started | The refusal above the dock, clear of the tab |
+| preset bubbles | Two presets and an emoji | "@Ji-woo" bubbles; one at the wall hanging inwards over a pop; one on the back row hanging below |
+| emoji, idle (choose) | Idle | The tab on the dock's border beside Choose |
+| emoji tray, lifting (done) | Tab tapped while Lifting | The tray above the tab, Done unmoved |
+| emoji tray, resting (start set) | Resting | The same with Start set |
+| emoji tray, slacking (start set) | Slacking | The same, the rest still counting up |
+| emoji tray, editing (save) | Editing a set | The same with Save |
+| emoji sent (the second after) | An emoji accepted | The tab wears Fire; the stamp still showing |
+| emoji tray cooling | Reopened within 1 s | All eight at half |
+| emoji failed | No connection | The red line left of the tab |
+| phone, emoji tray over done | Phone, Lifting | The tray over the sheet, Done pinned below |
+| phone 360, emoji tray resting | 360 px wide | Everything fits |
+| emoji pops, a room of 12 | Twelve plus Dony sending | Pops under tags everywhere, beside tags on the back row, Dony's like anyone's |
+| dony emoji | His schedule and answers | Hi on landing, Dead while slacking, Love after a cheer |
+| emoji art | Reference | The eight at 4× and 2×, the slap glove beside Hi, the five icons |
+| room log | A busy room | The log under the squad, lines about you edged in leaf |
+| room log, opened | "Show older" | The older lines with "You walked in" |
+| room log, empty | Nothing sent yet | The empty line |
+| phone, room log | Phone, scrolled down | The log after the squad, the dock and tab pinned |
+
+Reduced motion is described per piece (I.4, I.5, I.8) rather than drawn: a
+still frame looks the same as the held frames shown.
+
+### I.11 Requirements covered
+
+| Requirement (criteria/int.md) | Element |
+| --- | --- |
+| INT-1.1 "a menu naming Ji-woo, showing her state (colour, icon and word) … and no emoji" | `.menu` header: head, name, `.chip.state-*`; four `.act` rows; no emoji in it |
+| INT-1.2 keyboard, focus trapped, Escape back to the avatar | I.2 Keyboard and focus |
+| INT-1.3 outside tap closes and still acts | I.2, pointerdown outside not swallowed |
+| INT-1.4 covers no part of the dock | Laptop: in the map. Phone: fixed, 56 px above the dock. State "phone, menu open" |
+| INT-1.5 the sender's panel is unchanged | Nothing in the sheet changes; the menu is outside it |
+| INT-1.6, INT-1.7 updates in place; closes when they leave | I.2 |
+| INT-1.8, INT-1.10 own avatar and row open nothing; rows open the menu | `.people .person` for others only; state "menu from the squad list" |
+| INT-1.9 accessible name plus a menu | `aria-haspopup="menu"`, `aria-expanded` |
+| INT-1.11 Dony | State "menu variants" (Dony) |
+| INT-2.4, INT-2.5, INT-2.13 Slap disabled with the reason | `.act[aria-disabled]` + `p.menu-why`; state "menu variants" |
+| INT-2.14 highlight | `.act.hot` with the ▶ cursor |
+| INT-3.1, INT-3.8 reaction over any pose | `svg.fx`; state "reactions" |
+| INT-3.2 banner wordings | `.banner`; state "banners" |
+| INT-3.4 banner never over the dock, no focus | I.5 Where; states "slapped", "phone, poked mid-set" |
+| INT-3.5 replace, no queue | I.5 Time |
+| INT-3.9 reduced motion | I.4, I.5 |
+| INT-3.10 failure line | `.error` (I.3); state "refused and failed" |
+| INT-4.7 unavailable for 10 s, comes back by itself | `.act[aria-disabled]` + "Easy, give them 10 seconds."; state "menu variants" |
+| INT-5.1 ten presets in two groups, no confirm | `.presets`; state "menu, message presets" |
+| INT-5.4 bubble above the sender, addressed | `.say` with `.to`; state "preset bubbles" |
+| INT-5.5 5 s, replace, others together, emoji never hides it | I.6; `.over-pop` |
+| INT-5.8, INT-5.9 the log and its empty state | `.room-log`; states "room log", "room log, empty" |
+| INT-8.1 in every state, two taps | `.emote` in every dock; states "emoji, idle", "emoji tray, …" |
+| INT-8.2 eight pixel emoji with words | `.tray`; state "emoji art" |
+| INT-8.3 pops above the sender's own avatar, 3 s | `.pops`/`.pop`; state "emoji pops, a room of 12" |
+| INT-8.4 never moves, covers or disables the main button | The tab rises out of the dock; the tray is 48 px clear; tray states |
+| INT-8.6 can tell it was sent with the map scrolled away; never hides the stamp | The tab wears the sent emoji; state "emoji sent" |
+| INT-8.7 newest replaces; bubble and pop both visible | I.8, I.6 |
+| INT-8.8 unavailable for the rest of the second, no message | `.tray[data-cooling]`; state "emoji tray cooling" |
+| INT-8.12 keyboard | I.7 Keyboard |
+| INT-8.16 failure near the tab | `.emote-error`; state "emoji failed" |
+| INT-8.18 a room of twelve stays readable on a phone at 1× | Pops under tags, one per person, 3 s; state "emoji pops, a room of 12" at 390 px |
+| INT-8.19 Hi reads as a wave, not a slap; banter not shame | Art in `emoji.ts`; state "emoji art" |
+| BOT-6.1, 6.2, 6.4, 6.7 Dony's emoji | The same `.pop`; state "dony emoji" |
+
+### I.12 What the page needs from the server
+
+- Per other member (and Dony): whether Slap is allowed and, if not, why
+  (`lifting` | `finished`); and `limitUntil`, when your 10 s limit on them
+  runs out (null if none). Sent with the room view, so a reload shows
+  INT-4.7 correctly.
+- The room log's newest 50: kind, sender name, target or addressee name
+  (with a flag for "you"), preset text, `createdAt`; plus your `joinedAt`.
+- Events: interaction accepted (kind, from, to, and for the target's own
+  screen the banner wording), preset accepted (from, to, text, `sentAt`),
+  emoji (from, key), each as its own small SSE event.
+- Responses to the sender's POSTs: accepted, or refused with a reason key
+  (`target-lifting`, `target-finished`, `rate-limit`, `gone`, `self`), which
+  the page maps to the copy bank.
+
+### I.13 The art (`src/sprites/emoji.ts`, `src/sprites/icons.ts`)
+
+**Added to `src/sprites/` already**, because the mockup draws all art from
+the sheet: `src/sprites/emoji.ts` (the eight emoji as `hiEmoji` …
+`loveEmoji` plus the `EMOJI` list of key, word and sprite; the ten reaction
+frames as `cheerFx1` … `slapFx4`), five icons in `icons.ts` (`cheerIcon`,
+`pokeIcon`, `slapIcon`, `sayIcon`, `emoteIcon`), and an import plus a short loop in
+`scripts/sprites.ts` that publish them as `em-<key>`, `fx-<kind>-<n>` and
+`i-<name>`. The grids carry their ink outline; read them there.
+
+- **Emoji**: 16 × 16, at most five colours plus ink. Yellow is the
+  `--finished` value (`#f2c94c`) with a shade; fire adds an orange
+  (`#f08a24`, not the slacking red); the heart is pink (`#e46fae`, the pink
+  hair swatch) because red means slacking or an error; tears are
+  `--resting` blue; the skull and eyes are paper with a grey shade.
+- **Hi** is an open palm, fingers up and spread, the thumb out, with paper
+  wave arcs either side. **Slap's** glove is white with a leaf cuff, seen
+  from the side, flying in with speed lines, and always followed by a POW.
+  Different colour, shape and motion: the two can't be confused.
+- **Nothing mocks a body** (INT-8.19): Flex is an arm, Dead is the Gen Z
+  "I'm dead (laughing)" skull, Eyes is "I see you".
+- **Reactions**: 32 × 32, transparent except the effect; paper, grey, yellow
+  and leaf plus ink. Effects stay off the face.
+
+### I.14 Departures
+
+1. **System 9's `.menu` rule is replaced** (Poke and Slap disabled while
+   Lifting) by int.md's: only Slap, while Lifting or Finished. Updated in
+   `system.md`.
+2. **System 9's `.banner` placement** ("slides in from the top of the map")
+   holds on a laptop; on a phone it is fixed to the top of the screen,
+   because the map is usually scrolled away when you're at your fields.
+   Updated in `system.md`.
+3. **New colours inside sprite palettes only** (system 5 allows raw hex
+   there): emoji orange `#f08a24` and the grey shade `#aab8a0`. Yellow,
+   pink and blue reuse token or swatch values.
+4. **Phone emoji in copy, pixel emoji on the map.** The copy bank's emoji
+   (in banners, presets, the log) are the phone's own glyphs, as system 3
+   allows in VT323 text; the eight sent emoji are always the pixel art.
+   Same meaning, two renderings; the pixel set is the one that's "sent".
+5. **A layer under avatars** (`.pops`): the first map element drawn
+   between the stations and the people. It keeps tags readable at twelve.
+6. **Strangers.** Poke at any time and the Nudge presets read as hostile
+   from someone you don't know (int.md, "What this makes harder later"):
+   nothing here would need to change visually, but a stranger room would
+   need mute, block, and Poke behind a setting. The room log's "You walked
+   in" line already gives "since you joined" a place to go. Emoji are the
+   right shape for strangers as drawn.
+7. **The menu's `role="menu"`** with buttons as `menuitem`: Tab moves inside
+   it as well as the arrows, because INT-1.2 asks for both.
+
+### I.15 Open questions for the user
+
+1. **Where the room log lives on a phone.** Drawn as the next panel after
+   the squad, reached by scrolling. The alternative is a "Log" button on the
+   map's border opening a sheet, which would be one more thing near the
+   dock. Recommended: as drawn.
+2. **The emoji tab shows what you just sent for 1 s.** Drawn as the answer
+   to INT-8.6. The alternative is a small "Sent" stamp on the dock's border
+   like Done's, which would compete with "Set 2 logged". Recommended: as
+   drawn.
+3. **Bubbles that overlap at 1×.** Drawn: newer on top, the log keeps both.
+   The alternative is stacking them, which would cover tags. Recommended: as
+   drawn.
+4. **The empty log line**: "Quiet in here. Tap someone on the map to cheer
+   them on 👀". Change if the voice is off.
+5. **Sound.** Not drawn: a short square-wave blip for a banner (target only)
+   and none for emoji, quieter than the rest-over sound, behind the existing
+   sound toggle (system 11). Confirm or drop.

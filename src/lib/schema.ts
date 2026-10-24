@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // The data model in docs/product/spec-4-weeks.md, as far as it is built.
-// stations, interactions and messages arrive with the gym (weeks 10–11).
+// Interactions and messages arrived with INT (week 12).
 // Times are Unix milliseconds.
 
 export const users = sqliteTable("users", {
@@ -131,4 +131,40 @@ export const stations = sqliteTable(
     // second, whatever the code above it does (ADR 0004)
     uniqueIndex("stations_one_each").on(t.roomId, t.userId).where(sql`user_id is not null`),
   ],
+);
+
+// INT-1 to INT-4: one row per accepted Cheer, Poke or Slap. The 10 s limit
+// (INT-4) and Dony's answers (BOT-6.7, BOT-6.8) are worked out from these
+// rows' times, so both survive a restart. `to_user_id` is 0 for Dony (dony.ts),
+// who is no user, so it carries no foreign key.
+export const interactions = sqliteTable(
+  "interactions",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    roomId: integer("room_id").notNull().references(() => rooms.id),
+    fromUserId: integer("from_user_id").notNull().references(() => users.id),
+    toUserId: integer("to_user_id").notNull(),
+    kind: text("kind", { enum: ["cheer", "poke", "slap"] }).notNull(),
+    // the target's state when it was accepted, which picks Poke's banner
+    targetState: text("target_state").notNull(),
+    createdAt: integer("created_at").notNull(),
+  },
+  (t) => [index("interactions_room").on(t.roomId, t.createdAt), index("interactions_pair").on(t.fromUserId, t.toUserId, t.createdAt)],
+);
+
+// INT-5: one row per accepted preset, addressed to one person (D8). Kept
+// after the room closes, shown nowhere (D12). `body` stays empty until free
+// text (INT-6); a preset is stored by its key.
+export const messages = sqliteTable(
+  "messages",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    roomId: integer("room_id").notNull().references(() => rooms.id),
+    senderId: integer("sender_id").notNull().references(() => users.id),
+    toUserId: integer("to_user_id").notNull(),
+    presetKey: text("preset_key").notNull(),
+    body: text("body"),
+    createdAt: integer("created_at").notNull(),
+  },
+  (t) => [index("messages_room").on(t.roomId, t.createdAt), index("messages_sender").on(t.senderId, t.createdAt)],
 );
