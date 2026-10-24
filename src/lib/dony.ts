@@ -11,10 +11,10 @@
 // toward the 12, as host or as activity, and a person choosing a lift never
 // finds his station taken: he stands at a free one, and moves off if someone
 // claims it (BOT-5).
-import { eq } from "drizzle-orm";
+import { and, asc, eq, gte } from "drizzle-orm";
 import { db } from "./db.ts";
 import { EQUIPMENT, EXERCISES, type Equipment, type Exercise } from "./exercises.ts";
-import { rooms } from "./schema.ts";
+import { interactions, rooms } from "./schema.ts";
 import type { Look } from "../sprites/avatar.ts";
 
 export const DONY_ID = 0; // users' ids start at 1
@@ -128,16 +128,137 @@ function block(roomId: number, summonedAt: number, k: number, start: number): Se
   return out;
 }
 
-// The segment he's in at `now`, and when it ends. Blocks follow one another
-// for as long as he's out; a visit of several hours is a few dozen segments.
-function segmentAt(roomId: number, summonedAt: number, now: number): Segment {
+// Every segment of a visit, in order. Blocks follow one another for as long
+// as he's out; a visit of several hours is a few dozen segments.
+function* visit(roomId: number, summonedAt: number): Generator<Segment> {
   let start = summonedAt;
   for (let k = 0; ; k++) {
     const segments = block(roomId, summonedAt, k, start);
-    const hit = segments.find((s) => now < s.end);
-    if (hit) return hit;
+    yield* segments;
     start = segments.at(-1)!.end;
   }
+}
+
+// The segment he's in at `now`, and when it ends.
+function segmentAt(roomId: number, summonedAt: number, now: number): Segment {
+  for (const s of visit(roomId, summonedAt)) if (now < s.end) return s;
+  throw new Error("unreachable: a visit never ends");
+}
+
+// ---------- his emoji (BOT-6) ----------
+
+// Like his lifts, his emoji are planned from the room and the summon time,
+// so every screen, a page opened later and the server after a restart agree
+// on when each falls and which it is (BOT-6.5). Nothing is stored: his own
+// come from the seeded sequence, his answers from the interactions stored
+// for him (interactions.ts).
+export type DonyEmote = { at: number; emoji: string; why: "landing" | "own" | "answer" };
+
+const LANDING_MS = 1_500; // BOT-6.2: once he's on the walkway, within the 3 s warm-up
+const ANSWER_MS = 1_000; // BOT-6.7: about a second after the reaction
+const ANSWER_EVERY_MS = 10_000; // BOT-6.8
+const APART_MS = 1_000; // BOT-6.9, a person's emoji limit (INT-8.8)
+// BOT-6.4: what fits what he's doing
+const FITS = {
+  idle: ["hi", "haha"],
+  lifting: ["flex", "fire"],
+  resting: ["clap", "haha", "love"],
+  slacking: ["dead", "eyes"],
+} as const;
+const ANSWERS = { cheer: ["love", "flex"], poke: ["eyes"], slap: ["haha", "dead"] } as const;
+
+const stateIn = (s: Segment, at: number): keyof typeof FITS =>
+  s.kind === "idle" ? "idle" : s.kind === "lift" ? "lifting" : at >= s.restEnd + SLACK_GRACE_MS ? "slacking" : "resting";
+
+// BOT-6.3: on his own, about one every 2 minutes (60 to 180 s after the last),
+// never two within 60 s, at most one per set, rest or spell by the lockers,
+// none in the warm-up, each fitting the state he's in when it falls.
+function ownEmotes(roomId: number, summonedAt: number, until: number): DonyEmote[] {
+  const r = random(roomId, summonedAt, 6);
+  const out: DonyEmote[] = [];
+  let next = summonedAt + 3 * S + between(r, 60, 180) * S;
+  let first = true;
+  for (const s of visit(roomId, summonedAt)) {
+    if (s.start >= until) break;
+    if (first) {
+      first = false; // the warm-up
+      continue;
+    }
+    if (next >= s.end) continue;
+    // not in the first moments of a set, rest or spell, so it reads as about it
+    const at = Math.max(next, s.start + 2 * S);
+    if (at >= s.end || at >= until) continue;
+    const fits = FITS[stateIn(s, at)];
+    out.push({ at, emoji: fits[Math.floor(r() * fits.length)], why: "own" });
+    next = at + between(r, 60, 180) * S;
+  }
+  return out;
+}
+
+// BOT-6.7, BOT-6.8: an answer about a second after each accepted Cheer, Poke
+// or Slap, unless he answered less than 10 s before it came; one that would
+// fall within a second of another of his emoji is dropped (BOT-6.9) and
+// doesn't count.
+function answers(roomId: number, hits: { id: number; kind: string; at: number }[], taken: number[]): DonyEmote[] {
+  const out: DonyEmote[] = [];
+  let last = -Infinity;
+  for (const h of hits) {
+    const at = h.at + ANSWER_MS;
+    if (h.at - last < ANSWER_EVERY_MS) continue;
+    if (taken.some((t) => Math.abs(t - at) < APART_MS)) continue;
+    const options = ANSWERS[h.kind as keyof typeof ANSWERS];
+    if (!options) continue;
+    out.push({ at, emoji: options[Math.floor(random(roomId, h.id)() * options.length)], why: "answer" });
+    last = at;
+  }
+  return out;
+}
+
+// Everything he sends in a visit from `summonedAt`, up to `until`, in order:
+// the wave on landing, his own, and his answers to `hits` (the interactions
+// aimed at him in this visit, oldest first).
+export function donyEmotes(roomId: number, summonedAt: number, until: number, hits: { id: number; kind: string; at: number }[]): DonyEmote[] {
+  const landing: DonyEmote[] = summonedAt + LANDING_MS < until ? [{ at: summonedAt + LANDING_MS, emoji: "hi", why: "landing" }] : [];
+  const own = ownEmotes(roomId, summonedAt, until);
+  const planned = [...landing, ...own];
+  const replies = answers(
+    roomId,
+    hits.filter((h) => h.at >= summonedAt),
+    planned.map((e) => e.at),
+  ).filter((e) => e.at < until);
+  return [...planned, ...replies].sort((a, b) => a.at - b.at);
+}
+
+// What he sends in the visit he's on (or, given `summonedAt`, the visit that
+// summon would give), up to `until`, from the room and the interactions
+// stored for him. Null while he's in his poster and no summon is given.
+export function plannedEmotes(roomId: number, until: number, summonedAt?: number): { summonedAt: number; emotes: DonyEmote[] } | null {
+  if (summonedAt === undefined) {
+    const room = db
+      .select({ donySummonedAt: rooms.donySummonedAt, donySentBackAt: rooms.donySentBackAt, closedAt: rooms.closedAt })
+      .from(rooms)
+      .where(eq(rooms.id, roomId))
+      .get();
+    if (!room || room.closedAt || !isOut(room)) return null;
+    summonedAt = room.donySummonedAt!;
+  }
+  const hits = db
+    .select({ id: interactions.id, kind: interactions.kind, at: interactions.createdAt })
+    .from(interactions)
+    .where(and(eq(interactions.roomId, roomId), eq(interactions.toUserId, DONY_ID), gte(interactions.createdAt, summonedAt)))
+    .orderBy(asc(interactions.createdAt), asc(interactions.id))
+    .all();
+  return { summonedAt, emotes: donyEmotes(roomId, summonedAt, until, hits) };
+}
+
+// His schedule as the test hook shows it (spec/dony-emoji.test.ts)
+export function donySegments(roomId: number, summonedAt: number, until: number) {
+  const out: { kind: Segment["kind"]; start: number; end: number; slackAt: number | null }[] = [];
+  for (const s of visit(roomId, summonedAt)) {
+    if (s.start >= until) break;
+    out.push({ kind: s.kind, start: s.start, end: s.end, slackAt: s.kind === "rest" ? s.restEnd + SLACK_GRACE_MS : null });
+  }
+  return out;
 }
 
 // ---------- in the room's view ----------

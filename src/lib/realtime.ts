@@ -1,3 +1,4 @@
+import { DONY_ID, plannedEmotes } from "./dony.ts";
 import { log } from "./log.ts";
 import { AWAY_MS, roomView } from "./presence.ts";
 import { isMember, touchRoom } from "./rooms.ts";
@@ -32,6 +33,7 @@ export function broadcast(roomId: number): void {
   for (const c of clients) c.send(chunk);
   // everyone has been told it closed; nobody is in it to watch any more
   if (view.closed) return drop(roomId, undefined, "room_closed");
+  donyEmotes(roomId);
   if (donyNext) {
     // capped, so a long rest by the lockers doesn't hold a timer for minutes
     const wait = Math.min(Math.max(donyNext - view.now, 0) + 50, 10 * 60_000);
@@ -39,6 +41,47 @@ export function broadcast(roomId: number): void {
     timer.unref();
     donyTimers.set(roomId, timer);
   }
+}
+
+// INT-3, INT-5, INT-8: one small event to everyone watching the room, beside
+// the room itself: an interaction, a preset or an emoji. Nothing is re-read,
+// so a room of twelve sending emoji never redraws anyone's room.
+export function announce(roomId: number, event: "interaction" | "say" | "emote", data: object): void {
+  const chunk = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+  for (const c of streams.get(roomId) ?? []) c.send(chunk);
+}
+
+// BOT-6: Dony's emoji, sent at the times his schedule gives them. Only the
+// time up to which they've gone out lives in memory, per room, and only
+// while someone is watching: one that falls while nobody's stream is open,
+// or across a restart, is missed rather than sent late, and none goes twice
+// (BOT-6.6). What he sends is worked out fresh each time (dony.ts).
+const donyEmoteTimers = new Map<number, ReturnType<typeof setTimeout>>();
+const donyEmotedTo = new Map<number, number>();
+export function donyEmotes(roomId: number): void {
+  clearTimeout(donyEmoteTimers.get(roomId));
+  donyEmoteTimers.delete(roomId);
+  if (!streams.get(roomId)?.size) return;
+  const now = Date.now();
+  const from = donyEmotedTo.get(roomId) ?? now;
+  donyEmotedTo.set(roomId, now);
+  const plan = plannedEmotes(roomId, now + 15 * 60_000);
+  if (!plan) return;
+  for (const e of plan.emotes) {
+    if (e.at > from && e.at <= now) announce(roomId, "emote", { emoji: e.emoji, from: { id: DONY_ID, name: "Dony" }, at: e.at });
+  }
+  const next = plan.emotes.find((e) => e.at > now);
+  if (next) {
+    const timer = setTimeout(() => donyEmotes(roomId), Math.min(next.at - now + 5, 10 * 60_000));
+    timer.unref();
+    donyEmoteTimers.set(roomId, timer);
+  }
+}
+
+// What Dony would have sent up to now is missed, not sent late: after the
+// test hook moves the room's times (qa.ts), as after a restart (BOT-6.6).
+export function skipDonyEmotes(roomId: number): void {
+  if (streams.get(roomId)?.size) donyEmotedTo.set(roomId, Date.now());
 }
 
 // Hangs up on whoever should no longer be watching: one person who left the
@@ -68,7 +111,10 @@ export function subscribe(roomId: number, userId: number, signal: AbortSignal): 
     if (!client) return;
     log("stream.close", { uid: userId, room: roomId, reason, s: Math.round((Date.now() - opened) / 1000) });
     streams.get(roomId)?.delete(client);
-    if (!streams.get(roomId)?.size) streams.delete(roomId);
+    if (!streams.get(roomId)?.size) {
+      streams.delete(roomId);
+      donyEmotedTo.delete(roomId);
+    }
     client = undefined;
     clearInterval(ping);
     setTimeout(() => broadcast(roomId), AWAY_MS + 1000).unref();
@@ -96,7 +142,11 @@ export function subscribe(roomId: number, userId: number, signal: AbortSignal): 
           }
         },
       };
-      if (!streams.has(roomId)) streams.set(roomId, new Set());
+      if (!streams.has(roomId)) {
+        streams.set(roomId, new Set());
+        // what Dony sent before anyone was watching is missed (BOT-6.6)
+        donyEmotedTo.set(roomId, Date.now());
+      }
       streams.get(roomId)!.add(client);
       log("stream.open", { uid: userId, room: roomId, watching: streams.get(roomId)!.size });
       touchRoom(roomId, userId);
