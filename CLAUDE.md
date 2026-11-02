@@ -42,7 +42,8 @@ docs/adr/                    NNNN-<slug>.md, one decision each
 docs/design/                 system.md (design rules); <page>/ holds that
                              page's mockup.html and spec.md; no images
 docs/evidence/               YYYY-MM-DD-<slug>/, one per episode PROCESS.md cites
-.claude/                     agents/ (subagent definitions), settings.json (hooks)
+.claude/                     agents/ (subagent definitions), settings.json (hooks);
+                             worktrees/ (gitignored) holds parallel sessions' checkouts
 .shots/  data/  dist/        gitignored: working screenshots, local db, build
 ```
 
@@ -140,6 +141,20 @@ open it once I say yes. Merge only after its checks pass and I say so, since
 merging to `main` deploys. Merge with a merge commit, never a squash, so the
 SHAs `PROCESS.md` cites survive; then delete the branch and return to an
 up-to-date `main`.
+
+## Working in a worktree
+
+When another session holds the main checkout, this session works in a
+worktree under `.claude/worktrees/<name>/` instead:
+
+- Rename its branch to the `<type>/<slug>` the rules above would give it
+  (`git branch -m feat/rest-timer`), so the pull request flow stays the same.
+- Run `pnpm install` first. Its `data/` database is its own and starts fresh.
+- Serve on the first free port from 8081 up (`lsof -i :8081` shows if one is
+  taken): `PORT=8081 pnpm dev`, then `APP_URL=http://localhost:8081 pnpm check`.
+  8080 belongs to the main checkout.
+- After the merge, don't return to `main` there, since the main checkout has
+  it; tell me the worktree's path and leave removing it to me.
 
 ## Commits
 
