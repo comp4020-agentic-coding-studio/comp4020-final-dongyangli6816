@@ -8,11 +8,6 @@ on:
   # itself triggers no push event.
   workflow_dispatch:
 
-# One deploy at a time, and never cancel one mid-flight.
-concurrency:
-  group: deploy
-  cancel-in-progress: false
-
 jobs:
   check:
     # Runs once the repo is public; until then `pnpm check` is the same
@@ -47,14 +42,18 @@ jobs:
         # what the container printed, so a crash or slow boot is visible
         if: ${{ failure() }}
         run: docker logs app
+      # The three steps below run whether or not the spec passed: a failing
+      # test says nothing about a committed key, and the key scan is the one
+      # check that must never be skipped.
       - name: Check the process evidence
         # skipped in the template repo itself, where PROCESS.md is still the
         # boilerplate every student replaces
-        if: ${{ !github.event.repository.is_template }}
+        if: ${{ !cancelled() && !github.event.repository.is_template }}
         run: pnpm check:evidence
       - name: Scan for committed secrets
         # Pinned in both halves (action SHA and scanner image) because this
         # runs in every repo in the course. Bump between semesters.
+        if: ${{ !cancelled() }}
         uses: trufflesecurity/trufflehog@6f3c981e7b77f235fd2702dd74af25fc4b72bf11 # v3.96.0
         with:
           version: "3.96.0"
@@ -62,6 +61,7 @@ jobs:
       - name: Scan for a committed course key
         # A course key has no verifier a runner can reach, so this pass
         # matches its shape instead (.github/trufflehog.yml).
+        if: ${{ !cancelled() }}
         uses: trufflesecurity/trufflehog@6f3c981e7b77f235fd2702dd74af25fc4b72bf11 # v3.96.0
         with:
           version: "3.96.0"
@@ -76,6 +76,14 @@ jobs:
     if: ${{ !github.event.repository.private && !github.event.repository.is_template && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # One deploy at a time, never cancelled mid-flight. Only the deploy queues
+    # here: at the workflow's top level it also held every pull request's
+    # checks, and a queued run was cancelled by the next one to arrive, so a
+    # pull request's checks could cancel a deploy of main (Oct 13). A queued
+    # deploy that a newer one replaces is no loss: the newer main has it all.
+    concurrency:
+      group: deploy
+      cancel-in-progress: false
     permissions:
       contents: read
     # Registers the GitHub Deployment with the live URL. The app is named
