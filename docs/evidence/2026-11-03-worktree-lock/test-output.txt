@@ -1,0 +1,38 @@
+PASS A starts in the main checkout and takes the lock
+PASS B is told at start; the lock stays with A
+PASS B's tool call in the main checkout is denied
+PASS A's own tool call passes
+PASS B passes in a worktree
+PASS B in its worktree editing a main-checkout file is denied
+PASS B writing a file in a new folder of its worktree passes
+PASS a relative path resolves from the session's folder
+PASS B in the main checkout editing a worktree file passes
+PASS B's non-git command passes
+PASS words containing git (.gitignore, github) pass
+PASS git after cd && is denied
+PASS git inside bash -c is denied
+PASS git by absolute path is denied
+PASS git inside $( ) is denied
+PASS B's git in its worktree passes
+PASS A's PostToolUse refreshes the heartbeat
+PASS A's subagent working in a worktree keeps A's lock
+PASS a non-holder's SessionEnd keeps the lock
+PASS the holder's SessionEnd releases the lock
+PASS B's edit after A ends passes and takes the lock
+PASS C, starting after that, is told B holds it
+PASS C's tool call in the main checkout is then denied
+PASS a new session takes over a stale lock
+PASS the holder releases the lock on moving to a worktree
+PASS CLAUDE_MAIN_LOCK_STALE=3600 keeps a 21-minute lock
+PASS a non-numeric CLAUDE_MAIN_LOCK_STALE falls back to 1200 s
+PASS an empty lock file (a crash mid-write) is taken over
+PASS round 1: 20 starting at once leaves one holder, who alone isn't told
+PASS round 2: 20 starting at once leaves one holder, who alone isn't told
+PASS round 3: 20 starting at once leaves one holder, who alone isn't told
+PASS round 1: 20 edits at once on a stale lock let exactly the new holder through
+PASS round 2: 20 edits at once on a stale lock let exactly the new holder through
+PASS round 3: 20 edits at once on a stale lock let exactly the new holder through
+PASS input that isn't JSON: exit 0, no output at all
+PASS a directory outside git passes
+---- 36 passed, 0 failed
+exit 0
