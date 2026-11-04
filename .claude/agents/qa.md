@@ -121,6 +121,30 @@ Check each test against these before you finish it:
   it with the test hook instead of waiting it out; no test waits more than a
   few seconds of real time. Before using a hook, write down what else it
   changes (moving someone's times back also makes them Away).
+- **The test's own steps take time.** CI runs on a busy machine, where
+  opening a page, a request or a check on two screens can take a second or
+  more; locally they take milliseconds, so a test that passes here can fail
+  there with nothing wrong. Two tests failed `main`'s deploys this way (a
+  phone's blink timed with a clock, the emoji tab's 1 s checked too late),
+  and more were found waiting to:
+  - a state that lasts a moment (the emoji tab's 1 s, a pop's 3 s) is
+    checked the moment it appears, before anything else;
+  - a limit on elapsed time starts its clock after the slow steps (opening
+    a page, a run of requests), never before them, and a step that takes
+    several requests sends them together when it can;
+  - assert what the criterion means, not a stand-in for it: "past 10 s since
+    his answer, under 10 s since Kai's cheer", not "under 13.1 s since his
+    answer";
+  - a beat (frames, a bob, a blink) is read from its CSS animation, never
+    timed with a clock.
+- **Random output and the windows you read.** A check on something drawn at
+  random (Dony's schedule is seeded from the room and the summon time, which
+  a test can't choose) is a draw each run: fix the seed if you can, and if
+  you can't, find the real spread of what you count before you set its
+  bounds, and widen the sample until the bounds hold. A window you read
+  (`until`, a time range) must cover the moments the test uses: one that
+  ended an hour after a summon cut off everything near now whenever the
+  summon was moved back over an hour.
 
 ## Limits
 
