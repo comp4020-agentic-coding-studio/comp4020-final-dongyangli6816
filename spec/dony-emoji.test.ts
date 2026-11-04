@@ -105,8 +105,13 @@ const donyOf = (e: RoomEvent) => (e as DonyRoom).dony?.member ?? null;
 const donyEmotes = (w: RoomWatch) => w.all("emote").filter((e) => e.from.name === "Dony");
 const interact = (b: Browser, path: string, to: number, kind: string) => b.post(path, { action: "interact", to: String(to), kind });
 
-// his visit over a fixed span, so two reads of it can be compared
-const span = (summonedAt: number) => ({ until: summonedAt + 60 * MIN });
+// His visit read up to a fixed end, so two reads of it can be compared, and
+// that end is always past now and the minutes a check works in. It used to
+// be an hour after the summon, which falls before now once summonFitting
+// moves the summon back over an hour (about one search in a hundred): then
+// the emoji and answers near now were cut off, and a check failed reading
+// one that wasn't there (Nov 3). `fixedAt` is when the check began.
+const span = (summonedAt: number, fixedAt: number) => ({ summonedAt, until: fixedAt + 3 * MIN });
 const ownBetween = (v: Visit, from: number, to: number) => own(v).filter((e) => e.at >= from && e.at < to);
 
 // Summons Dony as anyone would, then puts his visit where the check needs it:
@@ -129,7 +134,8 @@ async function summonFitting(
     // the preview is of the visit as it will be once moved, seen from now
     if (!dony || !test(dony, now)) continue;
     await backdate(b, path, { room: true }, ms);
-    const moved = (await qa(b, path, span(real.summonedAt - ms))).dony!;
+    // read back up to the same end as the preview (see span)
+    const moved = (await qa(b, path, span(real.summonedAt - ms, now))).dony!;
     expect(moved.summonedAt, "the summon moved back with the room").toBe(real.summonedAt - ms);
     const w = await watchRoom(b, path);
     const seen = await w.next("room", (e) => donyOf(e) !== null, 2000).finally(() => w.close());
@@ -245,13 +251,19 @@ describe("Dony's emoji, live", () => {
 describe("Dony's emoji over a visit", () => {
   // BOT-6.3, BOT-6.4 (fits his state), BOT-6.9 (at least 1 s apart), BOT-6.2
   // (Hi on landing, the first of every visit). Read from his schedule through
-  // the hook, over twenty hour-long visits in one room.
+  // the hook, over eighty hour-long visits in one room. His schedule is drawn
+  // from the room and the summon time, which a test can't choose, so the count
+  // is a random draw each run. Over twenty visits it fell below 450 in about
+  // one run in two hundred (sampled with the server's own schedule code, Nov
+  // 4; the 438 that failed main's checks was one); over eighty, none in two
+  // thousand did, the lowest 465.
+  const VISITS = 80;
   it("lands with Hi, then about one every 2 minutes, never two within 60 s, one per segment at most, each fitting his state", async (ctx) => {
     const { path, b } = await gym(ctx, ["Mia"]);
     const t0 = Date.now();
     let total = 0;
     const tenMinuteCounts: number[] = [];
-    for (let v = 0; v < 20; v++) {
+    for (let v = 0; v < VISITS; v++) {
       const summonedAt = t0 - 2 * 60 * MIN - v * 3_917_000;
       const { dony } = await qa(b.Mia, path, { summonedAt, until: summonedAt + 60 * MIN });
       expect(dony, "a visit").not.toBeNull();
@@ -279,8 +291,9 @@ describe("Dony's emoji over a visit", () => {
     }
     // about one every 2 minutes: 30 an hour, so 600 over twenty hours, give
     // or take a quarter; about five in ten minutes
-    expect(total).toBeGreaterThanOrEqual(450);
-    expect(total).toBeLessThanOrEqual(750);
+    const per20Hours = total / (VISITS / 20);
+    expect(per20Hours).toBeGreaterThanOrEqual(450);
+    expect(per20Hours).toBeLessThanOrEqual(750);
     // and in a 10-minute stretch, about five: most stretches have two to eight
     const typical = tenMinuteCounts.filter((n) => n >= 2 && n <= 8).length / tenMinuteCounts.length;
     expect(typical).toBeGreaterThanOrEqual(0.75);
@@ -302,7 +315,7 @@ describe("interactions with Dony", () => {
     // before: moving the senders back moves his past answers back with them
     // (about 16 s in all below) but not his own emoji, and an answer moved to
     // within 1 s of one of his own would be dropped (BOT-6.9)
-    const { visit, dony, summonedAt } = await summonFitting(b.Mia, path, (v, now) => {
+    const { visit, dony, summonedAt, at } = await summonFitting(b.Mia, path, (v, now) => {
       if (ownBetween(v, now - 40 * S, now + 20 * S).length) return false;
       for (let t = now; t <= now + 20 * S; t += 500) if (stateAt(v, t) === "lifting") return false;
       return true;
@@ -334,33 +347,34 @@ describe("interactions with Dony", () => {
     // so that now is a set time after it.
     const people = ["Mia", "Tom", "Priya", "Sam", "Kai", "Ava"];
     const lastAnswer = async () => {
-      const answers = (await qa(b.Mia, path, span(summonedAt))).dony!.emotes.filter((e) => e.why === "answer");
+      const answers = (await qa(b.Mia, path, span(summonedAt, at))).dony!.emotes.filter((e) => e.why === "answer");
       return answers.at(-1)!.at;
     };
+    // The six moves go out together: every millisecond they take is added to
+    // `ms` by the time the next request lands, and one after another they
+    // took long enough on a busy runner to matter near the 10 s edge
     const nowAfterLastAnswer = async (ms: number) => {
       const move = ms - (Date.now() - (await lastAnswer()));
       expect(move, "the hook only moves time forward").toBeGreaterThanOrEqual(0);
-      for (const n of people) await backdate(b.Mia, path, { user: ids[n] }, move);
-    };
-    // the hook can only move stored times into the past, so a step that comes
-    // after real waiting may already be past `ms`: then it moves nothing, and
-    // the check is that now is still past `ms` and not far beyond it
-    const nowAtLeastAfterLastAnswer = async (ms: number) => {
-      const elapsed = Date.now() - (await lastAnswer());
-      if (elapsed < ms) await nowAfterLastAnswer(ms);
-      else expect(elapsed, "still close to the 10 s edge").toBeLessThan(ms + 3_000);
+      await Promise.all(people.map((n) => backdate(b.Mia, path, { user: ids[n] }, move)));
     };
 
-    // 9 s after his answer: Kai cheers too. 2.5 s on, none of the four
-    // (the three at once, and Kai's) has an answer
-    await nowAfterLastAnswer(9_000);
+    // 8.5 s after his answer: Kai cheers too. 2.5 s on, none of the four
+    // (the three at once, and Kai's) has an answer. 8.5 s rather than closer
+    // to 10, so the requests in between can't carry Kai's cheer past 10 s
+    await nowAfterLastAnswer(8_500);
+    const kaiAt = Date.now();
     expect((await interact(b.Kai, path, dony, "cheer")).status).toBe(200);
     await wait(2500);
     expect(donyEmotes(ava), "no answer within 10 s of his last").toHaveLength(1);
 
-    // past 10 s after it (about 11.5 s, after the wait above; Kai's cheer,
-    // 2.5 s ago and unanswered, doesn't count): Priya pokes, answered
-    await nowAtLeastAfterLastAnswer(10_100);
+    // Priya pokes past 10 s after his answer (at least 8.5 s + the 2.5 s
+    // wait) but under 10 s after Kai's cheer: answered, so the 10 s counts
+    // from his last answer, not from the last interaction he was sent.
+    // These two are what make the step mean that; they replace a ceiling of
+    // 13.1 s after his answer, which a busy runner overran (Nov 3)
+    expect(Date.now() - (await lastAnswer()), "past 10 s since his last answer").toBeGreaterThan(10_000);
+    expect(Date.now() - kaiAt, "under 10 s since Kai's unanswered cheer").toBeLessThan(10_000);
     expect((await interact(b.Priya, path, dony, "poke")).status).toBe(200);
     const poke = await ava.next("interaction", (e) => e.to.name === "Dony" && e.from.name === "Priya");
     const second = await ava.next("emote", (e) => e.from.name === "Dony", 2500);
@@ -375,7 +389,7 @@ describe("interactions with Dony", () => {
 
     // his schedule and his own emoji are as they were planned: the answers
     // changed nothing
-    const after = (await qa(b.Mia, path, span(summonedAt))).dony!;
+    const after = (await qa(b.Mia, path, span(summonedAt, at))).dony!;
     expect(after.segments).toEqual(visit.segments);
     expect(own(after)).toEqual(own(visit));
     expect(after.emotes.filter((e) => e.why === "answer")).toHaveLength(3);
