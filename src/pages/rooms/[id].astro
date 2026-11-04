@@ -101,7 +101,7 @@ if (Astro.request.method === "POST") {
     log(event, { ...who(user), room: roomId, ...fields });
   const lift = (ex: Exercise) => {
     const claim = setLifting(user.id, roomId, ex.id);
-    did("station.claim", { exercise: ex.name, slot: claim?.slot, arrived: claim?.arrived });
+    did("station.claim", { exercise: ex.name, slot: claim?.slot, arrived: claim?.arrived, carried_out: claim?.carriedOut });
   };
   const values = (v: SetValues) => ({ kg: v.weightKg, reps: v.reps, s: v.durationS, m: v.distanceM });
 

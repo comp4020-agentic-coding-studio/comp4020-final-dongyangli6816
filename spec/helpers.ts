@@ -68,7 +68,10 @@ export type RoomEvent = {
     station: { slot: number; equipment: string } | null;
     slackAt: number | null;
   }[];
-  stations: { slot: number; equipment: string | null }[];
+  // placedAt: when the station's current equipment was put there, ms since
+  // epoch on the server's clock; null on an empty station (the contract at
+  // the top of spec/delivery.test.ts)
+  stations: { slot: number; equipment: string | null; placedAt: number | null }[];
 };
 
 export async function openEvents(b: Browser, roomPath: string) {

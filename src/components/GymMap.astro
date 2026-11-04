@@ -122,6 +122,7 @@ const FX_SYMBOLS = Object.entries(emojiArt).flatMap(([name, s]) => {
           style={`--x: ${STATIONS[s.slot - 1][0]}; --y: ${STATIONS[s.slot - 1][1]}`}
           data-slot={s.slot}
           data-equipment={s.equipment ?? undefined}
+          data-placed-at={s.equipment ? (s.placedAt ?? undefined) : undefined}
           aria-hidden="true"
         >
           {s.equipment ? <MachineArt e={s.equipment} part="idle" /> : <Sprite sprite={art(bay(s.slot))} />}
