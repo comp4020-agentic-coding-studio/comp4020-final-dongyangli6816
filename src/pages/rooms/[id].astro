@@ -1280,6 +1280,8 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   document.addEventListener("astro:page-load", () => {
     const gym = document.querySelector<HTMLElement>(".gym");
     posterDrawn = undefined; // a new page: read the poster as the server drew it
+    // and its stations as the server drew them, with no run replayed (GYM-6.19)
+    resetCrew();
     tick = gym ? init() : () => {};
     if (gym) connect(gym.dataset.room!);
     else disconnect();
@@ -1299,6 +1301,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   let live: { roomId: string; source: EventSource } | undefined;
   let view: RoomView | undefined;
   let offset = 0;
+  let skew = -Infinity;
   let connected = true;
   let lostTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -1310,6 +1313,9 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     source.addEventListener("room", (e) => {
       view = JSON.parse((e as MessageEvent<string>).data) as RoomView;
       offset = view.now - Date.now();
+      // a message held up on the way makes the server look behind; the
+      // largest offset seen is the truest, so a late one reads as late (GYM-6.21)
+      skew = Math.max(skew, offset);
       // the host ended it, or it closed: the room page says where to go
       if (view.closed) {
         disconnect();
@@ -1326,8 +1332,9 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       lostTimer = undefined;
       connected = true;
       // the first message on a new stream is news we missed: everyone is put
-      // where it says, with no walk replayed (GYM-10.21)
+      // where it says, with no walk or delivery replayed (GYM-10.21, GYM-6.20)
       catchingUp = true;
+      skew = -Infinity;
       liveTick();
     });
     source.addEventListener("error", () => {
@@ -1348,6 +1355,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     live?.source.close();
     live = undefined;
     view = undefined;
+    skew = -Infinity;
     clearTimeout(lostTimer);
     lostTimer = undefined;
     connected = true;
@@ -1490,8 +1498,20 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       const div = map.querySelector<HTMLElement>(`.station[data-slot="${s.slot}"]`);
       if (!div) continue;
       const equipment = s.equipment ?? "";
-      if ((div.dataset.equipment ?? "") !== equipment) {
-        // new equipment simply appears this week; the worker carries it in next
+      // GYM-6: a station whose equipment changed since this screen last
+      // heard sends the worker in, if this screen is live and the change is
+      // fresh; otherwise it is simply drawn in place (GYM-6.19 to 6.21)
+      if (!known.has(s.slot)) known.set(s.slot, div.dataset.equipment ?? "");
+      if (known.get(s.slot) !== equipment) {
+        known.set(s.slot, equipment);
+        const fresh = !!equipment && s.placedAt !== null && Date.now() + skew - s.placedAt < LATE_MS;
+        if (fresh && !catchingUp && !reducedMotion.matches) {
+          turnRound(s.slot);
+          startRun(s.slot, equipment, div.dataset.equipment ?? "", s.slot === mine);
+        } else dropRuns(s.slot);
+      }
+      // the station keeps what it showed until the worker puts the new one down
+      if (!pending(s.slot) && (div.dataset.equipment ?? "") !== equipment) {
         div.replaceChildren(copy(equipment ? `data-gear="${equipment}"` : `data-bay="${s.slot}"`));
         if (equipment) div.dataset.equipment = equipment;
         else delete div.dataset.equipment;
@@ -1515,6 +1535,17 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       const dony = "dony" in m;
       let b = left.get(String(p.id));
       left.delete(String(p.id));
+      // GYM-7.5, GYM-6.32 (delivery.md D10): anyone going to a station with a
+      // worker still on his way to it or from it, on this screen, waits
+      // standing where they are, and sets off once he has gone. Off a machine
+      // they stand on its aisle tile; mid-walk, on the tile they've reached.
+      const slot = p.onStation ? slotAt(p.tile) : 0;
+      if (slot && b && busy(slot)) {
+        const here = tileOf(b);
+        const from = slotAt(here);
+        const tile: Tile = from ? [here[0], here[1] + 1] : here;
+        Object.assign(p, { tile, onStation: false, pose: "stand" });
+      }
       if (!b) {
         // someone new walks in from the door; Dony hops down from his poster,
         // once it has shaken (3.2a), or is simply there under reduced motion
@@ -1543,6 +1574,8 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
           }, 250);
         }
         map.append(b);
+        // just in, heading for a station a worker is still about: wait where they appear
+        if (slot && busy(slot) && !landing.has(b)) Object.assign(p, { tile: tileOf(b), onStation: false, pose: "stand" });
       }
       b.classList.toggle("me", m.id === me);
       b.classList.toggle("away", m.away);
@@ -1596,6 +1629,199 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       });
     }
     drawStations();
+    drawCrew();
+  }
+
+  // ---------- the gym worker (GYM-6, GYM-7; room spec "Delivery, Nov 4") ----------
+  // A run is one worker's trip for one station's change, and nothing about it
+  // is stored: it exists only on a screen that saw the change live. Where he
+  // is comes from how long ago the run started, quantised to 125 ms steps,
+  // never from counting ticks, so a tab shown again finds him where he
+  // should be, or gone (GYM-6.22). With n the steps of route(DOOR, station):
+  // in, a step a tick, onto the station at n; the put-down at n + 1, back on
+  // the waiting tile; a delivery holds its ta-da for four ticks and walks
+  // out empty-handed; a swap staggers straight out with the old machine.
+  const LATE_MS = 3000; // a change heard of this late is drawn in place (D5)
+  type Run = {
+    slot: number;
+    path: Tile[]; // DOOR excluded, the station last
+    load: string; // what he brings in
+    old: string; // what the station showed when he set off: "" for an empty bay
+    start: number; // performance.now() when he steps onto the mat
+    turn?: number; // the tick he turned round at, if the station changed under him
+    from?: number; // and how far along his route he was then
+    down: boolean;
+    el?: HTMLElement;
+    key?: string;
+  };
+  let runs: Run[] = [];
+  let lastStart = -Infinity;
+  // each station's equipment as this screen last heard it from the server
+  let known = new Map<number, string>();
+  const tickOf = (r: Run, t = performance.now()) => Math.floor((t - r.start) / STEP_MS);
+  const sameTile = (a: Tile, b: Tile) => a[0] === b[0] && a[1] === b[1];
+  const slotAt = (t: Tile) => STATIONS.findIndex((s) => sameTile(s, t)) + 1;
+  // still on his way in with the station's new equipment
+  const inbound = (r: Run, t?: number) => r.turn === undefined && tickOf(r, t) <= r.path.length;
+  const pending = (slot: number) => runs.some((r) => r.slot === slot && inbound(r));
+  // any worker still about this station, coming or going (D10)
+  const busy = (slot: number) => runs.some((r) => r.slot === slot);
+
+  function startRun(slot: number, load: string, old: string, mine: boolean) {
+    // single file: at least a step behind the last one to set off (D.6)
+    const start = Math.max(performance.now(), lastStart + STEP_MS);
+    lastStart = start;
+    runs.push({ slot, path: route(DOOR, STATIONS[slot - 1]), load, old, start, down: false });
+    // the claimer hears it once; nothing at the put-down (GYM-7.6)
+    const news = mine ? document.querySelector<HTMLElement>("#sheet-news") : null;
+    if (news) {
+      news.textContent = "";
+      setTimeout(() => (news.textContent = "Equipment's on its way. Start whenever"), 50);
+    }
+    kickCrew();
+  }
+
+  // the station changed again before its equipment was down: the worker
+  // turns round on the next tick, still carrying it, with a "huh?" (D4, D.7)
+  function turnRound(slot: number) {
+    const now = performance.now();
+    for (const r of runs.filter((r) => r.slot === slot && inbound(r, now))) {
+      const k = tickOf(r, now);
+      if (k < 0) {
+        drop(r); // never set off
+        continue;
+      }
+      // from the tile he's on, on the next tick
+      r.turn = k + 1;
+      r.from = Math.min(k, r.path.length);
+    }
+  }
+
+  function resetCrew() {
+    for (const r of runs) r.el?.remove();
+    runs = [];
+    known = new Map();
+    lastStart = -Infinity;
+  }
+
+  // catching up, late, or reduced motion: no worker for this station
+  function dropRuns(slot: number) {
+    for (const r of runs.filter((r) => r.slot === slot && inbound(r))) drop(r);
+  }
+  function drop(r: Run) {
+    r.el?.remove();
+    runs = runs.filter((x) => x !== r);
+  }
+
+  // where a run is at tick k: the tile index along [DOOR, ...path], the frame,
+  // what he carries, and his overlays; undefined once he has left
+  function poseOf(r: Run, k: number) {
+    const n = r.path.length;
+    const odd = k % 2 === 1;
+    if (r.turn !== undefined && k >= r.turn) {
+      const at = r.from! - (k - r.turn);
+      if (at < 0) return undefined;
+      return { at, frame: odd ? "carry1" : "carry2", carry: r.load, sweat: false, huh: k < r.turn + 4, sway: "" };
+    }
+    if (k <= n) return { at: Math.max(k, 0), frame: odd ? "carry1" : "carry2", carry: r.load, sweat: false, huh: false, sway: "" };
+    if (r.old) {
+      // a swap: straight out with the old machine, swaying (D2, D.5)
+      const at = 2 * n - k;
+      if (at < 0) return undefined;
+      return { at, frame: odd ? "carry1" : "carry2", carry: r.old, sweat: true, huh: false, sway: odd ? "sway-l" : "sway-r" };
+    }
+    if (k <= n + 4) return { at: n - 1, frame: "putdown", carry: "", sweat: true, huh: false, sway: "" };
+    const at = 2 * n + 3 - k;
+    if (at < 0) return undefined;
+    return { at, frame: odd ? "walk1" : "walk2", carry: "", sweat: false, huh: false, sway: "" };
+  }
+
+  let crewFrame = 0;
+  function kickCrew() {
+    crewFrame ||= requestAnimationFrame(() => {
+      crewFrame = 0;
+      drawCrew();
+    });
+  }
+
+  // Draws every worker where his run says, puts equipment down when it's
+  // due, and removes workers whose runs are over.
+  function drawCrew() {
+    const map = document.querySelector<HTMLElement>(".map-panel .map");
+    if (!map) return;
+    let crew = map.querySelector<HTMLElement>(":scope > .crew");
+    if (!crew && runs.length) {
+      crew = document.createElement("div");
+      crew.className = "crew";
+      crew.setAttribute("aria-hidden", "true");
+      crew.inert = true;
+      [...map.querySelectorAll(":scope > .station")].at(-1)?.after(crew);
+    }
+    const now = performance.now();
+    let landed = false;
+    for (const r of [...runs]) {
+      const k = tickOf(r, now);
+      if (!r.down && r.turn === undefined && k > r.path.length) {
+        r.down = true;
+        landed = true;
+      }
+      if (k < 0) continue; // waiting his turn in single file
+      const pose = poseOf(r, k);
+      if (!pose) {
+        drop(r);
+        landed = true; // he's gone: whoever waited for him sets off (D10)
+        continue;
+      }
+      const [x, y] = pose.at === 0 ? DOOR : r.path[pose.at - 1];
+      const key = [x, y, pose.frame, pose.carry, pose.sweat, pose.huh, pose.sway].join("|");
+      if (r.key === key && r.el?.isConnected) continue;
+      r.key = key;
+      if (!r.el?.isConnected) {
+        r.el = document.createElement("div");
+        crew?.append(r.el);
+      }
+      r.el.className = ["worker", pose.frame === "carry2" && "dip", pose.sway].filter(Boolean).join(" ");
+      place(r.el, [x, y]);
+      const svg = (cls: string, id: string, size = TILE) =>
+        `<svg class="${cls}" viewBox="0 0 ${size} ${size}"><use href="#wk-${id}" /></svg>`;
+      r.el.innerHTML =
+        svg("body", pose.frame) + (pose.sweat ? svg("body", "sweat") : "") + (pose.huh ? svg("huh", "huh", 12) : "");
+      if (pose.carry) {
+        const gear = map
+          .closest(".map-panel")!
+          .querySelector<HTMLTemplateElement>(`template[data-gear="${pose.carry}"]`)!
+          .content.querySelector("svg")!
+          .cloneNode(true) as SVGElement;
+        gear.classList.add("load");
+        gear.dataset.equipment = pose.carry;
+        r.el.prepend(gear);
+      }
+    }
+    if (!runs.length) crew?.remove();
+    // a put-down: the station shows its new equipment; a worker gone: whoever
+    // waited for him walks to it
+    if (landed && view) drawMap(Date.now() + offset);
+    drawDocket();
+    if (runs.length) kickCrew();
+  }
+
+  // GYM-7.6: the claimer's docket on the Lifting dock, from the claim to the
+  // put-down on this screen; never for anyone else's run
+  function drawDocket() {
+    const dock = document.querySelector<HTMLElement>(".dock");
+    if (!dock) return;
+    const me = meId();
+    const slot = view?.members.find((m) => m.id === me)?.station?.slot;
+    const lifting = !!dock.querySelector('button.wide[form="set-log"]:not([value="start"])');
+    const want = lifting && !reducedMotion.matches && runs.some((r) => r.slot === slot && inbound(r));
+    const eta = dock.querySelector(".eta");
+    if (want && !eta) {
+      const p = document.createElement("p");
+      p.className = "eta";
+      p.setAttribute("aria-hidden", "true");
+      p.innerHTML = "<span>Equipment's on its way.</span><span>Start whenever 🚚</span>";
+      dock.append(p);
+    } else if (!want) eta?.remove();
   }
 
   // A station hides its machine while someone is on it, not while they walk
@@ -1837,6 +2063,10 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       for (const div of oldMap.querySelectorAll<HTMLElement>(".station")) {
         newMap.querySelector(`.station[data-slot="${div.dataset.slot}"]`)?.replaceWith(div);
       }
+      // the workers carry on too, after the stations, so a run plays once
+      // (GYM-6.37)
+      const crew = oldMap.querySelector(":scope > .crew");
+      if (crew) [...newMap.querySelectorAll(":scope > .station")].at(-1)?.after(crew);
     }
     // the room log is the server's again, with the menu's limits; an open
     // menu on the old page goes with it
@@ -3540,6 +3770,52 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   @media (prefers-reduced-motion: reduce) {
     :global(.map .pop) {
       animation: none;
+    }
+  }
+
+  /* ---------- the delivery docket (GYM-7.6; room spec D.10) ----------
+     The claimer's own line while their equipment is on its way, rising out
+     of the dock's top border on the left, as the emoji tab does on the
+     right, and the same 48 px tall. Taps go through it; #sheet-news says it
+     once. */
+  :global(.dock .eta) {
+    position: absolute;
+    bottom: calc(100% - var(--px));
+    left: 0.75rem;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-sizing: border-box;
+    height: 48px;
+    max-width: calc(100% - 5.5rem);
+    margin: 0;
+    padding: 0 0.5rem;
+    font: 20px/20px var(--body);
+    color: var(--paper);
+    background: var(--night);
+    border: 2px dashed var(--leaf);
+    border-bottom: 0;
+    pointer-events: none;
+    animation: eta-in 160ms steps(4);
+  }
+  :global(.dock .eta span) {
+    white-space: nowrap;
+  }
+  :global(.dock .eta span + span) {
+    color: var(--leaf);
+  }
+  /* a refusal or failure line that meets the docket stands above it */
+  :global(.dock:has(.eta) .note),
+  :global(.dock:has(.eta) .error) {
+    bottom: calc(100% + 3.5rem);
+  }
+  @keyframes eta-in {
+    from {
+      clip-path: inset(100% 0 0 0);
+    }
+    to {
+      clip-path: inset(0);
     }
   }
 

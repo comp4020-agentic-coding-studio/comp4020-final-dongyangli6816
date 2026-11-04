@@ -14,7 +14,7 @@
 // bay-<slot> and claim; poster-<name>; i-<name> for the 8 x 8 icons in
 // currentColor; the sprites of props.ts and door.ts by their export names;
 // em-<key> for the eight emoji and fx-<kind>-<n> for reaction frames
-// (emoji.ts).
+// (emoji.ts); wk-<frame> for the gym worker (worker.ts).
 import type { Equipment } from "../src/lib/exercises.ts";
 import { BODY, FIGURES, HAIR_STYLES, type Drawing, type Figure, type HairStyle } from "../src/sprites/avatar.ts";
 import { DONY_HOP, DONY_VARS, POSTER, POSTER_PALETTE } from "../src/sprites/dony.ts";
@@ -25,6 +25,7 @@ import * as icons from "../src/sprites/icons.ts";
 import * as props from "../src/sprites/props.ts";
 import * as door from "../src/sprites/door.ts";
 import * as emoji from "../src/sprites/emoji.ts";
+import { WORKER_FRAMES, WORKER_VARS } from "../src/sprites/worker.ts";
 import { TILE, type Sprite } from "../src/sprites/sprite.ts";
 
 // the avatar's slots as Avatar.astro colours them
@@ -76,6 +77,10 @@ export function sheet(): string[] {
   }
   out.push(symbol("dony-hop", TILE, TILE, dony(DONY_HOP)));
   out.push(symbol("av-ghost", TILE, TILE, slots(BODY)));
+  // the gym worker (GYM-6): his fixed colours on the person's slots
+  for (const [name, grid] of Object.entries(WORKER_FRAMES)) {
+    out.push(symbol(`wk-${name}`, grid[0].length, grid.length, `<g style="${WORKER_VARS}">${slots(grid)}</g>`));
+  }
   for (const [machine, { idle, frames }] of Object.entries(MACHINES) as [Equipment, (typeof MACHINES)[Equipment]][]) {
     out.push(symbol(`eq-${machine}`, TILE, TILE, gym(idle)));
     frames.forEach((f, i) => {
