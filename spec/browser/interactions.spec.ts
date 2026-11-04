@@ -1233,6 +1233,13 @@ for (const width of [390, 1280]) {
       // one tap sends; the tray closes; the pop goes over Mia on both screens
       const sentAt = Date.now();
       await tray.locator(`button[value="${key}"]`).click();
+      // the tab wears it for the second, then its icon again. Checked first:
+      // the second starts at the tap, and checking both screens' pops before
+      // it took over a second on a busy runner, so the tab had already gone
+      // back to its icon (failed main's checks, Nov 3)
+      await expect(tab).toHaveAttribute("aria-label", `Send an emoji (sent: ${key})`);
+      await expect(tab).toHaveAttribute("aria-disabled", "true");
+      await expect(tab.locator("use")).toHaveAttribute("href", new RegExp(`#em-${key}$`));
       await expect(tray).toBeHidden();
       for (const page of [mia, tom]) {
         const pop = page.locator(".map .pops svg.pop");
@@ -1240,10 +1247,6 @@ for (const width of [390, 1280]) {
         await expect(pop.locator("use")).toHaveAttribute("href", new RegExp(`#em-${key}$`));
         await onSendersTile(page, ".map .pops svg.pop", "Mia");
       }
-      // the tab wears it for the second, then its icon again
-      await expect(tab).toHaveAttribute("aria-label", `Send an emoji (sent: ${key})`);
-      await expect(tab).toHaveAttribute("aria-disabled", "true");
-      await expect(tab.locator("use")).toHaveAttribute("href", new RegExp(`#em-${key}$`));
       await expect(tab).toHaveAttribute("aria-label", "Send an emoji", { timeout: 1500 });
       await expect(tab).not.toHaveAttribute("aria-disabled", "true");
       await expect(mia.locator(".dock .stamp:has-text('Sent')")).toHaveCount(0);
@@ -1335,8 +1338,9 @@ test("with the map scrolled away the tab shows what went, the stamp is untouched
   const news = mia.locator("#sheet-news");
   await mia.locator(EMOTE).click();
   await mia.locator('.tray button[value="fire"]').click();
-  await expect(stamp, "the stamp untouched (it shows for 4 s after Done)").toHaveText(stampText!);
+  // the tab's sent look lasts a second from the tap, so it's checked first
   await expect(mia.locator(EMOTE)).toHaveAttribute("aria-label", "Send an emoji (sent: fire)");
+  await expect(stamp, "the stamp untouched (it shows for 4 s after Done)").toHaveText(stampText!);
   await expect(news).toHaveText("Sent: fire", { timeout: 1000 });
   expect(intersects(await box(mia.locator(EMOTE)), await box(mia.locator(MAIN)))).toBe(false);
   // within the second the tab is unavailable: a tap on it sends nothing, and
@@ -1522,35 +1526,61 @@ test("in a room of twelve all sending emoji, nothing covers the dock and Done an
 // ======================================================================
 
 // BOT-6.2, BOT-6.1 (exactly as a person's: the same pop, no banner, no
-// announcement, the squad list unchanged), BOT-6.10 (sent back mid-pop: it
-// goes with him), BOT-6.11 (not announced), BOT-6.6 (a reload mid-pop shows nothing)
-test("Dony waves Hi on landing on every screen like a person's pop, and it goes with him when he's sent back", async ({ browser }) => {
+// announcement, the squad list unchanged), BOT-6.11 (not announced), BOT-6.6
+// (a reload mid-pop shows nothing)
+test("Dony waves Hi on landing on every screen like a person's pop, and a screen opened mid-pop doesn't show it", async ({ browser }) => {
   const { path, people } = await room(browser, ["Mia", "Tom"]);
   const mia = await recorded(people.Mia, path);
   const tom = await recorded(people.Tom, path);
   await mia.locator(".map .poster").click();
   const hi = '.map .pops svg.pop use[href$="#em-hi"]';
   for (const page of [mia, tom]) await expect(page.locator(hi)).toHaveCount(1, { timeout: 4000 });
-  const shownAt = Date.now();
-  // a screen opened while it shows doesn't show it (checked first, so the
-  // 3 s it shows for isn't spent on the checks below)
+  // a screen opened while it shows doesn't show it. The screen takes a while
+  // to open on a busy runner, so what's checked is that the Hi still shows
+  // on Tom's first screen once the late one is open; that's what makes "not
+  // on the late one" mean something
   const late = await recorded(people.Tom, path);
   await late.waitForTimeout(300);
-  expect(Date.now() - shownAt, "checked while his Hi still shows elsewhere").toBeLessThan(2700);
-  await expect(tom.locator(hi)).toHaveCount(1);
+  await expect(tom.locator(hi), "his Hi still shows on Tom's first screen").toHaveCount(1, { timeout: 0 });
   expect((await seenOn(late)).filter((s) => s.what === "pop")).toEqual([]);
-  // above him, as a person's would be, following him as he walks
-  await onSendersTile(mia, ".map .pops svg.pop", "Dony");
   // no banner, no announcement
   for (const page of [mia, tom]) {
     expect((await seenOn(page)).filter((s) => s.what === "banner")).toEqual([]);
     await expect(page.locator("#sheet-news")).toHaveText("");
   }
-  // sent back mid-pop: it goes with him
-  await mia.locator(".map .poster").click();
-  await expect(mia.locator(".map .pops svg.pop")).toHaveCount(0, { timeout: 1000 });
-  expect(Date.now() - shownAt, "gone with him, before its 3 s were up").toBeLessThan(2900);
   await expect(mia.locator(".room-log li")).toHaveCount(0);
+});
+
+// BOT-6.10 (sent back mid-pop: his emoji goes with him), BOT-6.2 (above him,
+// as a person's). On its own, so the pop's 3 s aren't spent on other checks
+// before he's sent back: that ran past the 3 s on a busy runner.
+test("Dony's Hi goes with him when he's sent back mid-pop", async ({ browser }) => {
+  const { path, people } = await room(browser, ["Mia", "Tom"]);
+  const mia = await recorded(people.Mia, path);
+  const tom = await recorded(people.Tom, path);
+  await mia.locator(".map .poster").click();
+  const pop = '.map .pops svg.pop:has(use[href$="#em-hi"])';
+  // only Mia's screen is waited on before she sends him back, so nothing
+  // else spends the pop's 3 s
+  await expect(mia.locator(pop)).toHaveCount(1, { timeout: 4000 });
+  await mia.locator(".map .poster").click();
+  const sentBackAt = Date.now();
+  // It went with him, not on its own 3 s: he was sent back well inside them
+  // (this gap holds only a check and a tap), and it was gone a second later
+  // at most, still inside them
+  const shownAt = (await seenOn(mia)).find((s) => s.what === "pop" && s.use?.endsWith("#em-hi"))!.t;
+  expect(sentBackAt - shownAt, "sent back well inside the pop's 3 s").toBeLessThan(1500);
+  for (const page of [mia, tom]) await expect(page.locator(pop)).toHaveCount(0, { timeout: 1000 });
+  expect((await seenOn(tom)).filter((s) => s.what === "pop" && s.use?.endsWith("#em-hi")), "Tom saw it too").toHaveLength(1);
+});
+
+// BOT-6.2: above him, as a person's would be, following him as he walks
+test("Dony's Hi rides above him as he walks, as a person's would", async ({ browser }) => {
+  const { path, people } = await room(browser, ["Mia"]);
+  const mia = await recorded(people.Mia, path);
+  await mia.locator(".map .poster").click();
+  await expect(mia.locator('.map .pops svg.pop use[href$="#em-hi"]')).toHaveCount(1, { timeout: 4000 });
+  await onSendersTile(mia, ".map .pops svg.pop", "Dony");
 });
 
 // BOT-6.7 (browser: his answer pops about a second after his reaction)
