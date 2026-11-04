@@ -60,7 +60,7 @@ type Frame = {
   workers: Worker[];
   crew: boolean;
   stations: Record<number, string | null>;
-  avatars: Record<string, { x: number; y: number; pose: string; state: string }>;
+  avatars: Record<string, { x: number; y: number; pose: string; state: string; label: string }>;
   eta: boolean;
   news: string;
 };
@@ -94,7 +94,7 @@ function probe() {
     const avatars: Frame["avatars"] = {};
     for (const a of document.querySelectorAll<HTMLElement>(".map .avatar")) {
       const name = (a.getAttribute("aria-label") ?? "").split(",")[0].replace(" (you)", "");
-      avatars[name] = { x: Number(a.style.getPropertyValue("--x")), y: Number(a.style.getPropertyValue("--y")), pose: a.dataset.pose ?? "", state: a.dataset.state ?? "" };
+      avatars[name] = { x: Number(a.style.getPropertyValue("--x")), y: Number(a.style.getPropertyValue("--y")), pose: a.dataset.pose ?? "", state: a.dataset.state ?? "", label: a.getAttribute("aria-label") ?? "" };
     }
     const eta = document.querySelector<HTMLElement>(".dock .eta");
     const frame = {
@@ -180,8 +180,18 @@ function changeAt(log: Frame[], slot: number, from: number) {
 // for her station has gone, the claimer stands where she was, never on the
 // station's aisle tile; she sets off only after, and reaches the machine after.
 // Returns the frame she arrived in.
-function expectWaitsForTheWorker(log: Frame[], name: string, slot: number, equipment: string, lastGone: number, what: string) {
-  const learned = log.find((f) => f.avatars[name]?.state === "lifting");
+// `learned` picks the frame the screen learned of the claim in (by default
+// the first in which she is Lifting).
+function expectWaitsForTheWorker(
+  log: Frame[],
+  name: string,
+  slot: number,
+  equipment: string,
+  lastGone: number,
+  what: string,
+  learnedIn: (f: Frame) => boolean = (f) => f.avatars[name]?.state === "lifting",
+) {
+  const learned = log.find(learnedIn);
   expect(learned, `${what}: ${name} turns Lifting`).toBeDefined();
   const spot = tileOf(learned!.avatars[name]);
   const [sx, sy] = TILE[slot].split(",").map(Number);
@@ -511,3 +521,68 @@ test("a rush: two claims at once walk in single file, Mia's switch turns her wor
   await expect(jiPage.locator('.map .avatar[aria-label^="Tom,"]'), "Tom on his bar").toHaveAttribute("style", new RegExp(`--x: ${tx}; --y: ${ty}(;|$)`));
   expect(ji.filter((f) => f.avatars.Tom && tileOf(f.avatars.Tom) !== TILE[tomSlot] && f.avatars.Tom.state === "lifting").length, "and straight there, no waiting tile").toBeLessThanOrEqual(1);
 });
+
+// ======================================================================
+// D10's wait, in the other places it applies (GYM-6.15, GYM-7.8)
+// ======================================================================
+
+// GYM-6.15 (browser), GYM-6.14: Mia's platform is on its way to 5; she
+// switches to Bench press (a free bench on 2, no run) and sets off for it;
+// mid-walk she chooses Deadlift again. She gets 5 back with no new worker,
+// stops on the tile she has reached, standing, and walks to 5 only once the
+// platform's worker has gone.
+test("back to a platform still on its way: Mia stops where she has got to and walks over once the worker has gone", async ({ browser }) => {
+  const { path, people } = await room(browser, ["Mia", "Tom"]);
+  const tomPage = await screen(people.Tom, path);
+  await choose(people.Mia, path, "9"); // deadlift: a platform delivered to 5
+  await expect(tomPage.locator(".map .crew .worker")).toHaveCount(1, { timeout: 2000 });
+  await choose(people.Mia, path, "3"); // bench press: the bench on 2, free
+  // she has left the lockers for the bench
+  await expect
+    .poll(async () => {
+      const a = (await framesOf(tomPage)).at(-1)!.avatars.Mia;
+      return !!a && a.label.includes("bench press") && tileOf(a) !== "8,7";
+    }, { intervals: [20], timeout: 2000 })
+    .toBe(true);
+  await choose(people.Mia, path, "9"); // deadlift again, before the worker has gone
+  await logShows(tomPage, "Mia", TILE[5], "lifting-platform");
+
+  const log = await framesOf(tomPage);
+  const runs = tracks(log);
+  expect(runs, "one worker: no new run for the second deadlift").toHaveLength(1);
+  const benchAt = log.find((f) => f.avatars.Mia?.label.includes("bench press"))!.t;
+  const back = (f: Frame) => f.t > benchAt && !!f.avatars.Mia?.label.includes("deadlift on lifting platform 5");
+  const learned = log.find(back);
+  expect(learned, "Tom's screen learns of the second deadlift").toBeDefined();
+  expect(learned!.t, "and learns of it while the worker is still on the map").toBeLessThan(runs[0].goneAt);
+  const spot = tileOf(learned!.avatars.Mia);
+  expect(spot, "she was mid-walk, off the lockers").not.toBe("8,7");
+  expect(log.filter((f) => f.t > benchAt && f.avatars.Mia?.pose === "flat-bench"), "she never plays the bench").toEqual([]);
+  expectWaitsForTheWorker(log, "Mia", 5, "lifting-platform", runs[0].goneAt, "Tom's screen", back);
+});
+
+// GYM-7.8 (browser): Mia chooses Deadlift (a delivery to 5) and logs a set at
+// once, so she heads for the cooler while the worker is still out; there she
+// taps Start set. No new run; she stands at the cooler until the worker has
+// gone, then walks to her platform.
+test("Start set while her platform is still on its way: Mia stands at the cooler until the worker has gone, then walks to it", async ({ browser }) => {
+  const { path, people } = await room(browser, ["Mia", "Tom"]);
+  const tomPage = await screen(people.Tom, path);
+  await choose(people.Mia, path, "9");
+  await expect(tomPage.locator(".map .crew .worker")).toHaveCount(1, { timeout: 2000 });
+  await post(people.Mia, path, { exercise_id: "9", weight_kg: "100", reps: "5" }); // Done: Resting
+  await logShows(tomPage, "Mia", COOLER, "rest");
+  await post(people.Mia, path, { action: "start", exercise_id: "9", weight_kg: "100", reps: "5" });
+  await logShows(tomPage, "Mia", TILE[5], "lifting-platform");
+
+  const log = await framesOf(tomPage);
+  const runs = tracks(log);
+  expect(runs, "one worker: Start set starts no run").toHaveLength(1);
+  const restedAt = log.find((f) => f.avatars.Mia?.state === "resting")!.t;
+  const started = (f: Frame) => f.t > restedAt && f.avatars.Mia?.state === "lifting";
+  const learned = log.find(started)!;
+  expect(learned.t, "Start set reached Tom's screen while the worker was still on the map").toBeLessThan(runs[0].goneAt);
+  expect(tileOf(learned.avatars.Mia), "she was at the cooler when she tapped it").toBe(COOLER);
+  expectWaitsForTheWorker(log, "Mia", 5, "lifting-platform", runs[0].goneAt, "Tom's screen", started);
+});
+
