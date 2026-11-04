@@ -10,7 +10,8 @@
   animation side is covered here; if a later file covers the rest of these
   requirements, it continues these numbers.
 - **Status**: agreed
-- **Date**: 19 Oct 2026 (drafted and agreed the same day; see Decisions)
+- **Date**: 19 Oct 2026 (drafted and agreed the same day; see Decisions);
+  GYM-10.19 revised 5 Nov 2026 (`delivery.md` D10)
 
 ## The request
 
@@ -113,8 +114,8 @@ Used with these meanings throughout.
 - **Not built yet, and not specified here**: the worker and delivery (GYM-6,
   GYM-7), the interactions and their reactions (INT-1 to 5), the personal-best
   flex (GYM-17) and work in (GYM-16). Where they meet this feature:
-  - **GYM-7**: the avatar waits by the station until the worker has put the
-    equipment down. GYM-10.19 says where it waits, so the two fit.
+  - **GYM-7**: the avatar waits where it is until the worker has gone, then
+    walks to its station (GYM-10.19, revised 5 Nov per `delivery.md` D10).
   - **INT-3**: a reaction plays on the target's avatar wherever it is.
     Cheer is allowed on someone Lifting (INT-2), so a cheer will play over
     someone lying on a bench or hanging from a bar. **Reactions are effects
@@ -297,14 +298,19 @@ state changes again (she taps Done straight away, or chooses another lift),
 then her avatar heads for the new place from wherever it has got to, and
 never plays the animation of the place it no longer goes to. *browser*
 
-**GYM-10.19** Given Mia's machine isn't on her station yet on some screen
-(after GYM-6 ships, a delivery is still carrying it in there), then on that
-screen her avatar waits standing on the aisle tile in front of the station,
-tag Lifting, and steps onto the machine and starts the animation once the
-equipment is down. Until GYM-6 ships, equipment appears at once (as today),
-so she goes straight on. Someone who opens or reloads the room during a
-delivery sees her on the machine, with no delivery replayed (GYM-8).
-*browser* (after GYM-6)
+**GYM-10.19** Given a delivery or swap for Mia's station is playing on some
+screen (GYM-6), then on that screen her avatar stays where it is, standing,
+tag Lifting, until the worker has put the equipment down, walked back out
+and gone at the entrance; only then does it walk to the station, step onto
+the machine and start the animation. If she was on another machine (or
+sitting in front of one), she stands on that station's aisle tile while she
+waits. Someone who opens or reloads the room during a delivery, or has
+reduced motion, sees her on the machine at once, with no delivery replayed
+(GYM-8). *Revised 5 Nov 2026* by the user after trying the build: it first
+had her walk to the aisle tile in front of the new station and wait there,
+which put her and the worker on the move at once. The full rule, including
+who else waits and Done while waiting, is in `delivery.md` D10 (GYM-7.5,
+GYM-6.32). *browser*
 
 **GYM-10.20** Given Mia is Lifting on the flat bench, when she chooses Back
 squat and is given another station, then she walks there and plays the squat

@@ -169,8 +169,8 @@ equipment.
 | GYM-3 | P0 | Each station holds at most one piece of equipment, and each piece of equipment is used by one person at a time. The same kind of equipment can be on several stations at once (five people benching means five benches). A person keeps their station while resting, slacking or Away, and holds none while Idle. |
 | GYM-4 | P0 | Choosing an exercise releases the station the person was using, then claims one, in this order: (1) a station that already has that equipment and nobody using it; (2) an empty station, which triggers a delivery; (3) the station whose equipment has gone unused longest, which triggers a swap. Any equipment can be swapped out, including the four a room opens with, as long as nobody is using it. |
 | GYM-5 | P0 | The server makes the claim in one database transaction, so two people who want the same station at the same moment never both get it. Whoever commits second falls through to the next rule in GYM-4, and, by the argument above, still finds a station (ADR 0004). |
-| GYM-6 | P0 | **Delivery:** a muscular gym worker walks in from the entrance carrying the equipment, puts it down on the claimed station, and walks out. Every screen in the room plays this. A **swap** is the same, except the worker first carries the old equipment out. |
-| GYM-7 | P0 | The delivery never blocks logging. The person can tap **Start set** at once; their avatar waits by the station until the worker has put the equipment down. |
+| GYM-6 | P0 | **Delivery:** a muscular gym worker walks in from the entrance carrying the equipment, puts it down on the claimed station, and walks out. Every screen in the room plays this. A **swap** is one trip: the worker carries the new equipment in, swaps it at the station and carries the old one out (changed 4 Nov, `criteria/delivery.md`). |
+| GYM-7 | P0 | The delivery never blocks logging. The person can tap **Start set** at once; their avatar waits where it is until the worker has put the equipment down and gone, then walks to it (changed 5 Nov, `criteria/delivery.md`). |
 | GYM-8 | P0 | The equipment layout is stored per room, so anyone who arrives later, reloads, or comes back after a restart sees the equipment where it was left, with no replay of the delivery. |
 | GYM-9 | P0 | Each person is in exactly one state: **Idle**, **Lifting**, **Resting**, **Slacking** or **Finished**. |
 | GYM-10 | P0 | Avatars walk between stations along the aisles (straight segments on the tile grid, no free pathfinding). **Start set** plays the equipment's exercise loop. **Done** sends the avatar to the water cooler. |
@@ -201,7 +201,7 @@ equipment.
 | --- | --- | --- |
 | BOT-1 | P1 | The back wall's poster is "Member of the month: Dony". Anyone in the room can tap it (by touch, click or keyboard) to summon Dony: on every screen the poster goes empty and he hops down onto the walkway. The server records the summon (when, by whom). He can be summoned again any number of times after being sent back; each summon is a fresh visit with a new schedule. |
 | BOT-2 | P1 | Dony is drawn on the people's body frames, so he has every pose and animation a person has, with his own head (an Asian character's hair and glasses) over them and his fixed violet colours; his hop is his only frame of his own. Plus the poster's full and empty frames, within the art rules. He can't be picked in the avatar editor. |
-| BOT-3 | P1 | Dony trains by a schedule worked out from the room and his summon time: blocks of 4 to 6 lifts over 45 to 60 minutes, 3 to 5 sets each, realistic set lengths and rests, 3 to 6 minutes Idle between blocks, mostly on equipment already on the floor (at most two deliveries a block). He goes Idle, Lifting, Resting and Slacking (about one rest in eight, at most twice a block) through the same station rules (GYM-4), never Finished, and every screen sees each change within about a second (GYM-13). His emoji (BOT-6) are part of the same schedule. |
+| BOT-3 | P1 | Dony trains by a schedule worked out from the room and his summon time: blocks of 4 to 6 lifts over 45 to 60 minutes, 3 to 5 sets each, realistic set lengths and rests, 3 to 6 minutes Idle between blocks, only on equipment already on the floor, so he never causes a delivery (changed 4 Nov, `criteria/delivery.md`). He goes Idle, Lifting, Resting and Slacking (about one rest in eight, at most twice a block) through the same station rules (GYM-4), never Finished, and every screen sees each change within about a second (GYM-13). His emoji (BOT-6) are part of the same schedule. |
 | BOT-4 | P1 | Anyone in the room can tap the empty poster to send Dony back: he stops whatever he's doing, frees his station, walks back and hops into the poster. He can be sent back at any moment; after a send back the poster rests for 30 seconds before he can be summoned again. A tap only acts if the poster is still as its tapper saw it (full for a summon, empty for a send back) and, for a summon, isn't resting; otherwise it does nothing, silently. |
 | BOT-5 | P1 | Dony appears on the map and in the squad list like a person, with no bot marker. He never counts as a member, toward the 12, as host or as room activity. A station he holds is always free for a person to take. The room closes when the last real person leaves, as now, and he goes with it. He appears in no logbook, summary, history or friends list, and nothing he does, his emoji included, counts as room activity. |
 | BOT-6 | P1 | While he's out, Dony sends the same emoji as people (INT-8): 👋 when he lands, then about one every 2 minutes (never two within 60 s) fitting his state, and an answer about a second after a Cheer, Poke or Slap aimed at him (at most one answer every 10 s, never to presets). Planned from the room, his summon time and the stored interactions, like the rest of his schedule. |
@@ -283,9 +283,10 @@ row, so a cold start restores the gym exactly.
 | `interactions` | `id`, `room_id`, `from_user_id`, `to_user_id`, `kind`, `created_at` | Also enforces INT-4 |
 | `messages` | `id`, `room_id`, `sender_id`, `preset_key`, `body`, `created_at` | `body` only for free text (INT-6) |
 
-A delivery is not a table. A client that sees a station whose `placed_at` is
-less than a few seconds old plays the worker's animation; any later client
-just draws the equipment in place (GYM-8).
+A delivery is not a table. A screen that is already open when a station's
+change arrives plays the worker's animation if the change's `placed_at` is
+under 3 s old; a screen that opens or reloads, or hears of it later, just
+draws the equipment in place (GYM-8).
 
 ## Stack
 
