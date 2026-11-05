@@ -9,7 +9,32 @@ import { EMPTY, FIGURES, HAIR, type Drawing, type HairStyle } from "./avatar.ts"
 import { DONY_HEAD, DONY_HOP } from "./dony.ts";
 import { MACHINES, type Frame } from "./machines.ts";
 
-export type Pose = "stand" | "rest" | "sit" | "walk" | "hop" | Equipment;
+// flex1 and flex2 are the PB's flex (GYM-17.7, room spec F.5): one drawing
+// each, swapped by the room's script on the flex's own timings, not bobbed
+export type Pose = "stand" | "rest" | "sit" | "walk" | "hop" | "flex1" | "flex2" | ActPose | Equipment;
+
+// Acting an interaction out (INT-13 to INT-16, room spec A.5): the walker's
+// move, the target's reaction, and the lifter's hand (a body-less layer).
+// One drawing each, swapped by the room's script on the move's timings.
+export const ACT_POSES = [
+  "reach",
+  "swing",
+  "point",
+  "cheer",
+  "bow",
+  "crouch",
+  "startle",
+  "recoil",
+  "sit-cheer",
+  "sit-startle",
+  "sit-recoil",
+  "sit-reach",
+  "hand1",
+  "hand2",
+] as const;
+export type ActPose = (typeof ACT_POSES)[number];
+// poses that hold still on their own: the script times them, nothing bobs
+export const isHeld = (pose: string): boolean => pose === "flex1" || pose === "flex2" || (ACT_POSES as readonly string[]).includes(pose);
 
 export const isMachine = (pose: string): pose is Equipment => pose in MACHINES;
 

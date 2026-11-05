@@ -17,8 +17,8 @@ import { EQUIPMENT, type Equipment } from "../lib/exercises.ts";
 import { HAIR_STYLES, lookKey, type Look } from "../sprites/avatar.ts";
 import { bay, CLAIM, GYM_PALETTE, MAP, SCENERY, STATIONS, TILES } from "../sprites/gym.ts";
 import { POSTER, POSTER_PALETTE } from "../sprites/dony.ts";
-import { isMachine, type Pose } from "../sprites/poses.ts";
-import { phoneOffIcon } from "../sprites/icons.ts";
+import { ACT_POSES, isMachine, type Pose } from "../sprites/poses.ts";
+import { phoneOffIcon, soundIcon } from "../sprites/icons.ts";
 import * as emojiArt from "../sprites/emoji.ts";
 import { paths, TILE, type Sprite } from "../sprites/sprite.ts";
 
@@ -48,7 +48,7 @@ const mine = view.members.find((m) => m.id === me)?.station?.slot;
 const placed = spots(view, view.now);
 const byId = new Map(everyone(view).map((m) => [m.id, m]));
 const MACHINE_IDS = Object.keys(EQUIPMENT) as Equipment[];
-const POSES: Pose[] = ["stand", "rest", "sit", "walk", ...MACHINE_IDS];
+const POSES: Pose[] = ["stand", "rest", "sit", "walk", "flex1", "flex2", ...ACT_POSES, ...MACHINE_IDS];
 // the stations someone is on, using the machine (the first render: nobody walks)
 const slotAt = ([x, y]: [number, number]) => STATIONS.findIndex(([sx, sy]) => sx === x && sy === y) + 1;
 const occupied = new Set(placed.filter((p) => isMachine(p.pose)).map((p) => slotAt(p.tile)));
@@ -158,6 +158,10 @@ const FX_SYMBOLS = Object.entries(emojiArt).flatMap(([name, s]) => {
     }
     {/* INT-5: preset bubbles, over every avatar (I.6); INT-3: the target's banner (I.5) */}
     <div class="says" aria-hidden="true"></div>
+    {/* INT-10.2: High-five offers' bubbles, under every avatar so they never hide a tag */}
+    <div class="says offers" aria-hidden="true"></div>
+    {/* INT-14.4: moves flying from a lifter (or a cut-short errand) to their target (A.7) */}
+    <div class="flights" aria-hidden="true"></div>
     <div class="banner-slot"></div>
   </div>
   {/* what the script draws avatars and stations from */}
@@ -220,6 +224,11 @@ const FX_SYMBOLS = Object.entries(emojiArt).flatMap(([name, s]) => {
   </svg>
   <template data-claim><Sprite sprite={art(CLAIM)} class="claim" /></template>
   <template data-tag-away><Sprite sprite={phoneOffIcon} scale={2} /></template>
+  {/* INT-12.8: the sound setting, a sign on the bottom border (room spec F.11).
+      Drawn on the default; the script puts in what this browser chose. */}
+  <button type="button" class="sound" data-sound="all">
+    <span class="sound-box"><Sprite sprite={soundIcon} scale={2} /><span class="vh">Sound: </span><span class="sound-word">All sounds</span></span>
+  </button>
 </section>
 
 <style is:global>

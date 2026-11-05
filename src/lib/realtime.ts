@@ -1,4 +1,7 @@
-import { DONY_ID, plannedEmotes } from "./dony.ts";
+import { currentDonyPb, DONY_ID, plannedEmotes } from "./dony.ts";
+import { donyFives } from "./interactions.ts";
+import { everyone } from "./floor.ts";
+import { stateAt } from "./squad.ts";
 import { log } from "./log.ts";
 import { AWAY_MS, roomView } from "./presence.ts";
 import { isMember, touchRoom } from "./rooms.ts";
@@ -46,7 +49,7 @@ export function broadcast(roomId: number): void {
 // INT-3, INT-5, INT-8: one small event to everyone watching the room, beside
 // the room itself: an interaction, a preset or an emoji. Nothing is re-read,
 // so a room of twelve sending emoji never redraws anyone's room.
-export function announce(roomId: number, event: "interaction" | "say" | "emote", data: object): void {
+export function announce(roomId: number, event: "interaction" | "say" | "emote" | "highfive" | "pb", data: object): void {
   const chunk = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
   for (const c of streams.get(roomId) ?? []) c.send(chunk);
 }
@@ -70,9 +73,27 @@ export function donyEmotes(roomId: number): void {
   for (const e of plan.emotes) {
     if (e.at > from && e.at <= now) announce(roomId, "emote", { emoji: e.emoji, from: { id: DONY_ID, name: "Dony" }, at: e.at });
   }
-  const next = plan.emotes.find((e) => e.at > now);
+  // BOT-7.5, BOT-7.6: his planned PB, by the same rule: missed if it fell
+  // while nobody watched, never sent twice. It falls when one of his sets
+  // ends, so the room's own update at that moment calls this on time.
+  const pb = currentDonyPb(roomId);
+  if (pb && pb.at > from && pb.at <= now) announce(roomId, "pb", { from: { id: DONY_ID, name: "Dony" }, exercise: pb.exercise, at: pb.at });
+  // BOT-7.2: his acceptance of a High-five, at the moment it was decided for
+  const fives = donyFives(roomId, from, now);
+  if (fives.length) {
+    // BOT-8.5: both states as they are at his acceptance, so every screen
+    // agrees who walks
+    const view = roomView(roomId, now);
+    const stateOf = (id: number) => {
+      const m = everyone(view).find((x) => x.id === id);
+      return m ? stateAt(m, now) : "idle";
+    };
+    for (const f of fives) announce(roomId, "highfive", { ...f, fromState: stateOf(f.from.id), toState: stateOf(DONY_ID) });
+  }
+  const times = [...plan.emotes.map((e) => e.at), ...(pb ? [pb.at] : []), ...donyFives(roomId, now, now + 60_000).map((f) => f.done)];
+  const next = times.filter((t) => t > now).sort((a, b) => a - b)[0];
   if (next) {
-    const timer = setTimeout(() => donyEmotes(roomId), Math.min(next.at - now + 5, 10 * 60_000));
+    const timer = setTimeout(() => donyEmotes(roomId), Math.min(next - now + 5, 10 * 60_000));
     timer.unref();
     donyEmoteTimers.set(roomId, timer);
   }

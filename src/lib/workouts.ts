@@ -1,7 +1,8 @@
 import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "./db.ts";
 import type { Exercise, Kind } from "./exercises.ts";
-import { exercises, rooms, sets, workouts } from "./schema.ts";
+import { beats } from "./logbook.ts";
+import { exercises, personalBests, rooms, sets, workouts } from "./schema.ts";
 
 export const MAX_REST_S = 600;
 
@@ -66,16 +67,49 @@ export function openWorkoutId(userId: number, roomId: number): number | undefine
 
 // LOG-4: the rest after a set starts from the person's last choice for that
 // exercise, or the exercise's default the first time.
-export function logSet(userId: number, roomId: number, exercise: Exercise, values: SetValues): void {
+//
+// GYM-17: whether the set is a personal best is decided in the same
+// IMMEDIATE transaction that stores it, from the person's earlier sets as
+// stored at that moment, so of two Dones at once only the first can be one
+// (GYM-17.5), and Done costs no second request (GYM-17.10). Returns whether
+// it was.
+export function logSet(userId: number, roomId: number, exercise: Exercise, values: SetValues): { pb: boolean } {
   const now = Date.now();
-  db.transaction(() => {
-    const workoutId = openWorkout(userId, roomId);
-    const restTargetS = lastSet(userId, exercise.id)?.restTargetS ?? exercise.defaultRestS;
-    db.insert(sets)
-      .values({ workoutId, exerciseId: exercise.id, ...values, completedAt: now, restTargetS })
-      .run();
-    db.update(rooms).set({ lastActiveAt: now }).where(eq(rooms.id, roomId)).run();
-  });
+  return db.transaction(
+    (tx) => {
+      const workoutId = openWorkout(userId, roomId, now);
+      const restTargetS = lastSet(userId, exercise.id)?.restTargetS ?? exercise.defaultRestS;
+      const pb = isPersonalBest(userId, workoutId, exercise, values);
+      const setId = tx
+        .insert(sets)
+        .values({ workoutId, exerciseId: exercise.id, ...values, completedAt: now, restTargetS })
+        .returning({ id: sets.id })
+        .get().id;
+      if (pb) tx.insert(personalBests).values({ setId, roomId, userId, exerciseId: exercise.id, createdAt: now }).run();
+      tx.update(rooms).set({ lastActiveAt: now }).where(eq(rooms.id, roomId)).run();
+      return { pb };
+    },
+    { behavior: "immediate" },
+  );
+}
+
+export const wasPersonalBest = (setId: number): boolean =>
+  !!db.select({ id: personalBests.setId }).from(personalBests).where(eq(personalBests.setId, setId)).get();
+
+// GYM-17.1 to GYM-17.3: strictly better, by what the kind measures, than
+// every set of this exercise the person has logged, in any room; and only
+// once a workout before this one has the exercise in it (F4), so a first
+// workout's warm-ups set the bar instead of each being a PB.
+function isPersonalBest(userId: number, workoutId: number, exercise: Exercise, values: SetValues): boolean {
+  const earlier = db
+    .select({ workoutId: sets.workoutId, weightKg: sets.weightKg, reps: sets.reps, durationS: sets.durationS, distanceM: sets.distanceM })
+    .from(sets)
+    .innerJoin(workouts, eq(workouts.id, sets.workoutId))
+    .where(and(eq(workouts.userId, userId), eq(sets.exerciseId, exercise.id)))
+    .all();
+  if (!earlier.some((s) => s.workoutId !== workoutId)) return false;
+  const set = { kind: exercise.kind, ...values };
+  return earlier.every((s) => beats(set, { kind: exercise.kind, ...s }));
 }
 
 // The person's newest set in their open workout here: the one whose rest is

@@ -9,7 +9,7 @@
 // machine the machine's own layers are drawn by the station, around this.
 import { AVATAR_UPPER_ROWS, HAIR_STYLES, HEAD_CROP, lookVars, type HairStyle, type Look } from "../sprites/avatar.ts";
 import { DONY_VARS } from "../sprites/dony.ts";
-import { drawingsOf, headOf, isMachine, type Pose } from "../sprites/poses.ts";
+import { drawingsOf, headOf, isHeld, isMachine, type Pose } from "../sprites/poses.ts";
 import { paths, TILE } from "../sprites/sprite.ts";
 
 interface Props {
@@ -40,7 +40,7 @@ const slotted = (map: Map<string, string>, glow = false) =>
 const styles: (HairStyle | "dony")[] = dony ? ["dony"] : !look ? [] : allHair ? HAIR_STYLES.map((s) => s.id) : [look.hair];
 // rows above the split bob, the rest stay planted; a machine's people, the
 // walk and the slacker don't bob, so their whole body goes under the hair
-const bobs = !isMachine(pose) && pose !== "sit" && pose !== "walk";
+const bobs = !isMachine(pose) && pose !== "sit" && pose !== "walk" && !isHeld(pose);
 const split = bobs ? AVATAR_UPPER_ROWS : TILE;
 const drawings = drawingsOf(pose).map((d, i, all) => {
   return {
