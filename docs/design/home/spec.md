@@ -221,3 +221,155 @@ editor.
   assistive tech and the tab order, so there's one accessible link.
 - **The key tag inside a bubble** makes that line a few pixels taller
   (unchanged, accepted).
+
+## Logbook links, Nov 4
+
+The criteria are `docs/product/criteria/logbook.md`: **LB-3.11** (`/plans` is
+one tap from home) and **LB-5.7** (every exercise name on home's Last workout
+card links to its page). Only home changes. `join` and `avatar` don't change,
+and the earlier sections above still hold. The mockup's signed-in default and
+first-use states show the change. The other states' cards have the same
+links, but their labels don't call them out.
+
+### 1. Plan
+
+**Shared (Lobby).** Unchanged. Nothing here touches the opening, the door
+card, the one primary per page, or the voice.
+
+**Shared with the Logbook group.** Two things are borrowed from it so the
+same job looks the same on both groups' pages (`history/spec.md`, "Shared:
+the Logbook group, Nov 4", "Links"):
+
+- **An exercise name is a plain underlined link with no arrow**, 44 px tall
+  without making its row taller. The rule is the one history uses for
+  `.log th.lift a`, applied to home's `td`.
+- **"Your plans" is the summary's `a.to-plans`**: the same words, the same
+  plain link, 44 px tall, last among the card's logbook links.
+
+**Who and when.** Mia on the way to the gym, looking at last session before
+she taps Join. Or at home after training, curious how her bench is going.
+Neither link is needed to train with the squad, so both stay quiet.
+
+**The one job.** Unchanged: get into a room. **Join** stays the only
+primary and Create room stays secondary. Both new links sit inside the
+Last workout card, the fourth thing on the page, below the door card and
+Your rooms. On a phone that is below the fold, so neither competes with
+Join.
+
+**Where the plans link goes, and why.** At the end of the Last workout
+card's `.actions`, after See summary and All history: `See summary · All
+history · Your plans`.
+
+- That card is home's corner of the logbook, and plans are part of the
+  logbook (Logbook group, D10). It is also where the summary puts the link.
+- Other places considered:
+  - the top bar: History is the only nav link (Logbook shared block), so it
+    stays that way;
+  - the door card: it would compete with Join;
+  - a new card: too big for one link.
+- It is a text link, not a third `.button.secondary`. The card already has
+  two secondary buttons, and a third would wrap to its own row on a phone
+  and look as important as All history. As a text link it is one tap, one
+  Tab stop and one Enter (LB-3.11).
+- It shows in **every** signed-in state, the first-use (empty) state
+  included. With no plans, `/plans` explains how to get one ("Finish a
+  workout, then save it as a plan from its summary", LB-3.8). In first use,
+  where there are no buttons, it sits alone in an `.actions` row under the
+  hint.
+
+**Hierarchy inside the card.** Unchanged: the totals, then the Best column.
+The names are now links, so they turn green and underlined. The Best
+figures stay ink and read first, because they are what the card is for.
+
+**Reuse.** The layout's `a`, `.actions` and `:focus-visible`. The summary's
+`.to-plans`. History's 44 px link rule. There is **no new component and no
+new art**.
+
+**What the template check changed.** Nothing new to check: the page's
+character is the player tile, the six code slots and the key tags, and none
+of them moves. The check here was the reverse: don't add a "Plans" button or
+a dashboard tile that would make home look like a fitness-app hub. One
+logbook link inside the logbook card keeps home about the squad.
+
+**What the brief's correction settled.** Home's card keeps its **one row per
+exercise** (Lift · Sets · Best, from `bestLabel`). It has no per-set rows, so
+it shows **no** set-type marks, record marks, RPE or notes. Those live on the
+summary and history, one tap away through See summary and All history.
+
+### 2. Requirements covered
+
+| Requirement (source) | Element that meets it |
+| --- | --- |
+| LB-3.11 "Given Mia is on home or a summary, then `/plans` is one tap (or one Enter) away" | `a.to-plans[href=/plans]` "Your plans", last in the Last workout card's `.actions`, in every signed-in state (including first use and a Live workout) |
+| LB-5.7 "every exercise name in a set table is a link to that exercise's page, at least 44 px tall and reachable by keyboard" (home's Last workout card) | Each `td`'s name is wrapped in `a[href=/exercises/{exerciseId}]`, with `.logbook td a` `min-height: 44px` and the layout's focus ring |
+| LB-5.7 / D20 "The room's sheet has no such link" | Not home's concern, so nothing changes in the room |
+| LB-0.3 old sets read as before | The card's figures and markup are as before; only the name gains a link |
+| System 8, one primary per screen | Join stays the only primary; both additions are plain links |
+| System 12, tap targets 44 px and keyboard use | Both links are 44 px tall, native `a` elements in DOM order (Join, rooms, then the names, See summary, All history, Your plans) |
+
+### 3. Structure
+
+Changes only, all inside `section.card.logbook`:
+
+1. **Table body rows:** `tr > td > a[href=/exercises/{id}]` {name}, then the
+   Sets and Best cells unchanged. `{id}` is the group's exercise id. The
+   rows from `history()` already carry `exerciseId`, so
+   `g.sets[0].exerciseId` works, with no new query. The header stays `Lift ·
+   Sets · Best`, and the empty row (`td.empty`, no link) is unchanged.
+2. **`div.actions`** (a workout exists): See summary (finished only), All
+   history, then **`a.to-plans[href=/plans]` "Your plans"**.
+3. **First use** (no workout): after `p.hint` "Your first set lands here…",
+   a **`div.actions` > `a.to-plans`** "Your plans".
+
+**Page block additions** (`<style id="page">`, built from tokens):
+
+```css
+.logbook td a { display: inline-block; min-height: 44px; margin: -0.5rem 0; padding: 0.5rem 0; }
+.logbook td a:hover { color: var(--deep); }
+.to-plans { display: inline-flex; align-items: center; min-height: 44px; }
+```
+
+- The negative margin cancels the padding, so the rows stay as tall as
+  before (a 24 px VT323 line plus the cell's 0.5rem padding), while the
+  link's box reaches 44 px.
+- A long name ("Incline walk" on a phone) wraps inside the link, and the
+  box grows with it.
+- `.to-plans` is the summary's rule, unchanged. If the main agent moves it
+  to one place, both pages use it.
+
+### 4. States
+
+| State | What changes |
+| --- | --- |
+| Signed in, default; Left; Ended with a workout | The names are links; "Your plans" ends the card's actions row. At 1280 px it shares the row with the two buttons. At 390 px it wraps to its own line under All history |
+| Live workout (`Live` badge, no See summary) | `All history · Your plans`. The names link as usual; the exercise page shows the open workout as a Live session (exercise spec) |
+| First use (empty) | No names to link. "Your plans" sits alone under the hint |
+| Ended, nothing logged; pending | Shown cut short in the mockup, so the card isn't drawn; when it shows, it is as above |
+| Signed out | Unchanged: no card, no links |
+| Error | None on home (unchanged) |
+
+### 5. Departures
+
+- **"Your plans" is a text link beside two buttons**, not a third button. It
+  matches the summary's `.to-plans` and keeps the card's buttons to two.
+- **The links in the card's Lift column have no arrow**, as history's
+  exercise links don't (history spec, Nov 4 departures).
+
+Otherwise none.
+
+### Open questions (behaviour the criteria don't decide)
+
+Listed, not decided. The mockup draws the first option in each.
+
+1. **Does "Your plans" show when Mia has no plans?** Drawn: always, because
+   `/plans` explains how to get one. The alternative is to hide it until she
+   has a plan. That would make LB-3.11 conditional, which its wording isn't.
+2. **Does the card's Best show RPE?** `bestLabel` builds on `setLabel`, which
+   now appends ` @ 8`. The Logbook mockups write Best **without** RPE (for
+   example, history's "Best 85 kg × 5" for a set logged `@ 9.5`). Drawn: no
+   RPE, matching them. Whichever rule history and the summary use, home
+   should use too.
+3. **Can a warm-up be a workout's Best?** LB-2.10 keeps warm-ups out of
+   records but says nothing about the per-workout "Best" line. It only
+   matters when every set of an exercise is a warm-up, or a warm-up was the
+   heaviest. Home should follow whatever `bestLabel` does for history.

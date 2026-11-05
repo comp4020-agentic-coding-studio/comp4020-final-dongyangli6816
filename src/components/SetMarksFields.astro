@@ -1,0 +1,145 @@
+---
+// LB-2.1, LB-2.13: a set's type and RPE, under its figures in the room's
+// sheet (docs/design/room/spec.md, "Logbook refactor, Nov 4", L.3 items 3
+// and 4). The type is three radio chips drawn like the marks they make,
+// Normal picked unless echoed; the RPE is one optional row, never pre-filled.
+//
+// Departure (decided 4 Nov while the user was away): the RPE is a number
+// field rather than the design's select, because LB-2.14 keeps a refused
+// value ("0", "7.3") in the field as typed, which a select can't hold. It
+// keeps the design's one-row layout and hint.
+import { SET_TYPES } from "../lib/logbook.ts";
+
+interface Props {
+  type: string;
+  rpe: string;
+  // the field an error is about, from readMarks()
+  invalid?: string;
+  error?: string;
+}
+const { type, rpe, invalid = "", error = "" } = Astro.props;
+const WORD = { normal: "Normal", warmup: "Warm-up", failure: "Failure" } as const;
+const picked = (SET_TYPES as readonly string[]).includes(type) ? type : "normal";
+---
+
+<fieldset class="set-type" aria-describedby={invalid === "set_type" ? "type-error" : undefined}>
+  <legend class="vh">Set type</legend>
+  {
+    SET_TYPES.map((t) => (
+      <label class:list={{ "t-warmup": t === "warmup" }}>
+        <input type="radio" name="set_type" value={t} checked={picked === t} />
+        {WORD[t]}
+      </label>
+    ))
+  }
+</fieldset>
+{
+  invalid === "set_type" && (
+    <p class="error" id="type-error" role="alert">
+      {error}
+    </p>
+  )
+}
+<div class="set-rpe">
+  <label for="rpe">RPE</label>
+  <input
+    id="rpe"
+    name="rpe"
+    type="number"
+    inputmode="decimal"
+    min="1"
+    max="10"
+    step="0.5"
+    value={rpe}
+    placeholder="–"
+    aria-invalid={invalid === "rpe" ? "true" : undefined}
+    aria-describedby={invalid === "rpe" ? "rpe-error rpe-hint" : "rpe-hint"}
+  />
+  <p class="hint" id="rpe-hint">Optional. 10 is nothing left</p>
+</div>
+{
+  invalid === "rpe" && (
+    <p class="error" id="rpe-error" role="alert">
+      {error}
+    </p>
+  )
+}
+
+<style>
+  .set-type {
+    display: flex;
+    gap: 0.5rem;
+    min-width: 0;
+    margin: 1rem 0 0;
+    padding: 0;
+    border: 0;
+  }
+  .set-type label {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    margin: 0;
+    padding: 0 0.25rem;
+    font: 8px/1 var(--display);
+    text-transform: uppercase;
+    color: var(--paper);
+    background: var(--night);
+    border: 2px solid var(--edge);
+    cursor: pointer;
+  }
+  .set-type .t-warmup {
+    border-style: dashed;
+  }
+  /* the radio is the whole chip: one tap, arrow keys move between them */
+  .set-type input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .set-type label:has(:checked) {
+    color: var(--ink);
+    background: var(--leaf);
+    border-color: var(--ink);
+  }
+  .set-type label:has(:checked)::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    background: currentColor;
+  }
+  .set-type label:has(:focus-visible) {
+    outline: var(--px) solid var(--focus);
+    outline-offset: var(--px);
+  }
+  .set-type:disabled label {
+    color: var(--dim);
+    cursor: progress;
+  }
+  .set-rpe {
+    display: grid;
+    grid-template-columns: auto 6.5rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0 0.75rem;
+    margin: 0.75rem 0 0;
+  }
+  .set-rpe label {
+    margin: 0;
+  }
+  .set-rpe input {
+    width: 100%;
+  }
+  .set-rpe .hint {
+    margin: 0;
+    font-size: 20px;
+    line-height: 1.1;
+  }
+</style>

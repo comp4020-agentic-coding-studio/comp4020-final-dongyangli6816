@@ -1,54 +1,111 @@
 ---
-// One workout's sets, drawn the same on history and its summary: one tbody
-// per exercise in the order first done, its name and best set in a row
-// header, then each set written the way a lifter writes it.
-import { bestLabel, byExercise, setLabel, type LoggedSet } from "../lib/logbook.ts";
+// Sets drawn the same on history, a summary and an exercise page
+// (docs/design/history/spec.md, "Logbook refactor, Nov 4"): one tbody per
+// group, its name and best set in a row header, then each set written the way
+// a lifter writes it (SetCell), then the group's note (LB-2.23).
+//
+// A workout's sets group by exercise, in the order first done, each name a
+// link to its page (LB-5.7). An exercise page passes its own groups, one per
+// session, headed by the session's day (exercise/spec.md, Structure 4).
+import { exerciseById, type Equipment } from "../lib/exercises.ts";
+import { bestLabel, byExercise, isWorking, type LoggedSet, type RecordKey } from "../lib/logbook.ts";
+import type { Look } from "../sprites/avatar.ts";
+import { arrowIcon, pencilIcon } from "../sprites/icons.ts";
+import ExerciseArt from "./ExerciseArt.astro";
+import Sprite from "./Sprite.astro";
+import SetCell from "./SetCell.astro";
+
+type Row = LoggedSet & { id?: number; exerciseId?: number };
+type Group = { name: string; href?: string; live?: boolean; note?: string; equipment?: Equipment; sets: readonly Row[] };
 
 interface Props {
-  sets: readonly LoggedSet[];
+  sets?: readonly Row[];
+  // set id -> the records it set (logbook.ts recordsBySet)
+  records?: ReadonlyMap<number, readonly RecordKey[]>;
+  // exercise id -> this workout's note for it
+  notes?: ReadonlyMap<number, string>;
+  groups?: readonly Group[];
+  head?: string;
+  // LB-7: the person's look, for each exercise's art beside its name
+  look?: Look;
 }
-const { sets } = Astro.props;
+const { sets = [], records = new Map(), notes = new Map(), groups: given, head = "Exercise", look } = Astro.props;
 
-// cardio puts its pace on a second line, so "5 km · 25:00" fits a phone
-const cell = (s: LoggedSet) => {
-  const label = setLabel(s);
-  if (s.distanceM === null) return { label, pace: "" };
-  const cut = label.lastIndexOf(" · ");
-  return { label: label.slice(0, cut), pace: label.slice(cut + 3) };
-};
+const groups: readonly Group[] =
+  given ??
+  byExercise(sets).map((g) => {
+    const exerciseId = g.sets[0].exerciseId;
+    return {
+      name: g.name,
+      href: exerciseId !== undefined ? `/exercises/${exerciseId}` : undefined,
+      note: exerciseId !== undefined ? notes.get(exerciseId) : undefined,
+      // LB-7.4: the art goes by the exercise's machine, never by what a set records
+      equipment: exerciseId !== undefined ? exerciseById(exerciseId)?.equipment : undefined,
+      sets: g.sets,
+    };
+  });
+// a session's day links to its summary, with the arrow, as history's days do
+const session = given !== undefined;
+// LB-7.11 (D37): the smallest whole-number size that reads as a person on a
+// machine, 1× (history/spec.md, "Exercise art, Nov 5")
+const ART_SIZE = 32;
 ---
 
 <table class="log">
   <thead>
     <tr>
-      <th scope="col">Exercise</th>
+      <th scope="col">{head}</th>
       <th scope="col" class="num">Set</th>
     </tr>
   </thead>
   {
-    byExercise(sets).map((ex) => (
+    groups.map((g) => (
       <tbody>
-        {ex.sets.map((s, j) => {
-          const { label, pace } = cell(s);
-          return (
-            <tr>
-              {j === 0 && (
-                <th scope="rowgroup" rowspan={ex.sets.length} class="lift">
-                  {ex.name}
-                  {ex.sets.length > 1 && (
-                    <span class="best">
-                      Best <span>{bestLabel(ex.sets)}</span>
-                    </span>
-                  )}
-                </th>
-              )}
-              <td class="set">
-                {label}
-                {pace && <span class="pace">{pace}</span>}
-              </td>
-            </tr>
-          );
-        })}
+        {g.sets.map((s, j) => (
+          <tr class:list={{ warm: !isWorking(s) }}>
+            {j === 0 && (
+              <th scope="rowgroup" rowspan={g.sets.length} class:list={["lift", { "has-art": !!(look && g.equipment && g.href) }]}>
+                {g.href ? (
+                  <a href={g.href} class:list={{ "ex-link": !!(look && g.equipment) }}>
+                    {/* LB-7.13: the art is part of the link, so a tap on it opens the page */}
+                    {look && g.equipment ? (
+                      <>
+                        <ExerciseArt e={g.equipment} look={look} size={ART_SIZE} />
+                        <span class="nm">{g.name}</span>
+                      </>
+                    ) : (
+                      g.name
+                    )}
+                    {session && (
+                      <>
+                        <span class="vh">, summary</span>
+                        <Sprite sprite={arrowIcon} scale={2} class="go" />
+                      </>
+                    )}
+                  </a>
+                ) : (
+                  g.name
+                )}
+                {g.live && <span class="badge">Live</span>}
+                {g.sets.length > 1 && (
+                  <span class="best">
+                    Best <span>{bestLabel(g.sets)}</span>
+                  </span>
+                )}
+              </th>
+            )}
+            <SetCell as="td" class="set" set={s} records={s.id !== undefined ? records.get(s.id) : undefined} />
+          </tr>
+        ))}
+        {g.note && (
+          <tr class="note">
+            <td colspan="2">
+              <Sprite sprite={pencilIcon} scale={2} />
+              <span class="vh">Note: </span>
+              <span data-note="">{g.note}</span>
+            </td>
+          </tr>
+        )}
       </tbody>
     ))
   }
@@ -61,6 +118,54 @@ const cell = (s: LoggedSet) => {
     color: var(--ink);
     vertical-align: top;
   }
+  /* the name is a link, 44 px tall, without making the row taller */
+  .log th.lift a {
+    display: inline-block;
+    min-height: 44px;
+    margin: -0.5rem 0 -0.25rem;
+    padding: 0.5rem 0 0.25rem;
+  }
+  /* LB-7, option A (history/spec.md, "Exercise art, Nov 5"; the user's pick):
+     from 421 px the art has its own 32 px column with a 12 px gap, and the
+     name and Best line share one left edge beside it. On a phone the column
+     doesn't fit, so the art stands above the name with an 8 px gap, on the
+     same left edge. */
+  .log th.lift.has-art {
+    position: relative;
+    padding-left: calc(0.6rem + 32px + 0.75rem);
+  }
+  .log th.lift a.ex-link :global(.ex-art) {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.6rem;
+  }
+  .log th.lift a.ex-link .nm {
+    line-height: 32px;
+  }
+  @media (max-width: 420px) {
+    .log th.lift.has-art {
+      padding-left: 0.6rem;
+    }
+    .log th.lift a.ex-link :global(.ex-art) {
+      position: relative;
+      top: auto;
+      left: auto;
+      display: block;
+      margin: 0 0 0.5rem;
+    }
+    .log th.lift a.ex-link .nm {
+      line-height: 1.15;
+    }
+  }
+  .log th.lift a:hover {
+    color: var(--deep);
+  }
+  /* the arrow follows the last word if a long day wraps; only the arrow, so
+     it never reaches the art's own layers (which made the art touch the name) */
+  .log th.lift a :global(svg.go) {
+    margin-left: 0.5rem;
+    vertical-align: -1px;
+  }
   .log .best {
     display: block;
     margin-top: 0.25rem;
@@ -72,16 +177,33 @@ const cell = (s: LoggedSet) => {
   .log .best span {
     white-space: nowrap;
   }
-  .log .set {
+  .log :global(.set) {
     width: 1%;
     text-align: right;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
   }
-  .log .pace {
+  .log :global(.pace) {
     display: block;
     font-size: 21px;
     color: var(--muted);
+  }
+  /* a warm-up's figures step back, so working sets read first */
+  .log tr.warm :global(.set) {
+    color: var(--muted);
+  }
+  .log tr.note td {
+    padding-top: 0.25rem;
+    font-size: 21px;
+    line-height: 1.2;
+    color: var(--muted);
+    border-top-style: dashed;
+    overflow-wrap: anywhere;
+  }
+  .log tr.note :global(svg) {
+    margin-right: 0.5rem;
+    vertical-align: -1px;
+    color: var(--ink);
   }
   .log tbody tr > * {
     background: var(--card);

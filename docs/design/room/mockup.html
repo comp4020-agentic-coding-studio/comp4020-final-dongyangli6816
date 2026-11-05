@@ -321,9 +321,10 @@
     background-color: var(--night);
     background-image: conic-gradient(var(--floor) 25%, transparent 0 50%, var(--floor) 0 75%, transparent 0);
   }
-  /* the gym needs room for two columns at 900 px and up */
+  /* the gym needs room for two columns at 900 px and up, and for the map at
+     2x (640 px) beside the sheet (room spec, Departure 19) */
   body.night main {
-    max-width: 64rem;
+    max-width: 72rem;
   }
   .night h2 {
     color: var(--leaf);
@@ -521,6 +522,95 @@
     color: var(--ink);
     background: var(--leaf);
     border: 2px solid var(--ink);
+  }
+  /* The logbook's tally (history, summary, exercise page, home): boxed
+     figures, 2 px ink lines from the gaps, so any count of boxes, in any
+     arrangement, is ruled the same way. WorkoutTally.astro adds .big. */
+  dl.tally {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: auto;
+    gap: 2px;
+    margin: 0 0 1rem;
+    background: var(--ink);
+    border: 2px solid var(--ink);
+  }
+  dl.tally div {
+    padding: 0.25rem 0.5rem;
+    background: var(--paper);
+  }
+  dl.tally dt {
+    font: 8px/1.4 var(--display);
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  dl.tally dd {
+    margin: 0;
+    font-size: 28px;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  @media (max-width: 420px) {
+    /* four boxes don't fit a 360 px card in one row: 2 × 2 */
+    dl.tally:has(> :nth-child(4)) {
+      grid-auto-flow: row;
+      grid-template-columns: auto auto;
+    }
+  }
+
+  /* text for screen readers only */
+  .vh {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  /* A set's type and records, on every page that writes a set
+     (docs/design/history/spec.md, "Shared marks"). Always a word too. */
+  .badge.warmup,
+  .badge.failure,
+  .badge.record {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--px);
+    margin: 0;
+    white-space: nowrap;
+  }
+  .badge.warmup {
+    background: transparent;
+    border-style: dashed;
+  }
+  .badge.failure {
+    background: transparent;
+  }
+  .badge.record {
+    color: var(--leaf);
+    background: var(--ink);
+  }
+  /* on Night (the room's sheet) the same marks, readable on the dark panel
+     (docs/design/history/spec.md, "Shared marks") */
+  .night .badge.warmup,
+  .night .badge.failure {
+    color: var(--paper);
+    border-color: var(--edge);
+  }
+  .night .badge.record {
+    border-color: var(--leaf);
+  }
+  .marks {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: var(--px) 0.5rem;
+    margin: var(--px) 0 0;
+    font-size: 21px;
+    line-height: 1.1;
+    white-space: normal;
+    text-align: right;
   }
 
   @media (max-width: 420px) {
@@ -2313,7 +2403,6 @@
         color: var(--dim);
       }
 
-
       /* ---------- the gym worker (GYM-6; spec.md, "Delivery, Nov 4") ----------
          One layer over the floor and stations, under every person, drawn by
          the script for a run and removed after it. It is decoration: no
@@ -2424,6 +2513,461 @@
         to {
           clip-path: inset(0);
         }
+      }
+
+      /* ===== Logbook refactor, Nov 4 (spec.md "Logbook refactor, Nov 4") =====
+         The sheet and This workout. Everything new sits above or below the
+         numbers; nothing here touches .dock or its button (LB-0.1). */
+
+      /* shared: logbook marks on Night. Layout.astro's .badge.warmup,
+         .failure, .record and .marks, with Night's colours: the two type
+         marks paper on an --edge outline, the record leaf on ink with a leaf
+         edge so it holds on --panel. Proposed for Layout.astro's Night block */
+      .night .badge.warmup,
+      .night .badge.failure {
+        color: var(--paper);
+        border-color: var(--edge);
+      }
+      .night .badge.record {
+        border-color: var(--leaf);
+      }
+      .night .rec-for {
+        color: var(--leaf);
+      }
+
+      /* Last time, in full (LB-1): a page of the logbook in the sheet. One
+         line per set, working sets numbered, warm-ups W and dimmed; the set
+         to match lit in leaf with the menu's cursor */
+      .last-time {
+        margin: 0 0 1rem;
+        padding: 0.25rem 0.5rem 0.5rem;
+        background: var(--night);
+        border: 2px solid var(--edge);
+      }
+      .last-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+        margin: 0 0 var(--px);
+        color: var(--dim);
+      }
+      .last-head b {
+        font-weight: 400;
+        color: var(--paper);
+      }
+      .last-sets {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font-size: 24px;
+        line-height: 1.15;
+        font-variant-numeric: tabular-nums;
+      }
+      .last-sets li {
+        display: grid;
+        grid-template-columns: 1.5rem minmax(0, 1fr);
+        align-items: center;
+        gap: 0 0.5rem;
+        margin: 0 -0.5rem;
+        padding: 2px 0.5rem;
+      }
+      .last-sets .n {
+        color: var(--dim);
+        text-align: right;
+      }
+      .last-sets .what {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--px) 0.5rem;
+      }
+      .last-sets .marks {
+        margin: 0;
+        justify-content: flex-start;
+        font-size: 20px;
+      }
+      .last-sets .warm [data-set] {
+        color: var(--dim);
+      }
+      .last-sets .match,
+      .last-sets .match .n,
+      .last-sets .match .rec-for {
+        color: var(--ink);
+        background: var(--leaf);
+      }
+      .last-sets .match .badge.failure {
+        color: var(--ink);
+        border-color: var(--ink);
+      }
+      .last-note {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+        margin: var(--px) 0 0;
+        padding-top: var(--px);
+        color: var(--dim);
+        border-top: 2px dashed var(--edge);
+        overflow-wrap: anywhere;
+      }
+      .last-note svg {
+        flex: none;
+        color: var(--leaf);
+      }
+
+      /* the set's type (LB-2.1): three radio chips under the numbers, drawn
+         like the marks they make; the chosen one lit, with a pixel bullet */
+      .set-type {
+        display: flex;
+        gap: 0.5rem;
+        min-width: 0;
+        margin: 1rem 0 0;
+        padding: 0;
+        border: 0;
+      }
+      .night .set-type label {
+        position: relative;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        min-height: 48px;
+        margin: 0;
+        padding: 0 0.25rem;
+        font: 8px/1 var(--display);
+        text-transform: uppercase;
+        color: var(--paper);
+        background: var(--night);
+        border: 2px solid var(--edge);
+        cursor: pointer;
+      }
+      .set-type .t-warmup {
+        border-style: dashed;
+      }
+      .set-type input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        margin: 0;
+        opacity: 0;
+        cursor: pointer;
+      }
+      .night .set-type label:has(:checked) {
+        color: var(--ink);
+        background: var(--leaf);
+        border-color: var(--ink);
+      }
+      .set-type label:has(:checked)::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        background: currentColor;
+      }
+      .set-type label:has(:focus-visible) {
+        outline: var(--px) solid var(--focus);
+        outline-offset: var(--px);
+      }
+      .night .set-type:disabled label {
+        color: var(--dim);
+        cursor: progress;
+      }
+
+      /* RPE (LB-2.13): optional, one compact row; "–" is none */
+      .set-rpe {
+        display: grid;
+        grid-template-columns: auto 6.5rem minmax(0, 1fr);
+        align-items: center;
+        gap: 0 0.75rem;
+        margin: 0.75rem 0 0;
+      }
+      .set-rpe label {
+        margin: 0;
+      }
+      .set-rpe .hint {
+        margin: 0;
+        font-size: 20px;
+        line-height: 1.1;
+      }
+
+      /* the exercise's note (LB-2.19): one folded line once the lift has a
+         set; the note's text when there is one, "Add a note" when not */
+      .ex-note {
+        margin: 0.75rem 0 0;
+      }
+      .ex-note > summary {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-height: 44px;
+        list-style: none;
+        cursor: pointer;
+        overflow-wrap: anywhere;
+      }
+      .ex-note > summary::-webkit-details-marker {
+        display: none;
+      }
+      .ex-note > summary svg {
+        flex: none;
+        color: var(--leaf);
+      }
+      .ex-note .add {
+        color: var(--leaf);
+        text-decoration: underline;
+        text-decoration-thickness: 2px;
+        text-underline-offset: 3px;
+      }
+      .ex-note .if-open,
+      .ex-note[open] .if-closed {
+        display: none;
+      }
+      .ex-note[open] .if-open {
+        display: inline;
+        color: var(--dim);
+      }
+      .night .ex-note textarea {
+        display: block;
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        font: 22px/1.2 var(--body);
+        color: var(--paper);
+        background: var(--night);
+        border: var(--px) solid var(--edge);
+        border-radius: 0;
+        box-shadow: inset var(--px) var(--px) 0 #000;
+        resize: vertical;
+      }
+      .ex-note textarea[aria-invalid="true"] {
+        box-shadow: inset var(--px) var(--px) 0 var(--error);
+      }
+      .note-save {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem 0.75rem;
+        margin: 0.5rem 0 0;
+      }
+      .note-save .hint,
+      .note-save .error {
+        margin: 0;
+      }
+
+      /* a record on the rest block, for the whole rest */
+      .rest-rec {
+        justify-content: flex-start;
+        margin: var(--px) 0 0;
+      }
+      /* the stamp with marks: a second line, growing upward from where the
+         one-line stamp sits, so it never covers the dock's button */
+      .stamp:has(.marks) {
+        flex-wrap: wrap;
+        transform: translateY(calc(-100% + 14px));
+      }
+      .stamp .marks {
+        flex-basis: 100%;
+        justify-content: flex-start;
+        margin: 0 0 2px 20px;
+        font-size: 20px;
+      }
+
+      /* plans: the offer (Idle, or a lift chosen and not editing) */
+      .plan-offer {
+        margin: 1rem 0 0;
+        padding-top: 0.5rem;
+        border-top: 2px dashed var(--edge);
+      }
+      .plan-offer > summary,
+      .plan > summary {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-height: 44px;
+        list-style: none;
+        cursor: pointer;
+      }
+      .plan-offer > summary::-webkit-details-marker,
+      .plan > summary::-webkit-details-marker {
+        display: none;
+      }
+      .plan-offer .badge,
+      .plan > summary .badge {
+        margin: 0;
+      }
+      .plan-offer .add {
+        color: var(--leaf);
+        text-decoration: underline;
+        text-decoration-thickness: 2px;
+        text-underline-offset: 3px;
+      }
+      .plan-offer[open] .add {
+        color: var(--dim);
+        text-decoration: none;
+      }
+      .plan-load label {
+        margin: 0.25rem 0;
+      }
+      .plan-pick {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0;
+      }
+      .plan-pick select {
+        flex: 1;
+        min-width: 0;
+      }
+      .plan-load .hint {
+        margin: 0.5rem 0 0;
+      }
+
+      /* the loaded plan (LB-3.13): a box on night, like the picker; its
+         lifts are Choose buttons, Up next lit with the menu's cursor */
+      .plan {
+        margin: 0 0 1rem;
+        background: var(--night);
+        border: 2px solid var(--edge);
+      }
+      .plan > summary {
+        padding: 0 0.5rem;
+      }
+      .plan-name {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .plan-sum {
+        margin-left: auto;
+        padding-right: 1.5rem;
+        color: var(--dim);
+        white-space: nowrap;
+        background: linear-gradient(45deg, transparent 50%, var(--paper) 50%) calc(100% - 12px) 50% / 8px 8px no-repeat,
+          linear-gradient(135deg, var(--paper) 50%, transparent 50%) calc(100% - 4px) 50% / 8px 8px no-repeat;
+      }
+      .plan-items {
+        display: grid;
+        gap: var(--px);
+        margin: 0;
+        padding: 0 0.5rem 0.5rem;
+        list-style: none;
+      }
+      .night .plan-items button {
+        display: grid;
+        grid-template-columns: 1rem minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 0.5rem;
+        width: 100%;
+        min-height: 48px;
+        margin: 0;
+        padding: 0.25rem 0.5rem 0.25rem 0.25rem;
+        font: inherit;
+        line-height: 1.1;
+        text-align: left;
+        text-transform: none;
+        color: var(--paper);
+        background: var(--panel);
+        border: 2px solid var(--edge);
+        box-shadow: none;
+        transform: none;
+      }
+      .night .plan-items button:hover {
+        background: var(--floor);
+      }
+      .plan-items .cur {
+        visibility: hidden;
+      }
+      .night .plan-items button.hot {
+        color: var(--ink);
+        background: var(--leaf);
+        border-color: var(--ink);
+      }
+      .plan-items .hot .cur {
+        visibility: visible;
+      }
+      /* the lift you're on: a paper edge */
+      .night .plan-items button[aria-current="true"] {
+        border-color: var(--paper);
+      }
+      .plan-items .full .ex {
+        color: var(--dim);
+      }
+      .plan-items .badge.up {
+        margin-left: 0.25rem;
+        color: var(--leaf);
+        background: var(--ink);
+      }
+      .plan-items .count {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+      /* planned sets as boxes, the room's .pips shape: filled when done,
+         an outline past the plan */
+      .planned {
+        display: flex;
+        gap: var(--px);
+      }
+      .planned i {
+        width: calc(var(--px) * 2);
+        height: calc(var(--px) * 3);
+        background: var(--night);
+        box-shadow: inset 0 0 0 2px var(--edge);
+      }
+      .planned i.done {
+        background: var(--leaf);
+        box-shadow: none;
+      }
+      .planned i.done.over {
+        background: transparent;
+        box-shadow: inset 0 0 0 2px var(--leaf);
+      }
+      .hot .planned i {
+        background: var(--leaf);
+        box-shadow: inset 0 0 0 2px var(--ink);
+      }
+      .hot .planned i.done {
+        background: var(--ink);
+      }
+      .plan-done {
+        margin: 0 0.5rem 0.5rem;
+      }
+      .plan-tools {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        border-top: 2px dashed var(--edge);
+      }
+      .plan-tools form {
+        margin: 0;
+      }
+      /* another plan and Swap on one row; Clear wraps under them on a phone */
+      .plan-tools .plan-pick {
+        flex: 1 1 15rem;
+      }
+
+      /* This workout: the logbook's marks, warm-up rows and the note row */
+      .log td.set .marks {
+        font-size: 20px;
+      }
+      .log tr.warm [data-set] {
+        color: var(--dim);
+      }
+      .log tr.note td {
+        padding-top: 0.25rem;
+        font-size: 20px;
+        line-height: 1.2;
+        color: var(--dim);
+        border-top-style: dashed;
+        overflow-wrap: anywhere;
+      }
+      .log tr.note svg {
+        margin-right: 0.5rem;
+        vertical-align: -1px;
+        color: var(--leaf);
       }
     </style>
     <style id="mockup">
@@ -2851,6 +3395,13 @@
         --av-shirt-2: #6650c8;
       }
 
+      /* logbook states: mockup only */
+      .lb-solo .panel {
+        max-width: 40rem;
+      }
+      .lb-intro {
+        padding-bottom: 0;
+      }
     </style>
   </head>
   <body class="night"><svg width="0" height="0" style="position: absolute" aria-hidden="true"><defs></defs></svg>
@@ -6520,14 +7071,6 @@
 
 
 
-
-
-
-
-
-
-
-
       <!-- ===== the gym worker: delivery and swap (4 Nov; criteria/delivery.md; spec.md "Delivery, Nov 4") ===== -->
       <!-- state: delivery (storyboard) -->
       <section class="state">
@@ -6614,6 +7157,1082 @@
           <figure class="art wk-art"><div class="art-tile" style="height: 64px"><svg viewBox="0 0 32 32" style="height: 64px" aria-hidden="true"><use href="/sprites.svg#eq-treadmill"/></svg></div><figcaption>treadmill, in place</figcaption></figure><figure class="art wk-art"><div class="art-tile" style="height: 128px"><svg viewBox="0 -32 32 64" style="height: 128px" aria-hidden="true"><g clip-path="url(#wk-clip-treadmill)"><use href="/sprites.svg#eq-treadmill" y="-27" width="32" height="32"/></g><use href="/sprites.svg#wk-carry1" width="32" height="32"/></svg></div><figcaption>treadmill, carried</figcaption></figure><figure class="art wk-art"><div class="art-tile" style="height: 64px"><svg viewBox="0 0 32 32" style="height: 64px" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench"/></svg></div><figcaption>flat bench, in place</figcaption></figure><figure class="art wk-art"><div class="art-tile" style="height: 128px"><svg viewBox="0 -32 32 64" style="height: 128px" aria-hidden="true"><g clip-path="url(#wk-clip-flat-bench)"><use href="/sprites.svg#eq-flat-bench" y="-27" width="32" height="32"/></g><use href="/sprites.svg#wk-carry1" width="32" height="32"/></svg></div><figcaption>flat bench, carried</figcaption></figure><figure class="art wk-art"><div class="art-tile" style="height: 64px"><svg viewBox="0 0 32 32" style="height: 64px" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack"/></svg></div><figcaption>squat rack, in place</figcaption></figure><figure class="art wk-art"><div class="art-tile" style="height: 128px"><svg viewBox="0 -32 32 64" style="height: 128px" aria-hidden="true"><g clip-path="url(#wk-clip-squat-rack)"><use href="/sprites.svg#eq-squat-rack" y="-27" width="32" height="32"/></g><use href="/sprites.svg#wk-carry1" width="32" height="32"/></svg></div><figcaption>squat rack, carried</figcaption></figure><figure class="art wk-art"><div class="art-tile" style="height: 64px"><svg viewBox="0 0 32 32" style="height: 64px" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack"/></svg></div><figcaption>dumbbell rack, in place</figcaption></figure><figure class="art wk-art"><div class="art-tile" style="height: 128px"><svg viewBox="0 -32 32 64" style="height: 128px" aria-hidden="true"><g clip-path="url(#wk-clip-dumbbell-rack)"><use href="/sprites.svg#eq-dumbbell-rack" y="-27" width="32" height="32"/></g><use href="/sprites.svg#wk-carry1" width="32" height="32"/></svg></div><figcaption>dumbbell rack, carried</figcaption></figure><figure class="art wk-art"><div class="art-tile" style="height: 64px"><svg viewBox="0 0 32 32" style="height: 64px" aria-hidden="true"><use href="/sprites.svg#eq-lifting-platform"/></svg></div><figcaption>lifting platform, in place</figcaption></figure><figure class="art wk-art"><div class="art-tile" style="height: 128px"><svg viewBox="0 -32 32 64" style="height: 128px" aria-hidden="true"><g clip-path="url(#wk-clip-lifting-platform)"><use href="/sprites.svg#eq-lifting-platform" y="-27" width="32" height="32"/></g><use href="/sprites.svg#wk-carry1" width="32" height="32"/></svg></div><figcaption>lifting platform, carried</figcaption></figure><figure class="art wk-art"><div class="art-tile" style="height: 64px"><svg viewBox="0 0 32 32" style="height: 64px" aria-hidden="true"><use href="/sprites.svg#eq-pull-up-bar"/></svg></div><figcaption>pull-up bar, in place</figcaption></figure><figure class="art wk-art"><div class="art-tile" style="height: 128px"><svg viewBox="0 -32 32 64" style="height: 128px" aria-hidden="true"><g clip-path="url(#wk-clip-pull-up-bar)"><use href="/sprites.svg#eq-pull-up-bar" y="-27" width="32" height="32"/></g><use href="/sprites.svg#wk-carry1" width="32" height="32"/></svg></div><figcaption>pull-up bar, carried</figcaption></figure><figure class="art wk-art"><div class="art-tile" style="height: 64px"><svg viewBox="0 0 32 32" style="height: 64px" aria-hidden="true"><use href="/sprites.svg#eq-cable-machine"/></svg></div><figcaption>cable machine, in place</figcaption></figure><figure class="art wk-art"><div class="art-tile" style="height: 128px"><svg viewBox="0 -32 32 64" style="height: 128px" aria-hidden="true"><g clip-path="url(#wk-clip-cable-machine)"><use href="/sprites.svg#eq-cable-machine" y="-27" width="32" height="32"/></g><use href="/sprites.svg#wk-carry1" width="32" height="32"/></svg></div><figcaption>cable machine, carried</figcaption></figure><figure class="art wk-art"><div class="art-tile" style="height: 64px"><svg viewBox="0 0 32 32" style="height: 64px" aria-hidden="true"><use href="/sprites.svg#eq-exercise-mat"/></svg></div><figcaption>exercise mat, in place</figcaption></figure><figure class="art wk-art"><div class="art-tile" style="height: 128px"><svg viewBox="0 -32 32 64" style="height: 128px" aria-hidden="true"><g clip-path="url(#wk-clip-exercise-mat)"><use href="/sprites.svg#eq-exercise-mat" y="-27" width="32" height="32"/></g><use href="/sprites.svg#wk-carry1" width="32" height="32"/></svg></div><figcaption>exercise mat, carried</figcaption></figure>
         </div>
       </section>
+
+      <!-- ===== Logbook refactor, Nov 4 (docs/product/criteria/logbook.md; spec.md "Logbook refactor, Nov 4"): the sheet and This workout ===== -->
+
+        <!-- state: lb intro -->
+        <section class="state lb-intro">
+          <p class="state-label">Logbook refactor · Nov 4 · the sheet gains Last time in full, set types, RPE, an exercise note and a loaded plan; This workout gains the shared marks. The dock's button keeps its box, place and label in every state below (LB-0.1). Priya (you) on flat bench 2, unless a label says otherwise</p>
+          
+        </section>
+
+      <div class="solos">
+
+        <!-- state: lb lifting, first set -->
+        <section class="state solo">
+          <p class="state-label">Lifting · first bench set today: Last time in full with its day, the warm-up marked W, set 1 lit as the one to match, last time's note. Under the numbers, the type (Normal) and an optional RPE. No set yet, so no note field (LB-2.19). No plan loaded: Load a plan, folded, at the foot</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-lb1">
+            <span class="chip state-lifting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-dumbbell" /></svg>Lifting</span>
+            <p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>8:12</time></p>
+            <h2 class="vh" id="sheet-title-lb1">Log a set</h2>
+            <details class="switch">
+              <summary><span class="lift">Bench press</span><span class="set-no">Set 1</span><span class="change">Change</span></summary>
+            </details>
+            <p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Flat bench 2</b></span></p>
+            <form method="post" class="set-form" id="set-log-lb1">
+              <input type="hidden" name="exercise_id" value="3" />
+              <div class="last-time" data-last>
+                <p class="last-head">Last time <b>Tue 27 Oct</b></p>
+                <ol class="last-sets"><li class="warm"><span class="n" aria-hidden="true">W</span><span class="what"><span data-set data-type="warmup">40 kg × 10</span><span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></span></li><li class="match"><span class="n" aria-hidden="true">▶</span><span class="what"><span class="vh">Set 1, the one to match: </span><span data-set data-match>60 kg × 8</span></span></li><li><span class="n" aria-hidden="true">2</span><span class="what"><span class="vh">Set 2: </span><span data-set>62.5 kg × 8<span class="rpe" aria-hidden="true"> @ 8</span></span><span class="vh">, RPE 8</span></span></li><li><span class="n" aria-hidden="true">3</span><span class="what"><span class="vh">Set 3: </span><span data-set data-type="failure">62.5 kg × 7<span class="rpe" aria-hidden="true"> @ 9.5</span></span><span class="vh">, RPE 9.5</span><span class="marks"><span class="badge failure"><span class="vh">Set type: </span>Failure</span></span></span></li></ol>
+                <p class="last-note"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="vh">Note: </span><span data-note>Seat on 4. Grip one finger wider.</span></p>
+              </div>
+              <div class="big-pair">
+                <div class="big">
+                  <label for="weight_kg-lb1">Weight</label>
+                  <span class="field"><input id="weight_kg-lb1" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="62.5" required /><span class="unit" aria-hidden="true">kg</span></span>
+                </div>
+                <span class="times" aria-hidden="true">×</span>
+                <div class="big">
+                  <label for="reps-lb1">Reps</label>
+                  <span class="field"><input id="reps-lb1" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="7" required /></span>
+                </div>
+              </div>
+              <fieldset class="set-type">
+                <legend class="vh">Set type</legend>
+                <label><input type="radio" name="set_type" value="normal" checked />Normal</label>
+                <label class="t-warmup"><input type="radio" name="set_type" value="warmup" />Warm-up</label>
+                <label><input type="radio" name="set_type" value="failure" />Failure</label>
+              </fieldset>
+              <div class="set-rpe">
+                <label for="rpe-lb1">RPE</label>
+                <select id="rpe-lb1" name="rpe" aria-describedby="rpe-hint-lb1"><option value="" selected>–</option><option>10</option><option>9.5</option><option>9</option><option>8.5</option><option>8</option><option>7.5</option><option>7</option><option>6.5</option><option>6</option><option>5.5</option><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option><option>2.5</option><option>2</option><option>1.5</option><option>1</option></select>
+                <p class="hint" id="rpe-hint-lb1">Optional. 10 is nothing left</p>
+              </div>
+            </form>
+            <details class="plan-offer">
+              <summary><span class="badge">Plan</span><span class="add">Load a plan</span></summary>
+              <form method="post" class="plan-load">
+                <input type="hidden" name="action" value="plan-load" />
+                <label for="plan-lb1">Your plans</label>
+                <div class="plan-pick">
+                  <select id="plan-lb1" name="plan_id"><option value="12">Push day</option><option value="9">Leg day</option><option value="7">Pull day</option></select>
+                  <button type="submit" class="button secondary tool">Load</button>
+                </div>
+                <p class="hint">Loading chooses nothing. You pick the lift.</p>
+              </form>
+            </details>
+            <div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><button type="submit" form="set-log-lb1" class="wide">Done</button></div>
+          </section>
+        </section>
+
+
+        <!-- state: lb resting, last time stays -->
+        <section class="state solo">
+          <p class="state-label">Resting · Done on set 2 (62.5 × 8 @ 8): Last time stays through the rest (D3) and now lights set 3. The stamp carries the RPE. The type is back to Normal and the RPE empty (D7). There's a set now, so the note is offered: one folded line</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-lb2">
+            <span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span>
+            <p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>14:40</time></p>
+            <h2 class="vh" id="sheet-title-lb2">Log a set</h2>
+            <div class="rest">
+              <div class="rest-top">
+                <p class="timer" role="timer" aria-label="Rest left">1:48</p>
+                <p class="rest-what"><span>of <b>2:30</b> rest</span><span>after <b>62.5 kg × 8 @ 8</b></span></p>
+              </div>
+              <form method="post" class="rest-adjust">
+                <input type="hidden" name="action" value="rest" />
+                <button type="submit" name="delta" value="-15" class="button secondary tool" aria-label="15 seconds less rest">-15 s</button>
+                <button type="submit" name="delta" value="15" class="button secondary tool" aria-label="15 seconds more rest">+15 s</button>
+              </form>
+            </div>
+            <details class="switch">
+              <summary><span class="lift">Bench press</span><span class="set-no">Set 3</span><span class="change">Change</span></summary>
+            </details>
+            <p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Flat bench 2</b></span></p>
+            <form method="post" class="set-form" id="set-log-lb2">
+              <input type="hidden" name="exercise_id" value="3" />
+              <div class="last-time" data-last>
+                <p class="last-head">Last time <b>Tue 27 Oct</b></p>
+                <ol class="last-sets"><li class="warm"><span class="n" aria-hidden="true">W</span><span class="what"><span data-set data-type="warmup">40 kg × 10</span><span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></span></li><li><span class="n" aria-hidden="true">1</span><span class="what"><span class="vh">Set 1: </span><span data-set>60 kg × 8</span></span></li><li><span class="n" aria-hidden="true">2</span><span class="what"><span class="vh">Set 2: </span><span data-set>62.5 kg × 8<span class="rpe" aria-hidden="true"> @ 8</span></span><span class="vh">, RPE 8</span></span></li><li class="match"><span class="n" aria-hidden="true">▶</span><span class="what"><span class="vh">Set 3, the one to match: </span><span data-set data-type="failure" data-match>62.5 kg × 7<span class="rpe" aria-hidden="true"> @ 9.5</span></span><span class="vh">, RPE 9.5</span><span class="marks"><span class="badge failure"><span class="vh">Set type: </span>Failure</span></span></span></li></ol>
+                <p class="last-note"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="vh">Note: </span><span data-note>Seat on 4. Grip one finger wider.</span></p>
+              </div>
+              <div class="big-pair">
+                <div class="big">
+                  <label for="weight_kg-lb2">Weight</label>
+                  <span class="field"><input id="weight_kg-lb2" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="62.5" required /><span class="unit" aria-hidden="true">kg</span></span>
+                </div>
+                <span class="times" aria-hidden="true">×</span>
+                <div class="big">
+                  <label for="reps-lb2">Reps</label>
+                  <span class="field"><input id="reps-lb2" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="8" required /></span>
+                </div>
+              </div>
+              <fieldset class="set-type">
+                <legend class="vh">Set type</legend>
+                <label><input type="radio" name="set_type" value="normal" checked />Normal</label>
+                <label class="t-warmup"><input type="radio" name="set_type" value="warmup" />Warm-up</label>
+                <label><input type="radio" name="set_type" value="failure" />Failure</label>
+              </fieldset>
+              <div class="set-rpe">
+                <label for="rpe-lb2">RPE</label>
+                <select id="rpe-lb2" name="rpe" aria-describedby="rpe-hint-lb2"><option value="" selected>–</option><option>10</option><option>9.5</option><option>9</option><option>8.5</option><option>8</option><option>7.5</option><option>7</option><option>6.5</option><option>6</option><option>5.5</option><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option><option>2.5</option><option>2</option><option>1.5</option><option>1</option></select>
+                <p class="hint" id="rpe-hint-lb2">Optional. 10 is nothing left</p>
+              </div>
+              <details class="ex-note">
+                <summary><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="if-closed add">Add a note</span><span class="if-open">Note on this lift</span></summary>
+                <label class="vh" for="note-lb2">Note on this lift</label>
+                <textarea id="note-lb2" name="note" maxlength="140" rows="2"></textarea>
+                
+                <div class="note-save">
+                  <button type="submit" form="set-log-lb2" name="action" value="note" formnovalidate class="button secondary tool">Save note</button>
+                  <p class="hint">It also saves with your next set.</p>
+                </div>
+              </details>
+            </form>
+            <details class="plan-offer">
+              <summary><span class="badge">Plan</span><span class="add">Load a plan</span></summary>
+              <form method="post" class="plan-load">
+                <input type="hidden" name="action" value="plan-load" />
+                <label for="plan-lb2">Your plans</label>
+                <div class="plan-pick">
+                  <select id="plan-lb2" name="plan_id"><option value="12">Push day</option><option value="9">Leg day</option><option value="7">Pull day</option></select>
+                  <button type="submit" class="button secondary tool">Load</button>
+                </div>
+                <p class="hint">Loading chooses nothing. You pick the lift.</p>
+              </form>
+            </details>
+            <div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><p class="stamp"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-tick" /></svg><span>Set 2 logged: <b data-set>62.5 kg × 8<span class="rpe" aria-hidden="true"> @ 8</span></b><span class="vh">, RPE 8</span></span></p><p class="dock-timer" aria-hidden="true" hidden>1:48</p><button type="submit" form="set-log-lb2" name="action" value="start" class="wide">Start set</button></div>
+          </section>
+        </section>
+
+
+        <!-- state: lb warm-up chosen -->
+        <section class="state solo">
+          <p class="state-label">Lifting · Back squat with Warm-up chosen (the chip lit, dashed like the mark it makes). One warm-up is in, so the lift row still says Set 1: warm-ups aren't numbered (D8). Last time shows two warm-ups, a failure set and a record, each in words</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-lb3">
+            <span class="chip state-lifting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-dumbbell" /></svg>Lifting</span>
+            <p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>22:05</time></p>
+            <h2 class="vh" id="sheet-title-lb3">Log a set</h2>
+            <details class="switch">
+              <summary><span class="lift">Back squat</span><span class="set-no">Set 1</span><span class="change">Change</span></summary>
+            </details>
+            <p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Squat rack 3</b></span></p>
+            <form method="post" class="set-form" id="set-log-lb3">
+              <input type="hidden" name="exercise_id" value="5" />
+              <div class="last-time" data-last>
+                <p class="last-head">Last time <b>Thu 29 Oct</b></p>
+                <ol class="last-sets"><li class="warm"><span class="n" aria-hidden="true">W</span><span class="what"><span data-set data-type="warmup">60 kg × 5</span><span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></span></li><li class="warm"><span class="n" aria-hidden="true">W</span><span class="what"><span data-set data-type="warmup">80 kg × 3</span><span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></span></li><li class="match"><span class="n" aria-hidden="true">▶</span><span class="what"><span class="vh">Set 1, the one to match: </span><span data-set data-match>100 kg × 5</span></span></li><li><span class="n" aria-hidden="true">2</span><span class="what"><span class="vh">Set 2: </span><span data-set>100 kg × 5<span class="rpe" aria-hidden="true"> @ 8</span></span><span class="vh">, RPE 8</span></span></li><li><span class="n" aria-hidden="true">3</span><span class="what"><span class="vh">Set 3: </span><span data-set data-type="failure" data-records="heaviest">102.5 kg × 4<span class="rpe" aria-hidden="true"> @ 10</span></span><span class="vh">, RPE 10</span><span class="marks"><span class="badge failure"><span class="vh">Set type: </span>Failure</span> <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span> <span class="rec-for">heaviest</span></span></span></li></ol>
+              </div>
+              <div class="big-pair">
+                <div class="big">
+                  <label for="weight_kg-lb3">Weight</label>
+                  <span class="field"><input id="weight_kg-lb3" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="80" required /><span class="unit" aria-hidden="true">kg</span></span>
+                </div>
+                <span class="times" aria-hidden="true">×</span>
+                <div class="big">
+                  <label for="reps-lb3">Reps</label>
+                  <span class="field"><input id="reps-lb3" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="3" required /></span>
+                </div>
+              </div>
+              <fieldset class="set-type">
+                <legend class="vh">Set type</legend>
+                <label><input type="radio" name="set_type" value="normal" />Normal</label>
+                <label class="t-warmup"><input type="radio" name="set_type" value="warmup" checked />Warm-up</label>
+                <label><input type="radio" name="set_type" value="failure" />Failure</label>
+              </fieldset>
+              <div class="set-rpe">
+                <label for="rpe-lb3">RPE</label>
+                <select id="rpe-lb3" name="rpe" aria-describedby="rpe-hint-lb3"><option value="" selected>–</option><option>10</option><option>9.5</option><option>9</option><option>8.5</option><option>8</option><option>7.5</option><option>7</option><option>6.5</option><option>6</option><option>5.5</option><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option><option>2.5</option><option>2</option><option>1.5</option><option>1</option></select>
+                <p class="hint" id="rpe-hint-lb3">Optional. 10 is nothing left</p>
+              </div>
+              <details class="ex-note">
+                <summary><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="if-closed add">Add a note</span><span class="if-open">Note on this lift</span></summary>
+                <label class="vh" for="note-lb3">Note on this lift</label>
+                <textarea id="note-lb3" name="note" maxlength="140" rows="2"></textarea>
+                
+                <div class="note-save">
+                  <button type="submit" form="set-log-lb3" name="action" value="note" formnovalidate class="button secondary tool">Save note</button>
+                  <p class="hint">It also saves with your next set.</p>
+                </div>
+              </details>
+            </form>
+            <div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><button type="submit" form="set-log-lb3" class="wide">Done</button></div>
+          </section>
+        </section>
+
+
+        <!-- state: lb warm-up logged -->
+        <section class="state solo">
+          <p class="state-label">Resting · Done on that warm-up: the stamp says Warm-up logged with its mark (LB-2.11), the rest runs as after any set (LB-2.12), the type is back to Normal and the next set is still Set 1</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-lb4">
+            <span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span>
+            <p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>22:41</time></p>
+            <h2 class="vh" id="sheet-title-lb4">Log a set</h2>
+            <div class="rest">
+              <div class="rest-top">
+                <p class="timer" role="timer" aria-label="Rest left">2:58</p>
+                <p class="rest-what"><span>of <b>3:00</b> rest</span><span>after <b>80 kg × 3</b></span></p>
+              </div>
+              <form method="post" class="rest-adjust">
+                <input type="hidden" name="action" value="rest" />
+                <button type="submit" name="delta" value="-15" class="button secondary tool" aria-label="15 seconds less rest">-15 s</button>
+                <button type="submit" name="delta" value="15" class="button secondary tool" aria-label="15 seconds more rest">+15 s</button>
+              </form>
+            </div>
+            <details class="switch">
+              <summary><span class="lift">Back squat</span><span class="set-no">Set 1</span><span class="change">Change</span></summary>
+            </details>
+            <p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Squat rack 3</b></span></p>
+            <form method="post" class="set-form" id="set-log-lb4">
+              <input type="hidden" name="exercise_id" value="5" />
+              <div class="last-time" data-last>
+                <p class="last-head">Last time <b>Thu 29 Oct</b></p>
+                <ol class="last-sets"><li class="warm"><span class="n" aria-hidden="true">W</span><span class="what"><span data-set data-type="warmup">60 kg × 5</span><span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></span></li><li class="warm"><span class="n" aria-hidden="true">W</span><span class="what"><span data-set data-type="warmup">80 kg × 3</span><span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></span></li><li class="match"><span class="n" aria-hidden="true">▶</span><span class="what"><span class="vh">Set 1, the one to match: </span><span data-set data-match>100 kg × 5</span></span></li><li><span class="n" aria-hidden="true">2</span><span class="what"><span class="vh">Set 2: </span><span data-set>100 kg × 5<span class="rpe" aria-hidden="true"> @ 8</span></span><span class="vh">, RPE 8</span></span></li><li><span class="n" aria-hidden="true">3</span><span class="what"><span class="vh">Set 3: </span><span data-set data-type="failure" data-records="heaviest">102.5 kg × 4<span class="rpe" aria-hidden="true"> @ 10</span></span><span class="vh">, RPE 10</span><span class="marks"><span class="badge failure"><span class="vh">Set type: </span>Failure</span> <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span> <span class="rec-for">heaviest</span></span></span></li></ol>
+              </div>
+              <div class="big-pair">
+                <div class="big">
+                  <label for="weight_kg-lb4">Weight</label>
+                  <span class="field"><input id="weight_kg-lb4" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="80" required /><span class="unit" aria-hidden="true">kg</span></span>
+                </div>
+                <span class="times" aria-hidden="true">×</span>
+                <div class="big">
+                  <label for="reps-lb4">Reps</label>
+                  <span class="field"><input id="reps-lb4" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="3" required /></span>
+                </div>
+              </div>
+              <fieldset class="set-type">
+                <legend class="vh">Set type</legend>
+                <label><input type="radio" name="set_type" value="normal" checked />Normal</label>
+                <label class="t-warmup"><input type="radio" name="set_type" value="warmup" />Warm-up</label>
+                <label><input type="radio" name="set_type" value="failure" />Failure</label>
+              </fieldset>
+              <div class="set-rpe">
+                <label for="rpe-lb4">RPE</label>
+                <select id="rpe-lb4" name="rpe" aria-describedby="rpe-hint-lb4"><option value="" selected>–</option><option>10</option><option>9.5</option><option>9</option><option>8.5</option><option>8</option><option>7.5</option><option>7</option><option>6.5</option><option>6</option><option>5.5</option><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option><option>2.5</option><option>2</option><option>1.5</option><option>1</option></select>
+                <p class="hint" id="rpe-hint-lb4">Optional. 10 is nothing left</p>
+              </div>
+              <details class="ex-note">
+                <summary><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="if-closed add">Add a note</span><span class="if-open">Note on this lift</span></summary>
+                <label class="vh" for="note-lb4">Note on this lift</label>
+                <textarea id="note-lb4" name="note" maxlength="140" rows="2"></textarea>
+                
+                <div class="note-save">
+                  <button type="submit" form="set-log-lb4" name="action" value="note" formnovalidate class="button secondary tool">Save note</button>
+                  <p class="hint">It also saves with your next set.</p>
+                </div>
+              </details>
+            </form>
+            <div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><p class="stamp"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-tick" /></svg><span>Warm-up logged: <b data-set data-type="warmup">80 kg × 3</b></span></p><p class="dock-timer" aria-hidden="true" hidden>1:48</p><button type="submit" form="set-log-lb4" name="action" value="start" class="wide">Start set</button></div>
+          </section>
+        </section>
+
+
+        <!-- state: lb record -->
+        <section class="state solo">
+          <p class="state-label">Resting · Done on set 3, 65 kg × 6 @ 9, a Heaviest record: the stamp grows a second line naming it, and the rest block keeps it for the whole rest. She's done as many working sets as last time had, so nothing is lit (LB-1.7). Her saved note reads in the folded line</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-lb5">
+            <span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span>
+            <p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>19:12</time></p>
+            <h2 class="vh" id="sheet-title-lb5">Log a set</h2>
+            <div class="rest">
+              <div class="rest-top">
+                <p class="timer" role="timer" aria-label="Rest left">2:29</p>
+                <p class="rest-what"><span>of <b>2:30</b> rest</span><span>after <b>65 kg × 6 @ 9</b></span></p>
+              </div>
+              <p class="marks rest-rec"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span> <span class="rec-for">heaviest</span></p>
+              <form method="post" class="rest-adjust">
+                <input type="hidden" name="action" value="rest" />
+                <button type="submit" name="delta" value="-15" class="button secondary tool" aria-label="15 seconds less rest">-15 s</button>
+                <button type="submit" name="delta" value="15" class="button secondary tool" aria-label="15 seconds more rest">+15 s</button>
+              </form>
+            </div>
+            <details class="switch">
+              <summary><span class="lift">Bench press</span><span class="set-no">Set 4</span><span class="change">Change</span></summary>
+            </details>
+            <p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Flat bench 2</b></span></p>
+            <form method="post" class="set-form" id="set-log-lb5">
+              <input type="hidden" name="exercise_id" value="3" />
+              <div class="last-time" data-last>
+                <p class="last-head">Last time <b>Tue 27 Oct</b></p>
+                <ol class="last-sets"><li class="warm"><span class="n" aria-hidden="true">W</span><span class="what"><span data-set data-type="warmup">40 kg × 10</span><span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></span></li><li><span class="n" aria-hidden="true">1</span><span class="what"><span class="vh">Set 1: </span><span data-set>60 kg × 8</span></span></li><li><span class="n" aria-hidden="true">2</span><span class="what"><span class="vh">Set 2: </span><span data-set>62.5 kg × 8<span class="rpe" aria-hidden="true"> @ 8</span></span><span class="vh">, RPE 8</span></span></li><li><span class="n" aria-hidden="true">3</span><span class="what"><span class="vh">Set 3: </span><span data-set data-type="failure">62.5 kg × 7<span class="rpe" aria-hidden="true"> @ 9.5</span></span><span class="vh">, RPE 9.5</span><span class="marks"><span class="badge failure"><span class="vh">Set type: </span>Failure</span></span></span></li></ol>
+                <p class="last-note"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="vh">Note: </span><span data-note>Seat on 4. Grip one finger wider.</span></p>
+              </div>
+              <div class="big-pair">
+                <div class="big">
+                  <label for="weight_kg-lb5">Weight</label>
+                  <span class="field"><input id="weight_kg-lb5" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="65" required /><span class="unit" aria-hidden="true">kg</span></span>
+                </div>
+                <span class="times" aria-hidden="true">×</span>
+                <div class="big">
+                  <label for="reps-lb5">Reps</label>
+                  <span class="field"><input id="reps-lb5" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="6" required /></span>
+                </div>
+              </div>
+              <fieldset class="set-type">
+                <legend class="vh">Set type</legend>
+                <label><input type="radio" name="set_type" value="normal" checked />Normal</label>
+                <label class="t-warmup"><input type="radio" name="set_type" value="warmup" />Warm-up</label>
+                <label><input type="radio" name="set_type" value="failure" />Failure</label>
+              </fieldset>
+              <div class="set-rpe">
+                <label for="rpe-lb5">RPE</label>
+                <select id="rpe-lb5" name="rpe" aria-describedby="rpe-hint-lb5"><option value="" selected>–</option><option>10</option><option>9.5</option><option>9</option><option>8.5</option><option>8</option><option>7.5</option><option>7</option><option>6.5</option><option>6</option><option>5.5</option><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option><option>2.5</option><option>2</option><option>1.5</option><option>1</option></select>
+                <p class="hint" id="rpe-hint-lb5">Optional. 10 is nothing left</p>
+              </div>
+              <details class="ex-note">
+                <summary><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="if-closed"><span class="vh">Note: </span><span data-note>Seat on 4. Felt strong today.</span></span><span class="if-open">Note on this lift</span></summary>
+                <label class="vh" for="note-lb5">Note on this lift</label>
+                <textarea id="note-lb5" name="note" maxlength="140" rows="2">Seat on 4. Felt strong today.</textarea>
+                
+                <div class="note-save">
+                  <button type="submit" form="set-log-lb5" name="action" value="note" formnovalidate class="button secondary tool">Save note</button>
+                  <p class="hint">It also saves with your next set.</p>
+                </div>
+              </details>
+            </form>
+            <div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><p class="stamp marked"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-tick" /></svg><span>Set 3 logged: <b data-set data-records="heaviest">65 kg × 6<span class="rpe" aria-hidden="true"> @ 9</span></b><span class="vh">, RPE 9</span></span><span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span> <span class="rec-for">heaviest</span></span></p><p class="dock-timer" aria-hidden="true" hidden>1:48</p><button type="submit" form="set-log-lb5" name="action" value="start" class="wide">Start set</button></div>
+          </section>
+        </section>
+
+
+        <!-- state: lb note open -->
+        <section class="state solo">
+          <p class="state-label">Resting · the note opened: up to 140 characters, its own Save note, and it also goes with Start set or Done, whichever comes first (LB-2.20). Start set doesn't move</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-lb6">
+            <span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span>
+            <p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>16:02</time></p>
+            <h2 class="vh" id="sheet-title-lb6">Log a set</h2>
+            <div class="rest">
+              <div class="rest-top">
+                <p class="timer" role="timer" aria-label="Rest left">0:52</p>
+                <p class="rest-what"><span>of <b>2:30</b> rest</span><span>after <b>62.5 kg × 7 @ 9.5</b></span></p>
+              </div>
+              <form method="post" class="rest-adjust">
+                <input type="hidden" name="action" value="rest" />
+                <button type="submit" name="delta" value="-15" class="button secondary tool" aria-label="15 seconds less rest">-15 s</button>
+                <button type="submit" name="delta" value="15" class="button secondary tool" aria-label="15 seconds more rest">+15 s</button>
+              </form>
+            </div>
+            <details class="switch">
+              <summary><span class="lift">Bench press</span><span class="set-no">Set 4</span><span class="change">Change</span></summary>
+            </details>
+            <p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Flat bench 2</b></span></p>
+            <form method="post" class="set-form" id="set-log-lb6">
+              <input type="hidden" name="exercise_id" value="3" />
+              <div class="big-pair">
+                <div class="big">
+                  <label for="weight_kg-lb6">Weight</label>
+                  <span class="field"><input id="weight_kg-lb6" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="62.5" required /><span class="unit" aria-hidden="true">kg</span></span>
+                </div>
+                <span class="times" aria-hidden="true">×</span>
+                <div class="big">
+                  <label for="reps-lb6">Reps</label>
+                  <span class="field"><input id="reps-lb6" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="7" required /></span>
+                </div>
+              </div>
+              <fieldset class="set-type">
+                <legend class="vh">Set type</legend>
+                <label><input type="radio" name="set_type" value="normal" checked />Normal</label>
+                <label class="t-warmup"><input type="radio" name="set_type" value="warmup" />Warm-up</label>
+                <label><input type="radio" name="set_type" value="failure" />Failure</label>
+              </fieldset>
+              <div class="set-rpe">
+                <label for="rpe-lb6">RPE</label>
+                <select id="rpe-lb6" name="rpe" aria-describedby="rpe-hint-lb6"><option value="" selected>–</option><option>10</option><option>9.5</option><option>9</option><option>8.5</option><option>8</option><option>7.5</option><option>7</option><option>6.5</option><option>6</option><option>5.5</option><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option><option>2.5</option><option>2</option><option>1.5</option><option>1</option></select>
+                <p class="hint" id="rpe-hint-lb6">Optional. 10 is nothing left</p>
+              </div>
+              <details class="ex-note" open>
+                <summary><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="if-closed add">Add a note</span><span class="if-open">Note on this lift</span></summary>
+                <label class="vh" for="note-lb6">Note on this lift</label>
+                <textarea id="note-lb6" name="note" maxlength="140" rows="2">Left shoulder grumpy, go 2.5 lighter next time</textarea>
+                
+                <div class="note-save">
+                  <button type="submit" form="set-log-lb6" name="action" value="note" formnovalidate class="button secondary tool">Save note</button>
+                  <p class="hint">It also saves with your next set.</p>
+                </div>
+              </details>
+            </form>
+            <div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><p class="dock-timer" aria-hidden="true" hidden>1:48</p><button type="submit" form="set-log-lb6" name="action" value="start" class="wide">Start set</button></div>
+          </section>
+        </section>
+
+
+        <!-- state: lb rpe error -->
+        <section class="state solo">
+          <p class="state-label">Error · Done sent an RPE outside 1 to 10 (only a stale or hand-made form can): no set logged, still Lifting, the fields as she left them, the error under the RPE (LB-2.14). A bad type gets "Set type is Normal, Warm-up or Failure." under the type chips, the same way</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-lb7">
+            <span class="chip state-lifting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-dumbbell" /></svg>Lifting</span>
+            <p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>15:30</time></p>
+            <h2 class="vh" id="sheet-title-lb7">Log a set</h2>
+            <details class="switch">
+              <summary><span class="lift">Bench press</span><span class="set-no">Set 3</span><span class="change">Change</span></summary>
+            </details>
+            <p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Flat bench 2</b></span></p>
+            <form method="post" class="set-form" id="set-log-lb7">
+              <input type="hidden" name="exercise_id" value="3" />
+              <div class="big-pair">
+                <div class="big">
+                  <label for="weight_kg-lb7">Weight</label>
+                  <span class="field"><input id="weight_kg-lb7" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="62.5" required /><span class="unit" aria-hidden="true">kg</span></span>
+                </div>
+                <span class="times" aria-hidden="true">×</span>
+                <div class="big">
+                  <label for="reps-lb7">Reps</label>
+                  <span class="field"><input id="reps-lb7" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="7" required /></span>
+                </div>
+              </div>
+              <fieldset class="set-type">
+                <legend class="vh">Set type</legend>
+                <label><input type="radio" name="set_type" value="normal" />Normal</label>
+                <label class="t-warmup"><input type="radio" name="set_type" value="warmup" />Warm-up</label>
+                <label><input type="radio" name="set_type" value="failure" checked />Failure</label>
+              </fieldset>
+              <div class="set-rpe">
+                <label for="rpe-lb7">RPE</label>
+                <select id="rpe-lb7" name="rpe" aria-describedby="rpe-hint-lb7 set-error-lb7" aria-invalid="true"><option value="" selected>–</option><option>10</option><option>9.5</option><option>9</option><option>8.5</option><option>8</option><option>7.5</option><option>7</option><option>6.5</option><option>6</option><option>5.5</option><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option><option>2.5</option><option>2</option><option>1.5</option><option>1</option></select>
+                <p class="hint" id="rpe-hint-lb7">Optional. 10 is nothing left</p>
+              </div>
+              <p class="error" id="set-error-lb7" role="alert">RPE is 1 to 10.</p>
+              <details class="ex-note">
+                <summary><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="if-closed add">Add a note</span><span class="if-open">Note on this lift</span></summary>
+                <label class="vh" for="note-lb7">Note on this lift</label>
+                <textarea id="note-lb7" name="note" maxlength="140" rows="2"></textarea>
+                
+                <div class="note-save">
+                  <button type="submit" form="set-log-lb7" name="action" value="note" formnovalidate class="button secondary tool">Save note</button>
+                  <p class="hint">It also saves with your next set.</p>
+                </div>
+              </details>
+            </form>
+            <div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><button type="submit" form="set-log-lb7" class="wide">Done</button></div>
+          </section>
+        </section>
+
+
+        <!-- state: lb note too long -->
+        <section class="state solo">
+          <p class="state-label">Error · Done sent a note over 140 characters: the set is logged anyway (the rest runs), the note stays open with its text and the error under it (LB-2.21). It's a 400, so no stamp (3.3 item 8). If Save note fails offline, "That didn't save. Try again." stands where the hint is, text kept</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-lb8">
+            <span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span>
+            <p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>16:40</time></p>
+            <h2 class="vh" id="sheet-title-lb8">Log a set</h2>
+            <div class="rest">
+              <div class="rest-top">
+                <p class="timer" role="timer" aria-label="Rest left">2:29</p>
+                <p class="rest-what"><span>of <b>2:30</b> rest</span><span>after <b>62.5 kg × 7</b></span></p>
+              </div>
+              <form method="post" class="rest-adjust">
+                <input type="hidden" name="action" value="rest" />
+                <button type="submit" name="delta" value="-15" class="button secondary tool" aria-label="15 seconds less rest">-15 s</button>
+                <button type="submit" name="delta" value="15" class="button secondary tool" aria-label="15 seconds more rest">+15 s</button>
+              </form>
+            </div>
+            <details class="switch">
+              <summary><span class="lift">Bench press</span><span class="set-no">Set 4</span><span class="change">Change</span></summary>
+            </details>
+            <p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Flat bench 2</b></span></p>
+            <form method="post" class="set-form" id="set-log-lb8">
+              <input type="hidden" name="exercise_id" value="3" />
+              <div class="big-pair">
+                <div class="big">
+                  <label for="weight_kg-lb8">Weight</label>
+                  <span class="field"><input id="weight_kg-lb8" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="62.5" required /><span class="unit" aria-hidden="true">kg</span></span>
+                </div>
+                <span class="times" aria-hidden="true">×</span>
+                <div class="big">
+                  <label for="reps-lb8">Reps</label>
+                  <span class="field"><input id="reps-lb8" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="7" required /></span>
+                </div>
+              </div>
+              <fieldset class="set-type">
+                <legend class="vh">Set type</legend>
+                <label><input type="radio" name="set_type" value="normal" checked />Normal</label>
+                <label class="t-warmup"><input type="radio" name="set_type" value="warmup" />Warm-up</label>
+                <label><input type="radio" name="set_type" value="failure" />Failure</label>
+              </fieldset>
+              <div class="set-rpe">
+                <label for="rpe-lb8">RPE</label>
+                <select id="rpe-lb8" name="rpe" aria-describedby="rpe-hint-lb8"><option value="" selected>–</option><option>10</option><option>9.5</option><option>9</option><option>8.5</option><option>8</option><option>7.5</option><option>7</option><option>6.5</option><option>6</option><option>5.5</option><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option><option>2.5</option><option>2</option><option>1.5</option><option>1</option></select>
+                <p class="hint" id="rpe-hint-lb8">Optional. 10 is nothing left</p>
+              </div>
+              <details class="ex-note" open>
+                <summary><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="if-closed add">Add a note</span><span class="if-open">Note on this lift</span></summary>
+                <label class="vh" for="note-lb8">Note on this lift</label>
+                <textarea id="note-lb8" name="note" maxlength="140" rows="2" aria-invalid="true" aria-describedby="note-error-lb8">Left shoulder grumpy again. Go 2.5 lighter next time, band pull-aparts first, then warm-ups at 40 and 50 before the working sets</textarea>
+                <p class="error" id="note-error-lb8" role="alert">Notes are up to 140 characters.</p>
+                <div class="note-save">
+                  <button type="submit" form="set-log-lb8" name="action" value="note" formnovalidate class="button secondary tool">Save note</button>
+                  <p class="hint">It also saves with your next set.</p>
+                </div>
+              </details>
+            </form>
+            <div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><p class="dock-timer" aria-hidden="true" hidden>1:48</p><button type="submit" form="set-log-lb8" name="action" value="start" class="wide">Start set</button></div>
+          </section>
+        </section>
+
+
+        <!-- state: lb pending -->
+        <section class="state solo">
+          <p class="state-label">Pending · Done tapped on a slow connection: the dock's button held down with its label, the numbers read-only, the type and RPE disabled. Save note, Load, Swap and Clear pend the same way: disabled, label kept</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-lb9" aria-busy="true">
+            <span class="chip state-lifting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-dumbbell" /></svg>Lifting</span>
+            <p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>15:31</time></p>
+            <h2 class="vh" id="sheet-title-lb9">Log a set</h2>
+            <details class="switch">
+              <summary><span class="lift">Bench press</span><span class="set-no">Set 3</span><span class="change">Change</span></summary>
+            </details>
+            <p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Flat bench 2</b></span></p>
+            <form method="post" class="set-form" id="set-log-lb9">
+              <input type="hidden" name="exercise_id" value="3" />
+              <div class="big-pair">
+                <div class="big">
+                  <label for="weight_kg-lb9">Weight</label>
+                  <span class="field"><input id="weight_kg-lb9" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="62.5" required readonly /><span class="unit" aria-hidden="true">kg</span></span>
+                </div>
+                <span class="times" aria-hidden="true">×</span>
+                <div class="big">
+                  <label for="reps-lb9">Reps</label>
+                  <span class="field"><input id="reps-lb9" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="7" required readonly /></span>
+                </div>
+              </div>
+              <fieldset class="set-type" disabled>
+                <legend class="vh">Set type</legend>
+                <label><input type="radio" name="set_type" value="normal" />Normal</label>
+                <label class="t-warmup"><input type="radio" name="set_type" value="warmup" />Warm-up</label>
+                <label><input type="radio" name="set_type" value="failure" checked />Failure</label>
+              </fieldset>
+              <div class="set-rpe">
+                <label for="rpe-lb9">RPE</label>
+                <select id="rpe-lb9" name="rpe" aria-describedby="rpe-hint-lb9" disabled><option value="">–</option><option>10</option><option selected>9.5</option><option>9</option><option>8.5</option><option>8</option><option>7.5</option><option>7</option><option>6.5</option><option>6</option><option>5.5</option><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option><option>2.5</option><option>2</option><option>1.5</option><option>1</option></select>
+                <p class="hint" id="rpe-hint-lb9">Optional. 10 is nothing left</p>
+              </div>
+            </form>
+            <div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><button type="submit" form="set-log-lb9" class="wide" disabled>Done</button></div>
+          </section>
+        </section>
+
+
+        <!-- state: lb idle, plans to load -->
+        <section class="state solo">
+          <p class="state-label">Idle · Priya has three plans, none loaded: Load a plan, opened. Loading chooses nothing and moves nobody (D11). Someone with no plans sees no plan control at all (LB-3.12)</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-lb10">
+            <span class="chip state-idle tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-idle" /></svg>Idle</span>
+            <p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>0:41</time></p>
+            <form method="post" class="pick" id="pick-lb10">
+              <input type="hidden" name="action" value="choose" />
+              <h2 class="lift lift-row" id="sheet-title-lb10">Pick a lift</h2>
+              <label for="exercise-lb10">Exercise</label>
+              <select id="exercise-lb10" name="exercise" aria-describedby="pick-hint-lb10"><optgroup label="Flat bench"><option value="3">Bench press</option><option value="4">Incline bench press</option></optgroup><optgroup label="Squat rack"><option value="5">Back squat</option><option value="6">Overhead press</option></optgroup></select>
+              <p class="hint" id="pick-hint-lb10">Choosing one claims a station on the map.</p>
+            </form>
+            <details class="plan-offer" open>
+              <summary><span class="badge">Plan</span><span class="add">Load a plan</span></summary>
+              <form method="post" class="plan-load">
+                <input type="hidden" name="action" value="plan-load" />
+                <label for="plan-lb10">Your plans</label>
+                <div class="plan-pick">
+                  <select id="plan-lb10" name="plan_id"><option value="12">Push day</option><option value="9">Leg day</option><option value="7">Pull day</option></select>
+                  <button type="submit" class="button secondary tool">Load</button>
+                </div>
+                <p class="hint">Loading chooses nothing. You pick the lift.</p>
+              </form>
+            </details>
+            <div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><button type="submit" form="pick-lb10" class="wide">Choose</button></div>
+          </section>
+        </section>
+
+
+        <!-- state: lb idle, plan loaded -->
+        <section class="state solo">
+          <p class="state-label">Idle · Push day loaded: the plan opens above the picker, each lift with its planned sets as boxes. Up next (Bench press) wears the cursor and is already selected in the picker, so the dock's Choose takes it in one tap (LB-3.14); any row is a Choose too (LB-3.16)</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-lb11">
+            <span class="chip state-idle tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-idle" /></svg>Idle</span>
+            <p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>0:58</time></p>
+            <details class="plan" data-plan open>
+              <summary><span class="badge">Plan</span><span class="plan-name">Push day</span><span class="plan-sum">0 of 4 lifts</span></summary>
+              <form method="post" class="plan-choose">
+                <input type="hidden" name="action" value="choose" />
+                <ol class="plan-items"><li data-plan-item data-exercise="3" data-next><button type="submit" name="exercise" value="3" class="hot"><span class="cur" aria-hidden="true">▶</span><span class="ex">Bench press <span class="badge up">Up next</span></span><span class="count"><span class="planned" aria-hidden="true"><i class=""></i><i class=""></i><i class=""></i><i class=""></i></span>0 of 4</span></button></li><li data-plan-item data-exercise="4"><button type="submit" name="exercise" value="4"><span class="cur" aria-hidden="true">▶</span><span class="ex">Incline bench press</span><span class="count"><span class="planned" aria-hidden="true"><i class=""></i><i class=""></i><i class=""></i></span>0 of 3</span></button></li><li data-plan-item data-exercise="6"><button type="submit" name="exercise" value="6"><span class="cur" aria-hidden="true">▶</span><span class="ex">Overhead press</span><span class="count"><span class="planned" aria-hidden="true"><i class=""></i><i class=""></i><i class=""></i></span>0 of 3</span></button></li><li data-plan-item data-exercise="8"><button type="submit" name="exercise" value="8"><span class="cur" aria-hidden="true">▶</span><span class="ex">Lateral raise</span><span class="count"><span class="planned" aria-hidden="true"><i class=""></i><i class=""></i><i class=""></i></span>0 of 3</span></button></li></ol>
+              </form>
+              
+              <div class="plan-tools">
+                <form method="post" class="plan-pick">
+                  <input type="hidden" name="action" value="plan-load" />
+                  <label class="vh" for="swap-lb11">Load another plan</label>
+                  <select id="swap-lb11" name="plan_id"><option value="9">Leg day</option><option value="7">Pull day</option></select>
+                  <button type="submit" class="button secondary tool">Swap</button>
+                </form>
+                <form method="post">
+                  <input type="hidden" name="action" value="plan-clear" />
+                  <button type="submit" class="button secondary tool">Clear</button>
+                </form>
+              </div>
+            </details>
+            <form method="post" class="pick" id="pick-lb11">
+              <input type="hidden" name="action" value="choose" />
+              <h2 class="lift lift-row" id="sheet-title-lb11">Pick a lift</h2>
+              <label for="exercise-lb11">Exercise</label>
+              <select id="exercise-lb11" name="exercise" aria-describedby="pick-hint-lb11"><optgroup label="Flat bench"><option value="3" selected>Bench press</option><option value="4">Incline bench press</option></optgroup><optgroup label="Squat rack"><option value="5">Back squat</option><option value="6">Overhead press</option></optgroup></select>
+              <p class="hint" id="pick-hint-lb11">Choosing one claims a station on the map.</p>
+            </form>
+            <div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><button type="submit" form="pick-lb11" class="wide">Choose</button></div>
+          </section>
+        </section>
+
+
+        <!-- state: lb lifting, plan folded -->
+        <section class="state solo">
+          <p class="state-label">Lifting · Incline bench press mid-plan: while the lift you're on still has planned sets to go, the plan folds to one line, and the lift row counts against it, Set 2 of 3</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-lb12">
+            <span class="chip state-lifting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-dumbbell" /></svg>Lifting</span>
+            <p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>27:15</time></p>
+            <h2 class="vh" id="sheet-title-lb12">Log a set</h2>
+            <details class="switch">
+              <summary><span class="lift">Incline bench press</span><span class="set-no">Set 2 of 3</span><span class="change">Change</span></summary>
+            </details>
+            <p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Flat bench 2</b></span></p>
+            <details class="plan" data-plan>
+              <summary><span class="badge">Plan</span><span class="plan-name">Push day</span><span class="plan-sum">1 of 4 lifts</span></summary>
+              <form method="post" class="plan-choose">
+                <input type="hidden" name="action" value="choose" />
+                <ol class="plan-items"><li data-plan-item data-exercise="3" class="full"><button type="submit" name="exercise" value="3"><span class="cur" aria-hidden="true">▶</span><span class="ex">Bench press</span><span class="count"><span class="planned" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i></span>4 of 4</span></button></li><li data-plan-item data-exercise="4" data-next><button type="submit" name="exercise" value="4" aria-current="true" class="hot"><span class="cur" aria-hidden="true">▶</span><span class="ex">Incline bench press <span class="badge up">Up next</span></span><span class="count"><span class="planned" aria-hidden="true"><i class="done"></i><i class=""></i><i class=""></i></span>1 of 3</span></button></li><li data-plan-item data-exercise="6"><button type="submit" name="exercise" value="6"><span class="cur" aria-hidden="true">▶</span><span class="ex">Overhead press</span><span class="count"><span class="planned" aria-hidden="true"><i class=""></i><i class=""></i><i class=""></i></span>0 of 3</span></button></li><li data-plan-item data-exercise="8"><button type="submit" name="exercise" value="8"><span class="cur" aria-hidden="true">▶</span><span class="ex">Lateral raise</span><span class="count"><span class="planned" aria-hidden="true"><i class=""></i><i class=""></i><i class=""></i></span>0 of 3</span></button></li></ol>
+              </form>
+              
+              <div class="plan-tools">
+                <form method="post" class="plan-pick">
+                  <input type="hidden" name="action" value="plan-load" />
+                  <label class="vh" for="swap-lb12">Load another plan</label>
+                  <select id="swap-lb12" name="plan_id"><option value="9">Leg day</option><option value="7">Pull day</option></select>
+                  <button type="submit" class="button secondary tool">Swap</button>
+                </form>
+                <form method="post">
+                  <input type="hidden" name="action" value="plan-clear" />
+                  <button type="submit" class="button secondary tool">Clear</button>
+                </form>
+              </div>
+            </details>
+            <form method="post" class="set-form" id="set-log-lb12">
+              <input type="hidden" name="exercise_id" value="4" />
+              <div class="last-time" data-last>
+                <p class="last-head">Last time <b>Tue 27 Oct</b></p>
+                <ol class="last-sets"><li><span class="n" aria-hidden="true">1</span><span class="what"><span class="vh">Set 1: </span><span data-set>50 kg × 10</span></span></li><li class="match"><span class="n" aria-hidden="true">▶</span><span class="what"><span class="vh">Set 2, the one to match: </span><span data-set data-match>50 kg × 9<span class="rpe" aria-hidden="true"> @ 8.5</span></span><span class="vh">, RPE 8.5</span></span></li><li><span class="n" aria-hidden="true">3</span><span class="what"><span class="vh">Set 3: </span><span data-set>50 kg × 8<span class="rpe" aria-hidden="true"> @ 9</span></span><span class="vh">, RPE 9</span></span></li></ol>
+              </div>
+              <div class="big-pair">
+                <div class="big">
+                  <label for="weight_kg-lb12">Weight</label>
+                  <span class="field"><input id="weight_kg-lb12" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="50" required /><span class="unit" aria-hidden="true">kg</span></span>
+                </div>
+                <span class="times" aria-hidden="true">×</span>
+                <div class="big">
+                  <label for="reps-lb12">Reps</label>
+                  <span class="field"><input id="reps-lb12" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="10" required /></span>
+                </div>
+              </div>
+              <fieldset class="set-type">
+                <legend class="vh">Set type</legend>
+                <label><input type="radio" name="set_type" value="normal" checked />Normal</label>
+                <label class="t-warmup"><input type="radio" name="set_type" value="warmup" />Warm-up</label>
+                <label><input type="radio" name="set_type" value="failure" />Failure</label>
+              </fieldset>
+              <div class="set-rpe">
+                <label for="rpe-lb12">RPE</label>
+                <select id="rpe-lb12" name="rpe" aria-describedby="rpe-hint-lb12"><option value="" selected>–</option><option>10</option><option>9.5</option><option>9</option><option>8.5</option><option>8</option><option>7.5</option><option>7</option><option>6.5</option><option>6</option><option>5.5</option><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option><option>2.5</option><option>2</option><option>1.5</option><option>1</option></select>
+                <p class="hint" id="rpe-hint-lb12">Optional. 10 is nothing left</p>
+              </div>
+              <details class="ex-note">
+                <summary><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="if-closed add">Add a note</span><span class="if-open">Note on this lift</span></summary>
+                <label class="vh" for="note-lb12">Note on this lift</label>
+                <textarea id="note-lb12" name="note" maxlength="140" rows="2"></textarea>
+                
+                <div class="note-save">
+                  <button type="submit" form="set-log-lb12" name="action" value="note" formnovalidate class="button secondary tool">Save note</button>
+                  <p class="hint">It also saves with your next set.</p>
+                </div>
+              </details>
+            </form>
+            <div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><button type="submit" form="set-log-lb12" class="wide">Done</button></div>
+          </section>
+        </section>
+
+
+        <!-- state: lb resting, plan's next lift -->
+        <section class="state solo">
+          <p class="state-label">Resting · Done on the last planned bench set (4 of 4): the rest runs, Start set is still Bench press, and the lift row reads Set 5 of 4, so an extra set is still one tap (LB-3.17). The plan unfolds by itself with Incline bench press up next, one tap away during the rest (LB-3.16)</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-lb13">
+            <span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span>
+            <p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>24:50</time></p>
+            <h2 class="vh" id="sheet-title-lb13">Log a set</h2>
+            <div class="rest">
+              <div class="rest-top">
+                <p class="timer" role="timer" aria-label="Rest left">2:29</p>
+                <p class="rest-what"><span>of <b>2:30</b> rest</span><span>after <b>62.5 kg × 7 @ 9</b></span></p>
+              </div>
+              <form method="post" class="rest-adjust">
+                <input type="hidden" name="action" value="rest" />
+                <button type="submit" name="delta" value="-15" class="button secondary tool" aria-label="15 seconds less rest">-15 s</button>
+                <button type="submit" name="delta" value="15" class="button secondary tool" aria-label="15 seconds more rest">+15 s</button>
+              </form>
+            </div>
+            <details class="switch">
+              <summary><span class="lift">Bench press</span><span class="set-no">Set 5 of 4</span><span class="change">Change</span></summary>
+            </details>
+            <p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Flat bench 2</b></span></p>
+            <details class="plan" data-plan open>
+              <summary><span class="badge">Plan</span><span class="plan-name">Push day</span><span class="plan-sum">1 of 4 lifts</span></summary>
+              <form method="post" class="plan-choose">
+                <input type="hidden" name="action" value="choose" />
+                <ol class="plan-items"><li data-plan-item data-exercise="3" class="full"><button type="submit" name="exercise" value="3" aria-current="true"><span class="cur" aria-hidden="true">▶</span><span class="ex">Bench press</span><span class="count"><span class="planned" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i></span>4 of 4</span></button></li><li data-plan-item data-exercise="4" data-next><button type="submit" name="exercise" value="4" class="hot"><span class="cur" aria-hidden="true">▶</span><span class="ex">Incline bench press <span class="badge up">Up next</span></span><span class="count"><span class="planned" aria-hidden="true"><i class=""></i><i class=""></i><i class=""></i></span>0 of 3</span></button></li><li data-plan-item data-exercise="6"><button type="submit" name="exercise" value="6"><span class="cur" aria-hidden="true">▶</span><span class="ex">Overhead press</span><span class="count"><span class="planned" aria-hidden="true"><i class=""></i><i class=""></i><i class=""></i></span>0 of 3</span></button></li><li data-plan-item data-exercise="8"><button type="submit" name="exercise" value="8"><span class="cur" aria-hidden="true">▶</span><span class="ex">Lateral raise</span><span class="count"><span class="planned" aria-hidden="true"><i class=""></i><i class=""></i><i class=""></i></span>0 of 3</span></button></li></ol>
+              </form>
+              
+              <div class="plan-tools">
+                <form method="post" class="plan-pick">
+                  <input type="hidden" name="action" value="plan-load" />
+                  <label class="vh" for="swap-lb13">Load another plan</label>
+                  <select id="swap-lb13" name="plan_id"><option value="9">Leg day</option><option value="7">Pull day</option></select>
+                  <button type="submit" class="button secondary tool">Swap</button>
+                </form>
+                <form method="post">
+                  <input type="hidden" name="action" value="plan-clear" />
+                  <button type="submit" class="button secondary tool">Clear</button>
+                </form>
+              </div>
+            </details>
+            <form method="post" class="set-form" id="set-log-lb13">
+              <input type="hidden" name="exercise_id" value="3" />
+              <div class="last-time" data-last>
+                <p class="last-head">Last time <b>Tue 27 Oct</b></p>
+                <ol class="last-sets"><li class="warm"><span class="n" aria-hidden="true">W</span><span class="what"><span data-set data-type="warmup">40 kg × 10</span><span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></span></li><li><span class="n" aria-hidden="true">1</span><span class="what"><span class="vh">Set 1: </span><span data-set>60 kg × 8</span></span></li><li><span class="n" aria-hidden="true">2</span><span class="what"><span class="vh">Set 2: </span><span data-set>62.5 kg × 8<span class="rpe" aria-hidden="true"> @ 8</span></span><span class="vh">, RPE 8</span></span></li><li><span class="n" aria-hidden="true">3</span><span class="what"><span class="vh">Set 3: </span><span data-set data-type="failure">62.5 kg × 7<span class="rpe" aria-hidden="true"> @ 9.5</span></span><span class="vh">, RPE 9.5</span><span class="marks"><span class="badge failure"><span class="vh">Set type: </span>Failure</span></span></span></li></ol>
+                <p class="last-note"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="vh">Note: </span><span data-note>Seat on 4. Grip one finger wider.</span></p>
+              </div>
+              <div class="big-pair">
+                <div class="big">
+                  <label for="weight_kg-lb13">Weight</label>
+                  <span class="field"><input id="weight_kg-lb13" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="62.5" required /><span class="unit" aria-hidden="true">kg</span></span>
+                </div>
+                <span class="times" aria-hidden="true">×</span>
+                <div class="big">
+                  <label for="reps-lb13">Reps</label>
+                  <span class="field"><input id="reps-lb13" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="7" required /></span>
+                </div>
+              </div>
+              <fieldset class="set-type">
+                <legend class="vh">Set type</legend>
+                <label><input type="radio" name="set_type" value="normal" checked />Normal</label>
+                <label class="t-warmup"><input type="radio" name="set_type" value="warmup" />Warm-up</label>
+                <label><input type="radio" name="set_type" value="failure" />Failure</label>
+              </fieldset>
+              <div class="set-rpe">
+                <label for="rpe-lb13">RPE</label>
+                <select id="rpe-lb13" name="rpe" aria-describedby="rpe-hint-lb13"><option value="" selected>–</option><option>10</option><option>9.5</option><option>9</option><option>8.5</option><option>8</option><option>7.5</option><option>7</option><option>6.5</option><option>6</option><option>5.5</option><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option><option>2.5</option><option>2</option><option>1.5</option><option>1</option></select>
+                <p class="hint" id="rpe-hint-lb13">Optional. 10 is nothing left</p>
+              </div>
+              <details class="ex-note">
+                <summary><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="if-closed add">Add a note</span><span class="if-open">Note on this lift</span></summary>
+                <label class="vh" for="note-lb13">Note on this lift</label>
+                <textarea id="note-lb13" name="note" maxlength="140" rows="2"></textarea>
+                
+                <div class="note-save">
+                  <button type="submit" form="set-log-lb13" name="action" value="note" formnovalidate class="button secondary tool">Save note</button>
+                  <p class="hint">It also saves with your next set.</p>
+                </div>
+              </details>
+            </form>
+            <div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><p class="stamp"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-tick" /></svg><span>Set 4 logged: <b data-set>62.5 kg × 7<span class="rpe" aria-hidden="true"> @ 9</span></b><span class="vh">, RPE 9</span></span></p><p class="dock-timer" aria-hidden="true" hidden>1:48</p><button type="submit" form="set-log-lb13" name="action" value="start" class="wide">Start set</button></div>
+          </section>
+        </section>
+
+
+        <!-- state: lb plan done -->
+        <section class="state solo">
+          <p class="state-label">Resting · every lift has its planned sets: no Up next, one line in the copy bank's voice, and nothing else happens (LB-3.20). Lateral raise went one over (4 of 3, the extra box outlined). The workout goes on until she finishes it</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-lb14">
+            <span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span>
+            <p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>51:22</time></p>
+            <h2 class="vh" id="sheet-title-lb14">Log a set</h2>
+            <div class="rest">
+              <div class="rest-top">
+                <p class="timer" role="timer" aria-label="Rest left">0:59</p>
+                <p class="rest-what"><span>of <b>1:00</b> rest</span><span>after <b>10 kg × 12</b></span></p>
+              </div>
+              <form method="post" class="rest-adjust">
+                <input type="hidden" name="action" value="rest" />
+                <button type="submit" name="delta" value="-15" class="button secondary tool" aria-label="15 seconds less rest">-15 s</button>
+                <button type="submit" name="delta" value="15" class="button secondary tool" aria-label="15 seconds more rest">+15 s</button>
+              </form>
+            </div>
+            <details class="switch">
+              <summary><span class="lift">Lateral raise</span><span class="set-no">Set 5 of 3</span><span class="change">Change</span></summary>
+            </details>
+            <p class="spot"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-claim" /></svg><span>Your spot: <b>Dumbbell rack 4</b></span></p>
+            <details class="plan" data-plan open>
+              <summary><span class="badge">Plan</span><span class="plan-name">Push day</span><span class="plan-sum">4 of 4 lifts</span></summary>
+              <form method="post" class="plan-choose">
+                <input type="hidden" name="action" value="choose" />
+                <ol class="plan-items"><li data-plan-item data-exercise="3" class="full"><button type="submit" name="exercise" value="3"><span class="cur" aria-hidden="true">▶</span><span class="ex">Bench press</span><span class="count"><span class="planned" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i></span>4 of 4</span></button></li><li data-plan-item data-exercise="4" class="full"><button type="submit" name="exercise" value="4"><span class="cur" aria-hidden="true">▶</span><span class="ex">Incline bench press</span><span class="count"><span class="planned" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="done"></i></span>3 of 3</span></button></li><li data-plan-item data-exercise="6" class="full"><button type="submit" name="exercise" value="6"><span class="cur" aria-hidden="true">▶</span><span class="ex">Overhead press</span><span class="count"><span class="planned" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="done"></i></span>3 of 3</span></button></li><li data-plan-item data-exercise="8" class="full"><button type="submit" name="exercise" value="8" aria-current="true"><span class="cur" aria-hidden="true">▶</span><span class="ex">Lateral raise</span><span class="count"><span class="planned" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done over"></i></span>4 of 3</span></button></li></ol>
+              </form>
+              <p class="plan-done">Plan done. Anything else is a bonus 🏆</p>
+              <div class="plan-tools">
+                <form method="post" class="plan-pick">
+                  <input type="hidden" name="action" value="plan-load" />
+                  <label class="vh" for="swap-lb14">Load another plan</label>
+                  <select id="swap-lb14" name="plan_id"><option value="9">Leg day</option><option value="7">Pull day</option></select>
+                  <button type="submit" class="button secondary tool">Swap</button>
+                </form>
+                <form method="post">
+                  <input type="hidden" name="action" value="plan-clear" />
+                  <button type="submit" class="button secondary tool">Clear</button>
+                </form>
+              </div>
+            </details>
+            <form method="post" class="set-form" id="set-log-lb14">
+              <input type="hidden" name="exercise_id" value="8" />
+              <div class="big-pair">
+                <div class="big">
+                  <label for="weight_kg-lb14">Weight</label>
+                  <span class="field"><input id="weight_kg-lb14" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="10" required /><span class="unit" aria-hidden="true">kg</span></span>
+                </div>
+                <span class="times" aria-hidden="true">×</span>
+                <div class="big">
+                  <label for="reps-lb14">Reps</label>
+                  <span class="field"><input id="reps-lb14" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="12" required /></span>
+                </div>
+              </div>
+              <fieldset class="set-type">
+                <legend class="vh">Set type</legend>
+                <label><input type="radio" name="set_type" value="normal" checked />Normal</label>
+                <label class="t-warmup"><input type="radio" name="set_type" value="warmup" />Warm-up</label>
+                <label><input type="radio" name="set_type" value="failure" />Failure</label>
+              </fieldset>
+              <div class="set-rpe">
+                <label for="rpe-lb14">RPE</label>
+                <select id="rpe-lb14" name="rpe" aria-describedby="rpe-hint-lb14"><option value="" selected>–</option><option>10</option><option>9.5</option><option>9</option><option>8.5</option><option>8</option><option>7.5</option><option>7</option><option>6.5</option><option>6</option><option>5.5</option><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option><option>2.5</option><option>2</option><option>1.5</option><option>1</option></select>
+                <p class="hint" id="rpe-hint-lb14">Optional. 10 is nothing left</p>
+              </div>
+              <details class="ex-note">
+                <summary><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="if-closed add">Add a note</span><span class="if-open">Note on this lift</span></summary>
+                <label class="vh" for="note-lb14">Note on this lift</label>
+                <textarea id="note-lb14" name="note" maxlength="140" rows="2"></textarea>
+                
+                <div class="note-save">
+                  <button type="submit" form="set-log-lb14" name="action" value="note" formnovalidate class="button secondary tool">Save note</button>
+                  <p class="hint">It also saves with your next set.</p>
+                </div>
+              </details>
+            </form>
+            <div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><p class="dock-timer" aria-hidden="true" hidden>1:48</p><button type="submit" form="set-log-lb14" name="action" value="start" class="wide">Start set</button></div>
+          </section>
+        </section>
+
+
+        <!-- state: lb edit set -->
+        <section class="state solo">
+          <p class="state-label">Editing · the pencil on bench set 3: its type (Failure) and RPE (9.5) can be changed or cleared (LB-2.6, LB-2.17). No Last time, note or plan while editing; Save stays where it was</p>
+          <section class="panel sheet" aria-labelledby="sheet-title-lb15">
+            <span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span>
+            <p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>20:03</time></p>
+            <div class="lift-row"><h2 class="lift" id="sheet-title-lb15">Bench press</h2><span class="set-no">Set 3</span><span class="badge">Editing</span><a href="?exercise=3" class="lift-cancel">Cancel</a></div>
+            <p class="hint logged-at">Logged at 6:38 pm</p>
+            <form method="post" id="set-edit-lb15" class="set-form">
+              <input type="hidden" name="action" value="edit" />
+              <input type="hidden" name="set_id" value="88" />
+              <div class="big-pair">
+                <div class="big">
+                  <label for="weight_kg-lb15">Weight</label>
+                  <span class="field"><input id="weight_kg-lb15" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="62.5" required /><span class="unit" aria-hidden="true">kg</span></span>
+                </div>
+                <span class="times" aria-hidden="true">×</span>
+                <div class="big">
+                  <label for="reps-lb15">Reps</label>
+                  <span class="field"><input id="reps-lb15" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="7" required /></span>
+                </div>
+              </div>
+              <fieldset class="set-type">
+                <legend class="vh">Set type</legend>
+                <label><input type="radio" name="set_type" value="normal" />Normal</label>
+                <label class="t-warmup"><input type="radio" name="set_type" value="warmup" />Warm-up</label>
+                <label><input type="radio" name="set_type" value="failure" checked />Failure</label>
+              </fieldset>
+              <div class="set-rpe">
+                <label for="rpe-lb15">RPE</label>
+                <select id="rpe-lb15" name="rpe" aria-describedby="rpe-hint-lb15"><option value="">–</option><option>10</option><option selected>9.5</option><option>9</option><option>8.5</option><option>8</option><option>7.5</option><option>7</option><option>6.5</option><option>6</option><option>5.5</option><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option><option>2.5</option><option>2</option><option>1.5</option><option>1</option></select>
+                <p class="hint" id="rpe-hint-lb15">Optional. 10 is nothing left</p>
+              </div>
+            </form>
+            <details class="confirm"><summary class="button secondary quiet"><span class="if-closed">Delete</span><span class="if-open">Keep it</span></summary></details>
+            <div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><button type="submit" form="set-edit-lb15" class="wide">Save</button></div>
+          </section>
+        </section>
+
+      </div>
+
+        <!-- state: lb this workout -->
+        <section class="state lb-solo">
+          <p class="state-label">This workout · the same marks as history and the summary, on Night: a warm-up dimmed with a dashed Warm-up, Failure in outline, a record lit with its star and what it beat, RPE in lifter's shorthand, and the lift's note as the last row of its sets. Warm-ups still count in the tally (D5). Sets from before this change carry no marks</p>
+          <section class="panel" aria-labelledby="log-title-lb16">
+            <h2 class="panel-title" id="log-title-lb16">This workout</h2>
+            <p class="tally"><b>8</b> sets · <b>3,145 kg</b> moved so far</p>
+            <table class="log">
+              <thead><tr><th>Exercise</th><th class="num">Set</th><th class="fix"><span class="vh">Edit</span></th></tr></thead>
+              <tbody>
+                <tr class="warm"><td>Bench press</td><td class="num set"><span data-set data-type="warmup">40 <span class="u">kg</span> × 10</span><span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></td><td class="fix"><a href="?edit=81"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="vh">Edit Bench press, 40 kg × 10</span></a></td></tr>
+                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Bench press</span></td><td class="num set"><span data-set>60 <span class="u">kg</span> × 8</span></td><td class="fix"><a href="?edit=82"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="vh">Edit Bench press, 60 kg × 8</span></a></td></tr>
+                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Bench press</span></td><td class="num set"><span data-set>62.5 <span class="u">kg</span> × 8<span class="rpe" aria-hidden="true"> @ 8</span></span><span class="vh">, RPE 8</span></td><td class="fix"><a href="?edit=83"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="vh">Edit Bench press, 62.5 kg × 8 @ 8</span></a></td></tr>
+                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Bench press</span></td><td class="num set"><span data-set data-records="heaviest">65 <span class="u">kg</span> × 6<span class="rpe" aria-hidden="true"> @ 9</span></span><span class="vh">, RPE 9</span><span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span> <span class="rec-for">heaviest</span></span></td><td class="fix"><a href="?edit=84"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="vh">Edit Bench press, 65 kg × 6 @ 9</span></a></td></tr>
+                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Bench press</span></td><td class="num set"><span data-set data-type="failure">62.5 <span class="u">kg</span> × 7<span class="rpe" aria-hidden="true"> @ 9.5</span></span><span class="vh">, RPE 9.5</span><span class="marks"><span class="badge failure"><span class="vh">Set type: </span>Failure</span></span></td><td class="fix"><a href="?edit=85"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="vh">Edit Bench press, 62.5 kg × 7 @ 9.5</span></a></td></tr>
+                <tr class="note"><td colspan="3"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="vh">Note: </span><span data-note>Seat on 4. Felt strong today.</span></td></tr>
+                <tr class="warm"><td>Back squat</td><td class="num set"><span data-set data-type="warmup">60 <span class="u">kg</span> × 5</span><span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></td><td class="fix"><a href="?edit=86"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="vh">Edit Back squat, 60 kg × 5</span></a></td></tr>
+                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Back squat</span></td><td class="num set"><span data-set data-records="e1rm reps">100 <span class="u">kg</span> × 6<span class="rpe" aria-hidden="true"> @ 8.5</span></span><span class="vh">, RPE 8.5</span><span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span> <span class="rec-for">best e1RM, most reps</span></span></td><td class="fix"><a href="?edit=87"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="vh">Edit Back squat, 100 kg × 6 @ 8.5</span></a></td></tr>
+                <tr><td class="ditto"><span aria-hidden="true">"</span><span class="vh">Back squat</span></td><td class="num set"><span data-set>100 <span class="u">kg</span> × 5</span></td><td class="fix"><a href="?edit=88"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="vh">Edit Back squat, 100 kg × 5</span></a></td></tr>
+              </tbody>
+            </table>
+            <form method="post">
+              <input type="hidden" name="action" value="finish" />
+              <div class="actions"><button type="submit" class="secondary button quiet">Finish workout</button></div>
+            </form>
+          </section>
+        </section>
+
+
+        <!-- state: lb phone, resting with a plan -->
+        <section class="state phone-only">
+          <p class="state-label">Phone (390 × 660) · Done just tapped, the sheet's top brought into view: the timer, Bench press Set 3 of 4, the folded plan and Last time with set 3 lit sit above the pinned dock. Type, RPE and note are a short scroll down. Start set is where it always was</p>
+          <div class="phone-frame lb-phone"><div class="screen"><main><div class="gym"><section class="panel sheet" aria-labelledby="sheet-title-lb17">
+            <span class="chip state-resting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-drop" /></svg>Resting</span>
+            <p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>14:40</time></p>
+            <h2 class="vh" id="sheet-title-lb17">Log a set</h2>
+            <div class="rest">
+              <div class="rest-top">
+                <p class="timer" role="timer" aria-label="Rest left">2:29</p>
+                <p class="rest-what"><span>of <b>2:30</b> rest</span><span>after <b>62.5 kg × 8 @ 8</b></span></p>
+              </div>
+              <form method="post" class="rest-adjust">
+                <input type="hidden" name="action" value="rest" />
+                <button type="submit" name="delta" value="-15" class="button secondary tool" aria-label="15 seconds less rest">-15 s</button>
+                <button type="submit" name="delta" value="15" class="button secondary tool" aria-label="15 seconds more rest">+15 s</button>
+              </form>
+            </div>
+            <details class="switch">
+              <summary><span class="lift">Bench press</span><span class="set-no">Set 3 of 4</span><span class="change">Change</span></summary>
+            </details>
+            <details class="plan" data-plan>
+              <summary><span class="badge">Plan</span><span class="plan-name">Push day</span><span class="plan-sum">0 of 4 lifts</span></summary>
+              <form method="post" class="plan-choose">
+                <input type="hidden" name="action" value="choose" />
+                <ol class="plan-items"><li data-plan-item data-exercise="3" data-next><button type="submit" name="exercise" value="3" aria-current="true" class="hot"><span class="cur" aria-hidden="true">▶</span><span class="ex">Bench press <span class="badge up">Up next</span></span><span class="count"><span class="planned" aria-hidden="true"><i class="done"></i><i class="done"></i><i class=""></i><i class=""></i></span>2 of 4</span></button></li><li data-plan-item data-exercise="4"><button type="submit" name="exercise" value="4"><span class="cur" aria-hidden="true">▶</span><span class="ex">Incline bench press</span><span class="count"><span class="planned" aria-hidden="true"><i class=""></i><i class=""></i><i class=""></i></span>0 of 3</span></button></li><li data-plan-item data-exercise="6"><button type="submit" name="exercise" value="6"><span class="cur" aria-hidden="true">▶</span><span class="ex">Overhead press</span><span class="count"><span class="planned" aria-hidden="true"><i class=""></i><i class=""></i><i class=""></i></span>0 of 3</span></button></li><li data-plan-item data-exercise="8"><button type="submit" name="exercise" value="8"><span class="cur" aria-hidden="true">▶</span><span class="ex">Lateral raise</span><span class="count"><span class="planned" aria-hidden="true"><i class=""></i><i class=""></i><i class=""></i></span>0 of 3</span></button></li></ol>
+              </form>
+              
+              <div class="plan-tools">
+                <form method="post" class="plan-pick">
+                  <input type="hidden" name="action" value="plan-load" />
+                  <label class="vh" for="swap-lb17">Load another plan</label>
+                  <select id="swap-lb17" name="plan_id"><option value="9">Leg day</option><option value="7">Pull day</option></select>
+                  <button type="submit" class="button secondary tool">Swap</button>
+                </form>
+                <form method="post">
+                  <input type="hidden" name="action" value="plan-clear" />
+                  <button type="submit" class="button secondary tool">Clear</button>
+                </form>
+              </div>
+            </details>
+            <form method="post" class="set-form" id="set-log-lb17">
+              <input type="hidden" name="exercise_id" value="3" />
+              <div class="last-time" data-last>
+                <p class="last-head">Last time <b>Tue 27 Oct</b></p>
+                <ol class="last-sets"><li class="warm"><span class="n" aria-hidden="true">W</span><span class="what"><span data-set data-type="warmup">40 kg × 10</span><span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></span></li><li><span class="n" aria-hidden="true">1</span><span class="what"><span class="vh">Set 1: </span><span data-set>60 kg × 8</span></span></li><li><span class="n" aria-hidden="true">2</span><span class="what"><span class="vh">Set 2: </span><span data-set>62.5 kg × 8<span class="rpe" aria-hidden="true"> @ 8</span></span><span class="vh">, RPE 8</span></span></li><li class="match"><span class="n" aria-hidden="true">▶</span><span class="what"><span class="vh">Set 3, the one to match: </span><span data-set data-type="failure" data-match>62.5 kg × 7<span class="rpe" aria-hidden="true"> @ 9.5</span></span><span class="vh">, RPE 9.5</span><span class="marks"><span class="badge failure"><span class="vh">Set type: </span>Failure</span></span></span></li></ol>
+                <p class="last-note"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="vh">Note: </span><span data-note>Seat on 4. Grip one finger wider.</span></p>
+              </div>
+              <div class="big-pair">
+                <div class="big">
+                  <label for="weight_kg-lb17">Weight</label>
+                  <span class="field"><input id="weight_kg-lb17" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="62.5" required /><span class="unit" aria-hidden="true">kg</span></span>
+                </div>
+                <span class="times" aria-hidden="true">×</span>
+                <div class="big">
+                  <label for="reps-lb17">Reps</label>
+                  <span class="field"><input id="reps-lb17" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="8" required /></span>
+                </div>
+              </div>
+              <fieldset class="set-type">
+                <legend class="vh">Set type</legend>
+                <label><input type="radio" name="set_type" value="normal" checked />Normal</label>
+                <label class="t-warmup"><input type="radio" name="set_type" value="warmup" />Warm-up</label>
+                <label><input type="radio" name="set_type" value="failure" />Failure</label>
+              </fieldset>
+              <div class="set-rpe">
+                <label for="rpe-lb17">RPE</label>
+                <select id="rpe-lb17" name="rpe" aria-describedby="rpe-hint-lb17"><option value="" selected>–</option><option>10</option><option>9.5</option><option>9</option><option>8.5</option><option>8</option><option>7.5</option><option>7</option><option>6.5</option><option>6</option><option>5.5</option><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option><option>2.5</option><option>2</option><option>1.5</option><option>1</option></select>
+                <p class="hint" id="rpe-hint-lb17">Optional. 10 is nothing left</p>
+              </div>
+              <details class="ex-note">
+                <summary><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="if-closed add">Add a note</span><span class="if-open">Note on this lift</span></summary>
+                <label class="vh" for="note-lb17">Note on this lift</label>
+                <textarea id="note-lb17" name="note" maxlength="140" rows="2"></textarea>
+                
+                <div class="note-save">
+                  <button type="submit" form="set-log-lb17" name="action" value="note" formnovalidate class="button secondary tool">Save note</button>
+                  <p class="hint">It also saves with your next set.</p>
+                </div>
+              </details>
+            </form>
+            <div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><p class="stamp"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-tick" /></svg><span>Set 2 logged: <b data-set>62.5 kg × 8<span class="rpe" aria-hidden="true"> @ 8</span></b><span class="vh">, RPE 8</span></span></p><p class="dock-timer" aria-hidden="true" hidden>1:48</p><button type="submit" form="set-log-lb17" name="action" value="start" class="wide">Start set</button></div>
+          </section></div></main></div></div>
+        </section>
+
+
+        <!-- state: lb phone 360, first set -->
+        <section class="state phone-only">
+          <p class="state-label">Phone at 360 px · the lean first set, scrolled to the fields: the numbers, the three type chips on one row and the RPE, all above Done</p>
+          <div class="w360"><div class="phone-frame lb-phone at-sheet" style="--to-sheet: -300px"><div class="screen"><main><div class="gym"><section class="panel sheet" aria-labelledby="sheet-title-lb18">
+            <span class="chip state-lifting tab"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-dumbbell" /></svg>Lifting</span>
+            <p class="panel-clock"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-clock" /></svg><span class="vh">Workout time </span><time>8:12</time></p>
+            <h2 class="vh" id="sheet-title-lb18">Log a set</h2>
+            <details class="switch">
+              <summary><span class="lift">Bench press</span><span class="set-no">Set 1</span><span class="change">Change</span></summary>
+            </details>
+            <form method="post" class="set-form" id="set-log-lb18">
+              <input type="hidden" name="exercise_id" value="3" />
+              <div class="last-time" data-last>
+                <p class="last-head">Last time <b>Tue 27 Oct</b></p>
+                <ol class="last-sets"><li class="warm"><span class="n" aria-hidden="true">W</span><span class="what"><span data-set data-type="warmup">40 kg × 10</span><span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></span></li><li class="match"><span class="n" aria-hidden="true">▶</span><span class="what"><span class="vh">Set 1, the one to match: </span><span data-set data-match>60 kg × 8</span></span></li><li><span class="n" aria-hidden="true">2</span><span class="what"><span class="vh">Set 2: </span><span data-set>62.5 kg × 8<span class="rpe" aria-hidden="true"> @ 8</span></span><span class="vh">, RPE 8</span></span></li><li><span class="n" aria-hidden="true">3</span><span class="what"><span class="vh">Set 3: </span><span data-set data-type="failure">62.5 kg × 7<span class="rpe" aria-hidden="true"> @ 9.5</span></span><span class="vh">, RPE 9.5</span><span class="marks"><span class="badge failure"><span class="vh">Set type: </span>Failure</span></span></span></li></ol>
+                <p class="last-note"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="vh">Note: </span><span data-note>Seat on 4. Grip one finger wider.</span></p>
+              </div>
+              <div class="big-pair">
+                <div class="big">
+                  <label for="weight_kg-lb18">Weight</label>
+                  <span class="field"><input id="weight_kg-lb18" name="weight_kg" type="number" inputmode="decimal" min="0" max="1000" step="0.5" value="62.5" required /><span class="unit" aria-hidden="true">kg</span></span>
+                </div>
+                <span class="times" aria-hidden="true">×</span>
+                <div class="big">
+                  <label for="reps-lb18">Reps</label>
+                  <span class="field"><input id="reps-lb18" name="reps" type="number" inputmode="numeric" min="1" max="1000" step="1" value="7" required /></span>
+                </div>
+              </div>
+              <fieldset class="set-type">
+                <legend class="vh">Set type</legend>
+                <label><input type="radio" name="set_type" value="normal" checked />Normal</label>
+                <label class="t-warmup"><input type="radio" name="set_type" value="warmup" />Warm-up</label>
+                <label><input type="radio" name="set_type" value="failure" />Failure</label>
+              </fieldset>
+              <div class="set-rpe">
+                <label for="rpe-lb18">RPE</label>
+                <select id="rpe-lb18" name="rpe" aria-describedby="rpe-hint-lb18"><option value="" selected>–</option><option>10</option><option>9.5</option><option>9</option><option>8.5</option><option>8</option><option>7.5</option><option>7</option><option>6.5</option><option>6</option><option>5.5</option><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option><option>2.5</option><option>2</option><option>1.5</option><option>1</option></select>
+                <p class="hint" id="rpe-hint-lb18">Optional. 10 is nothing left</p>
+              </div>
+            </form>
+            <details class="plan-offer">
+              <summary><span class="badge">Plan</span><span class="add">Load a plan</span></summary>
+              <form method="post" class="plan-load">
+                <input type="hidden" name="action" value="plan-load" />
+                <label for="plan-lb18">Your plans</label>
+                <div class="plan-pick">
+                  <select id="plan-lb18" name="plan_id"><option value="12">Push day</option><option value="9">Leg day</option><option value="7">Pull day</option></select>
+                  <button type="submit" class="button secondary tool">Load</button>
+                </div>
+                <p class="hint">Loading chooses nothing. You pick the lift.</p>
+              </form>
+            </details>
+            <div class="dock"><button type="button" class="emote" aria-haspopup="true" aria-expanded="false" aria-label="Send an emoji"><svg width="24" height="24" aria-hidden="true"><use href="/sprites.svg#i-emote" /></svg></button><button type="submit" form="set-log-lb18" class="wide">Done</button></div>
+          </section></div></main></div></div></div>
+        </section>
 
       <!-- state: art sheet (reference, not a page state) -->
       <section class="state">

@@ -108,6 +108,17 @@ Until then it stands where it is, tag Lifting. Changed: "Delivery, Nov 4"
 D.9, D.5's put-down row, D.12's two storyboard rows, D.14's GYM-7.5 row,
 and the delivery and swap storyboards in the mockup.
 
+**Revision, 4 Nov 2026 (the logbook refactor; `docs/product/criteria/logbook.md`,
+LB-1 to LB-4).** The sheet and This workout only. Last time lists every set
+of the previous session, with the one to match lit, and stays through the
+rest; the set gains a type (three radio chips) and an optional RPE (one
+row; built as a number field, logbook.md Decisions) under the numbers; an exercise note folds to one line once the lift
+has a set; a loaded plan is a box of Choose buttons with Up next lit; the
+stamp, the rest block and This workout carry the Logbook group's marks. The
+map, Dony, the squad, interactions and emoji don't change, and the dock's
+button keeps its box, place and label everywhere. Full design in "Logbook
+refactor, Nov 4" at the end; it supersedes 3.3 items 8 and 10's `p.last`.
+
 The mockup suffixes ids (`weight_kg-1`, `set-log-5`, `pick-2`) only because
 it shows many states on one page. The real ids are `weight_kg`, `reps`,
 `minutes`, `seconds`, `distance_km`, `exercise`, `set-error`, `set-edit`,
@@ -3998,7 +4009,6 @@ frames as `cheerFx1` … `slapFx4`), five icons in `icons.ts` (`cheerIcon`,
    and none for emoji, quieter than the rest-over sound, behind the existing
    sound toggle (system 11). Confirm or drop.
 
-
 ## Delivery, Nov 4
 
 From `docs/product/criteria/delivery.md` (agreed 4 Nov, D1 to D7): GYM-6
@@ -4735,3 +4745,385 @@ All settled by the user on **4 Nov 2026**, each as drawn. None is open.
 3. **The ta-da hold**: the worker's, 500 ms on the aisle tile in front
    of the bay at a delivery's put-down (D.5); none on a swap.
 4. **The "?" on a turn-round** (D.7) stays: 500 ms, beside his load.
+
+## Logbook refactor, Nov 4
+
+From `docs/product/criteria/logbook.md` (agreed 4 Nov), LB-0, LB-1, LB-2,
+LB-3 "Loading and working through a plan", LB-4.10 and LB-4.13. The sheet
+(3.3) and This workout (3.5) only; making plans, `/plans`, the summary,
+history and the exercise page are the Logbook group's. Mockup: the states
+from `<!-- state: lb intro -->` to `<!-- state: lb phone 360, first set -->`,
+just before the art sheet; CSS at the end of `<style id="page">`, under
+`/* ===== Logbook refactor, Nov 4 */`. The mockup's global block is now
+Layout.astro's as it stands (with `.vh`, the badge modifiers and `.marks`).
+
+### L.1 Plan
+
+**Shared (the Gym group is this page; this is what it shares with Logbook).**
+A set is written one way everywhere: `setLabel`, then ` @ 8` for an RPE,
+then `span.marks` with the type mark before any record mark. The marks are
+the Logbook group's, named in `history/spec.md` "Shared marks", unchanged
+(L.6). One primary button, always the dock's: nothing in this section is a
+primary button, and nothing touches `.dock` except the stamp's second line.
+
+**Who and when.** Between sets, one hand, 60 to 180 s: the person wants
+"what did I do last time on this set" in one glance, and then Start set. The
+Anchor also wants to mark a warm-up and type an RPE without slowing a normal
+set. The Drifter touches none of it, and must not pay for it (LB-0.1). It
+works the same for someone who knows nobody in the room: everything here is
+private to its owner and nothing reaches the map, the squad or the stream
+(LB-0.2, LB-1.11, LB-2.25, LB-3.25, LB-4.13).
+
+**The one job.** Still: log the next set, Start set then Done. The new
+parts answer "what am I aiming for" (Last time, the plan) and "what was that
+set" (type, RPE, note), and all of them are optional.
+
+**Hierarchy, top to bottom, unchanged at the top.** 1. The rest timer (or
+the cardio block). 2. The lift and its set number, now "Set 3 of 4" with a
+plan. 3. The plan, folded to one line while you're on a lift with sets to
+go. 4. Last time, the set to match lit. 5. The big numbers. 6. Type and RPE,
+small. 7. The note, one folded line. 8. Load a plan, a link at the foot. The
+numbers that must read at a glance: the timer, Last time's lit line, the
+fields, "n of m" in the plan.
+
+**Reuse.** `.badge` and its three modifiers (Layout), `.marks` (Layout),
+`.pips`'s box shape for planned sets, the menu's `▶` cursor and leaf "hot"
+fill for Up next and the set to match, `.recent`'s chip-buttons for the plan
+rows, `details` with a summary for every fold (as Change and Delete do),
+`.tool` for small secondary buttons, `.error` and `.hint`. New: four small
+blocks (`.last-time`, `.set-type`, `.set-rpe`, `.ex-note`) and two for plans
+(`.plan-offer`, `.plan`). No new icon: `i-record` is already in the sheet.
+
+**Template check, and what it changed.** A set-type segmented control, an
+RPE slider and a "routine progress" bar fit any lifting app. What made it
+Spotter's: Last time is drawn as a page of the logbook (numbered lines,
+warm-ups marked W, the note in pencil under a dashed rule), not a card; the
+set to match and Up next wear the **same ▶ cursor and leaf fill as the
+interaction menu's suggested move**, so "the game suggests this" reads the
+same across the gym; planned sets are the Room panel's pips, filling in leaf
+as you go, like loading plates. The slider was dropped (a drag gesture,
+system 14) for a select. And the type chips are drawn like the marks they
+make, so Warm-up's chip is dashed before you even tap it.
+
+### L.2 Requirements covered
+
+| Requirement | Element |
+| --- | --- |
+| LB-0.1 two taps, dock button unchanged with or without a plan | Nothing new is in `.dock` or `position: fixed`; the plan and offer are in the sheet's flow; type defaults Normal, RPE empty, note folded |
+| LB-0.6 keyboard, focus, names, not colour alone | Native radios, select, textarea, `details`, buttons; marks are words; the lit line also has ▶ and "the one to match" for screen readers |
+| LB-0.7 pending and failed forms | L.5 "Pending", "Note too long" |
+| LB-1.1, 1.2, 1.3 every set of the previous session, day, kind | `div.last-time[data-last]`: `p.last-head` "Last time" + day, `ol.last-sets` of `[data-set]` |
+| LB-1.4 types, RPE, note in Last time | Marks per line; `p.last-note > [data-note]` |
+| LB-1.5 first time | `p.last` "First time on this one. Ease into it." unchanged, in place of the block |
+| LB-1.6 shows Lifting and resting, not editing or Idle | L.3 item 1 (replaces `showLast`) |
+| LB-1.7 the set to match | `li.match` with `[data-match]` |
+| LB-1.9 twelve sets, never moves the dock | The list grows in the flow; the dock is fixed (phone) or the sheet's foot (laptop) |
+| LB-1.12 readable at arm's length | 24 px lines, one leaf line |
+| LB-2.1, 2.4, 2.5, 2.8 type, Normal default, echoed by Start set | `fieldset.set-type`, radios `name="set_type"` |
+| LB-2.2, 2.3 marked wherever written | Stamp, rest block, This workout, Last time (L.6) |
+| LB-2.6, 2.17 edit type and RPE | The edit form gets both (L.3 item 8) |
+| LB-2.11 only working sets numbered | `.set-no` and the stamp's "Warm-up logged" (L.3 items 2, 6) |
+| LB-2.13 to 2.16 optional RPE, error, shorthand | `div.set-rpe` select `name="rpe"`; `.error` under it; ` @ 8` + `.vh` ", RPE 8" |
+| LB-2.19 to 2.24 the note | `details.ex-note`, `textarea name="note"`, Save note |
+| LB-3.12 load control | `details.plan-offer` with `form` `action=plan-load` |
+| LB-3.13, 3.15, 3.19, 3.20 the loaded plan | `details.plan[data-plan]`, `li[data-plan-item][data-exercise]`, "n of m", `[data-next]` |
+| LB-3.14 Up next preselected | the picker's `option selected` |
+| LB-3.16 one tap from the plan | each row is a `button name="exercise"` in an `action=choose` form |
+| LB-3.17 the last planned set leaves Start set | Unchanged dock; "Set 5 of 4" |
+| LB-3.21 replace, clear | Swap and Clear in `.plan-tools` |
+| LB-4.10 record on the stamp and This workout, never "Best" | `.badge.record` + `.rec-for` (L.6) |
+| LB-4.13 nobody else can tell | Nothing on the map, squad or log changes |
+
+### L.3 Structure (the sheet, top to bottom; changes only)
+
+Every set written on the sheet or in This workout is an element with
+`data-set`, plus `data-type="warmup|failure"` (absent for Normal) and
+`data-records="heaviest e1rm reps added hold distance time"` (the ones it
+set; absent if none), as the QA contract says (`spec/logbook.test.ts`). Its
+text is `setLabel` with ` @ 8`; the RPE's spoken `span.vh` ", RPE 8" goes
+**after** the `[data-set]` element, never inside it. The RPE's ` @ 8` is in
+`span.rpe[aria-hidden]`.
+
+1. **Last time** (replaces `p.last` when there is a previous session;
+   supersedes the `showLast` rule of 3.3 item 10 and the 8 Oct "after Done"
+   item 3). Inside `form#set-log`, before the fields, whenever an exercise is
+   chosen and you're not editing, **including a rest after the same lift**
+   (D3). Not while Idle or editing.
+
+   ```html
+   <div class="last-time" data-last>
+     <p class="last-head">Last time <b>Tue 27 Oct</b></p>   <!-- dayLabel -->
+     <ol class="last-sets">
+       <li class="warm"><span class="n" aria-hidden="true">W</span>
+         <span class="what"><span data-set data-type="warmup">40 kg × 10</span>
+           <span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></span></li>
+       <li><span class="n" aria-hidden="true">1</span>
+         <span class="what"><span class="vh">Set 1: </span><span data-set>60 kg × 8</span></span></li>
+       <li class="match"><span class="n" aria-hidden="true">▶</span>
+         <span class="what"><span class="vh">Set 2, the one to match: </span><span data-set data-match>62.5 kg × 8<span class="rpe" aria-hidden="true"> @ 8</span></span><span class="vh">, RPE 8</span></span></li>
+     </ol>
+     <p class="last-note"><Sprite pencilIcon 2/><span class="vh">Note: </span><span data-note>Seat on 4.</span></p>
+   </div>
+   ```
+
+   - Working sets numbered 1, 2, 3 in a dim column; warm-ups get `W` and dim
+     figures. Every set shown, none folded (LB-1.9).
+   - **The set to match** (LB-1.7): working set *n*, where *n* is your working
+     sets of this lift in this workout plus one. Its `li.match` is leaf with
+     ink text, and its number becomes `▶`. Done more than last time had: no
+     `li.match`.
+   - Records set in that session show their `.badge.record` + `.rec-for`.
+   - `p.last-note` only when that session had a note for the lift.
+   - **First time** (LB-1.5): no block; `p.last` "First time on this one.
+     Ease into it." as today.
+   - Cardio and holds: the same list ("1 km · 4:52 · 4:52 /km", "1:30").
+2. **The lift row.** `.set-no` counts **working** sets only (D8), so a
+   warm-up doesn't advance it ("Set 1" after a warm-up). With a plan loaded
+   and the lift in it: `Set 3 of 4` (the planned count), and past it `Set 5
+   of 4`. Lifts not in the plan, or no plan: `Set 3` as today.
+3. **Type**, straight after `SetFields`, in the set form (Lifting and every
+   rest state):
+
+   ```html
+   <fieldset class="set-type">
+     <legend class="vh">Set type</legend>
+     <label><input type="radio" name="set_type" value="normal" checked />Normal</label>
+     <label class="t-warmup"><input type="radio" name="set_type" value="warmup" />Warm-up</label>
+     <label><input type="radio" name="set_type" value="failure" />Failure</label>
+   </fieldset>
+   ```
+
+   Three 48 px chips in one row (fits 360 px), 8 px display labels. The
+   checked one is leaf with ink text and an 8 px square bullet; Warm-up's
+   border is dashed in every state, like its mark. The radio is the whole
+   chip (invisible, `inset: 0`), so it's one tap and arrow keys move
+   between them; focus ring `--focus` on the chip. Checked comes from the
+   echo (error, Start set) or Normal; never from the last set (D7).
+4. **RPE**, straight after the type:
+
+   ```html
+   <div class="set-rpe">
+     <label for="rpe">RPE</label>
+     <select id="rpe" name="rpe" aria-describedby="rpe-hint"><option value="">–</option><option>10</option>…<option>1</option></select>
+     <p class="hint" id="rpe-hint">Optional. 10 is nothing left</p>
+   </div>
+   ```
+
+   One row: the label, a 6.5 rem select, the hint. Options `–` (value "",
+   selected unless echoed) then 10 down to 1 in half steps, so the common
+   7 to 9.5 are near the top. A select, not a slider or 19 buttons: one tap
+   to open, the phone's own wheel, no drag, and it takes one line. Never
+   pre-filled (LB-2.13). That is the "collapsed" RPE: one small row, nothing
+   to dismiss.
+5. **The note** (LB-2.19), after the RPE, only when the lift has at least one
+   set in this workout and you're not editing:
+
+   ```html
+   <details class="ex-note">
+     <summary><Sprite pencilIcon 2/>
+       <span class="if-closed add">Add a note</span>            <!-- no note yet -->
+       <!-- or: <span class="if-closed"><span class="vh">Note: </span><span data-note>Seat on 4.</span></span> -->
+       <span class="if-open">Note on this lift</span></summary>
+     <label class="vh" for="note">Note on this lift</label>
+     <textarea id="note" name="note" maxlength="140" rows="2">Seat on 4.</textarea>
+     <div class="note-save">
+       <button type="submit" form="set-log" name="action" value="note" formnovalidate class="button secondary tool">Save note</button>
+       <p class="hint">It also saves with your next set.</p>
+     </div>
+   </details>
+   ```
+
+   - Folded, it is one 44 px line: "Add a note" (leaf, underlined), or the
+     saved note's text. Open, a 2-row textarea and **Save note**.
+   - It is inside `form#set-log`, so Start set and Done post `note` with the
+     set (LB-2.20), and Save note posts the same form with `action=note`
+     (`formnovalidate`, so empty weight or reps don't block it; the server
+     reads only `exercise_id` and `note`). Its 303 to `?exercise=<id>` keeps
+     the fields as the redirect renders them.
+   - Open when the page renders with a note error, or the note's text was
+     typed and echoed; otherwise folded.
+6. **The stamp** (3.3 item 8) gains, for a warm-up, the word: `Warm-up
+   logged: <b data-set data-type="warmup">80 kg × 3</b>`, and `.marks` with
+   the Warm-up badge; a working set is `Set {n} logged:` with *n* counting
+   working sets. A Failure set adds the Failure badge, a record adds
+   `.badge.record` + `.rec-for`. With marks, the stamp wraps to a second line
+   and grows upward (`.stamp:has(.marks)`), so it still never covers the
+   button. The screen-reader copy (3.3 item 11) reads the whole stamp, so a
+   record is announced: "Set 3 logged: 65 kg × 6, RPE 9, New Record:
+   heaviest".
+7. **The rest block** after a record: `p.marks.rest-rec` with the same
+   record mark, between `.rest-top` and `.rest-adjust`, for the whole rest,
+   so it is still there after the stamp's 4 s (the moment you'd screenshot).
+8. **Editing** (3.3, the `editing` branch): the edit form gets the type
+   chips and the RPE, filled from the set (`set_type`, `rpe`; `rpe=""`
+   clears). No Last time, note or plan while editing.
+9. **Plans** (LB-3.12 to 3.24). None of this is shown to someone with no
+   plans.
+   - **Not loaded** (Idle, or a lift chosen and not editing): at the sheet's
+     foot, after the form and before the dock, `details.plan-offer`: folded,
+     a `Plan` badge and "Load a plan" (leaf, underlined); open, a `form`
+     with `action=plan-load`, a `select name="plan_id"` (newest first),
+     **Load** (`.tool`), and "Loading chooses nothing. You pick the lift."
+   - **Loaded**: `details.plan[data-plan]`, **above** the picker when Idle,
+     **after the lift row and spot** otherwise:
+
+     ```html
+     <details class="plan" data-plan open>
+       <summary><span class="badge">Plan</span><span class="plan-name">Push day</span><span class="plan-sum">1 of 4 lifts</span></summary>
+       <form method="post" class="plan-choose">
+         <input type="hidden" name="action" value="choose" />
+         <ol class="plan-items">
+           <li data-plan-item data-exercise="3" class="full"><button type="submit" name="exercise" value="3" aria-current="true">
+             <span class="cur" aria-hidden="true">▶</span><span class="ex">Bench press</span>
+             <span class="count"><span class="planned" aria-hidden="true"><i class="done"></i>…</span>4 of 4</span></button></li>
+           <li data-plan-item data-exercise="4" data-next><button type="submit" name="exercise" value="4" class="hot">
+             <span class="cur" aria-hidden="true">▶</span><span class="ex">Incline bench press <span class="badge up">Up next</span></span>
+             <span class="count"><span class="planned" aria-hidden="true"><i></i><i></i><i></i></span>0 of 3</span></button></li>
+         </ol>
+       </form>
+       <p class="plan-done">Plan done. Anything else is a bonus 🏆</p>   <!-- only when all are full -->
+       <div class="plan-tools">
+         <form method="post" class="plan-pick"><input type="hidden" name="action" value="plan-load" />
+           <label class="vh" for="swap">Load another plan</label><select id="swap" name="plan_id">…other plans…</select>
+           <button type="submit" class="button secondary tool">Swap</button></form>
+         <form method="post"><input type="hidden" name="action" value="plan-clear" />
+           <button type="submit" class="button secondary tool">Clear</button></form>
+       </div>
+     </details>
+     ```
+
+     - Each row is one 48 px button: a Choose (LB-3.16), the same as a
+       `.recent` chip. **Up next** (`button.hot`) is leaf with ink, the ▶
+       cursor and an `Up next` badge (ink on leaf, inverted). The lift
+       you're on has a paper edge (`aria-current`). A full lift's name dims;
+       its boxes stay leaf.
+     - **Boxes** (`.planned i`): one per planned set, the pips' shape;
+       `.done` fills leaf; sets past the plan get one leaf **outline** box
+       each (`.done.over`), and the text says "5 of 4".
+     - **Folded or open** (no JS needed; the server sets `open`): open when
+       Idle, when a rest is running and the lift you're on is full (so the
+       next one is a tap away, LB-3.17), and when every lift is full; folded
+       (one 44 px line) while you're on a lift that still has planned sets,
+       so it never pushes Last time and the numbers down mid-lift. A tap on
+       the summary opens or folds it either way.
+     - **Idle with a plan**: the picker's `option` for Up next is `selected`
+       (LB-3.14), so the dock's Choose takes it.
+     - **Plan done** (LB-3.20): no `data-next`, no `.hot`, `p.plan-done`
+       "Plan done. Anything else is a bonus 🏆". Nothing else changes.
+     - Swap's select lists the other plans; with only one plan, no Swap
+       form, just Clear.
+10. **Order of the sheet when lifting**: tab, clock, rest or cardio block,
+    lift row, spot, plan (if loaded), form (Last time, fields, stopwatch,
+    type, RPE, note, error), plan offer (if not loaded), dock.
+
+**This workout (3.5)**, per row: `td.set` holds the `[data-set]` element,
+then `.marks`; a warm-up row is `tr.warm` (dim figures); after an
+exercise's last row in a run, if it has a note, `tr.note > td[colspan=3]`
+with the pencil, `.vh` "Note: " and `span[data-note]` (escaped text). The
+pencil link's `.vh` names the set with its RPE. Ditto marks unchanged.
+
+### L.4 States (all drawn, at 390 and 1280)
+
+| State | Trigger | What changes |
+| --- | --- | --- |
+| **Lifting, first set** | A lift chosen, no set of it today, a previous session | Last time with set 1 lit and its note; type Normal; RPE –; no note field; Load a plan folded |
+| **Resting, Last time stays** | Done on set 2 | Last time stays, set 3 lit; stamp "Set 2 logged: 62.5 kg × 8 @ 8"; type back to Normal, RPE –; "Add a note" |
+| **Warm-up chosen** | Tap Warm-up | The chip lit (dashed); Set 1 still after an earlier warm-up |
+| **Warm-up logged** | Done on a warm-up | Stamp "Warm-up logged: 80 kg × 3" + Warm-up mark; rest as usual; Normal again |
+| **Record** | Done on a set that beats every earlier one | Stamp on two lines with Record · heaviest; the rest block keeps the mark; nothing lit in Last time once you pass its sets |
+| **Note open** | Tap the note line | Textarea and Save note; Start set unmoved |
+| **RPE error** | Done with RPE outside 1 to 10 (400) | "RPE is 1 to 10." under the RPE, its select `aria-invalid`; still Lifting, fields kept. A bad type: "Set type is Normal, Warm-up or Failure." under the chips |
+| **Note too long** | Done with a note over 140 (400, set logged) | Resting, the note open with its text, "Notes are up to 140 characters." under it; no stamp (a 400) |
+| **Pending** | Done on a slow connection | Dock button disabled, label kept; fields read-only; type fieldset and RPE disabled. Save note, Load, Swap, Clear: disabled, label kept |
+| **Save failed** | Note save, load, swap or clear fails offline | "That didn't save. Try again." where the note's hint is, or under the plan's row of buttons; nothing typed is cleared |
+| **Idle, plans to load** | Idle, has plans, none loaded | Load a plan opened: select and Load |
+| **Idle, plan loaded** | After Load | Plan open above the picker; Up next lit and preselected; Choose in the dock as before |
+| **Lifting, plan folded** | A plan lift with sets to go | Plan one line; "Set 2 of 3" |
+| **Resting, plan's next lift** | Done on the last planned set | Plan opens; next lift Up next; Start set still the current lift; "Set 5 of 4" |
+| **Plan done** | Every lift full | No Up next; "Plan done. Anything else is a bonus 🏆" |
+| **Edit set** | The pencil | Type and RPE filled from the set; no note, plan or Last time |
+| **This workout** | Sets with types, RPE, a record and a note | Marks, dim warm-ups, `@` RPE, note row |
+| **Phone, resting with a plan** | 390 × 660 after Done | Timer, lift row, folded plan, Last time with the lit line above the dock |
+| **Phone 360, first set** | 360 px | Type chips on one row, RPE row, Done unmoved |
+| No plans / sets from before | — | No plan control at all; old sets have no marks, no RPE, no note (LB-0.3) |
+
+### L.5 What the build adds
+
+- `<style id="page">`'s new block (end of the mockup's page styles), into the
+  room page's styles. About 400 lines, all from tokens.
+- **Layout.astro**: nothing more is required. The mockup proposes three
+  Night rules for the shared marks (`.night .badge.warmup`, `.night
+  .badge.failure`: paper text, `--edge` border; `.night .badge.record`:
+  `--leaf` border; `.night .rec-for`: leaf), marked `/* shared: logbook
+  marks on Night */`. They belong in Layout's Night block beside the other
+  `.night` rules, since the summary or history may one day sit on Night;
+  until then they can live in the room page.
+- `SetFields.astro`: unchanged. The type and RPE are written in the room
+  page after `<SetFields>`, so the edit and log forms share them; a small
+  `SetExtras.astro` (type and RPE, with `values.set_type`, `values.rpe`,
+  `invalid`) is the tidy way if the build prefers.
+- The script: none needed for any of this. `details` folds, radios and the
+  select are native; the existing pending code disables the fieldset and
+  select along with the fields (add `fieldset, select, textarea` to what it
+  disables); the after-Done announce already reads the whole stamp.
+
+### L.6 Shared marks
+
+The Logbook group's names (`docs/design/history/spec.md`, "Shared marks"),
+used unchanged on the sheet, the stamp, the rest block, Last time and This
+workout. Nothing new is a primitive.
+
+| Mark | Class | Word | On Night |
+| --- | --- | --- | --- |
+| Warm-up | `.badge.warmup` | `Warm-up` (`.vh` "Set type: " before) | paper text, dashed 2 px `--edge` border, no fill |
+| Failure | `.badge.failure` | `Failure` (`.vh` "Set type: ") | paper text, solid `--edge` border, no fill |
+| Record | `.badge.record` + `span.rec-for` | `Record` + `heaviest`, `best e1RM`, `most reps`, `heaviest added`, `longest hold`, `longest distance`, `longest time` (`.vh` "New " before, ":" after) | leaf on ink, `i-record` star, `--leaf` border; `.rec-for` in leaf |
+| RPE | `span.rpe[aria-hidden]` + `.vh` ", RPE 8" after `[data-set]` | ` @ 8` | the set's own colour |
+| Note | `[data-note]` with the pencil icon | the text | dim, under a dashed rule |
+| Row | `.marks` (Layout) holds type then record | | 20 px in the sheet and This workout |
+
+Two sheet-only uses of the same pieces: the **set to match** (`li.match`)
+and **Up next** (`button.hot`, `.badge.up`) borrow the interaction menu's ▶
+cursor and leaf fill. They are not marks on a set, and history never shows
+them.
+
+### L.7 Departures
+
+1. **The type chips are radios drawn as chips** (system 9 has no segmented
+   control). Built from the `.recent` chip and the menu's lit state; each is
+   48 px.
+2. **RPE is a select, not a stepper** (system 9's `.stepper` is for weight
+   and reps). A stepper with 19 values in half steps is up to 18 taps; a
+   select is two, and takes one line.
+3. **The stamp can take two lines** with marks (3.3 item 8 said "one line,
+   always"). It grows upward, so the button and its box are untouched.
+4. **Plans and strangers.** Nothing here is shown to anyone else, so a
+   stranger room changes nothing on this page. A shared plan (the squad
+   doing Push day together) would want a sign on the map, and would be a
+   new decision.
+
+### L.8 Not decided by the criteria (for the user)
+
+1. **Swapping or clearing during an Idle state with Up next preselected**:
+   after Clear, the picker falls back to no preselection. Not decided by
+   LB-3.21; drawn that way.
+2. **Does Swap need a confirm?** Drawn without (LB-3.21: her sets are
+   untouched, so nothing is lost). Same for Clear.
+3. **The plan's folded or open default** per state (L.3 item 9) is the
+   design's call; whether a manual fold should stick across the next swap
+   (it can't without script or storage) is not decided. Drawn: the server's
+   rule wins on each render.
+4. **The lift row's "Set 3 of 4"** for a lift that is in the plan: the
+   criteria say the plan shows "Bench press 2 of 4", not the lift row.
+   Recommended as drawn; say if it should stay "Set 3".
+5. **Save note's place in the form**: it posts `form#set-log` with
+   `action=note`. The contract names `action=note` with `exercise_id` and
+   `note`; the set form's other fields go along and the server should
+   ignore them. Confirm with the contract owner.
+6. **An RPE on a warm-up** is allowed by the criteria (any set); drawn as
+   allowed.
+7. **The plan while you're on a lift that isn't in it** (LB-3.15 allows
+   it): not drawn. Recommended: folded, like a plan lift with sets to go,
+   since you chose to go off-plan.
+8. **"Save failed"** (LB-0.7) is described, not drawn as its own state: the
+   copy stands where the note's hint is, or under the plan's buttons.

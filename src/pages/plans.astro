@@ -1,0 +1,202 @@
+---
+// LB-3.8 to LB-3.10: the person's plans, newest first, each renamed or
+// deleted in place (docs/design/plans/spec.md). Plans are made from a
+// summary (D9), so there is no New button; they're loaded in a room's sheet.
+import MachineArt from "../components/MachineArt.astro";
+import PendingForms from "../components/PendingForms.astro";
+import PlanList from "../components/PlanList.astro";
+import Layout from "../layouts/Layout.astro";
+import { log, who } from "../lib/log.ts";
+import { deletePlan, plansOf, readPlanName, renamePlan } from "../lib/workouts.ts";
+
+const user = Astro.locals.user;
+if (!user) return Astro.redirect("/signin?next=/plans", 303);
+
+// a refused rename re-renders with its card open, the error and the text kept
+let refused: { planId: number; error: string; typed: string } | undefined;
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const action = String(form.get("action") ?? "");
+  const planId = Number(form.get("plan_id"));
+  const notFound = () => {
+    log("plan.denied", { ...who(user), action, plan: String(form.get("plan_id") ?? "").slice(0, 20) });
+    return new Response("Not found", { status: 404 });
+  };
+  const mine = plansOf(user.id).find((p) => p.id === planId);
+  if (!mine || (action !== "rename" && action !== "delete")) return notFound();
+  if (action === "delete") {
+    deletePlan(user.id, planId);
+    log("plan.delete", { ...who(user), plan: planId });
+    return Astro.redirect(`/plans?deleted=${encodeURIComponent(mine.name)}`, 303);
+  }
+  const typed = String(form.get("name") ?? "");
+  const name = readPlanName(typed);
+  if ("error" in name) {
+    log("plan.refused", { ...who(user), plan: planId, reason: "name", length: [...typed.trim()].length });
+    refused = { planId, error: name.error, typed };
+    Astro.response.status = 400;
+  } else {
+    renamePlan(user.id, planId, name.name);
+    log("plan.rename", { ...who(user), plan: planId, length: [...name.name].length });
+    return Astro.redirect("/plans", 303);
+  }
+}
+
+const plans = plansOf(user.id);
+const deleted = Astro.url.searchParams.get("deleted");
+---
+
+<Layout title="Plans">
+  <h1>Plans</h1>
+  {deleted && (
+    <p class="bubble done-line" role="status">
+      Deleted {deleted}. Your workouts are untouched.
+    </p>
+  )}
+  {
+    plans.length === 0 ? (
+      <div class="card empty">
+        <span class="empty-art">
+          <MachineArt e="flat-bench" part="idle" />
+        </span>
+        <p>Finish a workout, then save it as a plan from its summary.</p>
+      </div>
+    ) : (
+      <>
+        <p class="lede">Load one from your sheet in any room.</p>
+        {plans.map((p) => {
+          const open = refused?.planId === p.id;
+          return (
+            <article class="card plan" id={`card-${p.id}`} data-swap aria-labelledby={`plan-${p.id}`}>
+              <h2 id={`plan-${p.id}`}>{p.name}</h2>
+              <PlanList items={p.items} />
+              <div class="plan-tools">
+                <details class="confirm" open={open}>
+                  <summary class="button secondary quiet">
+                    <span class="if-closed">Rename</span>
+                    <span class="if-open">Cancel</span>
+                  </summary>
+                  <form method="post" class="confirm-box" data-pending>
+                    <input type="hidden" name="action" value="rename" />
+                    <input type="hidden" name="plan_id" value={p.id} />
+                    <label for={`name-${p.id}`}>Plan name</label>
+                    <input
+                      id={`name-${p.id}`}
+                      name="name"
+                      maxlength="30"
+                      value={open ? refused!.typed : p.name}
+                      aria-invalid={open ? "true" : undefined}
+                      aria-describedby={open ? `err-${p.id}` : undefined}
+                    />
+                    {open && (
+                      <p class="error" id={`err-${p.id}`} role="alert">
+                        {refused!.error}
+                      </p>
+                    )}
+                    <div class="actions">
+                      <button type="submit">Save name</button>
+                    </div>
+                  </form>
+                </details>
+                <details class="confirm">
+                  <summary class="button secondary quiet">
+                    <span class="if-closed">Delete</span>
+                    <span class="if-open">Keep it</span>
+                  </summary>
+                  <form method="post" class="confirm-box" data-pending>
+                    <input type="hidden" name="action" value="delete" />
+                    <input type="hidden" name="plan_id" value={p.id} />
+                    <p>Delete {p.name}? It can't be undone. Your workouts stay in the book.</p>
+                    <div class="actions">
+                      <button type="submit" class="button secondary quiet">
+                        Delete plan
+                      </button>
+                    </div>
+                  </form>
+                </details>
+              </div>
+            </article>
+          );
+        })}
+      </>
+    )
+  }
+  <PendingForms />
+</Layout>
+
+<style>
+  .lede {
+    margin: -0.5rem 0 1.5rem;
+    color: var(--muted);
+  }
+  .plan h2 {
+    margin: 0 0 0.75rem;
+    overflow-wrap: anywhere;
+  }
+  .plan :global(.plan-list) {
+    margin-bottom: 0.75rem;
+  }
+  /* Rename and Delete: small secondary buttons on one row, each a <details>
+     whose summary turns into its own Cancel in place, so it all works
+     without JS (the room's confirm pattern) */
+  .plan-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 1rem;
+  }
+  .button.quiet {
+    padding: 0.75rem 1rem;
+    font-size: 8px;
+  }
+  .confirm > summary {
+    list-style: none;
+  }
+  .confirm > summary::-webkit-details-marker {
+    display: none;
+  }
+  .confirm .if-open,
+  .confirm[open] .if-closed {
+    display: none;
+  }
+  .confirm[open] .if-open {
+    display: inline;
+  }
+  .confirm[open] {
+    flex-basis: 100%;
+  }
+  .confirm-box {
+    margin: 0.5rem 0 0;
+    padding: 1rem;
+    background: var(--paper);
+    border: var(--px) solid var(--ink);
+  }
+  .confirm-box p {
+    margin: 0 0 0.5rem;
+  }
+  .confirm-box label {
+    margin-top: 0;
+  }
+  .confirm-box .actions {
+    margin-top: 0.5rem;
+  }
+  .confirm-box .error,
+  .done-line {
+    width: fit-content;
+    max-width: 100%;
+  }
+  .empty {
+    text-align: center;
+  }
+  .empty-art,
+  .empty-art :global(svg) {
+    display: block;
+    width: 64px;
+    height: 64px;
+    margin: 0.5rem auto 1rem;
+  }
+  .empty p {
+    max-width: 24rem;
+    margin-left: auto;
+    margin-right: auto;
+  }
+</style>

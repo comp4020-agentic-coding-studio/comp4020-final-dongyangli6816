@@ -1,0 +1,206 @@
+---
+// LB-5.3 to LB-5.5, LB-5.9, LB-5.10: one exercise's best per session, as a
+// little Game Boy screen (docs/design/exercise/spec.md, "The chart, for the
+// build"). Server-rendered SVG, no library and no script. It stretches to the
+// card at a fixed height with strokes that don't scale; a stepped line, square
+// points, records lit. The same points are a table under it.
+import { recordText, type RecordKey } from "../lib/logbook.ts";
+import { recordIcon } from "../sprites/icons.ts";
+import Sprite from "./Sprite.astro";
+
+export type Point = { day: string; value: number; record: boolean };
+
+interface Props {
+  // oldest first
+  points: readonly Point[];
+  measure: string;
+  caption: string;
+  // how a value reads ("104.5 kg", "12 reps", "1:30", "5 km")
+  unit: RecordKey;
+}
+const { points, measure, caption, unit } = Astro.props;
+
+// the axis padded out to a round step, so points never sit on the frame
+const STEP: Record<string, number> = { e1rm: 5, reps: 2, hold: 30, distance: 1000 };
+const step = STEP[unit] ?? 1;
+const vals = points.map((p) => p.value);
+const lo = Math.floor(Math.min(...vals) / step) * step - (points.length === 1 ? step : 0);
+let hi = Math.ceil(Math.max(...vals) / step) * step + (points.length === 1 ? step : 0);
+if (hi === lo) hi = lo + step;
+const lowest = Math.max(0, lo);
+const n = points.length;
+const x = (i: number) => (n === 1 ? 500 : Math.round((1000 * i) / (n - 1) * 10) / 10);
+const y = (v: number) => Math.round((100 - ((v - lowest) / (hi - lowest)) * 100) * 10) / 10;
+
+const line = n > 1 ? points.map((p, i) => (i === 0 ? `M${x(0)} ${y(p.value)}` : `H${x(i)}V${y(p.value)}`)).join("") : "";
+// over 20, only records and the newest keep a square: they'd touch at 360 px
+const many = n > 20;
+const dot = points
+  .map((p, i) => ({ p, i }))
+  .filter(({ p, i }) => !p.record && (!many || i === n - 1))
+  .map(({ p, i }) => `M${x(i)} ${y(p.value)}h0`)
+  .join("");
+const rec = points
+  .map((p, i) => ({ p, i }))
+  .filter(({ p }) => p.record)
+  .map(({ p, i }) => `M${x(i)} ${y(p.value)}h0`)
+  .join("");
+const anyRecord = points.some((p) => p.record);
+const label = (v: number) => recordText(unit, v);
+---
+
+<figure class="chart">
+  <div class="plot">
+    <span class="y hi">{label(hi)}</span>
+    <span class="y lo">{label(lowest)}</span>
+    <svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true">
+      <path class="grid" d="M0 0H1000M0 50H1000M0 100H1000" />
+      {line && <path class="line" d={line} />}
+      {dot && <path class="dot" d={dot} />}
+      {rec && <path class="rec" d={rec} />}
+      {rec && <path class="rec-in" d={rec} />}
+    </svg>
+  </div>
+  <p class:list={["x", { one: n === 1 }]}>
+    <span>{points[0].day}</span>
+    {n > 1 && <span>{points[n - 1].day}</span>}
+  </p>
+  <figcaption>
+    {n === 1 ? (
+      "One session so far. The line starts with your next one."
+    ) : (
+      <>
+        {caption}
+        {anyRecord && (
+          <>
+            {" "}
+            <span class="key" aria-hidden="true" />
+            Lit square: a new record.
+          </>
+        )}
+      </>
+    )}
+  </figcaption>
+</figure>
+<details class="fold points">
+  <summary>
+    Chart as a table <span class="toggle" />
+  </summary>
+  <table data-points="">
+    <thead>
+      <tr>
+        <th scope="col">Session</th>
+        <th scope="col" class="num">{measure}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        // in the chart's order, oldest first, since it's the chart as text
+        // (LB-5.5; decided 4 Nov, D32)
+        points.map((p) => (
+          <tr>
+            <td>{p.day}</td>{" "}
+            <td class="num">
+              {label(p.value)}
+              {p.record && (
+                <>
+                  {" "}
+                  <span class="badge record">
+                    <Sprite sprite={recordIcon} scale={2} />
+                    Record
+                  </span>
+                </>
+              )}
+            </td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</details>
+
+<style>
+  .chart {
+    margin: 0 0 0.5rem;
+  }
+  .plot {
+    position: relative;
+    padding: 28px 12px;
+    background: var(--ink);
+    border: var(--px) solid var(--ink);
+    box-shadow: inset 0 0 0 2px var(--deep);
+  }
+  .plot svg {
+    display: block;
+    width: 100%;
+    height: 96px;
+    overflow: visible;
+  }
+  .plot path {
+    fill: none;
+    vector-effect: non-scaling-stroke;
+    stroke-linecap: square;
+    shape-rendering: crispEdges;
+  }
+  .plot .grid {
+    stroke: var(--deep);
+    stroke-width: 2;
+  }
+  .plot .line {
+    stroke: var(--leaf);
+    stroke-width: 4;
+  }
+  .plot .dot {
+    stroke: var(--leaf);
+    stroke-width: 8;
+  }
+  /* a record: a paper square lit round a leaf one, so it isn't colour alone */
+  .plot .rec {
+    stroke: var(--paper);
+    stroke-width: 16;
+  }
+  .plot .rec-in {
+    stroke: var(--leaf);
+    stroke-width: 8;
+  }
+  .plot .y {
+    position: absolute;
+    left: 12px;
+    font-size: 21px;
+    line-height: 1;
+    color: var(--leaf);
+    font-variant-numeric: tabular-nums;
+  }
+  .plot .y.hi {
+    top: 4px;
+  }
+  .plot .y.lo {
+    bottom: 4px;
+  }
+  .x {
+    display: flex;
+    justify-content: space-between;
+    margin: 0.25rem 0 0;
+    color: var(--muted);
+  }
+  .x.one {
+    justify-content: center;
+  }
+  figcaption {
+    color: var(--muted);
+  }
+  .key {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin: 0 0.5rem 0 0.25rem;
+    vertical-align: -1px;
+    background: var(--leaf);
+    border: var(--px) solid var(--paper);
+    outline: 2px solid var(--ink);
+  }
+  .points .badge.record {
+    margin-left: 0.5rem;
+    vertical-align: 2px;
+  }
+</style>

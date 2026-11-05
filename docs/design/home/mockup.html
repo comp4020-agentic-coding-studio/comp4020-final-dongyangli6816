@@ -975,6 +975,24 @@
       .logbook .actions {
         margin-top: 0;
       }
+      /* NEW Nov 4: each exercise name links to its page (LB-5.7), 44 px
+         tall without making the row taller, as history's .log th.lift a */
+      .logbook td a {
+        display: inline-block;
+        min-height: 44px;
+        margin: -0.5rem 0;
+        padding: 0.5rem 0;
+      }
+      .logbook td a:hover {
+        color: var(--deep);
+      }
+      /* NEW Nov 4: "Your plans" (LB-3.11), the summary's .to-plans as is:
+         a plain link, last in the card's row of logbook links */
+      .to-plans {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+      }
 
       @media (max-width: 420px) {
         .pitch h1 {
@@ -1081,7 +1099,7 @@
 
     <!-- ============================================================ -->
     <!-- state: signed-in-default -->
-    <p class="mock-state">State: signed in · Mia, 3 open rooms, last workout yesterday with all four kinds of set · her avatar beside the greeting</p>
+    <p class="mock-state">State: signed in · Mia, 3 open rooms, last workout yesterday with all four kinds of set · her avatar beside the greeting · Nov 4: each lift name links to its exercise page; Your plans ends the card</p>
     <div class="mock-frame">
       <header class="topbar">
         <a href="/" class="brand" aria-label="Spotter home">
@@ -1147,17 +1165,18 @@
               <tr><th scope="col">Lift</th><th scope="col" class="num">Sets</th><th scope="col" class="num">Best</th></tr>
             </thead>
             <tbody>
-              <tr><td>Run</td><td class="num">1</td><td class="num">5 km · 25:00</td></tr>
-              <tr><td>Bench press</td><td class="num">4</td><td class="num">62.5 kg × 8</td></tr>
-              <tr><td>Pull-up</td><td class="num">4</td><td class="num">BW + 10 kg × 8</td></tr>
-              <tr><td>Push-ups</td><td class="num">3</td><td class="num">BW × 20</td></tr>
-              <tr><td>Plank</td><td class="num">3</td><td class="num">1:30</td></tr>
-              <tr><td>Incline walk</td><td class="num">1</td><td class="num">1.2 km · 15:00</td></tr>
+              <tr><td><a href="/exercises/1">Run</a></td><td class="num">1</td><td class="num">5 km · 25:00</td></tr>
+              <tr><td><a href="/exercises/3">Bench press</a></td><td class="num">4</td><td class="num">62.5 kg × 8</td></tr>
+              <tr><td><a href="/exercises/11">Pull-up</a></td><td class="num">4</td><td class="num">BW + 10 kg × 8</td></tr>
+              <tr><td><a href="/exercises/15">Push-ups</a></td><td class="num">3</td><td class="num">BW × 20</td></tr>
+              <tr><td><a href="/exercises/16">Plank</a></td><td class="num">3</td><td class="num">1:30</td></tr>
+              <tr><td><a href="/exercises/2">Incline walk</a></td><td class="num">1</td><td class="num">1.2 km · 15:00</td></tr>
             </tbody>
           </table>
           <div class="actions">
             <a href="/workouts/118" class="button secondary">See summary</a>
             <a href="/history" class="button secondary">All history</a>
+            <a href="/plans" class="to-plans">Your plans</a>
           </div>
         </section>
       </main>
@@ -1234,15 +1253,16 @@
               <tr><th scope="col">Lift</th><th scope="col" class="num">Sets</th><th scope="col" class="num">Best</th></tr>
             </thead>
             <tbody>
-              <tr><td>Back squat</td><td class="num">4</td><td class="num">100 kg × 5</td></tr>
-              <tr><td>Romanian deadlift</td><td class="num">3</td><td class="num">80 kg × 8</td></tr>
-              <tr><td>Bench press</td><td class="num">4</td><td class="num">62.5 kg × 8</td></tr>
-              <tr><td>Lat pulldown</td><td class="num">3</td><td class="num">55 kg × 10</td></tr>
+              <tr><td><a href="/exercises/5">Back squat</a></td><td class="num">4</td><td class="num">100 kg × 5</td></tr>
+              <tr><td><a href="/exercises/10">Romanian deadlift</a></td><td class="num">3</td><td class="num">80 kg × 8</td></tr>
+              <tr><td><a href="/exercises/3">Bench press</a></td><td class="num">4</td><td class="num">62.5 kg × 8</td></tr>
+              <tr><td><a href="/exercises/13">Lat pulldown</a></td><td class="num">3</td><td class="num">55 kg × 10</td></tr>
             </tbody>
           </table>
           <div class="actions">
             <a href="/workouts/112" class="button secondary">See summary</a>
             <a href="/history" class="button secondary">All history</a>
+            <a href="/plans" class="to-plans">Your plans</a>
           </div>
         </section>
       </main>
@@ -1310,14 +1330,15 @@
               <tr><th scope="col">Lift</th><th scope="col" class="num">Sets</th><th scope="col" class="num">Best</th></tr>
             </thead>
             <tbody>
-              <tr><td>Incline walk</td><td class="num">1</td><td class="num">2.4 km · 30:00</td></tr>
-              <tr><td>Hanging leg raise</td><td class="num">3</td><td class="num">BW × 12</td></tr>
-              <tr><td>Plank</td><td class="num">3</td><td class="num">1:15</td></tr>
+              <tr><td><a href="/exercises/2">Incline walk</a></td><td class="num">1</td><td class="num">2.4 km · 30:00</td></tr>
+              <tr><td><a href="/exercises/12">Hanging leg raise</a></td><td class="num">3</td><td class="num">BW × 12</td></tr>
+              <tr><td><a href="/exercises/16">Plank</a></td><td class="num">3</td><td class="num">1:15</td></tr>
             </tbody>
           </table>
           <div class="actions">
             <a href="/workouts/121" class="button secondary">See summary</a>
             <a href="/history" class="button secondary">All history</a>
+            <a href="/plans" class="to-plans">Your plans</a>
           </div>
         </section>
       </main>
@@ -1380,7 +1401,7 @@
 
     <!-- ============================================================ -->
     <!-- state: signed-in-first-use (empty) -->
-    <p class="mock-state">State: first use (empty) · Priya just signed up (or tapped Later in the editor): her random avatar, no rooms, no workouts</p>
+    <p class="mock-state">State: first use (empty) · Priya just signed up (or tapped Later in the editor): her random avatar, no rooms, no workouts · Your plans still shows (its page says how to get one)</p>
     <div class="mock-frame">
       <header class="topbar">
         <a href="/" class="brand" aria-label="Spotter home">
@@ -1436,6 +1457,7 @@
             </tbody>
           </table>
           <p class="hint">Your first set lands here once you log it in a room.</p>
+          <div class="actions"><a href="/plans" class="to-plans">Your plans</a></div>
         </section>
       </main>
       <footer>

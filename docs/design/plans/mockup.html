@@ -1,0 +1,1291 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f3d22" />
+    <title>Plans · Spotter (mockup)</title>
+    <link rel="stylesheet" href="../../../node_modules/@fontsource/press-start-2p/400.css" />
+    <link rel="stylesheet" href="../../../node_modules/@fontsource/vt323/400.css" />
+    <!-- Layout.astro's <style is:global>, copied unchanged -->
+    <style id="global">
+      /* Deep green, after the Game Boy's four-shade screen. One "pixel" of
+         decoration is --px, so borders and shadows stay on the same grid. */
+      :root {
+        --ink: #0b2416;
+        --deep: #0f3d22;
+        --green: #1f6b3a;
+        --leaf: #c8e66b;
+        --paper: #e8f0d8;
+        --card: #f7fbef;
+        --muted: #3d5a45;
+        --error: #a3241b;
+        --focus: #f2c94c;
+        --green-hover: #1a5c32;
+        --leaf-hover: #d6ef86;
+        --tile: #dbe7c6;
+        --row: #eef5e1;
+        /* person states (GYM-9): always a fill under ink text, with an icon and a word */
+        --idle: #e8f0d8;
+        --lifting: #c8e66b;
+        --resting: #7cc6e8;
+        --slacking: #ff6b5e;
+        --finished: #f2c94c;
+        /* Night: the gym after hours */
+        --night: #081a10;
+        --floor: #0f2a1a;
+        --panel: #143822;
+        --edge: #3f8f5a;
+        --dim: #8fa896;
+        --px: 4px;
+        --display: "Press Start 2P", ui-monospace, monospace;
+        --body: "VT323", ui-monospace, monospace;
+        color-scheme: light;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        color: var(--ink);
+        font: 22px/1.35 var(--body);
+        /* pixel fonts have one weight; a faked bold smears them */
+        font-synthesis: none;
+        /* a faint 16 px checker, like gym floor tiles */
+        background-color: var(--paper);
+        background-image: conic-gradient(var(--tile) 25%, transparent 0 50%, var(--tile) 0 75%, transparent 0);
+        background-size: 32px 32px;
+      }
+
+      /* ---------- top bar ---------- */
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.5rem 1rem;
+        padding: 0.75rem 1rem;
+        background: var(--deep);
+        border-bottom: var(--px) solid var(--ink);
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        color: var(--paper);
+        text-decoration: none;
+        font: 16px/1 var(--display);
+        text-transform: uppercase;
+      }
+      .logo {
+        image-rendering: pixelated;
+      }
+      .topbar nav {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+      }
+      .topbar nav a,
+      .topbar .linklike {
+        color: var(--paper);
+        font: 24px/1 var(--body);
+        text-decoration: none;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+      }
+      .topbar nav a:hover,
+      .topbar .linklike:hover {
+        color: var(--leaf);
+      }
+      .topbar nav a[aria-current="page"] {
+        color: var(--leaf);
+        text-decoration: underline;
+        text-decoration-thickness: var(--px);
+        text-underline-offset: 6px;
+      }
+      .topbar form {
+        margin: 0;
+      }
+
+      /* ---------- page ---------- */
+      main {
+        flex: 1;
+        width: 100%;
+        max-width: 44rem;
+        margin: 0 auto;
+        padding: 1.5rem 1rem 2rem;
+      }
+      footer {
+        padding: 1rem;
+        text-align: center;
+        border-top: var(--px) solid var(--ink);
+        background: var(--deep);
+      }
+      footer a {
+        color: var(--leaf);
+      }
+      footer a[aria-current="page"] {
+        text-decoration: none;
+      }
+      footer a[aria-current="page"]::before {
+        content: "";
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        margin-right: 0.5rem;
+        background: var(--leaf);
+        vertical-align: middle;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--display);
+        font-weight: 400;
+        line-height: 1.4;
+        margin: 0 0 1rem;
+      }
+      /* Press Start 2P is drawn on an 8 px grid: crisp only at 8, 16, 24, 32 */
+      h1 {
+        font-size: 24px;
+      }
+      h2 {
+        font-size: 16px;
+        color: var(--green);
+      }
+      h3 {
+        font-size: 16px;
+      }
+      p {
+        margin: 0 0 1rem;
+      }
+      a {
+        color: var(--green);
+        text-decoration-thickness: 2px;
+        text-underline-offset: 3px;
+      }
+
+      /* ---------- pixel panels ---------- */
+      .card {
+        position: relative;
+        margin: 0 0 1.5rem;
+        padding: 1.25rem;
+        background: var(--card);
+        border: var(--px) solid var(--ink);
+        box-shadow: var(--px) var(--px) 0 var(--green), calc(var(--px) * 2) calc(var(--px) * 2) 0 var(--ink);
+      }
+      .card > :last-child {
+        margin-bottom: 0;
+      }
+
+      /* ---------- forms ---------- */
+      label {
+        display: block;
+        margin: 1rem 0 0.35rem;
+        color: var(--deep);
+      }
+      input,
+      select {
+        width: 100%;
+        min-height: 48px;
+        padding: 0.5rem 0.75rem;
+        font: 26px/1.1 var(--body);
+        color: var(--ink);
+        background: #fff;
+        border: var(--px) solid var(--ink);
+        border-radius: 0;
+        box-shadow: inset var(--px) var(--px) 0 var(--tile);
+      }
+      select {
+        appearance: none;
+        background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%),
+          linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+        background-position: calc(100% - 22px) 50%, calc(100% - 14px) 50%;
+        background-size: 8px 8px;
+        background-repeat: no-repeat;
+        padding-right: 2.5rem;
+      }
+      button,
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        min-height: 48px;
+        padding: 0.75rem 1.25rem;
+        font: 16px/1.4 var(--display);
+        text-transform: uppercase;
+        text-decoration: none;
+        color: var(--paper);
+        background: var(--green);
+        border: 0;
+        cursor: pointer;
+        /* a notched pixel outline plus a drop shadow; pressing moves it down */
+        box-shadow:
+          0 calc(var(--px) * -1) 0 var(--ink),
+          0 var(--px) 0 var(--ink),
+          calc(var(--px) * -1) 0 0 var(--ink),
+          var(--px) 0 0 var(--ink),
+          0 calc(var(--px) * 2) 0 var(--ink),
+          inset 0 calc(var(--px) * -1) 0 var(--deep);
+        margin: var(--px) var(--px) calc(var(--px) * 2);
+        transition: transform 60ms steps(1);
+      }
+      button:hover,
+      .button:hover {
+        background: var(--green-hover);
+      }
+      button:active,
+      .button:active {
+        transform: translateY(var(--px));
+        box-shadow:
+          0 calc(var(--px) * -1) 0 var(--ink),
+          0 var(--px) 0 var(--ink),
+          calc(var(--px) * -1) 0 0 var(--ink),
+          var(--px) 0 0 var(--ink);
+      }
+      .button.secondary {
+        color: var(--ink);
+        background: var(--leaf);
+      }
+      .button.secondary:hover {
+        background: var(--leaf-hover);
+      }
+      /* pending: held down, label kept, never a spinner */
+      button:disabled,
+      button:disabled:hover {
+        cursor: progress;
+        color: var(--paper);
+        background: var(--muted);
+        transform: translateY(var(--px));
+        box-shadow:
+          0 calc(var(--px) * -1) 0 var(--ink),
+          0 var(--px) 0 var(--ink),
+          calc(var(--px) * -1) 0 0 var(--ink),
+          var(--px) 0 0 var(--ink);
+      }
+      .wide {
+        width: calc(100% - var(--px) * 2);
+      }
+      .topbar .linklike {
+        background: none;
+        box-shadow: none;
+        margin: 0;
+        padding: 0;
+        text-transform: none;
+      }
+      /* ink ring on Paper; the yellow one fails contrast there (1.4:1) and is
+         kept for the dark bars and Night */
+      :focus-visible {
+        outline: var(--px) solid var(--ink);
+        outline-offset: var(--px);
+      }
+      .topbar :focus-visible,
+      footer :focus-visible,
+      body.night :focus-visible {
+        outline-color: var(--focus);
+      }
+      input[aria-invalid="true"] {
+        box-shadow: inset var(--px) var(--px) 0 var(--error);
+      }
+      /* the ring reaches 8 px past a field, so the error sits 12 px below it */
+      .error {
+        margin: 0.75rem 0 0;
+        padding: 0.4rem 0.6rem;
+        color: #fff;
+        background: var(--error);
+        border-left: calc(var(--px) * 2) solid var(--ink);
+      }
+      .error a {
+        color: #fff;
+      }
+      .hint {
+        color: var(--muted);
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1rem;
+        align-items: center;
+        margin-top: 1.25rem;
+      }
+
+      /* ---------- Night: same components, surface colours swapped ---------- */
+      body.night {
+        color: var(--paper);
+        color-scheme: dark;
+        background-color: var(--night);
+        background-image: conic-gradient(var(--floor) 25%, transparent 0 50%, var(--floor) 0 75%, transparent 0);
+      }
+      /* the gym needs room for two columns at 900 px and up, and for the map at
+         2x (640 px) beside the sheet (room spec, Departure 19) */
+      body.night main {
+        max-width: 72rem;
+      }
+      .night h2 {
+        color: var(--leaf);
+      }
+      .night label {
+        color: var(--paper);
+      }
+      .night .bubble {
+        color: var(--ink);
+      }
+      .night .hint {
+        color: var(--dim);
+      }
+      .night main a {
+        color: var(--leaf);
+      }
+      /* --green disappears on the dark floor, so primary is leaf with ink */
+      .night button,
+      .night .button {
+        color: var(--ink);
+        background: var(--leaf);
+      }
+      .night button:hover,
+      .night .button:hover {
+        background: var(--leaf-hover);
+      }
+      /* secondary on Night: night fill, paper label, the notch in --edge */
+      .night .button.secondary {
+        color: var(--paper);
+        background: var(--night);
+        box-shadow:
+          0 calc(var(--px) * -1) 0 var(--edge),
+          0 var(--px) 0 var(--edge),
+          calc(var(--px) * -1) 0 0 var(--edge),
+          var(--px) 0 0 var(--edge),
+          0 calc(var(--px) * 2) 0 #000;
+      }
+      .night .button.secondary:hover {
+        background: var(--floor);
+      }
+      .night .button.secondary:active {
+        box-shadow:
+          0 calc(var(--px) * -1) 0 var(--edge),
+          0 var(--px) 0 var(--edge),
+          calc(var(--px) * -1) 0 0 var(--edge),
+          var(--px) 0 0 var(--edge);
+      }
+      .night button:disabled {
+        color: var(--ink);
+        background: var(--dim);
+      }
+      .night input,
+      .night select {
+        color: var(--paper);
+        background-color: var(--night);
+        border-color: var(--edge);
+        box-shadow: inset var(--px) var(--px) 0 #000;
+      }
+      .night select {
+        background-image:
+          linear-gradient(45deg, transparent 50%, var(--paper) 50%),
+          linear-gradient(135deg, var(--paper) 50%, transparent 50%);
+      }
+      .night th,
+      .night td {
+        border-color: var(--edge);
+      }
+      .night tbody tr:nth-child(even) td {
+        background: var(--floor);
+      }
+
+      /* ---------- bits ---------- */
+      .passcode-box {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+      .passcode {
+        display: inline-block;
+        padding: 0.5rem 0.75rem;
+        font: 24px/1 var(--display);
+        letter-spacing: 0.12em;
+        color: var(--leaf);
+        background: var(--ink);
+        border: var(--px) solid var(--green);
+      }
+      .bubble {
+        position: relative;
+        margin: 0 0 1.25rem;
+        padding: 0.75rem 1rem;
+        background: var(--leaf);
+        border: var(--px) solid var(--ink);
+      }
+      .bubble::after {
+        content: "";
+        position: absolute;
+        left: 1.5rem;
+        bottom: calc(var(--px) * -3);
+        width: calc(var(--px) * 3);
+        height: calc(var(--px) * 3);
+        background: var(--leaf);
+        border-right: var(--px) solid var(--ink);
+        border-bottom: var(--px) solid var(--ink);
+        transform: skewY(45deg);
+      }
+      .roster {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .roster li {
+        padding: 0.25rem 0.6rem;
+        background: var(--paper);
+        border: var(--px) solid var(--ink);
+      }
+      .roster li::before {
+        content: "";
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        margin-right: 0.5rem;
+        background: var(--green);
+        vertical-align: middle;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 24px;
+      }
+      th {
+        font: 8px/2 var(--display);
+        text-transform: uppercase;
+        color: var(--paper);
+        background: var(--deep);
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 0.5rem 0.6rem;
+        border: 2px solid var(--ink);
+      }
+      td.num,
+      th.num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      tbody tr:nth-child(even) td {
+        background: var(--row);
+      }
+      .stat {
+        font-family: var(--display);
+        font-size: 8px;
+        color: var(--muted);
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        font: 8px/1 var(--display);
+        text-transform: uppercase;
+        white-space: nowrap;
+        color: var(--ink);
+        border: 2px solid var(--ink);
+      }
+      .chip svg {
+        flex: none;
+      }
+      .state-idle {
+        background: var(--idle);
+      }
+      .state-lifting {
+        background: var(--lifting);
+      }
+      .state-resting {
+        background: var(--resting);
+      }
+      .state-slacking {
+        background: var(--slacking);
+      }
+      .state-finished {
+        background: var(--finished);
+      }
+      .badge {
+        display: inline-block;
+        margin-left: 0.5rem;
+        padding: 0.15rem 0.4rem;
+        font: 8px/1.4 var(--display);
+        vertical-align: middle;
+        color: var(--ink);
+        background: var(--leaf);
+        border: 2px solid var(--ink);
+      }
+
+      @media (max-width: 420px) {
+        body {
+          font-size: 21px;
+        }
+        h1 {
+          font-size: 16px;
+        }
+        .card {
+          padding: 1rem;
+        }
+        .passcode {
+          font-size: 20px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        button,
+        .button {
+          transition: none;
+        }
+      }
+    </style>
+    <style id="page">
+      /* ===== shared: logbook =====
+         Written identically in the four Logbook mockups (history, summary,
+         exercise, plans). Today it lives in WorkoutTally.astro and
+         WorkoutSets.astro as scoped styles; see history/spec.md,
+         "Logbook refactor, Nov 4", for where each part goes. */
+
+      /* shared: logbook. When it was: "6:42 – 7:46 pm" */
+      .when {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      /* shared: logbook. The tally: boxed figures ruled by 2 px ink lines
+         from the gaps, so any count of boxes is ruled the same way. */
+      .tally {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: auto;
+        gap: 2px;
+        margin: 0 0 1rem;
+        background: var(--ink);
+        border: 2px solid var(--ink);
+      }
+      .tally div {
+        padding: 0.25rem 0.5rem;
+        background: var(--paper);
+      }
+      .tally dt {
+        font: 8px/1.4 var(--display);
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .tally dd {
+        margin: 0;
+        font-size: 28px;
+        line-height: 1.1;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      @media (max-width: 420px) {
+        /* four boxes don't fit a 360 px card in one row: 2 × 2 */
+        .tally:has(> :nth-child(4)) {
+          grid-auto-flow: row;
+          grid-template-columns: auto auto;
+        }
+      }
+
+      /* shared: logbook. The set table: one tbody per group (an exercise on
+         history and the summary, a session on the exercise page), its name
+         in a row header, then one written set per row. */
+      .log th.lift {
+        font: 24px/1.15 var(--body);
+        text-transform: none;
+        color: var(--ink);
+        vertical-align: top;
+      }
+      /* NEW: the group's name is a link (an exercise's page, or a session's
+         summary), 44 px tall, without making the row taller */
+      .log th.lift a {
+        display: inline-block;
+        min-height: 44px;
+        margin: -0.5rem 0 -0.25rem;
+        padding: 0.5rem 0 0.25rem;
+      }
+      .log th.lift a:hover {
+        color: var(--deep);
+      }
+      /* the arrow follows the last word if a long name wraps */
+      .log th.lift a svg {
+        margin-left: 0.5rem;
+        vertical-align: -1px;
+      }
+      .log .best {
+        display: block;
+        margin-top: 0.25rem;
+        font-size: 21px;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      /* the figure never splits; on a phone the line breaks after "Best" */
+      .log .best span {
+        white-space: nowrap;
+      }
+      .log .set {
+        width: 1%;
+        text-align: right;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+      /* cardio: pace on its own line, so "5 km · 25:00" fits a phone */
+      .log .pace {
+        display: block;
+        font-size: 21px;
+        color: var(--muted);
+      }
+      /* NEW: a warm-up's figures step back, so working sets read first */
+      .log tr.warm .set {
+        color: var(--muted);
+      }
+      /* NEW: the marks under a set: its type, then any record. They may
+         wrap; the set's figures above them never do. */
+      .log .marks {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        align-items: center;
+        gap: var(--px) 0.5rem;
+        margin: var(--px) 0 0;
+        font-size: 21px;
+        line-height: 1.1;
+        white-space: normal;
+        text-align: right;
+      }
+      /* NEW: the exercise's note for that workout, under its sets */
+      .log tr.note td {
+        padding-top: 0.25rem;
+        font-size: 21px;
+        line-height: 1.2;
+        color: var(--muted);
+        border-top-style: dashed;
+        overflow-wrap: anywhere;
+      }
+      .log tr.note svg {
+        margin-right: 0.5rem;
+        vertical-align: -1px;
+        color: var(--ink);
+      }
+      .log tbody tr > * {
+        background: var(--card);
+      }
+      .log tbody:nth-of-type(even) tr > * {
+        background: var(--paper);
+      }
+      .log tbody + tbody tr:first-child > * {
+        border-top-width: var(--px);
+      }
+
+      /* shared: logbook (and the room's sheet). Set-type and record marks,
+         built on the layout's .badge. Proposed for Layout.astro once the
+         Gym design uses the same names. */
+      .badge.warmup,
+      .badge.failure,
+      .badge.record {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--px);
+        margin: 0;
+        white-space: nowrap;
+      }
+      /* a warm-up is a lighter set: a dashed outline, no fill */
+      .badge.warmup {
+        background: transparent;
+        border-style: dashed;
+      }
+      /* a set taken to failure: a solid outline, no fill */
+      .badge.failure {
+        background: transparent;
+      }
+      /* a record: the leaf-on-ink of a lit day, with the star */
+      .badge.record {
+        color: var(--leaf);
+        background: var(--ink);
+      }
+
+      /* shared: logbook. Text for screen readers only */
+      .vh {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+
+      /* shared: logbook (summary, plans). A plan's exercises in order: the
+         station they're done at, the name, and its planned sets as empty
+         boxes, the ones the room's sheet fills in ("2 of 4"). Drawn the
+         same as the summary's preview and as a saved plan on /plans. */
+      .plan-list {
+        margin: 0 0 1rem;
+        padding: 0;
+        list-style: none;
+        counter-reset: plan;
+        border-top: 2px solid var(--ink);
+      }
+      .plan-list li {
+        display: grid;
+        grid-template-columns: 1rem 32px 1fr auto;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.25rem 0;
+        border-bottom: 2px solid var(--ink);
+        counter-increment: plan;
+      }
+      .plan-list li::before {
+        content: counter(plan);
+        color: var(--muted);
+        text-align: right;
+      }
+      .plan-list .art {
+        width: 32px;
+        height: 32px;
+        image-rendering: pixelated;
+      }
+      .plan-list a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+      }
+      .plan-list .n {
+        white-space: nowrap;
+        text-align: right;
+      }
+      /* one box per planned set; the sheet fills them with .done */
+      /* under the count, right-aligned; ten (the cap) still fit at 360 px */
+      .planned {
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--px);
+        margin: 0 0 var(--px);
+      }
+      .planned i {
+        width: calc(var(--px) * 2);
+        height: calc(var(--px) * 3);
+        background: var(--card);
+        box-shadow: inset 0 0 0 2px var(--ink);
+      }
+      .planned i.done {
+        background: var(--green);
+      }
+
+      /* ===== plans page (/plans) ===== */
+      .lede {
+        margin: -0.5rem 0 1.5rem;
+        color: var(--muted);
+      }
+      .plan h2 {
+        margin: 0 0 0.75rem;
+        overflow-wrap: anywhere;
+      }
+      .plan .plan-list {
+        margin-bottom: 0.75rem;
+      }
+
+      /* Rename and Delete: small secondary buttons on one row, each a
+         <details> whose summary turns into its own Cancel in place (the
+         room's confirm pattern, LOG-8), so it all works without JS */
+      .plan-tools {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0 1rem;
+      }
+      .button.quiet {
+        padding: 0.75rem 1rem;
+        font-size: 8px;
+      }
+      .confirm > summary {
+        list-style: none;
+      }
+      .confirm > summary::-webkit-details-marker {
+        display: none;
+      }
+      .confirm .if-open,
+      .confirm[open] .if-closed {
+        display: none;
+      }
+      .confirm[open] .if-open {
+        display: inline;
+      }
+      /* an open one takes the whole row where it stands, so its Cancel
+         stays on the spot that was tapped */
+      .confirm[open] {
+        flex-basis: 100%;
+      }
+      .confirm-box {
+        margin: 0.5rem 0 0;
+        padding: 1rem;
+        background: var(--paper);
+        border: var(--px) solid var(--ink);
+      }
+      .confirm-box p {
+        margin: 0 0 0.5rem;
+      }
+      .confirm-box label {
+        margin-top: 0;
+      }
+      .confirm-box .actions {
+        margin-top: 0.5rem;
+      }
+      .confirm-box .error {
+        width: fit-content;
+        max-width: 100%;
+      }
+      .done-line {
+        width: fit-content;
+        max-width: 100%;
+      }
+
+      .empty {
+        text-align: center;
+      }
+      .empty svg {
+        display: block;
+        margin: 0.5rem auto 1rem;
+        image-rendering: pixelated;
+      }
+      .empty p {
+        max-width: 24rem;
+        margin-left: auto;
+        margin-right: auto;
+      }
+    </style>
+    <style id="mockup">
+      /* mockup scaffolding only: state labels. Not part of the page. */
+      .state {
+        margin: 0 0 3rem;
+      }
+      .state + .state {
+        padding-top: 2rem;
+        border-top: calc(var(--px) * 2) dashed var(--muted);
+      }
+      .state-label {
+        display: inline-block;
+        margin: 0 0 1rem;
+        padding: 0.25rem 0.5rem;
+        font: 8px/1.4 var(--display);
+        text-transform: uppercase;
+        color: var(--paper);
+        background: var(--ink);
+      }
+      .state-note {
+        margin: 0 0 1rem;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- New art, drawn here until it is in src/sprites/icons.ts (grid in
+         docs/design/history/spec.md, "Logbook refactor, Nov 4" > Shared marks).
+         Then draw it from /sprites.svg#i-record instead. -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <symbol id="i-record" viewBox="0 0 8 8"><path fill="currentColor" d="M3 0h2v2h-2zM2 2h4v1h-4zM0 3h8v1h-8zM1 4h6v1h-6zM2 5h4v1h-4zM1 6h2v1h-2zM5 6h2v1h-2zM1 7h1v1h-1zM6 7h1v1h-1z" /></symbol>
+    </svg>
+    <header class="topbar">
+      <a href="/" class="brand" aria-label="Spotter home">
+        <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><use href="/sprites.svg#logo" /></svg>
+        <span>Spotter</span>
+      </a>
+      <nav>
+        <a href="/history">History</a>
+        <form method="post" action="/signout">
+          <button type="submit" class="linklike">Sign out</button>
+        </form>
+      </nav>
+    </header>
+    <main>
+      <!-- state: default -->
+      <section class="state">
+        <p class="state-label">State: default · four plans, newest first</p>
+        <p class="state-note">Reached from "Your plans" on the summary, or from home. Plans are made only from a summary (D9), so the page has no New button.</p>
+
+        <h1>Plans</h1>
+        <p class="lede">Load one from your sheet in any room.</p>
+          <article class="card plan" aria-labelledby="plan-7">
+            <h2 id="plan-7">Push day</h2>
+            <ol class="plan-list">
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg><a href="/exercises/3">Bench press</a><span class="n">4 sets<span class="planned" aria-hidden="true"><i></i><i></i><i></i><i></i></span></span></li>
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg><a href="/exercises/4">Incline bench press</a><span class="n">3 sets<span class="planned" aria-hidden="true"><i></i><i></i><i></i></span></span></li>
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg><a href="/exercises/8">Lateral raise</a><span class="n">3 sets<span class="planned" aria-hidden="true"><i></i><i></i><i></i></span></span></li>
+            </ol>
+            <div class="plan-tools">
+              <details class="confirm">
+                <summary class="button secondary quiet"><span class="if-closed">Rename</span><span class="if-open">Cancel</span></summary>
+                <form method="post" action="/plans/7/rename" class="confirm-box">
+                  <label for="name-7">Plan name</label>
+                  <input id="name-7" name="name" maxlength="30" value="Push day" />
+                  <div class="actions">
+                    <button type="submit">Save name</button>
+                  </div>
+                </form>
+              </details>
+              <details class="confirm">
+                <summary class="button secondary quiet"><span class="if-closed">Delete</span><span class="if-open">Keep it</span></summary>
+                <form method="post" action="/plans/7/delete" class="confirm-box">
+                  <p>Delete Push day? It can't be undone. Your workouts stay in the book.</p>
+                  <div class="actions">
+                    <button type="submit" class="button secondary quiet">Delete plan</button>
+                  </div>
+                </form>
+              </details>
+            </div>
+          </article>
+          <article class="card plan" aria-labelledby="plan-5">
+            <h2 id="plan-5">Legs (the honest version)</h2>
+            <ol class="plan-list">
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg><a href="/exercises/5">Back squat</a><span class="n">5 sets<span class="planned" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></span></li>
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-lifting-platform" /></svg><a href="/exercises/10">Romanian deadlift</a><span class="n">3 sets<span class="planned" aria-hidden="true"><i></i><i></i><i></i></span></span></li>
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-pull-up-bar" /></svg><a href="/exercises/12">Hanging leg raise</a><span class="n">3 sets<span class="planned" aria-hidden="true"><i></i><i></i><i></i></span></span></li>
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-exercise-mat" /></svg><a href="/exercises/16">Plank</a><span class="n">2 sets<span class="planned" aria-hidden="true"><i></i><i></i></span></span></li>
+            </ol>
+            <div class="plan-tools">
+              <details class="confirm">
+                <summary class="button secondary quiet"><span class="if-closed">Rename</span><span class="if-open">Cancel</span></summary>
+                <form method="post" action="/plans/5/rename" class="confirm-box">
+                  <label for="name-5">Plan name</label>
+                  <input id="name-5" name="name" maxlength="30" value="Legs (the honest version)" />
+                  <div class="actions">
+                    <button type="submit">Save name</button>
+                  </div>
+                </form>
+              </details>
+              <details class="confirm">
+                <summary class="button secondary quiet"><span class="if-closed">Delete</span><span class="if-open">Keep it</span></summary>
+                <form method="post" action="/plans/5/delete" class="confirm-box">
+                  <p>Delete Legs (the honest version)? It can't be undone. Your workouts stay in the book.</p>
+                  <div class="actions">
+                    <button type="submit" class="button secondary quiet">Delete plan</button>
+                  </div>
+                </form>
+              </details>
+            </div>
+          </article>
+          <article class="card plan" aria-labelledby="plan-3">
+            <h2 id="plan-3">Thu 29 Oct</h2>
+            <ol class="plan-list">
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-lifting-platform" /></svg><a href="/exercises/9">Deadlift</a><span class="n">2 sets<span class="planned" aria-hidden="true"><i></i><i></i></span></span></li>
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-pull-up-bar" /></svg><a href="/exercises/11">Pull-up</a><span class="n">3 sets<span class="planned" aria-hidden="true"><i></i><i></i><i></i></span></span></li>
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-cable-machine" /></svg><a href="/exercises/14">Seated cable row</a><span class="n">2 sets<span class="planned" aria-hidden="true"><i></i><i></i></span></span></li>
+            </ol>
+            <div class="plan-tools">
+              <details class="confirm">
+                <summary class="button secondary quiet"><span class="if-closed">Rename</span><span class="if-open">Cancel</span></summary>
+                <form method="post" action="/plans/3/rename" class="confirm-box">
+                  <label for="name-3">Plan name</label>
+                  <input id="name-3" name="name" maxlength="30" value="Thu 29 Oct" />
+                  <div class="actions">
+                    <button type="submit">Save name</button>
+                  </div>
+                </form>
+              </details>
+              <details class="confirm">
+                <summary class="button secondary quiet"><span class="if-closed">Delete</span><span class="if-open">Keep it</span></summary>
+                <form method="post" action="/plans/3/delete" class="confirm-box">
+                  <p>Delete Thu 29 Oct? It can't be undone. Your workouts stay in the book.</p>
+                  <div class="actions">
+                    <button type="submit" class="button secondary quiet">Delete plan</button>
+                  </div>
+                </form>
+              </details>
+            </div>
+          </article>
+          <article class="card plan" aria-labelledby="plan-2">
+            <h2 id="plan-2">Easy 5k</h2>
+            <ol class="plan-list">
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg><a href="/exercises/1">Run</a><span class="n">1 set<span class="planned" aria-hidden="true"><i></i></span></span></li>
+            </ol>
+            <div class="plan-tools">
+              <details class="confirm">
+                <summary class="button secondary quiet"><span class="if-closed">Rename</span><span class="if-open">Cancel</span></summary>
+                <form method="post" action="/plans/2/rename" class="confirm-box">
+                  <label for="name-2">Plan name</label>
+                  <input id="name-2" name="name" maxlength="30" value="Easy 5k" />
+                  <div class="actions">
+                    <button type="submit">Save name</button>
+                  </div>
+                </form>
+              </details>
+              <details class="confirm">
+                <summary class="button secondary quiet"><span class="if-closed">Delete</span><span class="if-open">Keep it</span></summary>
+                <form method="post" action="/plans/2/delete" class="confirm-box">
+                  <p>Delete Easy 5k? It can't be undone. Your workouts stay in the book.</p>
+                  <div class="actions">
+                    <button type="submit" class="button secondary quiet">Delete plan</button>
+                  </div>
+                </form>
+              </details>
+            </div>
+          </article>
+      </section>
+
+      <!-- state: rename open -->
+      <section class="state">
+        <p class="state-label">State: rename open</p>
+        <p class="state-note">Rename turned into Cancel in place; the field holds the current name. "Thu 29 Oct" is a plan saved with no name (LB-3.1).</p>
+
+          <article class="card plan" aria-labelledby="plan-3-r">
+            <h2 id="plan-3-r">Thu 29 Oct</h2>
+            <ol class="plan-list">
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-lifting-platform" /></svg><a href="/exercises/9">Deadlift</a><span class="n">2 sets<span class="planned" aria-hidden="true"><i></i><i></i></span></span></li>
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-pull-up-bar" /></svg><a href="/exercises/11">Pull-up</a><span class="n">3 sets<span class="planned" aria-hidden="true"><i></i><i></i><i></i></span></span></li>
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-cable-machine" /></svg><a href="/exercises/14">Seated cable row</a><span class="n">2 sets<span class="planned" aria-hidden="true"><i></i><i></i></span></span></li>
+            </ol>
+            <div class="plan-tools">
+              <details class="confirm" open>
+                <summary class="button secondary quiet"><span class="if-closed">Rename</span><span class="if-open">Cancel</span></summary>
+                <form method="post" action="/plans/3/rename" class="confirm-box">
+                  <label for="name-3">Plan name</label>
+                  <input id="name-3" name="name" maxlength="30" value="Thu 29 Oct" />
+                  <div class="actions">
+                    <button type="submit">Save name</button>
+                  </div>
+                </form>
+              </details>
+              <details class="confirm">
+                <summary class="button secondary quiet"><span class="if-closed">Delete</span><span class="if-open">Keep it</span></summary>
+                <form method="post" action="/plans/3/delete" class="confirm-box">
+                  <p>Delete Thu 29 Oct? It can't be undone. Your workouts stay in the book.</p>
+                  <div class="actions">
+                    <button type="submit" class="button secondary quiet">Delete plan</button>
+                  </div>
+                </form>
+              </details>
+            </div>
+          </article>
+      </section>
+
+      <!-- state: rename errors -->
+      <section class="state">
+        <p class="state-label">State: rename errors · pending</p>
+        <p class="state-note">Over 30 characters (only from a forced request: the field stops at 30), then no connection with the text kept, then pending: Save name held down, label kept.</p>
+
+          <article class="card plan" aria-labelledby="plan-3-e1">
+            <h2 id="plan-3-e1">Thu 29 Oct</h2>
+            <ol class="plan-list">
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-lifting-platform" /></svg><a href="/exercises/9">Deadlift</a><span class="n">2 sets<span class="planned" aria-hidden="true"><i></i><i></i></span></span></li>
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-pull-up-bar" /></svg><a href="/exercises/11">Pull-up</a><span class="n">3 sets<span class="planned" aria-hidden="true"><i></i><i></i><i></i></span></span></li>
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-cable-machine" /></svg><a href="/exercises/14">Seated cable row</a><span class="n">2 sets<span class="planned" aria-hidden="true"><i></i><i></i></span></span></li>
+            </ol>
+            <div class="plan-tools">
+              <details class="confirm" open>
+                <summary class="button secondary quiet"><span class="if-closed">Rename</span><span class="if-open">Cancel</span></summary>
+                <form method="post" action="/plans/3/rename" class="confirm-box">
+                  <label for="name-3">Plan name</label>
+                  <input id="name-3" name="name" maxlength="30" value="Back and biceps but mostly vibes" aria-invalid="true" aria-describedby="err-3" />
+                  <p class="error" id="err-3" role="alert">Names are up to 30 characters.</p>
+                  <div class="actions">
+                    <button type="submit">Save name</button>
+                  </div>
+                </form>
+              </details>
+              <details class="confirm">
+                <summary class="button secondary quiet"><span class="if-closed">Delete</span><span class="if-open">Keep it</span></summary>
+                <form method="post" action="/plans/3/delete" class="confirm-box">
+                  <p>Delete Thu 29 Oct? It can't be undone. Your workouts stay in the book.</p>
+                  <div class="actions">
+                    <button type="submit" class="button secondary quiet">Delete plan</button>
+                  </div>
+                </form>
+              </details>
+            </div>
+          </article>
+          <article class="card plan" aria-labelledby="plan-3-e2">
+            <h2 id="plan-3-e2">Thu 29 Oct</h2>
+            <ol class="plan-list">
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-lifting-platform" /></svg><a href="/exercises/9">Deadlift</a><span class="n">2 sets<span class="planned" aria-hidden="true"><i></i><i></i></span></span></li>
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-pull-up-bar" /></svg><a href="/exercises/11">Pull-up</a><span class="n">3 sets<span class="planned" aria-hidden="true"><i></i><i></i><i></i></span></span></li>
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-cable-machine" /></svg><a href="/exercises/14">Seated cable row</a><span class="n">2 sets<span class="planned" aria-hidden="true"><i></i><i></i></span></span></li>
+            </ol>
+            <div class="plan-tools">
+              <details class="confirm" open>
+                <summary class="button secondary quiet"><span class="if-closed">Rename</span><span class="if-open">Cancel</span></summary>
+                <form method="post" action="/plans/3/rename" class="confirm-box">
+                  <label for="name-3">Plan name</label>
+                  <input id="name-3" name="name" maxlength="30" value="Pull day" />
+                  <p class="error" id="err-3" role="alert">That didn't save. Try again.</p>
+                  <div class="actions">
+                    <button type="submit">Save name</button>
+                  </div>
+                </form>
+              </details>
+              <details class="confirm">
+                <summary class="button secondary quiet"><span class="if-closed">Delete</span><span class="if-open">Keep it</span></summary>
+                <form method="post" action="/plans/3/delete" class="confirm-box">
+                  <p>Delete Thu 29 Oct? It can't be undone. Your workouts stay in the book.</p>
+                  <div class="actions">
+                    <button type="submit" class="button secondary quiet">Delete plan</button>
+                  </div>
+                </form>
+              </details>
+            </div>
+          </article>
+          <article class="card plan" aria-labelledby="plan-3-e3">
+            <h2 id="plan-3-e3">Thu 29 Oct</h2>
+            <ol class="plan-list">
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-lifting-platform" /></svg><a href="/exercises/9">Deadlift</a><span class="n">2 sets<span class="planned" aria-hidden="true"><i></i><i></i></span></span></li>
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-pull-up-bar" /></svg><a href="/exercises/11">Pull-up</a><span class="n">3 sets<span class="planned" aria-hidden="true"><i></i><i></i><i></i></span></span></li>
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-cable-machine" /></svg><a href="/exercises/14">Seated cable row</a><span class="n">2 sets<span class="planned" aria-hidden="true"><i></i><i></i></span></span></li>
+            </ol>
+            <div class="plan-tools">
+              <details class="confirm" open>
+                <summary class="button secondary quiet"><span class="if-closed">Rename</span><span class="if-open">Cancel</span></summary>
+                <form method="post" action="/plans/3/rename" class="confirm-box">
+                  <label for="name-3">Plan name</label>
+                  <input id="name-3" name="name" maxlength="30" value="Pull day" />
+                  <div class="actions">
+                    <button type="submit" disabled>Save name</button>
+                  </div>
+                </form>
+              </details>
+              <details class="confirm">
+                <summary class="button secondary quiet"><span class="if-closed">Delete</span><span class="if-open">Keep it</span></summary>
+                <form method="post" action="/plans/3/delete" class="confirm-box">
+                  <p>Delete Thu 29 Oct? It can't be undone. Your workouts stay in the book.</p>
+                  <div class="actions">
+                    <button type="submit" class="button secondary quiet">Delete plan</button>
+                  </div>
+                </form>
+              </details>
+            </div>
+          </article>
+      </section>
+
+      <!-- state: delete confirm -->
+      <section class="state">
+        <p class="state-label">State: delete asks once more</p>
+        <p class="state-note">Delete turned into Keep it; the box names the plan (LB-3.9). The second button is secondary: no red buttons (system 5).</p>
+
+          <article class="card plan" aria-labelledby="plan-5-d">
+            <h2 id="plan-5-d">Legs (the honest version)</h2>
+            <ol class="plan-list">
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-squat-rack" /></svg><a href="/exercises/5">Back squat</a><span class="n">5 sets<span class="planned" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></span></li>
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-lifting-platform" /></svg><a href="/exercises/10">Romanian deadlift</a><span class="n">3 sets<span class="planned" aria-hidden="true"><i></i><i></i><i></i></span></span></li>
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-pull-up-bar" /></svg><a href="/exercises/12">Hanging leg raise</a><span class="n">3 sets<span class="planned" aria-hidden="true"><i></i><i></i><i></i></span></span></li>
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-exercise-mat" /></svg><a href="/exercises/16">Plank</a><span class="n">2 sets<span class="planned" aria-hidden="true"><i></i><i></i></span></span></li>
+            </ol>
+            <div class="plan-tools">
+              <details class="confirm">
+                <summary class="button secondary quiet"><span class="if-closed">Rename</span><span class="if-open">Cancel</span></summary>
+                <form method="post" action="/plans/5/rename" class="confirm-box">
+                  <label for="name-5">Plan name</label>
+                  <input id="name-5" name="name" maxlength="30" value="Legs (the honest version)" />
+                  <div class="actions">
+                    <button type="submit">Save name</button>
+                  </div>
+                </form>
+              </details>
+              <details class="confirm" open>
+                <summary class="button secondary quiet"><span class="if-closed">Delete</span><span class="if-open">Keep it</span></summary>
+                <form method="post" action="/plans/5/delete" class="confirm-box">
+                  <p>Delete Legs (the honest version)? It can't be undone. Your workouts stay in the book.</p>
+                  <div class="actions">
+                    <button type="submit" class="button secondary quiet">Delete plan</button>
+                  </div>
+                </form>
+              </details>
+            </div>
+          </article>
+      </section>
+
+      <!-- state: after a change -->
+      <section class="state">
+        <p class="state-label">State: after rename and after delete</p>
+        <p class="state-note">Confirmed in place with a bubble at the top (system 13). Renamed: the card shows its new name. Deleted: the card is gone.</p>
+
+        <h1>Plans</h1>
+        <p class="lede">Load one from your sheet in any room.</p>
+        <p class="bubble done-line" role="status">Deleted Legs (the honest version). Your workouts are untouched.</p>
+          <article class="card plan" aria-labelledby="plan-7-a">
+            <h2 id="plan-7-a">Push day</h2>
+            <ol class="plan-list">
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg><a href="/exercises/3">Bench press</a><span class="n">4 sets<span class="planned" aria-hidden="true"><i></i><i></i><i></i><i></i></span></span></li>
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg><a href="/exercises/4">Incline bench press</a><span class="n">3 sets<span class="planned" aria-hidden="true"><i></i><i></i><i></i></span></span></li>
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-dumbbell-rack" /></svg><a href="/exercises/8">Lateral raise</a><span class="n">3 sets<span class="planned" aria-hidden="true"><i></i><i></i><i></i></span></span></li>
+            </ol>
+            <div class="plan-tools">
+              <details class="confirm">
+                <summary class="button secondary quiet"><span class="if-closed">Rename</span><span class="if-open">Cancel</span></summary>
+                <form method="post" action="/plans/7/rename" class="confirm-box">
+                  <label for="name-7">Plan name</label>
+                  <input id="name-7" name="name" maxlength="30" value="Push day" />
+                  <div class="actions">
+                    <button type="submit">Save name</button>
+                  </div>
+                </form>
+              </details>
+              <details class="confirm">
+                <summary class="button secondary quiet"><span class="if-closed">Delete</span><span class="if-open">Keep it</span></summary>
+                <form method="post" action="/plans/7/delete" class="confirm-box">
+                  <p>Delete Push day? It can't be undone. Your workouts stay in the book.</p>
+                  <div class="actions">
+                    <button type="submit" class="button secondary quiet">Delete plan</button>
+                  </div>
+                </form>
+              </details>
+            </div>
+          </article>
+          <article class="card plan" aria-labelledby="plan-3-a">
+            <h2 id="plan-3-a">Pull day</h2>
+            <ol class="plan-list">
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-lifting-platform" /></svg><a href="/exercises/9">Deadlift</a><span class="n">2 sets<span class="planned" aria-hidden="true"><i></i><i></i></span></span></li>
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-pull-up-bar" /></svg><a href="/exercises/11">Pull-up</a><span class="n">3 sets<span class="planned" aria-hidden="true"><i></i><i></i><i></i></span></span></li>
+              <li><svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-cable-machine" /></svg><a href="/exercises/14">Seated cable row</a><span class="n">2 sets<span class="planned" aria-hidden="true"><i></i><i></i></span></span></li>
+            </ol>
+            <div class="plan-tools">
+              <details class="confirm">
+                <summary class="button secondary quiet"><span class="if-closed">Rename</span><span class="if-open">Cancel</span></summary>
+                <form method="post" action="/plans/3/rename" class="confirm-box">
+                  <label for="name-3">Plan name</label>
+                  <input id="name-3" name="name" maxlength="30" value="Thu 29 Oct" />
+                  <div class="actions">
+                    <button type="submit">Save name</button>
+                  </div>
+                </form>
+              </details>
+              <details class="confirm">
+                <summary class="button secondary quiet"><span class="if-closed">Delete</span><span class="if-open">Keep it</span></summary>
+                <form method="post" action="/plans/3/delete" class="confirm-box">
+                  <p>Delete Thu 29 Oct? It can't be undone. Your workouts stay in the book.</p>
+                  <div class="actions">
+                    <button type="submit" class="button secondary quiet">Delete plan</button>
+                  </div>
+                </form>
+              </details>
+            </div>
+          </article>
+      </section>
+
+      <!-- state: empty -->
+      <section class="state">
+        <p class="state-label">State: empty · no plans yet</p>
+        <p class="state-note">LB-3.8: says how to get one, and nothing else. A plan is a run through the gym, so the art is the equipment you'd walk past.</p>
+
+        <h1>Plans</h1>
+        <div class="card empty">
+          <svg viewBox="0 0 32 32" width="64" height="64" aria-hidden="true"><use href="/sprites.svg#eq-flat-bench" /></svg>
+          <p>Finish a workout, then save it as a plan from its summary.</p>
+        </div>
+      </section>
+
+      <!-- state: signed out, not yours -->
+      <section class="state">
+        <p class="state-label">States with no screen of their own</p>
+        <p class="state-note">Signed out: 303 to /signin?next=/plans (LB-3.10). Renaming or deleting someone else's plan, or one that's gone: 404 (LB-0.4), the framework's page.</p>
+      </section>
+
+    </main>
+    <footer>
+      <a href="/readme/">What Spotter is for</a>
+    </footer>
+  </body>
+</html>

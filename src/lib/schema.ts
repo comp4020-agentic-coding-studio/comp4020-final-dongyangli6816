@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { type AnySQLiteColumn, index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // The data model in docs/product/spec-4-weeks.md, as far as it is built.
 // Interactions and messages arrived with INT (week 12).
@@ -72,6 +72,11 @@ export const workouts = sqliteTable(
     roomId: integer("room_id").references(() => rooms.id),
     startedAt: integer("started_at").notNull(),
     endedAt: integer("ended_at"),
+    // LB-3: the plan loaded in this workout, while it's open. A reference, not
+    // a copy, so renaming or deleting the plan shows at once (LB-3.22)
+    planId: integer("plan_id").references((): AnySQLiteColumn => plans.id, { onDelete: "set null" }),
+    // LB-3.4: the plan this finished workout was saved as, so it's saved once
+    savedPlanId: integer("saved_plan_id").references((): AnySQLiteColumn => plans.id, { onDelete: "set null" }),
   },
   (t) => [index("workouts_user").on(t.userId, t.startedAt)],
 );
@@ -95,6 +100,10 @@ export const sets = sqliteTable(
     // rest to start with next time
     restEndedAt: integer("rest_ended_at"),
     slackS: integer("slack_s"),
+    // LB-2: null on sets from before types and RPE, which read as normal sets
+    // with no RPE everywhere (LB-0.3)
+    setType: text("set_type", { enum: ["normal", "warmup", "failure"] }),
+    rpe: real("rpe"),
   },
   (t) => [index("sets_workout").on(t.workoutId)],
 );
@@ -167,4 +176,41 @@ export const messages = sqliteTable(
     createdAt: integer("created_at").notNull(),
   },
   (t) => [index("messages_room").on(t.roomId, t.createdAt), index("messages_sender").on(t.senderId, t.createdAt)],
+);
+
+// LB-2.19 to LB-2.27 (D4): one note per exercise per workout, private to its
+// writer, shown again under Last time.
+export const exerciseNotes = sqliteTable(
+  "exercise_notes",
+  {
+    workoutId: integer("workout_id").notNull().references(() => workouts.id, { onDelete: "cascade" }),
+    exerciseId: integer("exercise_id").notNull().references(() => exercises.id),
+    body: text("body").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (t) => [uniqueIndex("exercise_notes_pk").on(t.workoutId, t.exerciseId)],
+);
+
+// LB-3 (D9, D12): a plan is made from a finished workout and holds its
+// exercises in order, each with a number of sets. No target weights.
+export const plans = sqliteTable(
+  "plans",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    userId: integer("user_id").notNull().references(() => users.id),
+    name: text("name").notNull(),
+    createdAt: integer("created_at").notNull(),
+  },
+  (t) => [index("plans_user").on(t.userId, t.createdAt)],
+);
+
+export const planExercises = sqliteTable(
+  "plan_exercises",
+  {
+    planId: integer("plan_id").notNull().references(() => plans.id, { onDelete: "cascade" }),
+    position: integer("position").notNull(),
+    exerciseId: integer("exercise_id").notNull().references(() => exercises.id),
+    sets: integer("sets").notNull(),
+  },
+  (t) => [uniqueIndex("plan_exercises_pk").on(t.planId, t.position)],
 );

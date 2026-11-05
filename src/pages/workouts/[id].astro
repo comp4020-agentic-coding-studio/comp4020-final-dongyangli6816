@@ -3,25 +3,81 @@ import Sprite from "../../components/Sprite.astro";
 import WorkoutSets from "../../components/WorkoutSets.astro";
 import WorkoutTally from "../../components/WorkoutTally.astro";
 import Layout from "../../layouts/Layout.astro";
-import { dayLabel, distanceKm, km, timeRange, volume } from "../../lib/logbook.ts";
+import PendingForms from "../../components/PendingForms.astro";
+import PlanList from "../../components/PlanList.astro";
+import { byExercise, dateLabel, dayLabel, distanceKm, isWorking, km, recordsBySet, timeRange, volume } from "../../lib/logbook.ts";
 import Avatar from "../../components/Avatar.astro";
 import { lookOf } from "../../lib/avatars.ts";
 import { log, who } from "../../lib/log.ts";
-import { workoutSummary } from "../../lib/workouts.ts";
-import { trophyIcon } from "../../sprites/icons.ts";
+import { readPlanName, saveAsPlan, setsForRecords, workoutSummary } from "../../lib/workouts.ts";
+import { recordIcon, trophyIcon } from "../../sprites/icons.ts";
 
 // LOG-6: one finished workout, drawn as its history entry at full size.
 const user = Astro.locals.user;
 if (!user) return Astro.redirect(`/signin?next=${encodeURIComponent(Astro.url.pathname)}`, 303);
 
 const id = Number(Astro.params.id);
+const here = `/workouts/${id}`;
+const notFound = () => new Response("Not found", { status: 404 });
+
+// LB-3.1 to LB-3.7: Save as plan. Refusals re-render the page with the
+// reason under the form, and keep what was typed.
+let planError = "";
+let planErrorField = "";
+let typedName = "";
+let justSaved = "";
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  if (form.get("action") !== "save-plan" || !Number.isInteger(id)) return notFound();
+  typedName = String(form.get("name") ?? "");
+  const own = workoutSummary(user.id, id);
+  if (!own) {
+    log("plan.denied", { ...who(user), workout: Astro.params.id });
+    return notFound();
+  }
+  if (own.endedAt === null) {
+    log("plan.refused", { ...who(user), workout: id, reason: "open" });
+    return new Response("That workout is still going", { status: 409 });
+  }
+  const name = readPlanName(typedName, dateLabel(own.startedAt));
+  if ("error" in name) {
+    planError = name.error;
+    planErrorField = "name";
+    log("plan.refused", { ...who(user), workout: id, reason: "name", length: [...typedName.trim()].length });
+  } else {
+    const r = saveAsPlan(user.id, id, name.name);
+    if (r.ok) {
+      log("plan.save", { ...who(user), workout: id, plan: r.planId, length: [...name.name].length });
+      return Astro.redirect(`${here}?saved=${r.planId}`, 303);
+    }
+    planError =
+      r.reason === "only-warmups"
+        ? "Only warm-ups in this one. Nothing to plan yet."
+        : r.reason === "full"
+          ? "That's 20 plans. Delete one to make room."
+          : "That didn't save. Try again.";
+    log("plan.refused", { ...who(user), workout: id, reason: r.reason });
+  }
+  Astro.response.status = 400;
+}
+
 const w = Number.isInteger(id) ? workoutSummary(user.id, id) : undefined;
 // someone else's workout looks the same as no workout
 if (!w) {
   log("workout.denied", { ...who(user), workout: Astro.params.id });
-  return new Response("Not found", { status: 404 });
+  return notFound();
 }
 if (w.endedAt === null) return Astro.redirect(w.roomId ? `/rooms/${w.roomId}` : "/history", 303);
+if (w.savedPlan && Astro.url.searchParams.get("saved") === String(w.savedPlan.id)) justSaved = w.savedPlan.name;
+
+// LB-4.10, LB-4.12 (D24): the marks, and how many sets carry one
+const records = recordsBySet(setsForRecords(user.id, w.sets.map((s) => s.exerciseId)));
+const recordSets = w.sets.filter((s) => records.has(s.id)).length;
+
+// LB-3.2: the plan this workout would make, the same rule saveAsPlan uses
+const preview = byExercise(w.sets)
+  .map((g) => ({ exerciseId: g.sets[0].exerciseId, name: g.name, sets: Math.min(10, g.sets.filter(isWorking).length) }))
+  .filter((i) => i.sets > 0);
 
 const now = Date.now();
 const day = dayLabel(w.startedAt, now);
@@ -74,6 +130,17 @@ const cheer =
         ))
     }
     <WorkoutTally sets={w.sets} startedAt={w.startedAt} endedAt={w.endedAt} now={now} big />
+    {
+      recordSets > 0 && (
+        <p class="records-line">
+          <span class="badge record">
+            <Sprite sprite={recordIcon} scale={2} />
+            {recordSets} new record{recordSets === 1 ? "" : "s"}
+          </span>
+          Past you just got beaten 🏆
+        </p>
+      )
+    }
   </section>
 
   <div class="actions after">
@@ -85,13 +152,69 @@ const cheer =
     <h2 id="every-set">Every set</h2>
     {
       w.sets.length > 0 ? (
-        <WorkoutSets sets={w.sets} />
+        <WorkoutSets sets={w.sets} records={records} notes={w.notes} look={lookOf(user.id)} />
       ) : (
         <p class="nothing">No sets this time. The bar's not going anywhere 🏋️</p>
       )
     }
   </section>
+
+  {
+    w.sets.length > 0 && (
+      <section class="card save-plan" id="save-card" data-swap aria-labelledby="save-plan">
+        {w.savedPlan && !justSaved ? (
+          <>
+            <h2 id="save-plan">Plan</h2>
+            <p class="saved">
+              Saved as <a href="/plans">{w.savedPlan.name}</a>. Load it from your sheet next time.
+            </p>
+          </>
+        ) : (
+          <>
+            <h2 id="save-plan">Save as plan</h2>
+            {justSaved && (
+              <p class="bubble" role="status">
+                Saved as <a href="/plans">{justSaved}</a>. Load it from the sheet next time 📋
+              </p>
+            )}
+            <p class="hint">Do this one again: the lifts in order, a box per working set. Warm-ups stay out.</p>
+            {preview.length > 0 && <PlanList items={preview} />}
+            {!justSaved && (
+              <form method="post" data-pending>
+                <input type="hidden" name="action" value="save-plan" />
+                <label for="plan-name">Name (optional)</label>
+                <div class="save-row">
+                  <input
+                    id="plan-name"
+                    name="name"
+                    maxlength="30"
+                    placeholder={dateLabel(w.startedAt)}
+                    value={typedName}
+                    aria-invalid={planErrorField === "name" ? "true" : undefined}
+                    aria-describedby={planError ? "plan-error" : undefined}
+                  />
+                  <button type="submit" class="button secondary">
+                    Save plan
+                  </button>
+                </div>
+                {planError && (
+                  <p class="error" id="plan-error" role="alert">
+                    {planError}
+                  </p>
+                )}
+              </form>
+            )}
+          </>
+        )}
+        <a class="to-plans" href="/plans">
+          Your plans
+        </a>
+      </section>
+    )
+  }
+  <PendingForms />
 </Layout>
+
 
 <style>
   .when {
@@ -154,5 +277,50 @@ const cheer =
   .nothing {
     margin: 0;
     color: var(--muted);
+  }
+
+  /* LB-4.12: the count of records, under the tally; only when > 0 */
+  .records-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    margin: 0;
+    font-size: 24px;
+  }
+
+  /* LB-3.1: Save as plan, the last card */
+  .save-plan .hint {
+    margin: -0.5rem 0 1rem;
+  }
+  .save-plan label {
+    margin-top: 0;
+  }
+  .save-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.5rem 1rem;
+  }
+  .save-row input {
+    flex: 1 1 14rem;
+    width: auto;
+  }
+  .save-row button {
+    flex: none;
+    margin-top: var(--px);
+  }
+  .save-plan .error,
+  .save-plan .bubble {
+    width: fit-content;
+    max-width: 100%;
+  }
+  .saved {
+    margin: 0;
+  }
+  .to-plans {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
   }
 </style>

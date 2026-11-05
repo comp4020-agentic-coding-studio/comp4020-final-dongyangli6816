@@ -104,7 +104,7 @@ and the table changes in the same commit.
 | --- | --- |
 | Auth | `signin`, `signup` |
 | Lobby | `home` (`index`), `join`, `avatar` |
-| Logbook | `history`, `summary` |
+| Logbook | `history`, `summary`, `exercise`, `plans` |
 | Gym | `room` |
 | About | `readme` |
 

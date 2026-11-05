@@ -1,0 +1,80 @@
+---
+// LB-3.12: load one of your plans, at the sheet's foot
+// (docs/design/room/spec.md, "Logbook refactor, Nov 4", L.3 item 9). Shown
+// only to someone with a plan, folded to one line. Loading chooses nothing
+// (LB-3.13).
+interface Props {
+  plans: readonly { id: number; name: string }[];
+  // the lift chosen now, kept after the load
+  exerciseId?: number;
+  open?: boolean;
+}
+const { plans, exerciseId, open = false } = Astro.props;
+---
+
+<details class="plan-offer" open={open}>
+  <summary><span class="badge">Plan</span><span class="add">Load a plan</span></summary>
+  <form method="post" class="plan-load">
+    <input type="hidden" name="action" value="plan-load" />
+    {exerciseId !== undefined && <input type="hidden" name="exercise_id" value={exerciseId} />}
+    <label for="plan-pick">Plan</label>
+    <div class="plan-pick">
+      <select id="plan-pick" name="plan_id">
+        {plans.map((p) => <option value={p.id}>{p.name}</option>)}
+      </select>
+      <button type="submit" class="button secondary tool">Load</button>
+    </div>
+    <p class="hint">Loading chooses nothing. You pick the lift.</p>
+  </form>
+</details>
+
+<style>
+  .plan-offer {
+    margin: 1rem 0 0;
+    padding-top: 0.5rem;
+    border-top: 2px dashed var(--edge);
+  }
+  .plan-offer > summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    list-style: none;
+    cursor: pointer;
+  }
+  .plan-offer > summary::-webkit-details-marker {
+    display: none;
+  }
+  .plan-offer .badge {
+    margin: 0;
+  }
+  .add {
+    color: var(--leaf);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+  }
+  .plan-offer[open] .add {
+    color: var(--dim);
+    text-decoration: none;
+  }
+  .plan-load {
+    margin: 0;
+  }
+  .plan-load label {
+    margin: 0.25rem 0;
+  }
+  .plan-pick {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+  }
+  .plan-pick select {
+    flex: 1;
+    min-width: 0;
+  }
+  .plan-load .hint {
+    margin: 0.5rem 0 0;
+  }
+</style>
