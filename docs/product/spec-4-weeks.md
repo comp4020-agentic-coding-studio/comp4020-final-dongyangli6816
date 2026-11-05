@@ -76,7 +76,7 @@ Two situations are designed for:
 | Report, block, mute, kick, admin page, text filtering pipeline, moderation API | Only needed with strangers; a passcode room is a closed group |
 | Email verification, password reset, Google or Apple sign-in, 18+ age gate | No email service in the setup; no strangers |
 | PWA install, web push notifications, offline logging and sync, wake lock | Large effort, and iPhone push needs home-screen install; in-page sound and visual alerts instead |
-| 80 seeded exercises, custom exercises, warm-up sets, personal records, units switching | 16 exercises on 8 pieces of equipment, kg only. Four tracking kinds came back in on 8 Oct (ADR 0002) |
+| 80 seeded exercises, custom exercises, units switching | 16 exercises on 8 pieces of equipment, kg only. Four tracking kinds came back in on 8 Oct (ADR 0002); warm-up sets and personal records came back in on 4 Nov (LB-2, LB-4) |
 | Tiled map editor, sprite sheets drawn per avatar layer, ~20 animations, free walking and A* pathfinding | Sprites are drawn in code with two-frame animations; avatars walk along fixed aisles |
 | Layered avatar creator with thousands of combinations | A handful of choices, done by palette swaps |
 | Success metrics, retention targets, running-cost planning, scaling path | Product-launch concerns, not course concerns |
@@ -132,6 +132,23 @@ delivery plan below.
 | LOG-7 | P0 | History lists the person's past workouts, newest first, with their sets. |
 | LOG-8 | P1 | Edit or delete a set after logging it. |
 | LOG-9 | P1 | Sets carry a client-generated ID, so a retried request on a slow connection never logs the same set twice. |
+
+### The logbook (added 4 Nov)
+
+Criteria and decisions: `docs/product/criteria/logbook.md`. Logging stays one
+set at a time, because Done, rest and Start set drive the avatar. All seven
+are P1, built in this order and cut from the end: LB-1, LB-2 (types and RPE),
+LB-4, LB-6, LB-5, LB-2 (notes), LB-3, LB-7 (added 5 Nov).
+
+| ID | Pri | Requirement |
+| --- | --- | --- |
+| LB-1 | P1 | Choosing an exercise shows every set of it from the last workout that included it, not just the last set. Pre-fill is unchanged (LOG-3). |
+| LB-2 | P1 | A set can be Normal, Warm-up or Failure, and carry an RPE from 1 to 10 in half steps. One note per exercise per workout, shown again under Last time. |
+| LB-3 | P1 | Plans: saved from a finished workout (exercises and a set count each), managed on `/plans`, loaded in the room's sheet. A loaded plan never chooses an exercise by itself. |
+| LB-4 | P1 | Personal records per exercise and kind (heaviest, best estimated 1RM by Epley, most reps, longest hold, longest distance and time), marked on the set that set them. Warm-ups and a first-ever set never set one. Nobody else in the room is told (GYM-17 stays separate). |
+| LB-5 | P1 | `/exercises/:id`: every past set of an exercise, its current records and a line chart of its best per workout, with a table of the same points. |
+| LB-6 | P1 | History opens with this week's workouts, volume and distance, and a streak of consecutive Monday-to-Sunday weeks trained, in Australia/Sydney time. |
+| LB-7 | P1 | Beside each exercise's name on history and the summary, and in the exercise page's head, the person's own avatar doing it on its machine: the gym's two-frame animation, decorative, still under reduced motion. |
 
 ### The gym
 
@@ -280,6 +297,9 @@ row, so a cold start restores the gym exactly.
 | `exercises` | `id`, `name`, `equipment` | Seeded, 16 rows |
 | `workouts` | `id`, `user_id`, `room_id` (nullable), `started_at`, `ended_at` | |
 | `sets` | `id`, `workout_id`, `exercise_id`, `weight_kg`, `reps`, `completed_at`, `rest_target_s`, `slack_s` | `slack_s` written when the next set starts |
+| `sets` (4 Nov) | + `set_type`, `rpe` | Null on sets logged before LB-2: they read as Normal with no RPE |
+| `exercise_notes` | `workout_id`, `exercise_id`, `body` | One note per exercise per workout (LB-2) |
+| `plans`, `plan_exercises` | `id`, `user_id`, `name`; `plan_id`, `position`, `exercise_id`, `sets` | A plan made from a finished workout (LB-3); `workouts.plan_id` is the plan loaded there |
 | `interactions` | `id`, `room_id`, `from_user_id`, `to_user_id`, `kind`, `created_at` | Also enforces INT-4 |
 | `messages` | `id`, `room_id`, `sender_id`, `preset_key`, `body`, `created_at` | `body` only for free text (INT-6) |
 
@@ -313,8 +333,10 @@ Fly in this course (Crit 7 used the same stack). Each choice gets an ADR in
 | Avatar editor | Live preview, choices, randomise, save |
 | `/join/:code` | Joins the room, or asks the person to sign in or sign up first and then joins |
 | Gym (`/rooms/:id`) | Top bar with passcode, invite link and leave; the gym map; the people list; a bottom panel that changes with your state |
-| Workout summary | Duration, sets, volume, slacking time |
-| History | Past workouts with their sets |
+| Workout summary | Duration, sets, volume, slacking time, records set, Save as plan |
+| History | This week's stats and streak, then past workouts with their sets (LB-6) |
+| `/exercises/:id` | One exercise's records, chart and every past set (LB-5) |
+| `/plans` | Your plans: rename, delete; made with Save as plan on a summary (LB-3) |
 | `/readme/` | `README.md` rendered in full |
 
 The gym's bottom panel, by state:
