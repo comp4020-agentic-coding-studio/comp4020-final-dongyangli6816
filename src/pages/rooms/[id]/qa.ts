@@ -1,10 +1,10 @@
 import type { APIRoute } from "astro";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "../../../lib/db.ts";
-import { donySegments, plannedEmotes } from "../../../lib/dony.ts";
+import { donyPb, donySegments, plannedEmotes } from "../../../lib/dony.ts";
 import { broadcast, skipDonyEmotes } from "../../../lib/realtime.ts";
 import { isMember } from "../../../lib/rooms.ts";
-import { interactions, messages, presence, roomMembers, rooms, sets, workouts } from "../../../lib/schema.ts";
+import { interactions, messages, personalBests, presence, roomMembers, rooms, sets, workouts } from "../../../lib/schema.ts";
 
 // The test hook (the contract at the top of spec/interactions.test.ts and
 // spec/dony-emoji.test.ts). Only on an app run with SPOTTER_TEST_HOOKS=1, as
@@ -30,7 +30,13 @@ export const GET: APIRoute = ({ params, locals, url }) => {
   const until = num("until") ?? now + 10 * 60_000;
   const room = db.select({ lastActiveAt: rooms.lastActiveAt }).from(rooms).where(eq(rooms.id, roomId)).get()!;
   const plan = plannedEmotes(roomId, until, num("summonedAt"));
-  const dony = plan && { summonedAt: plan.summonedAt, segments: donySegments(roomId, plan.summonedAt, until), emotes: plan.emotes };
+  const dony = plan && {
+    summonedAt: plan.summonedAt,
+    segments: donySegments(roomId, plan.summonedAt, until),
+    emotes: plan.emotes,
+    // BOT-7.5: his planned PB for that visit (spec/room-feel.test.ts)
+    pb: donyPb(roomId, plan.summonedAt),
+  };
   return Response.json({ now, lastActiveAt: room.lastActiveAt, dony });
 };
 
@@ -98,9 +104,17 @@ export const POST: APIRoute = async ({ params, locals, request }) => {
         .where(inArray(sets.workoutId, open))
         .run();
     }
+    // their interactions, replies and High-five offers, and when an offer of
+    // theirs was accepted, so the 30 s, the 10 s and an offer's window all
+    // run out n ms sooner
     tx.update(interactions)
-      .set({ createdAt: back(interactions.createdAt) })
+      .set({ createdAt: back(interactions.createdAt), doneAt: back(interactions.doneAt) })
       .where(and(eq(interactions.roomId, roomId), eq(interactions.fromUserId, userId)))
+      .run();
+    // their PBs here, so the 30 s after one runs out n ms sooner
+    tx.update(personalBests)
+      .set({ createdAt: back(personalBests.createdAt) })
+      .where(and(eq(personalBests.roomId, roomId), eq(personalBests.userId, userId)))
       .run();
     tx.update(messages)
       .set({ createdAt: back(messages.createdAt) })

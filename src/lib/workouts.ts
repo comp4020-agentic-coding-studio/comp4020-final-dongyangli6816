@@ -1,8 +1,8 @@
 import { and, asc, desc, eq, inArray, isNotNull, isNull, ne } from "drizzle-orm";
 import { db } from "./db.ts";
 import type { Exercise, Kind } from "./exercises.ts";
-import { isSetType, isWorking, readRpe, type SetType } from "./logbook.ts";
-import { exerciseNotes, exercises, planExercises, plans, rooms, sets, workouts } from "./schema.ts";
+import { isSetType, isWorking, readRpe, recordsBySet, type SetType } from "./logbook.ts";
+import { exerciseNotes, exercises, personalBests, planExercises, plans, rooms, sets, workouts } from "./schema.ts";
 
 export const MAX_REST_S = 600;
 
@@ -81,20 +81,42 @@ export function openWorkoutId(userId: number, roomId: number): number | undefine
 
 // LOG-4: the rest after a set starts from the person's last choice for that
 // exercise, or the exercise's default the first time.
-export function logSet(userId: number, roomId: number, exercise: Exercise, values: SetValues, marks: SetMarks = NORMAL): number {
+//
+// GYM-17: whether the set is a personal best is decided in the same
+// IMMEDIATE transaction that stores it, from the person's earlier sets as
+// stored at that moment, so of two Dones at once only the first can be one
+// (GYM-17.5), and Done costs no second request (GYM-17.10). Returns the
+// set's id and whether it was a PB.
+export function logSet(
+  userId: number,
+  roomId: number,
+  exercise: Exercise,
+  values: SetValues,
+  marks: SetMarks = NORMAL,
+): { id: number; pb: boolean } {
   const now = Date.now();
-  return db.transaction(() => {
-    const workoutId = openWorkout(userId, roomId);
-    const restTargetS = lastSet(userId, exercise.id)?.restTargetS ?? exercise.defaultRestS;
-    const id = db
-      .insert(sets)
-      .values({ workoutId, exerciseId: exercise.id, ...values, ...marks, completedAt: now, restTargetS })
-      .returning({ id: sets.id })
-      .get().id;
-    db.update(rooms).set({ lastActiveAt: now }).where(eq(rooms.id, roomId)).run();
-    return id;
-  });
+  return db.transaction(
+    (tx) => {
+      const workoutId = openWorkout(userId, roomId, now);
+      const restTargetS = lastSet(userId, exercise.id)?.restTargetS ?? exercise.defaultRestS;
+      const id = tx
+        .insert(sets)
+        .values({ workoutId, exerciseId: exercise.id, ...values, ...marks, completedAt: now, restTargetS })
+        .returning({ id: sets.id })
+        .get().id;
+      // GYM-17 (settled 5 Nov with logbook D18): a personal best is a set
+      // that sets at least one of the logbook's records, worked out the
+      // logbook's way (LB-4: per record type, working sets only, the first
+      // set of a type sets nothing), read in this transaction with the set
+      const pb = recordsBySet(setsForRecords(userId, [exercise.id])).has(id);
+      if (pb) tx.insert(personalBests).values({ setId: id, roomId, userId, exerciseId: exercise.id, createdAt: now }).run();
+      tx.update(rooms).set({ lastActiveAt: now }).where(eq(rooms.id, roomId)).run();
+      return { id, pb };
+    },
+    { behavior: "immediate" },
+  );
 }
+
 
 // The person's newest set in their open workout here: the one whose rest is
 // running, if any.

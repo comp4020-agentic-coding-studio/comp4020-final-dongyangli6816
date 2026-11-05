@@ -130,8 +130,11 @@ describe("records", () => {
     expect(textOfDoc(await page(b, `/workouts/${first}`))).not.toMatch(/record/i);
   });
 
-  // LB-4.13
-  it("tells nobody else in the room", async (ctx) => {
+  // LB-4.13 as overturned by the user (5 Nov): a record is a personal best
+  // (room-feel GYM-17) and is announced to the room: a `pb` event and the
+  // room log line "Mia hit a PB on bench press", with no numbers and no
+  // record names in the stream or the log; the room view carries no record keys
+  it("tells the room someone set a record, without numbers or which record", async (ctx) => {
     const mia = await person("Mia");
     const tom = await person("Tom");
     const { path, passcode } = await createRoom(mia.b);
@@ -146,10 +149,23 @@ describe("records", () => {
     const d = await done(mia.b, path, EX.bench, kg("62.5", "8"));
     expect(stampSet(d)?.records, "it is a record").toEqual(["e1rm", "heaviest"]);
     await watch.next("room", (e) => member(e, "Mia")?.state === "resting", 2000);
-    expect(JSON.stringify(watch.all("room"))).not.toMatch(/record|e1rm|heaviest/i);
+    // the room's moment: one pb event, who and the lift, nothing else
+    const pb = await watch.next("pb", () => true, 2000);
+    const { arrivedAt: _, ...data } = pb;
+    expect(Object.keys(data).sort(), "who, the lift and when").toEqual(["at", "exercise", "from"]);
+    expect(data).toMatchObject({ from: { name: "Mia" }, exercise: { id: Number(EX.bench), name: "Bench press" } });
+    expect(JSON.stringify(data), "no numbers").not.toMatch(/62\.5|\b8\b|kg/);
+    // the room view and the stream carry no record keys or names
+    expect(JSON.stringify(watch.all("room")), "the room view").not.toMatch(/record|e1rm|heaviest/i);
+    expect(JSON.stringify(watch.all("pb")), "the pb event").not.toMatch(/record|e1rm|heaviest/i);
     expect(watch.all("interaction").length + watch.all("say").length + watch.all("emote").length).toBe(0);
-    const tomHtml = await (await tom.b.get(path)).text();
-    expect(roomLogOf(tomHtml), "no room-log line").toEqual(logBefore);
+    await watch.during("pb", 500);
+    expect(watch.all("pb"), "once").toHaveLength(1);
+    // the log line, and only it, is new; no numbers in the log
+    const tomLog = roomLogOf(await (await tom.b.get(path)).text())!;
+    expect(tomLog.filter((l) => !(logBefore ?? []).includes(l)), "one new room-log line").toEqual(["Mia hit a PB on bench press"]);
+    expect(tomLog.join(" | "), "no numbers in the log").not.toMatch(/62\.5|kg/);
+    // Tom's page names no record type either (his own sets aren't records)
     expect(textOfDoc(await page(tom.b, path))).not.toMatch(/new record/i);
   });
 });

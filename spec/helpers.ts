@@ -72,6 +72,12 @@ export type RoomEvent = {
   // epoch on the server's clock; null on an empty station (the contract at
   // the top of spec/delivery.test.ts)
   stations: { slot: number; equipment: string | null; placedAt: number | null }[];
+  // room-wide lists (docs/product/criteria/room-feel.md; the contract at the
+  // top of spec/room-feel.test.ts), so a reload or reconnect can draw them.
+  // `from`/`to` are written as ids or as {id, name}: readers take either.
+  offers?: { id: number; from: number | Who; to: number | Who; until: number }[];
+  answerable?: { id: number; from: number | Who; to: number | Who; kind: "thanks" | "poke-back" | "slap-back"; until: number }[];
+  pbs?: { userId: number; exercise: { id: number; name: string }; until: number }[];
 };
 
 export async function openEvents(b: Browser, roomPath: string) {
@@ -105,7 +111,7 @@ export async function openEvents(b: Browser, roomPath: string) {
   }
   return {
     res,
-    next: (ms = 1000) =>
+    next: (ms = 2000) =>
       new Promise<RoomEvent>((resolve, reject) => {
         const queued = queue.shift();
         if (queued) return resolve(queued);
@@ -120,7 +126,7 @@ export async function openEvents(b: Browser, roomPath: string) {
         waiting.push(done);
       }),
     // the next event that passes the test, skipping any before it
-    async until(test: (e: RoomEvent) => boolean, ms = 1000): Promise<RoomEvent> {
+    async until(test: (e: RoomEvent) => boolean, ms = 2000): Promise<RoomEvent> {
       const deadline = Date.now() + ms;
       for (;;) {
         const e = await this.next(Math.max(1, deadline - Date.now()));
@@ -138,16 +144,36 @@ export async function openEvents(b: Browser, roomPath: string) {
 // (Date.now() on this side), so a test can say "within a second".
 export type Who = { id: number; name: string };
 export type InteractionEvent = {
-  kind: "cheer" | "poke" | "slap";
+  // replies (docs/product/criteria/room-feel.md, INT-9) are interactions too,
+  // with `answers`: the id of the interaction they answer
+  kind: "cheer" | "poke" | "slap" | "thanks" | "poke-back" | "slap-back";
   from: Who;
   to: Who;
   // the target's state when the server accepted it (Poke's banner wording)
   targetState: "idle" | "lifting" | "resting" | "slacking" | "finished";
   at: number;
+  id?: number;
+  answers?: number;
+  // the sender's state when it was accepted (room-acting.md INT-13.20)
+  fromState?: "idle" | "lifting" | "resting" | "slacking" | "finished";
 };
 export type SayEvent = { preset: string; text: string; from: Who; to: Who; at: number };
 export type EmoteEvent = { emoji: string; from: Who; at: number };
-export type StreamEvents = { room: RoomEvent; interaction: InteractionEvent; say: SayEvent; emote: EmoteEvent };
+// A High-five (room-feel.md INT-10): an offer, open until `until`, or, with
+// `done`, the moment it happened. Nothing is sent for a lapse.
+// With `done`, both people's states at that moment (room-acting.md INT-16, BOT-8.5).
+type State = "idle" | "lifting" | "resting" | "slacking" | "finished";
+export type HighFiveEvent = { id: number; from: Who; to: Who; at: number; until?: number; done?: number; fromState?: State; toState?: State };
+// A personal best (GYM-17, GYM-18): who and on what, never the numbers.
+export type PbEvent = { from: Who; exercise: { id: number; name: string }; at: number };
+export type StreamEvents = {
+  room: RoomEvent;
+  interaction: InteractionEvent;
+  say: SayEvent;
+  emote: EmoteEvent;
+  highfive: HighFiveEvent;
+  pb: PbEvent;
+};
 type Arrived = { [K in keyof StreamEvents]: { name: K; data: StreamEvents[K]; t: number } }[keyof StreamEvents];
 
 export async function watchRoom(b: Browser, roomPath: string) {
@@ -197,7 +223,7 @@ export async function watchRoom(b: Browser, roomPath: string) {
     async next<K extends keyof StreamEvents>(
       name: K,
       test: (e: StreamEvents[K]) => boolean = () => true,
-      ms = 1000,
+      ms = 2000,
     ): Promise<StreamEvents[K] & { arrivedAt: number }> {
       const deadline = Date.now() + ms;
       for (;;) {

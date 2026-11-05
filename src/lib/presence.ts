@@ -5,7 +5,8 @@ import { parseLook, type Look } from "../sprites/avatar.ts";
 import { lookOf } from "./avatars.ts";
 import { presence, roomMembers, rooms, sets, users, workouts } from "./schema.ts";
 import { claimStation, releaseStation, roomStations, type Claim } from "./stations.ts";
-import { donyView, type DonyMember } from "./dony.ts";
+import { donyPb, donyView, type DonyMember } from "./dony.ts";
+import { moments, type Moments } from "./interactions.ts";
 
 export const SLACK_GRACE_S = 30; // GYM-11
 export const AWAY_MS = 60_000; // GYM-14
@@ -47,7 +48,7 @@ export type RoomView = {
   dony: { out: boolean; restingUntil: number; fresh: boolean; member: DonyMember | null };
   // when Dony next changes what he's doing, for realtime.ts; not sent
   donyNext?: number | null;
-};
+} & Moments;
 
 // Choosing a lift (or logging a set of it) puts the person on it, on a
 // station with its equipment (GYM-4). Returns the station it took.
@@ -93,7 +94,7 @@ export function roomView(roomId: number, now = Date.now()): RoomView {
     .where(eq(rooms.id, roomId))
     .get();
   if (!room || room.closedAt) {
-    return { now, closed: true, members: [], stations: [], dony: { out: false, restingUntil: 0, fresh: false, member: null } };
+    return { now, closed: true, members: [], stations: [], dony: { out: false, restingUntil: 0, fresh: false, member: null }, offers: [], answerable: [], pbs: [] };
   }
   const floor = roomStations(roomId);
   const { next: donyNext, ...dony } = donyView(roomId, room, floor, now);
@@ -132,11 +133,17 @@ export function roomView(roomId: number, now = Date.now()): RoomView {
     .all();
   for (const s of recent) if (!latest.has(s.userId)) latest.set(s.userId, s);
 
+  // INT-9, INT-10, GYM-18 (contract): between people here now, Dony included
+  const present = new Set(members.map((m) => m.id));
+  if (dony.member) present.add(dony.member.id);
+  const pb = dony.out ? donyPb(roomId, room.donySummonedAt!) : null;
+
   return {
     now,
     closed: false,
     dony,
-    donyNext,
+    donyNext: pb && now < pb.at && (donyNext === null || pb.at < donyNext) ? pb.at : donyNext,
+    ...moments(roomId, present, pb, now),
     stations: floor.map(({ slot, equipment, placedAt }) => ({ slot, equipment, placedAt })),
     members: members.map((m) => {
       const set = latest.get(m.id);

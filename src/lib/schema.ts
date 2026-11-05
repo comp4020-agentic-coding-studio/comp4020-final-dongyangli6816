@@ -153,12 +153,40 @@ export const interactions = sqliteTable(
     roomId: integer("room_id").notNull().references(() => rooms.id),
     fromUserId: integer("from_user_id").notNull().references(() => users.id),
     toUserId: integer("to_user_id").notNull(),
-    kind: text("kind", { enum: ["cheer", "poke", "slap"] }).notNull(),
+    // a reply (INT-9) is one of the last three; a High-five (INT-10) is the
+    // offer, from the one who offered it
+    kind: text("kind", { enum: ["cheer", "poke", "slap", "highfive", "thanks", "poke-back", "slap-back"] }).notNull(),
     // the target's state when it was accepted, which picks Poke's banner
     targetState: text("target_state").notNull(),
     createdAt: integer("created_at").notNull(),
+    // a reply: the interaction it answers, at most one reply each (INT-9.6)
+    answersId: integer("answers_id"),
+    // a High-five: when it was accepted, so it happened (INT-10.6); an offer
+    // with none is open for 10 s from created_at, then lapsed (INT-10.10).
+    // Only its target accepts, so done_at is also their interaction with
+    // the offerer, for the 10 s limit (F10).
+    doneAt: integer("done_at"),
   },
-  (t) => [index("interactions_room").on(t.roomId, t.createdAt), index("interactions_pair").on(t.fromUserId, t.toUserId, t.createdAt)],
+  (t) => [
+    index("interactions_room").on(t.roomId, t.createdAt),
+    index("interactions_pair").on(t.fromUserId, t.toUserId, t.createdAt),
+    uniqueIndex("interactions_one_reply").on(t.answersId).where(sql`answers_id is not null`),
+  ],
+);
+
+// GYM-17: one row per set that was a personal best when it was logged.
+// Stored, not worked out again later, so an edit or delete never takes back
+// an announcement already made (R4) and the room log keeps it.
+export const personalBests = sqliteTable(
+  "personal_bests",
+  {
+    setId: integer("set_id").primaryKey(),
+    roomId: integer("room_id").notNull().references(() => rooms.id),
+    userId: integer("user_id").notNull().references(() => users.id),
+    exerciseId: integer("exercise_id").notNull().references(() => exercises.id),
+    createdAt: integer("created_at").notNull(),
+  },
+  (t) => [index("personal_bests_room").on(t.roomId, t.createdAt)],
 );
 
 // INT-5: one row per accepted preset, addressed to one person (D8). Kept

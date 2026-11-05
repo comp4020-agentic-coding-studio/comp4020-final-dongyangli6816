@@ -102,19 +102,25 @@ export function byExercise<S extends LoggedSet>(sets: readonly S[]): { name: str
 // (added weight breaks a tie), the heaviest weight otherwise (reps break a
 // tie). The earliest wins a full tie.
 export function topSet<S extends LoggedSet>(sets: readonly S[]): S {
-  const score = (s: S): [number, number] =>
-    s.distanceM !== null
-      ? [s.distanceM, -(s.durationS ?? 0)]
-      : s.durationS !== null
-        ? [s.durationS, 0]
-        : s.kind === "bodyweight"
-          ? [s.reps ?? 0, s.weightKg ?? 0]
-          : [s.weightKg ?? 0, s.reps ?? 0];
-  return sets.reduce((best, s) => {
-    const [a, b] = score(s);
-    const [x, y] = score(best);
-    return a > x || (a === x && b > y) ? s : best;
-  });
+  return sets.reduce((best, s) => (beats(s, best) ? s : best));
+}
+
+// That ranking as a pair, bigger first then the tie-break
+const score = (s: Omit<LoggedSet, "name">): [number, number] =>
+  s.distanceM !== null
+    ? [s.distanceM, -(s.durationS ?? 0)]
+    : s.durationS !== null
+      ? [s.durationS, 0]
+      : s.kind === "bodyweight"
+        ? [s.reps ?? 0, s.weightKg ?? 0]
+        : [s.weightKg ?? 0, s.reps ?? 0];
+
+// Whether one set is strictly better than another of the same exercise; a
+// tie is not (GYM-17.1, F3: the same "Best" history shows)
+function beats(s: Omit<LoggedSet, "name">, than: Omit<LoggedSet, "name">): boolean {
+  const [a, b] = score(s);
+  const [x, y] = score(than);
+  return a > x || (a === x && b > y);
 }
 
 // The best set without the pace or RPE, for tight columns: "100 kg × 5",

@@ -18,7 +18,8 @@
 - **Status**: agreed (every open question settled)
 - **Date**: 4 Nov 2026 (drafted and settled the same day; D23 to D30, found
   during the build, added the same day; D31 to D35 added 4 and 5 Nov; LB-7
-  drafted and settled 5 Nov, D36 to D43; see Decisions; submission is 9 Nov)
+  drafted and settled 5 Nov, D36 to D43; LB-4.13 superseded 5 Nov by
+  `room-feel.md` F15, and D18 updated; see Decisions; submission is 9 Nov)
 
 ## The request
 
@@ -113,14 +114,17 @@ Used with these meanings throughout.
 - **More exercises, custom exercises, units other than kg.** The spec's "Out"
   table, not reopened.
 - **The flex animation for a new heaviest weight (GYM-17)**, left out
-  of this work (D18). LB-4 leaves the data it needs in place.
+  of this work (D18). LB-4 leaves the data it needs in place. *(Built
+  since, 5 Nov 2026, in `room-feel.md`: any record triggers it, F14.)*
 - **Drop sets, supersets, rest-pause and other set types.** Three types cover
   what a squad logs; each new type is one more value later.
 - **A plan builder from scratch, and target weights or reps in a plan**
   (D9, D12). Plans are made from a finished workout.
 - **Sharing plans, records, stats or notes with anyone else**, the squad
   included. Everything in this file is private to its owner (ADR 0006). The
-  room sees nothing new.
+  room sees nothing new. *(One exception since 5 Nov 2026: the room is told
+  that someone set a record, by name and exercise, without numbers;
+  `room-feel.md` F15, superseding LB-4.13.)*
 - **Anything this file adds changing an avatar, a state, a rest, Slacking or
   a station**, except the one place a plan lets you choose an exercise in one
   tap, which is exactly a Choose (GYM-4).
@@ -152,7 +156,9 @@ Used with these meanings throughout.
   watched by strangers can make people anxious).
 - **GYM-17 would broadcast a record to the room.** Between friends that's a
   flex; between strangers it's a leaderboard moment. If it comes, it should be
-  a per-person setting, like INT-7 for slaps.
+  a per-person setting, like INT-7 for slaps. *(It came on 5 Nov 2026,
+  public and with no setting while rooms are friends-only: `room-feel.md`
+  F15. The setting is still owed before public rooms.)*
 - **Notes are stored free text.** They are only ever shown to their writer.
   If plans with notes are shared later, or notes shown to a room, they need
   the same escaping and, with strangers, reporting as INT-6.
@@ -703,11 +709,20 @@ record mark**, not record types broken, so it matches the marks on the
 page: one set of 100 kg × 6 that is a record for Most reps and Best e1RM
 counts as 1 (D24). *HTTP*
 
-**LB-4.13** Given a record is set, then nobody else in the room can tell: no
-animation, banner, room-log line, squad-list change or stream event. The
-flex (GYM-17) is not part of this work (D18). *HTTP* — With
-strangers: a broadcast record becomes a comparison; GYM-17, if built, should
-be a setting.
+**LB-4.13** *Superseded on 5 Nov 2026 by `room-feel.md` F15 (the user:
+"public, overturn LB-4.13"). A Done that sets a record is now a personal
+best, and the room sees its moment: the flex, a room banner and a room-log
+line naming the person and the exercise, without numbers or record types,
+and a fanfare (`room-feel.md` GYM-17, GYM-18). No setting in this build; one
+comes with public rooms. Everything else in LB-4 (the numbers, the record
+types, the marks) stays private to the lifter. The original criterion is
+kept below for the record; do not test it.*
+
+> ~~Given a record is set, then nobody else in the room can tell: no
+> animation, banner, room-log line, squad-list change or stream event. The
+> flex (GYM-17) is not part of this work (D18). *HTTP* — With strangers: a
+> broadcast record becomes a comparison; GYM-17, if built, should be a
+> setting.~~
 
 **LB-4.14** Given the copy around records, then it celebrates the person's
 own progress, never compares them with anyone, and says nothing about sets
@@ -1005,7 +1020,7 @@ versions can be found later.
 | D15 (Q15) | Which sets get a record mark? | (a) Each working set that beats every earlier one, marks staying put; (b) at most one per record type per workout, the workout's best | **(a).** Marks appear the moment you tap Done and never move, so the stamp, This workout and history always agree; (b) would move a mark mid-workout | LB-4.1, LB-4.11 |
 | D16 (Q16) | Is the first ever set of an exercise a record? | (a) No; (b) yes | **(a).** "Record" should mean you beat something. With (b), every new exercise and every showcase set is a "record", and the word stops meaning anything | LB-4.3 |
 | D17 (Q17) | Which records for each kind? | (a) Bodyweight: most reps, heaviest added; hold: longest; cardio: longest distance, longest time; (b) add fastest pace over runs of at least 1 km | **(a).** Every type is one comparison of one stored field. Pace needs a minimum distance to mean anything (a 100 m sprint would win); that's the richer version | Terms table, LB-4.6 |
-| D18 (Q18) | Include the flex animation for a new heaviest weight (GYM-17)? | (a) Not in this work; (b) include it | **(a).** It needs new art, a room event and timing with the walk to the cooler, in a week already full. LB-4 leaves it a small follow-up: "a Done that sets Heaviest plays the flex" | LB-4.13 |
+| D18 (Q18) | Include the flex animation for a new heaviest weight (GYM-17)? | (a) Not in this work; (b) include it | **(a).** It needs new art, a room event and timing with the walk to the cooler, in a week already full. LB-4 leaves it a small follow-up: "a Done that sets Heaviest plays the flex". **Built since (5 Nov 2026), in `room-feel.md`, widened by the user: a Done that sets any record (not only Heaviest) is a personal best and plays the room's moment (`room-feel.md` F14), and the room is told, overturning LB-4.13 (F15).** | LB-4.13 (superseded) |
 
 ### LB-5: The exercise page
 

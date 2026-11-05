@@ -15,7 +15,7 @@ import { avatarLabel, everyone } from "../../lib/floor.ts";
 import { STATE_WORD, stateAt, whatParts } from "../../lib/squad.ts";
 import { log, who } from "../../lib/log.ts";
 import { announce, broadcast, donyEmotes } from "../../lib/realtime.ts";
-import { emote, interact, joinedAt, limitsFrom, roomLog, say } from "../../lib/interactions.ts";
+import { acceptHighFive, emote, interact, joinedAt, limitsFrom, offerHighFive, reply, roomLog, say } from "../../lib/interactions.ts";
 import { EMOJI } from "../../sprites/emoji.ts";
 import { ago, isEmoji, isKind, isPreset, logLine, PRESETS, slapRefusal, type LogEntry, type Refusal } from "../../lib/moves.ts";
 import { endRoom, isMember, leaveRoom, ROOM_SIZE, touchRoom, wasMember } from "../../lib/rooms.ts";
@@ -69,6 +69,12 @@ import {
   slapIcon,
   sayIcon,
   emoteIcon,
+  thanksIcon,
+  highFiveIcon,
+  pbIcon,
+  soundIcon,
+  bellIcon,
+  soundOffIcon,
 } from "../../sprites/icons.ts";
 
 const user = Astro.locals.user;
@@ -158,26 +164,59 @@ if (Astro.request.method === "POST") {
   // refused with a reason it maps to the copy bank. Accepted ones go to
   // everyone watching as their own small event; the room is only re-sent if
   // the sender was Away, since sending brings them back (INT-5.13).
-  if (action === "interact" || action === "say" || action === "emote") {
+  if (action === "interact" || action === "say" || action === "emote" || action === "reply" || action === "accept") {
     const json = (status: number, body: object) =>
       new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
     const refuse = (status: number, reason: string, fields: Parameters<typeof log>[1] = {}) => {
       did(`${action}.refused`, { reason, ...fields });
       return json(status, { ok: false, reason });
     };
-    const STATUS: Record<Refusal, number> = { self: 400, gone: 409, "target-lifting": 409, "target-finished": 409, "rate-limit": 429 };
+    const STATUS: Record<Refusal, number> = {
+      self: 400,
+      gone: 409,
+      "target-lifting": 409,
+      "target-finished": 409,
+      "rate-limit": 429,
+      "too-late": 409,
+      answered: 409,
+      "nothing-to-answer": 409,
+      "target-away": 409,
+      "too-slow": 409,
+    };
     const me = { id: user.id, name: user.displayName };
     // `to` is a member's id, or Dony's (0), in decimal digits
     const toText = String(form.get("to") ?? "");
     const to = /^\d+$/.test(toText) ? Number(toText) : NaN;
     // touchRoom above already counted it as activity; back from Away for everyone
-    const sent = (event: "interaction" | "say" | "emote", data: { at: number }, fields: Parameters<typeof log>[1]) => {
+    const sent = (event: "interaction" | "say" | "emote" | "highfive", data: { at: number }, fields: Parameters<typeof log>[1], extra: object = {}) => {
       did(`${action}.sent`, fields);
       announce(roomId, event, data);
-      if (wasAway) broadcast(roomId);
-      if (event === "interaction") donyEmotes(roomId);
-      return json(200, { ok: true, at: data.at });
+      // a reply or a High-five changes the room's lists of what's open
+      // (offers, answerable), so the room is re-sent with them
+      if (wasAway || event === "highfive" || action === "reply" || event === "interaction") broadcast(roomId);
+      else if (event !== "emote") donyEmotes(roomId);
+      // the server's time it was accepted: a High-five's acceptance, else the stored time
+      const at = "done" in data && typeof data.done === "number" ? data.done : data.at;
+      return json(200, { ok: true, at, ...extra });
     };
+    // INT-10: an offer, or an acceptance (by `accept`, or by a crossing offer)
+    const five = (r: ReturnType<typeof offerHighFive>, fields: Parameters<typeof log>[1]) => {
+      if (!r.ok) return refuse(STATUS[r.reason], r.reason, fields);
+      const e = r.event;
+      const what = e.done !== undefined ? "done" : "offered";
+      return sent("highfive", e, { ...fields, highfive: what, offer: e.id }, e.done !== undefined ? { offer: e.id, done: true } : { offer: e.id, until: e.until });
+    };
+    if (action === "reply" || action === "accept") {
+      const field = action === "reply" ? "answers" : "offer";
+      const idText = String(form.get(field) ?? "");
+      if (!/^\d+$/.test(idText) || !Number.isSafeInteger(Number(idText))) return refuse(400, "invalid", { [field]: idText.slice(0, 20) });
+      const id = Number(idText);
+      if (action === "accept") return five(acceptHighFive(roomView(roomId), roomId, me, id), { offer: id });
+      const r = reply(roomView(roomId), roomId, me, id);
+      return r.ok
+        ? sent("interaction", r.event, { kind: r.event.kind, to: r.event.to.id, answers: id, target_state: r.event.targetState })
+        : refuse(STATUS[r.reason], r.reason, { answers: id });
+    }
     if (action === "emote") {
       const emoji = String(form.get("emoji") ?? "");
       if (!isEmoji(emoji)) return refuse(400, "invalid", { emoji: emoji.slice(0, 20) });
@@ -187,6 +226,7 @@ if (Astro.request.method === "POST") {
     if (!Number.isSafeInteger(to)) return refuse(400, "invalid", { to: toText.slice(0, 20) });
     if (action === "interact") {
       const kind = String(form.get("kind") ?? "");
+      if (kind === "highfive") return five(offerHighFive(roomView(roomId), roomId, me, to), { kind, to });
       if (!isKind(kind)) return refuse(400, "invalid", { kind: kind.slice(0, 20) });
       const r = interact(roomView(roomId), roomId, me, to, kind);
       return r.ok
@@ -299,10 +339,17 @@ if (Astro.request.method === "POST") {
       const read = readSet(ex.kind, form);
       const marks = readMarks(form);
       if ("values" in read && "marks" in marks) {
-        const setIdNew = logSet(user.id, roomId, ex, read.values, marks.marks);
+        const { id: setIdNew, pb } = logSet(user.id, roomId, ex, read.values, marks.marks);
         // the set says where it was done; a second station.claim would be noise
         const claim = setLifting(user.id, roomId, ex.id);
         did("set.log", { exercise: ex.name, ...values(read.values), ...marked(marks.marks), slot: claim?.slot, set: setIdNew });
+        // GYM-17, GYM-18: a set that sets a logbook record is the room's
+        // moment: everyone sees the flex, everyone else the banner; the
+        // lifter's stamp shows the Record badge (LB-4.10)
+        if (pb) {
+          did("set.pb", { exercise: ex.name, kind: ex.kind });
+          announce(roomId, "pb", { from: { id: user.id, name: user.displayName }, exercise: { id: ex.id, name: ex.name }, at: Date.now() });
+        }
         // LB-2.21: a note never stops a set; a refused one is said after it,
         // on the page as it is after Done, with the text kept
         if (form.has("note") && !keepNote(ex)) {
@@ -391,7 +438,17 @@ if (view.dony.member) squad.push(view.dony.member);
 // in (D14), shown only with lines on both sides of it (INT-5.23)
 const log50 = roomLog(roomId);
 const walkedIn = joinedAt(roomId, user.id);
-const LOG_ICON = { cheer: cheerIcon, poke: pokeIcon, slap: slapIcon, say: sayIcon };
+const LOG_ICON: Record<LogEntry["kind"], typeof cheerIcon> = {
+  cheer: cheerIcon,
+  poke: pokeIcon,
+  slap: slapIcon,
+  say: sayIcon,
+  thanks: thanksIcon,
+  "poke-back": pokeIcon,
+  "slap-back": slapIcon,
+  highfive: highFiveIcon,
+  pb: pbIcon,
+};
 const showWalkedIn = walkedIn !== undefined && log50.some((e) => e.at >= walkedIn) && log50.some((e) => e.at < walkedIn);
 type LogRow = { entry: LogEntry } | { walkedIn: number };
 const logRows: LogRow[] = [];
@@ -406,7 +463,7 @@ const liveSays = log50.filter((e) => e.kind === "say" && now - e.at < 5_000).rev
 const LOG_SHOWN = 5;
 const logShown = logRows.slice(0, LOG_SHOWN + Number(logRows.slice(0, LOG_SHOWN).some((r) => "walkedIn" in r)));
 const logOlder = logRows.slice(logShown.length);
-const isAboutMe = (e: LogEntry) => e.from.id === user.id || e.to.id === user.id;
+const isAboutMe = (e: LogEntry) => e.from.id === user.id || ("to" in e && e.to.id === user.id);
 // GYM-4: the station you claimed, shown in the sheet while you're on a lift
 const myStation = !editing && exercise ? view.members.find((m) => m.id === user.id)?.station : undefined;
 
@@ -496,7 +553,13 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
 ---
 
 <Layout title={`Room ${room.passcode}`} surface="night">
-  <div class="gym" data-room={roomId} data-limits={JSON.stringify(limits)} data-says={JSON.stringify(liveSays)}>
+  <div
+    class="gym"
+    data-room={roomId}
+    data-limits={JSON.stringify(limits)}
+    data-says={JSON.stringify(liveSays)}
+    data-moments={JSON.stringify({ offers: view.offers, answerable: view.answerable, pbs: view.pbs })}
+  >
     <GymMap view={view} me={user.id} passcode={room.passcode} />
 
     <section class="panel sheet" aria-labelledby="sheet-title" data-base-state={baseState} data-workout={openId}>
@@ -985,13 +1048,23 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
           <div class="menu-who">
             <p class="menu-name" id="menu-name"></p>
           </div>
+          <p class="menu-news" hidden><Sprite sprite={pbIcon} scale={2} /><span></span></p>
           <ul class="menu-acts">
+            {/* INT-9.10, INT-10.14: the answer row, filled by the script */}
+            <li class="answer" hidden>
+              <button type="button" class="act" role="menuitem" value="" aria-describedby="menu-why">
+                <span class="cur" aria-hidden="true"></span>
+                <span class="answer-icon"></span>
+                <span class="answer-word"></span>
+              </button>
+            </li>
             {
               (
                 [
                   ["cheer", cheerIcon, "Cheer"],
                   ["poke", pokeIcon, "Poke"],
                   ["slap", slapIcon, "Slap"],
+                  ["highfive", highFiveIcon, "High-five"],
                   ["message", sayIcon, "Message"],
                 ] as const
               ).map(([value, icon, word]) => (
@@ -1039,6 +1112,14 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       <template data-part="log-poke"><Sprite sprite={pokeIcon} scale={2} /></template>
       <template data-part="log-slap"><Sprite sprite={slapIcon} scale={2} /></template>
       <template data-part="log-say"><Sprite sprite={sayIcon} scale={2} /></template>
+      <template data-part="log-thanks"><Sprite sprite={thanksIcon} scale={2} /></template>
+      <template data-part="log-high-five"><Sprite sprite={highFiveIcon} scale={2} /></template>
+      <template data-part="log-pb"><Sprite sprite={pbIcon} scale={2} /></template>
+      <template data-part="tick"><Sprite sprite={tickIcon} scale={2} /></template>
+      {/* INT-12: the sound setting's icons, by value (F.11) */}
+      <template data-part="sound-all"><Sprite sprite={soundIcon} scale={2} /></template>
+      <template data-part="sound-rest"><Sprite sprite={bellIcon} scale={2} /></template>
+      <template data-part="sound-off"><Sprite sprite={soundOffIcon} scale={2} /></template>
       <template data-part="lost">
         <span class="lost"><Sprite sprite={signalIcon} scale={2} />Reconnecting…</span>
       </template>
@@ -1058,7 +1139,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
             "walkedIn" in r ? (
               <li class="joined">You walked in · {timeOfDay(r.walkedIn)}</li>
             ) : (
-              <li class:list={{ you: isAboutMe(r.entry) }} data-at={r.entry.at}>
+              <li class:list={{ you: isAboutMe(r.entry), pb: r.entry.kind === "pb" }} data-at={r.entry.at}>
                 <Sprite sprite={LOG_ICON[r.entry.kind]} scale={2} />
                 {(() => {
                   const l = logLine(r.entry, user.id);
@@ -1083,7 +1164,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
             "walkedIn" in r ? (
               <li class="joined">You walked in · {timeOfDay(r.walkedIn)}</li>
             ) : (
-              <li class:list={{ you: isAboutMe(r.entry) }} data-at={r.entry.at}>
+              <li class:list={{ you: isAboutMe(r.entry), pb: r.entry.kind === "pb" }} data-at={r.entry.at}>
                 <Sprite sprite={LOG_ICON[r.entry.kind]} scale={2} />
                 {(() => {
                   const l = logLine(r.entry, user.id);
@@ -1255,7 +1336,20 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   import { STATIONS } from "../../sprites/gym.ts";
   import { isMachine } from "../../sprites/poses.ts";
   import { TILE } from "../../sprites/sprite.ts";
-  import { ago, logLine, slapRefusal, type Kind, type LogEntry, type Refusal } from "../../lib/moves.ts";
+  import {
+    ago,
+    LOG_ICON,
+    logLine,
+    PB_MS,
+    REPLY,
+    REPLY_MS,
+    slapRefusal,
+    type Kind,
+    type LogEntry,
+    type Move,
+    type Refusal,
+    type Reply,
+  } from "../../lib/moves.ts";
   import type { MemberView, State } from "../../lib/presence.ts";
 
   // Every timer here is worked out from Date.now() on each tick, never
@@ -1268,24 +1362,143 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${ss}` : `${m}:${ss}`;
   };
 
+  // ---------- sound (LOG-5, INT-12; room spec F.11, F.13) ----------
+  // The browser lets a page play sound only after a gesture on it: the first
+  // tap or key press (INT-12.11) unlocks it. Before that a sound is skipped
+  // silently (INT-12.10). Everything goes through one gain node, so Sound
+  // off can silence what is already playing (INT-12.7).
+  type SoundSetting = "all" | "rest" | "off";
+  const SOUND_KEY = "spotter-sound";
   let audio: AudioContext | undefined;
-  addEventListener("pointerdown", () => (audio ??= new AudioContext()).resume(), { once: true });
-  function beep() {
+  let master: GainNode | undefined;
+  let unlocked = false;
+  const unlock = () => {
+    if (unlocked) return;
+    unlocked = true;
     try {
       audio ??= new AudioContext();
-      for (const at of [0, 0.25]) {
+      void audio.resume();
+    } catch {
+      // no sound here; nothing else depends on it
+    }
+  };
+  addEventListener("pointerdown", unlock, { once: true });
+  addEventListener("keydown", unlock, { once: true });
+
+  // INT-12.5, INT-12.6: kept in this browser only; a browser that won't
+  // keep it starts on All sounds each time
+  function soundSetting(): SoundSetting {
+    try {
+      const v = localStorage.getItem(SOUND_KEY);
+      return v === "rest" || v === "off" ? v : "all";
+    } catch {
+      return "all";
+    }
+  }
+  let sound: SoundSetting = soundSetting();
+  function setSound(v: SoundSetting) {
+    sound = v;
+    try {
+      localStorage.setItem(SOUND_KEY, v);
+    } catch {
+      // not kept; it still holds for this page
+    }
+    // a sound already playing stops at once when it's turned off
+    if (v === "off" && master && audio) {
+      master.disconnect();
+      master = undefined;
+    }
+  }
+
+  // One note: a frequency (or a slide from one to another), a start, a length
+  type Note = { f: number; to?: number; at: number; ms: number; wave?: OscillatorType };
+  function play(notes: Note[], gain: number, noiseAt?: number) {
+    if (!unlocked || sound === "off") return;
+    try {
+      audio ??= new AudioContext();
+      if (!master) {
+        master = audio.createGain();
+        master.connect(audio.destination);
+      }
+      const t0 = audio.currentTime;
+      for (const n of notes) {
         const osc = audio.createOscillator();
-        const gain = audio.createGain();
-        osc.type = "square";
-        osc.frequency.value = 880;
-        gain.gain.value = 0.08;
-        osc.connect(gain).connect(audio.destination);
-        osc.start(audio.currentTime + at);
-        osc.stop(audio.currentTime + at + 0.15);
+        const g = audio.createGain();
+        osc.type = n.wave ?? "square";
+        osc.frequency.setValueAtTime(n.f, t0 + n.at / 1000);
+        if (n.to) osc.frequency.linearRampToValueAtTime(n.to, t0 + (n.at + n.ms) / 1000);
+        g.gain.value = gain;
+        osc.connect(g).connect(master);
+        osc.start(t0 + n.at / 1000);
+        osc.stop(t0 + (n.at + n.ms) / 1000);
+      }
+      // the High-five's smack: 30 ms of noise
+      if (noiseAt !== undefined) {
+        const len = Math.round(audio.sampleRate * 0.03);
+        const buf = audio.createBuffer(1, len, audio.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+        const src = audio.createBufferSource();
+        const g = audio.createGain();
+        src.buffer = buf;
+        g.gain.value = gain;
+        src.connect(g).connect(master);
+        src.start(t0 + noiseAt / 1000);
       }
     } catch {
-      // no sound available; the flash and the red still say it
+      // no sound available; what is on screen still says it
     }
+  }
+
+  // F.13's palette, by what happened. Interaction sounds are capped at one a
+  // second, and never start under the fanfare or the rest-over beep, which
+  // always play (INT-12.9, R8).
+  const SOUNDS = {
+    cheer: { notes: [{ f: 660, at: 0, ms: 70 }, { f: 990, at: 70, ms: 70 }], gain: 0.04 },
+    poke: { notes: [{ f: 520, at: 0, ms: 50 }, { f: 520, at: 110, ms: 50 }], gain: 0.04 },
+    slap: { notes: [{ f: 300, to: 150, at: 0, ms: 90, wave: "triangle" as const }], gain: 0.04 },
+    thanks: { notes: [{ f: 880, at: 0, ms: 80 }, { f: 660, at: 80, ms: 80 }], gain: 0.04 },
+    offer: { notes: [{ f: 784, at: 0, ms: 60 }, { f: 784, at: 120, ms: 60 }], gain: 0.04 },
+    say: { notes: [{ f: 440, at: 0, ms: 40 }], gain: 0.03 },
+    sent: { notes: [{ f: 1320, at: 0, ms: 25 }], gain: 0.03 },
+    highfive: { notes: [{ f: 523, at: 0, ms: 50 }, { f: 659, at: 50, ms: 50 }, { f: 784, at: 100, ms: 50 }], gain: 0.04, noiseAt: 150 },
+  } satisfies Record<string, { notes: Note[]; gain: number; noiseAt?: number }>;
+  type SoundName = keyof typeof SOUNDS;
+  let lastBlip = -Infinity;
+  let loudUntil = -Infinity;
+  function blip(name: SoundName) {
+    if (sound !== "all") return;
+    const now = performance.now();
+    if (now - lastBlip < 1000 || now < loudUntil) return;
+    lastBlip = now;
+    const s: { notes: Note[]; gain: number; noiseAt?: number } = SOUNDS[name];
+    play(s.notes, s.gain, s.noiseAt);
+  }
+  // GYM-18, INT-12.1: the PB fanfare, for everyone in the room
+  function fanfare() {
+    if (sound !== "all") return;
+    loudUntil = performance.now() + 560;
+    play(
+      [
+        { f: 523, at: 0, ms: 90 },
+        { f: 659, at: 90, ms: 90 },
+        { f: 784, at: 180, ms: 90 },
+        { f: 1047, at: 270, ms: 290 },
+      ],
+      0.06,
+    );
+  }
+  // LOG-5: rest over, unchanged, unless sound is off
+  function beep() {
+    if (sound === "off") return;
+    loudUntil = performance.now() + 400;
+    play(
+      [
+        { f: 880, at: 0, ms: 150 },
+        { f: 880, at: 250, ms: 150 },
+      ],
+      0.08,
+    );
   }
 
   // Binds the timers, the stopwatch and the pending state to the room as it
@@ -1563,10 +1776,14 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
         disconnect();
         return navigate(location.pathname);
       }
+      checkErrands();
       liveTick();
+      readMoments(view);
       catchingUp = false;
     });
     source.addEventListener("interaction", (e) => onInteraction(JSON.parse((e as MessageEvent<string>).data)));
+    source.addEventListener("highfive", (e) => onHighFive(JSON.parse((e as MessageEvent<string>).data)));
+    source.addEventListener("pb", (e) => onPb(JSON.parse((e as MessageEvent<string>).data)));
     source.addEventListener("say", (e) => onSay(JSON.parse((e as MessageEvent<string>).data)));
     source.addEventListener("emote", (e) => onEmote(JSON.parse((e as MessageEvent<string>).data)));
     source.addEventListener("open", () => {
@@ -1574,7 +1791,10 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       lostTimer = undefined;
       connected = true;
       // the first message on a new stream is news we missed: everyone is put
-      // where it says, with no walk or delivery replayed (GYM-10.21, GYM-6.20)
+      // where it says, with no walk, delivery or errand replayed (GYM-10.21,
+      // GYM-6.20, INT-13.21)
+      for (const id of [...errands.keys()]) cutShort(id, "left");
+      reacting.clear();
       catchingUp = true;
       skew = -Infinity;
       liveTick();
@@ -1846,7 +2066,8 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       if (landing.has(b)) {
         landing.set(b, { tile: p.tile, onStation: p.onStation, pose: p.pose });
         if (!b.querySelector(".av")) show(b, "stand");
-      } else {
+      } else if (!holding(p.id)) {
+        // a flex, an errand or a reaction holds them until it ends (F.5, A.2, A.4)
         if (!b.querySelector(".av")) show(b, p.pose);
         walk(b, p.tile, p.onStation, p.pose);
       }
@@ -2310,7 +2531,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       newMap.querySelectorAll(".avatar").forEach((b) => b.remove());
       newMap.append(...oldMap.querySelectorAll(".avatar"));
       // pops, bubbles, a banner, an open menu and a refusal carry on too
-      for (const sel of [".pops", ".says", ".banner-slot"]) newMap.querySelector(sel)?.replaceWith(oldMap.querySelector(sel)!);
+      for (const sel of [".pops", ".says:not(.offers)", ".says.offers", ".banner-slot"]) newMap.querySelector(sel)?.replaceWith(oldMap.querySelector(sel)!);
       newMap.append(...oldMap.querySelectorAll(":scope > .menu, :scope > .note, :scope > .error"));
       for (const div of oldMap.querySelectorAll<HTMLElement>(".station")) {
         newMap.querySelector(`.station[data-slot="${div.dataset.slot}"]`)?.replaceWith(div);
@@ -2472,11 +2693,49 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     gone: (n) => `${n}'s left the gym.`,
     "rate-limit": () => "Easy, give them 10 seconds.",
     self: () => "",
+    // INT-9, INT-10 (room spec F.9)
+    "too-late": () => "Too late to answer that one.",
+    answered: () => "Already answered.",
+    "nothing-to-answer": () => "Too late to answer that one.",
+    "target-away": (n) => `${n}'s away right now.`,
+    "too-slow": (n) => `Too slow. ${n}'s hand is down.`,
   };
   const FAILED = "That didn't send. Try again.";
 
+  // INT-11.5: what the sender did, for the confirmation line and its screen
+  // reader line (room spec F.9)
+  const SENT: Record<Move | "offer", (n: string) => [line: string, said: string]> = {
+    cheer: (n) => [`You cheered ${n} 🔥`, `Cheered ${n}`],
+    poke: (n) => [`You poked ${n} 👉`, `Poked ${n}`],
+    slap: (n) => [`You slapped ${n} 👋`, `Slapped ${n}`],
+    thanks: (n) => [`You thanked ${n} 🙏`, `Thanked ${n}`],
+    "poke-back": (n) => [`You poked ${n} back 👉`, `Poked ${n} back`],
+    "slap-back": (n) => [`You returned ${n}'s slap 👋`, `Returned ${n}'s slap`],
+    offer: (n) => [`You offered ${n} a high-five ✋`, `Offered ${n} a high-five`],
+    highfive: (n) => [`You high-fived ${n} 🙌`, `High-fived ${n}`],
+  };
+  function say(line: string) {
+    const news = document.querySelector<HTMLElement>("#sheet-news");
+    if (!news) return;
+    news.textContent = "";
+    setTimeout(() => (news.textContent = line), 50);
+  }
+  // R9: the line shows only when their avatar is out of view; the screen
+  // reader hears it either way. A soft sound says it landed (INT-12.1).
+  function landed(what: Move | "offer", id: number, name: string) {
+    const [line, said] = SENT[what](name);
+    say(said);
+    blip("sent");
+    const b = avatarOf(id);
+    const r = b?.getBoundingClientRect();
+    const inView = !!r && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth && r.width > 0;
+    if (!inView) tell(line, false, undefined, "", true);
+  }
+
   // Posts a move as the page's forms would, and reads the JSON answer.
-  async function send(fields: Record<string, string>): Promise<{ ok: true; at: number } | { ok: false; reason: Refusal | "failed" }> {
+  async function send(
+    fields: Record<string, string>,
+  ): Promise<{ ok: true; at: number; offer?: number; until?: number; done?: boolean } | { ok: false; reason: Refusal | "failed" }> {
     try {
       const res = await fetch(location.pathname, { method: "POST", body: new URLSearchParams(fields) });
       const body = res.headers.get("content-type")?.includes("json") ? await res.json() : null;
@@ -2487,8 +2746,57 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     }
   }
 
+  // ---------- what is open between you and each person (INT-9, INT-10, GYM-18) ----------
+  // From the room's lists (a reload, a reconnect: INT-9.13, INT-10.12),
+  // brought up to date by each event in between. Each runs out at its own
+  // `until`, server time.
+  // `taken`: an offer to Dony he's going to accept at `until` (BOT-7.2)
+  type Open = { id: number; from: number; to: number; until: number; taken?: boolean };
+  let answers: (Open & { kind: Reply })[] = [];
+  let offers: Open[] = [];
+  let pbs: { userId: number; exercise: { id: number; name: string }; until: number }[] = [];
+  function readMoments(v: RoomView) {
+    answers = v.answerable;
+    offers = v.offers;
+    pbs = v.pbs;
+    for (const o of offers) if (o.from === meId() && !lapseTimers.has(o.id)) watchLapse(o);
+    drawOffers();
+    redrawAnswers();
+  }
+  const stillOpen = <T extends { until: number }>(xs: T[]) => xs.filter((x) => x.until > nowServer());
+  // what you can answer from this person now: their offer first, then their
+  // interaction (INT-9.10's order)
+  function answerFrom(id: number): { offer: Open } | { reply: Open & { kind: Reply } } | undefined {
+    const me = meId();
+    const offer = stillOpen(offers).find((o) => o.from === id && o.to === me);
+    if (offer) return { offer };
+    const reply = stillOpen(answers).find((a) => a.from === id && a.to === me);
+    return reply && { reply };
+  }
+  const freshPb = (id: number) => stillOpen(pbs).find((p) => p.userId === id);
+  // one timer brings the menu and banner in line when the next thing runs out
+  let momentTimer: ReturnType<typeof setTimeout> | undefined;
+  function redrawAnswers() {
+    if (menuOn) drawMenu();
+    // the banner's button goes early when its answer stops being possible (F.2)
+    const act = document.querySelector<HTMLButtonElement>(".banner-act");
+    if (act?.dataset.from && !act.dataset.room) {
+      const a = answerFrom(Number(act.dataset.from));
+      const still = act.dataset.offer ? a && "offer" in a && a.offer.id === Number(act.dataset.offer) : a && "reply" in a && a.reply.id === Number(act.dataset.answers);
+      if (!still) act.closest(".banner")?.remove();
+    }
+    clearTimeout(momentTimer);
+    const next = [...answers, ...offers, ...pbs].map((x) => x.until).filter((t) => t > nowServer());
+    if (next.length) momentTimer = setTimeout(() => {
+      drawOffers();
+      redrawAnswers();
+    }, Math.min(...next) - nowServer() + 20);
+  }
+
   // ---------- the menu (INT-1, INT-2; I.2) ----------
   let menuOn: { id: number; from: "map" | "row" } | undefined;
+  // the menu's rows that are drawn: the answer row and High-five come and go (F.3)
+  const ROW = "li:not([hidden]) > .act";
   // INT-4.7: when your 10 s on each person run out, from the page, then
   // from each accepted interaction
   let limits = new Map<number, number>();
@@ -2517,7 +2825,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     drawMenu();
     placeMenu();
     for (const el of [avatarOf(id), document.querySelector(`.people li[data-id="${id}"] > .person`)]) el?.setAttribute("aria-expanded", "true");
-    if (byKeyboard) (menu.querySelector<HTMLElement>(".act.hot:not([aria-disabled])") ?? menu.querySelector<HTMLElement>(".act"))!.focus({ preventScroll: true });
+    if (byKeyboard) (menu.querySelector<HTMLElement>(`${ROW}.hot:not([aria-disabled])`) ?? menu.querySelector<HTMLElement>(ROW))!.focus({ preventScroll: true });
   }
   // after a swap: the same person, if they're still here
   function reopenMenu(was: { id: number; from: "map" | "row" }) {
@@ -2576,22 +2884,64 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
 
     const limited = (limits.get(m.id) ?? 0) > nowServer();
     const slapNo = slapRefusal(state);
-    const hot = state === "slacking" ? ["poke", "slap"] : state === "lifting" ? ["cheer"] : [];
-    for (const b of menu.querySelectorAll<HTMLButtonElement>(".act")) {
+    // F.3: the answer row (their offer, else their interaction), the PB
+    // window, then I.2's rule by state; with an answer row it alone is hot
+    const answer = answerFrom(m.id);
+    const pb = freshPb(m.id);
+    const awayNo = m.away && !m.dony;
+    const hot = answer ? [] : pb ? ["cheer", "highfive"] : state === "slacking" ? ["poke", "slap"] : state === "lifting" ? ["cheer"] : [];
+    const row = menu.querySelector<HTMLLIElement>("li.answer")!;
+    row.hidden = !answer;
+    // never two High-fives (F.3): while their offer is open, the permanent row goes
+    menu.querySelector<HTMLElement>('.act[value="highfive"]')!.closest("li")!.hidden = !!answer && "offer" in answer;
+    let answerNo: Refusal | null = null;
+    if (answer) {
+      const b = row.querySelector<HTMLButtonElement>(".act")!;
+      const kind = "offer" in answer ? "highfive" : answer.reply.kind;
+      b.value = kind;
+      b.dataset.id = String("offer" in answer ? answer.offer.id : answer.reply.id);
+      const word = ANSWER_WORD[kind];
+      b.setAttribute("aria-label", `${word} ${m.name}`);
+      const icon = row.querySelector<HTMLElement>(".answer-icon")!;
+      if (icon.dataset.kind !== kind) {
+        icon.replaceChildren(tpl(`log-${LOG_ICON[kind]}`));
+        icon.dataset.kind = kind;
+      }
+      row.querySelector(".answer-word")!.textContent = word;
+      // Slap back follows Slap's rule; the row stays, dashed (F.3)
+      answerNo = kind === "slap-back" ? slapNo : null;
+      if (answerNo) b.setAttribute("aria-disabled", "true");
+      else b.removeAttribute("aria-disabled");
+      b.classList.toggle("hot", !answerNo);
+    }
+    for (const b of menu.querySelectorAll<HTMLButtonElement>("li:not(.answer) > .act")) {
       const kind = b.value;
-      const off = kind !== "message" && (limited || (kind === "slap" && !!slapNo));
+      const off = kind !== "message" && (limited || (kind === "slap" && !!slapNo) || (kind === "highfive" && awayNo));
       if (off) b.setAttribute("aria-disabled", "true");
       else b.removeAttribute("aria-disabled");
       b.classList.toggle("hot", hot.includes(kind) && !off);
     }
+    // GYM-18.6: one gold line while their PB is fresh
+    const news = menu.querySelector<HTMLElement>(".menu-news")!;
+    news.hidden = !pb;
+    if (pb) news.querySelector("span")!.textContent = `Just hit a PB on ${pb.exercise.name.toLowerCase()}`;
     const why = menu.querySelector<HTMLElement>(".menu-why")!;
-    const text = limited ? REFUSED["rate-limit"](m.name) : slapNo ? REFUSED[slapNo](m.name) : "";
+    const text = answerNo
+      ? REFUSED[answerNo](m.name)
+      : limited
+        ? REFUSED["rate-limit"](m.name)
+        : slapNo
+          ? REFUSED[slapNo](m.name)
+          : awayNo
+            ? REFUSED["target-away"](m.name)
+            : "";
     why.textContent = text;
     why.hidden = !text;
     // back by themselves when the 10 s run out, without reopening
     clearTimeout(limitTimer);
     if (limited) limitTimer = setTimeout(drawMenu, limits.get(m.id)! - nowServer() + 20);
   }
+  const ANSWER_WORD: Record<Reply | "highfive", string> = { thanks: "Thanks", "poke-back": "Poke back", "slap-back": "Slap back", highfive: "High-five" };
 
   // Laptop: beside the avatar (the side away from the nearer wall), or
   // under the squad row. Phone: CSS pins it above the dock.
@@ -2636,14 +2986,21 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
 
   // A refusal (dashed) or a failure (red) where the menu was: beside the
   // target on a laptop, just above the dock on a phone (INT-3.14).
-  function tell(text: string, failed: boolean, near: number | undefined, className = "") {
+  function tell(text: string, failed: boolean, near: number | undefined, className = "", sent = false) {
     document.querySelectorAll(`.gym .note, .gym .error${className ? "" : ":not(.emote-error)"}`).forEach((n) => {
       if (!className || n.classList.contains(className)) n.remove();
     });
     const line = document.createElement("p");
-    line.className = [failed ? "error" : "note", className].filter(Boolean).join(" ");
+    line.className = [failed ? "error" : "note", sent && "sent", className].filter(Boolean).join(" ");
     line.setAttribute("role", failed ? "alert" : "status");
-    line.textContent = text;
+    // the confirmation line (F.9): a tick first, solid leaf, 2 s, and its
+    // words already said once through #sheet-news
+    if (sent) {
+      line.removeAttribute("role");
+      line.setAttribute("aria-hidden", "true");
+      line.append(tpl("tick"));
+    }
+    line.append(text);
     const target = near !== undefined ? avatarOf(near) : null;
     if (!phone.matches && target && !className) {
       const map = document.querySelector<HTMLElement>(".map-panel .map")!;
@@ -2654,26 +3011,52 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       line.style.top = `${Math.max(0, r.top - m.top + 8)}px`;
       line.style.left = west ? `${r.left - m.left - line.offsetWidth - 12}px` : `${r.right - m.left + 12}px`;
     } else document.querySelector(".dock")!.append(line);
-    setTimeout(() => line.remove(), 4000);
+    setTimeout(() => line.remove(), sent ? 2000 : 4000);
   }
 
   let sending = false;
-  async function act(kind: string) {
-    if (!menuOn) return;
-    const id = menuOn.id;
+  // A move from the menu (or a banner's button, `answering` set): Cheer,
+  // Poke, Slap, a High-five offer, or an answer to their offer or move.
+  async function act(kind: string, answering?: { id: number; offer: boolean; to: number }, to?: number) {
+    const id = answering?.to ?? to ?? menuOn?.id;
+    if (id === undefined) return;
     const m = personIn(id);
-    closeMenu(); // at once (INT-3.10)
-    if (sending) return; // a double tap sends one (INT-4.5)
+    if (!answering && to === undefined) closeMenu(); // at once (INT-3.10)
+    if (sending) return; // a double tap sends one (INT-4.5, INT-9.6)
     sending = true;
-    const r = await send({ action: "interact", to: String(id), kind });
+    const fields: Record<string, string> = answering
+      ? answering.offer
+        ? { action: "accept", offer: String(answering.id) }
+        : { action: "reply", answers: String(answering.id) }
+      : { action: "interact", to: String(id), kind };
+    const r = await send(fields);
     sending = false;
-    if (r.ok) limits.set(id, r.at + 10_000);
-    else if (r.reason === "failed") tell(FAILED, true, id);
-    else if (r.reason !== "self") {
+    const name = m?.name ?? "They";
+    if (r.ok) {
+      // a reply or an acceptance counts as your latest with them (F10)
+      limits.set(id, r.at + 10_000);
+      if (answering) {
+        if (answering.offer) offers = offers.filter((o) => o.id !== answering.id);
+        else answers = answers.filter((a) => a.id !== answering.id);
+      }
+      // for an answer, `kind` is the answer's own (thanks, poke-back, slap-back)
+      const what: Move | "offer" = kind === "highfive" ? (r.done ? "highfive" : "offer") : (kind as Move);
+      landed(what, id, name);
+      if (what === "offer" && r.offer && r.until) offers = [...offers.filter((o) => o.id !== r.offer), { id: r.offer, from: meId(), to: id, until: r.until }];
+      redrawAnswers();
+    } else if (r.reason === "failed") tell(FAILED, true, id);
+    // a double tap's second, already answered, shows nothing (INT-9.6)
+    else if (r.reason !== "self" && !(r.reason === "answered" && Date.now() - lastAnswerTap < 1500)) {
       if (r.reason === "rate-limit") limits.set(id, Math.max(limits.get(id) ?? 0, nowServer() + 1000));
-      tell(REFUSED[r.reason](m?.name ?? "They"), false, id);
+      if (answering && r.reason !== "target-lifting" && r.reason !== "target-finished") {
+        if (answering.offer) offers = offers.filter((o) => o.id !== answering.id);
+        else answers = answers.filter((a) => a.id !== answering.id);
+        redrawAnswers();
+      }
+      tell(REFUSED[r.reason](name), false, id);
     }
   }
+  let lastAnswerTap = 0;
 
   async function sayPreset(preset: string) {
     if (!menuOn) return;
@@ -2695,7 +3078,25 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     if (actButton) {
       if (actButton.getAttribute("aria-disabled") === "true") return; // stays open, sends nothing
       if (actButton.value === "message") return showMessages(true);
+      // the answer row: accept their offer, or answer their move
+      if (actButton.closest("li.answer") && menuOn) {
+        const to = menuOn.id;
+        closeMenu();
+        lastAnswerTap = Date.now();
+        return void act(actButton.value, { id: Number(actButton.dataset.id), offer: actButton.value === "highfive", to });
+      }
       return void act(actButton.value);
+    }
+    // a banner's one button (F.2): live after its first half second
+    const bannerAct = t.closest?.<HTMLButtonElement>(".banner-act");
+    if (bannerAct) {
+      if (Date.now() - Number(bannerAct.dataset.shown) < 500 || bannerAct.disabled) return;
+      const to = Number(bannerAct.dataset.from);
+      bannerAct.closest(".banner")?.remove();
+      lastAnswerTap = Date.now();
+      if (bannerAct.dataset.room) return void act("cheer", undefined, to);
+      const offer = !!bannerAct.dataset.offer;
+      return void act(offer ? "highfive" : bannerAct.dataset.kind!, { id: Number(bannerAct.dataset.offer ?? bannerAct.dataset.answers), offer, to });
     }
     if (t.closest?.(".menu .back")) return showMessages(false);
     const preset = t.closest?.<HTMLButtonElement>(".menu .preset");
@@ -2733,11 +3134,11 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       // opened by a tap, focus still on its opener: the menu's keys take it in
       else if (document.activeElement === opener() && ["Tab", "ArrowDown", "ArrowUp"].includes(e.key)) {
         e.preventDefault();
-        menu.querySelector<HTMLElement>(".act")!.focus({ preventScroll: true });
+        menu.querySelector<HTMLElement>(ROW)!.focus({ preventScroll: true });
       }
       return;
     }
-    const rows = [...menu.querySelectorAll<HTMLElement>(menu.querySelector<HTMLElement>(".menu-message")!.hidden ? ".act" : ".back, .preset")];
+    const rows = [...menu.querySelectorAll<HTMLElement>(menu.querySelector<HTMLElement>(".menu-message")!.hidden ? ROW : ".back, .preset")];
     const i = rows.indexOf(document.activeElement as HTMLElement);
     const go = (j: number) => {
       e.preventDefault();
@@ -2755,70 +3156,760 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   });
 
   // ---------- reactions and banners (INT-3; I.4, I.5) ----------
-  const FX_FRAMES: Record<Kind, number> = { cheer: 3, poke: 3, slap: 4 };
-  const FX_MS: Record<Kind, number> = { cheer: 600, poke: 720, slap: 800 };
+  // F.6: each frame with its own start and length (ms), the jolt the whole
+  // sprite does, the total, and the ★ frames reduced motion shows still
+  type Frame = [href: string, at: number, ms: number];
+  type Reaction = { frames: Frame[]; jolt?: "hop" | "nudge" | "shake"; total: number; still: string[] };
+  const POKE: Frame[] = [["poke-1", 0, 250], ["poke-2", 250, 350], ["poke-3", 600, 400]];
+  const SLAP: Frame[] = [["slap-1", 0, 150], ["slap-2", 150, 300], ["slap-3", 450, 350], ["slap-4", 800, 400]];
+  const REACTION: Record<Move, Reaction> = {
+    cheer: { frames: [["cheer-1", 0, 200], ["cheer-2", 200, 250], ["cheer-4", 450, 350], ["cheer-3", 800, 300]], jolt: "hop", total: 1100, still: ["cheer-4"] },
+    poke: { frames: POKE, jolt: "nudge", total: 1000, still: ["poke-2"] },
+    slap: { frames: SLAP, jolt: "shake", total: 1200, still: ["slap-2"] },
+    thanks: { frames: [["thanks-1", 0, 300], ["thanks-2", 300, 450], ["thanks-3", 750, 350]], jolt: "hop", total: 1100, still: ["thanks-2"] },
+    "poke-back": { frames: [...POKE, ["back-1", 0, 1000]], jolt: "nudge", total: 1000, still: ["poke-2", "back-1"] },
+    "slap-back": { frames: [...SLAP, ["back-1", 0, 450]], jolt: "shake", total: 1200, still: ["slap-2", "back-1"] },
+    highfive: { frames: [["highfive-1", 0, 250], ["highfive-2", 250, 350], ["highfive-3", 600, 400]], jolt: "nudge", total: 1000, still: ["highfive-2"] },
+  };
   const SVG = "http://www.w3.org/2000/svg";
-  function react(id: number, kind: Kind) {
+  const fxTimers = new WeakMap<Element, ReturnType<typeof setTimeout>>();
+  // `west`: drawn mirrored, for a High-five partner to the west (F.4)
+  function react(id: number, kind: Move, west = false) {
     const b = avatarOf(id);
     if (!b) return;
     b.querySelector("svg.fx")?.remove();
+    const r = REACTION[kind];
+    const still = reducedMotion.matches;
     const fx = document.createElementNS(SVG, "svg");
-    fx.setAttribute("class", `fx fx-${kind}`);
+    // the replies are drawn as what they answer, plus their own mark
+    const base = kind === "poke-back" ? "poke" : kind === "slap-back" ? "slap" : kind;
+    fx.setAttribute("class", `fx fx-${base} fx-${kind}${west ? " face-west" : ""}${still ? " still" : ""}`);
     fx.setAttribute("viewBox", `0 0 ${TILE} ${TILE}`);
     fx.setAttribute("aria-hidden", "true");
-    // reduced motion: the middle frame alone, still (INT-3.9)
-    const frames = reducedMotion.matches ? [2] : Array.from({ length: FX_FRAMES[kind] }, (_, i) => i + 1);
-    for (const n of frames) {
+    // reduced motion: the ★ frames alone, still, for a second (INT-11.6)
+    const frames: Frame[] = still ? r.still.map((h) => [h, 0, 1000]) : r.frames;
+    for (const [href, at, ms] of frames) {
       const use = document.createElementNS(SVG, "use");
-      use.setAttribute("href", `#fx-${kind}-${n}`);
+      use.setAttribute("href", `#fx-${href}`);
+      use.style.setProperty("--at", `${at}ms`);
+      use.style.setProperty("--d", `${ms}ms`);
+      // Slap back's hook sits top right (F.6)
+      if (href === "back-1" && kind === "slap-back") use.setAttribute("x", String((22 / 32) * TILE));
       fx.append(use);
     }
     b.append(fx);
-    setTimeout(() => fx.remove(), reducedMotion.matches ? 800 : FX_MS[kind]);
+    // the whole sprite moves with it; the tag never does (INT-11.2)
+    const av = b.querySelector<SVGElement>("svg.av");
+    if (av && r.jolt && !still) {
+      av.classList.remove("jolt-hop", "jolt-nudge", "jolt-shake");
+      void av.getBoundingClientRect(); // restart it
+      av.style.setProperty("--dir", west ? "-1" : "1");
+      av.style.animationDuration = `${r.total}ms`;
+      av.classList.add(`jolt-${r.jolt}`);
+      clearTimeout(fxTimers.get(av));
+      fxTimers.set(av, setTimeout(() => av.classList.remove(`jolt-${r.jolt}`), r.total));
+    }
+    setTimeout(() => fx.remove(), still ? 1000 : r.total);
   }
 
-  const BANNER: Record<Kind, (from: string, resting: boolean) => string> = {
+  const BANNER: Record<Move, (from: string, resting: boolean) => string> = {
     cheer: (n) => `${n} is hyping you up 🔥`,
     poke: (n, resting) => (resting ? `${n} poked you. Rest's over? 👉` : `${n} poked you 👉`),
     slap: (n) => `${n} slapped you back to work 👋`,
+    thanks: (n) => `${n} says thanks 🙏`,
+    "poke-back": (n) => `${n} poked you back 👉`,
+    "slap-back": (n) => `${n} returned the slap 👋`,
+    highfive: (n) => `${n} wants a high-five ✋`,
   };
+  // A banner (I.5, F.2): who it's from, the line, and at most one button.
+  // With a button it stays 6 s and the button wakes after half a second;
+  // without, 4 s. The newest replaces the last (D9). A room banner (F.8)
+  // has the gold ring and the PB tab. `low` when its person stands in the
+  // top three rows, so it never covers them on a laptop.
+  type BannerAct = { word: string; icon: string; data: Record<string, string> };
   let bannerTimer: ReturnType<typeof setTimeout> | undefined;
-  function banner(text: string, from: number) {
+  function banner(text: string, from: number, opts: { act?: BannerAct; room?: boolean; label?: string } = {}) {
     const slot = document.querySelector<HTMLElement>(".map-panel .banner-slot");
     if (!slot) return;
-    const p = document.createElement("p");
-    p.className = "banner";
-    p.setAttribute("role", "status");
+    const box = document.createElement("div");
+    box.className = ["banner", opts.act && "has-act", opts.room && "room"].filter(Boolean).join(" ");
+    if (opts.room) {
+      const tab = document.createElement("span");
+      tab.className = "banner-tab";
+      tab.setAttribute("aria-hidden", "true");
+      tab.append(tpl("log-pb"), "PB");
+      box.append(tab);
+    }
     const sender = personIn(from);
-    if (sender) p.append(head(sender));
+    if (sender) box.append(head(sender));
     const words = document.createElement("span");
+    words.className = "banner-line";
+    words.setAttribute("role", "status");
+    if (opts.label) words.setAttribute("aria-label", opts.label);
     words.textContent = text;
-    p.append(words);
-    // the newest replaces the last and runs its own 4 s (D9); a new element,
-    // so its animation starts again
-    slot.replaceChildren(p);
+    box.append(words);
+    // whoever had focus gets it back if the button had it when it goes (F.2)
+    const before = document.activeElement as HTMLElement | null;
+    if (opts.act) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "banner-act";
+      Object.assign(b.dataset, opts.act.data, { from: String(from), shown: String(Date.now()) });
+      const cur = document.createElement("span");
+      cur.className = "cur";
+      cur.setAttribute("aria-hidden", "true");
+      cur.textContent = "▶";
+      const vh = document.createElement("span");
+      vh.className = "vh";
+      vh.textContent = ` ${sender?.name ?? ""}`;
+      b.append(cur, tpl(`log-${opts.act.icon}`), opts.act.word, vh);
+      box.append(b);
+    }
+    const b = avatarOf(from);
+    slot.classList.toggle("low", !!b && tileOf(b)[1] <= 2);
+    slot.replaceChildren(box);
     clearTimeout(bannerTimer);
-    bannerTimer = setTimeout(() => p.remove(), 4000);
+    const ms = opts.act ? 6000 : 4000;
+    bannerTimer = setTimeout(() => {
+      const hadFocus = box.contains(document.activeElement);
+      box.remove();
+      if (hadFocus) before?.focus({ preventScroll: true });
+    }, ms);
+  }
+
+  // ---------- acting it out (INT-13 to INT-16, BOT-8; room spec A.2 to A.10) ----------
+  // A move is acted out on every screen from its event: a sender who isn't
+  // Lifting walks to beside the target and does it there (an errand); a
+  // Lifting sender waves from their machine and the move flies over. The
+  // target's reaction, banner and sound wait for the hit (A1), at most 3 s
+  // after the event. Nothing here touches the server: it only draws.
+  type Base = "cheer" | "poke" | "slap" | "thanks" | "highfive";
+  const baseOf = (m: Move): Base => (m === "poke-back" ? "poke" : m === "slap-back" ? "slap" : m);
+  // A.5: the walker's frames [pose, from ms], when the hit is, and the length
+  const WALKER: Record<Base, { frames: [string, number][]; hit: number; ms: number }> = {
+    cheer: { frames: [["cheer", 0], ["stand", 450]], hit: 0, ms: 1000 },
+    poke: { frames: [["point", 0], ["stand", 600]], hit: 0, ms: 900 },
+    slap: { frames: [["reach", 0], ["swing", 150], ["stand", 800]], hit: 150, ms: 1200 },
+    thanks: { frames: [["bow", 0], ["stand", 500]], hit: 0, ms: 1000 },
+    highfive: { frames: [["reach", 0], ["stand", 600]], hit: 250, ms: 1000 },
+  };
+  // A.4, A.5: the target's body off a machine, from the hit [pose, from ms,
+  // lift px]; "pose" is their own pose. ★ frames for reduced motion.
+  type ReactFrame = [pose: string, at: number, lift: 0 | 2 | 4];
+  const REACT_STAND: Record<Base, { frames: ReactFrame[]; ms: number; still: string; lean?: boolean }> = {
+    cheer: { frames: [["pose", 0, 0], ["crouch", 200, 0], ["cheer", 450, 4], ["pose", 800, 0]], ms: 1100, still: "cheer" },
+    poke: { frames: [["pose", 0, 0], ["startle", 250, 4], ["startle", 600, 0], ["pose", 900, 0]], ms: 1000, still: "startle" },
+    slap: { frames: [["recoil", 0, 0], ["pose", 650, 0]], ms: 1050, still: "recoil", lean: true },
+    thanks: { frames: [["pose", 0, 0], ["crouch", 300, 0], ["pose", 500, 4], ["pose", 750, 0]], ms: 1100, still: "pose" },
+    highfive: { frames: [["reach", 0, 0], ["pose", 350, 0]], ms: 750, still: "reach" },
+  };
+  const REACT_SIT: Record<Base, { frames: ReactFrame[]; ms: number; still: string; lean?: boolean }> = {
+    cheer: { frames: [["pose", 0, 0], ["sit-cheer", 450, 2], ["pose", 800, 0]], ms: 1100, still: "sit-cheer" },
+    poke: { frames: [["pose", 0, 0], ["sit-startle", 250, 0], ["pose", 900, 0]], ms: 1000, still: "sit-startle" },
+    slap: { frames: [["sit-recoil", 0, 0], ["pose", 650, 0]], ms: 1050, still: "sit-recoil", lean: true },
+    thanks: { frames: [["pose", 0, 0], ["pose", 500, 2], ["pose", 750, 0]], ms: 1100, still: "pose" },
+    highfive: { frames: [["sit-reach", 0, 0], ["pose", 350, 0]], ms: 750, still: "sit-reach" },
+  };
+  const FLIGHT: Record<Base, string> = { cheer: "star", poke: "finger", slap: "glove", thanks: "heart", highfive: "palm" };
+  const HIT_CAP_MS = 3000; // INT-13.9: the hit lands at most 3 s after the event
+
+  // Whoever is on an errand, so drawMap leaves them be until it ends and
+  // then walks them to where their state puts them (that's the walk back)
+  type Errand = { to: number; move: Move; hit: () => void; done: boolean; timers: ReturnType<typeof setTimeout>[] };
+  const errands = new Map<number, Errand>();
+  // reacting avatars, so drawMap doesn't redraw their pose under the reaction
+  const reacting = new Map<number, number>();
+  const holding = (id: number) => errands.has(id) || reacting.has(id) || flexing.has(id);
+
+  const notMoving = (state: string) => state !== "lifting";
+
+  // A.2 rule 2: the meeting spot, diagonally in front of the target, on the
+  // walker's side; the other diagonal, then straight in front, then beside
+  function meetingSpot(target: HTMLElement, walker: HTMLElement): Tile {
+    const [tx, ty] = tileOf(target);
+    const [wx] = tileOf(walker);
+    const side = wx < tx ? -1 : 1;
+    const down = ty >= 8 ? -1 : 1;
+    const clamp = (x: number) => Math.min(8, Math.max(1, x));
+    const taken = new Set(
+      [...document.querySelectorAll<HTMLElement>(".map-panel .avatar:not(.leaving)")]
+        .filter((b) => b !== walker && b !== target)
+        .map((b) => tileOf(b).join(",")),
+    );
+    // and the spots other walkers are heading for
+    const reserved = new Set([...document.querySelectorAll<HTMLElement>(".map .avatar.errand")].filter((b) => b !== walker).map((b) => b.dataset.spot ?? ""));
+    const options: Tile[] = [
+      [clamp(tx + side), ty + down],
+      [clamp(tx - side), ty + down],
+      [tx, ty + down],
+      [clamp(tx + side), ty],
+    ];
+    return options.find((t) => !taken.has(t.join(",")) && !reserved.has(t.join(","))) ?? options[0];
+  }
+  // already beside the target (A.2, INT-13.6): on or next to the meeting spot
+  const near = (a: Tile, b: Tile) => Math.abs(a[0] - b[0]) <= 1 && Math.abs(a[1] - b[1]) <= 1;
+
+  // The target's body reaction at the hit (A.4): body frames off a machine,
+  // F.6's effect over them; on a machine or walking, effect and jolt only
+  function hitTarget(id: number, move: Move, west: boolean) {
+    react(id, move, west);
+    const b = avatarOf(id);
+    // a walker plays their own move's frames; on a machine or walking, the
+    // effect and its jolt alone (INT-15.2, INT-15.3)
+    if (!b || errands.has(id) || b.classList.contains("on-machine") || walks.get(b)) return;
+    const pose = b.dataset.pose ?? "stand";
+    const table = (pose === "sit" ? REACT_SIT : REACT_STAND)[baseOf(move)];
+    const av = () => b.querySelector<SVGElement>("svg.av");
+    const lift = (px: number) => {
+      av()?.classList.remove("lift-2", "lift-4");
+      if (px) av()?.classList.add(`lift-${px}`);
+    };
+    const end = performance.now() + (reducedMotion.matches ? 1000 : table.ms);
+    reacting.set(id, end);
+    const draw = (p: string) => {
+      show(b, p === "pose" ? pose : p);
+      // facing whoever hit them; the lean is away from them
+      av()?.classList.toggle("face-west", west && p !== "pose");
+      if (table.lean && p !== "pose") {
+        av()?.style.setProperty("--dir", west ? "-1" : "1");
+        av()?.classList.add("lean-2");
+      }
+    };
+    if (reducedMotion.matches) draw(table.still);
+    else
+      for (const [p, at, px] of table.frames)
+        setTimeout(() => {
+          if (reacting.get(id) !== end) return; // a newer hit restarted it
+          draw(p);
+          lift(px);
+        }, at);
+    setTimeout(() => {
+      if (reacting.get(id) !== end) return;
+      reacting.delete(id);
+      const a = av();
+      a?.classList.remove("lift-2", "lift-4", "lean-2", "face-west");
+      show(b, pose);
+      liveTick();
+    }, reducedMotion.matches ? 1000 : table.ms);
+  }
+
+  // A.6: the lifter's hand over their machine, two frames, 400 ms
+  function gesture(id: number, west: boolean) {
+    const b = avatarOf(id);
+    if (!b) return;
+    b.querySelector("svg.gesture")?.remove();
+    const panel = b.closest(".map-panel")!;
+    const dony = b.dataset.look === "dony";
+    const frame = (n: 1 | 2) => {
+      const t = panel.querySelector<HTMLTemplateElement>(dony ? `template[data-dony="hand${n}"]` : `template[data-pose="hand${n}"]`);
+      const svg = t?.content.querySelector("svg")?.cloneNode(true) as SVGElement | undefined;
+      if (!svg) return;
+      svg.classList.add("gesture");
+      svg.classList.toggle("face-west", west);
+      svg.setAttribute("aria-hidden", "true");
+      const m = view && everyone(view).find((x) => String(x.id) === b.dataset.id);
+      if (m && !("dony" in m)) {
+        svg.setAttribute("style", lookVars(m.look));
+        svg.dataset.hair = m.look.hair;
+      }
+      b.querySelector("svg.gesture")?.remove();
+      b.append(svg);
+    };
+    frame(1);
+    if (reducedMotion.matches) return void setTimeout(() => b.querySelector("svg.gesture")?.remove(), 1000);
+    setTimeout(() => frame(2), 200);
+    setTimeout(() => b.querySelector("svg.gesture")?.remove(), 400);
+  }
+
+  // A.7: a move flying from a tile to the target's, a tile a step, 125 ms a
+  // step, at most 8 steps (so within 1 s), dropping to the aisle row between
+  // two back-row ends; lands on the target, calling `landed`
+  function fly(base: Base, from: Tile, toId: number, landed: () => void) {
+    const layer = document.querySelector<HTMLElement>(".map .flights");
+    const target = avatarOf(toId);
+    if (!layer || !target || reducedMotion.matches) return landed();
+    const to = tileOf(target);
+    const n = Math.min(8, Math.max(1, Math.max(Math.abs(to[0] - from[0]), Math.abs(to[1] - from[1]))));
+    const backRow = from[1] <= 1 && to[1] <= 1;
+    const svg = document.createElementNS(SVG, "svg");
+    svg.setAttribute("class", `flight${to[0] < from[0] ? " face-west" : ""}`);
+    svg.setAttribute("viewBox", `0 0 ${TILE} ${TILE}`);
+    const use = document.createElementNS(SVG, "use");
+    svg.append(use);
+    layer.append(svg);
+    let i = 0;
+    const step = () => {
+      const f = i / n;
+      const x = from[0] + (to[0] - from[0]) * f;
+      const y = backRow && i > 0 && i < n ? 2 : from[1] + (to[1] - from[1]) * f;
+      svg.style.setProperty("--fx", String(x));
+      svg.style.setProperty("--fy", String(y + 0.5));
+      use.setAttribute("href", `#fx-${FLIGHT[base]}-${(i % 2) + 1}`);
+      if (i++ >= n) {
+        svg.remove();
+        return landed();
+      }
+      setTimeout(step, Math.min(125, 1000 / n));
+    };
+    step();
+  }
+
+  // The High-five's smack, on the corner between two tiles (A.9)
+  function smack(a: Tile, b: Tile) {
+    const layer = document.querySelector<HTMLElement>(".map .flights");
+    if (!layer) return;
+    const svg = document.createElementNS(SVG, "svg");
+    svg.setAttribute("class", "smack");
+    svg.setAttribute("viewBox", `0 0 ${TILE} ${TILE}`);
+    svg.style.setProperty("--fx", String((a[0] + b[0]) / 2 + 0.5));
+    svg.style.setProperty("--fy", String((a[1] + b[1]) / 2 + 0.5));
+    const use = document.createElementNS(SVG, "use");
+    use.setAttribute("href", "#fx-smack-1");
+    svg.append(use);
+    layer.append(svg);
+    setTimeout(() => svg.remove(), 350);
+  }
+
+  // Ends an errand early (A.8): the move flies from where the walker is, if
+  // it hasn't landed, and the walker goes where its state puts it
+  function cutShort(id: number, why: "next" | "state" | "cap" | "left") {
+    const e = errands.get(id);
+    if (!e) return;
+    errands.delete(id);
+    for (const t of e.timers) clearTimeout(t);
+    const b = avatarOf(id);
+    b?.classList.remove("errand", "at-spot");
+    b?.querySelector("svg.av")?.classList.remove("face-west");
+    if (b) delete b.dataset.spot;
+    // not landed yet: it flies from here, and its landing is the hit (e.hit
+    // marks it done, so it plays exactly once, INT-13.14)
+    if (!e.done && why !== "left") {
+      if (b) fly(baseOf(e.move), tileOf(b), e.to, e.hit);
+      else e.hit();
+    }
+    liveTick();
+  }
+
+  // Acts one move out (INT-13, INT-14): returns at once; calls `onHit`
+  // exactly once, at the hit, within 3 s
+  function actOut(move: Move, fromId: number, toId: number, fromState: string, onHit: () => void) {
+    const walker = avatarOf(fromId);
+    const target = avatarOf(toId);
+    const base = baseOf(move);
+    let hitDone = false;
+    const hit = () => {
+      if (hitDone) return;
+      hitDone = true;
+      onHit();
+    };
+    if (!walker || !target) return hit();
+    // a newer move from the same walker cuts their errand short (A2)
+    cutShort(fromId, "next");
+    const west = tileOf(target)[0] < tileOf(walker)[0];
+    // reduced motion (A.10): the sender's ★ frame where they are, the hit at once
+    if (reducedMotion.matches) {
+      if (notMoving(fromState)) {
+        const still = WALKER[base].frames.find(([, at]) => at <= WALKER[base].hit)?.[0] ?? "stand";
+        const was = walker.dataset.pose ?? "stand";
+        if (!walker.classList.contains("on-machine")) {
+          show(walker, still);
+          reacting.set(fromId, performance.now() + 1000);
+          setTimeout(() => {
+            reacting.delete(fromId);
+            show(walker, was);
+            liveTick();
+          }, 1000);
+        }
+      } else gesture(fromId, west);
+      return hit();
+    }
+    // a Lifting sender stays on their machine (INT-14)
+    if (!notMoving(fromState) || walker.classList.contains("on-machine")) {
+      gesture(fromId, west);
+      fly(base, tileOf(walker), toId, hit);
+      return;
+    }
+    // the errand (INT-13)
+    const e: Errand = { to: toId, move, hit: () => {}, done: false, timers: [] };
+    e.hit = () => {
+      if (e.done) return;
+      e.done = true;
+      hit();
+    };
+    errands.set(fromId, e);
+    walker.classList.add("errand");
+    const spot = meetingSpot(target, walker);
+    walker.dataset.spot = spot.join(",");
+    // the 3 s cap (INT-13.9): if the hit hasn't come, it flies from here
+    e.timers.push(setTimeout(() => errands.get(fromId) === e && !e.done && cutShort(fromId, "cap"), HIT_CAP_MS));
+    const play = () => {
+      if (errands.get(fromId) !== e) return;
+      const t = avatarOf(toId);
+      if (!t) return cutShort(fromId, "left");
+      const faceWest = tileOf(t)[0] < tileOf(walker)[0];
+      walker.classList.add("at-spot");
+      const av = () => walker.querySelector<SVGElement>("svg.av");
+      walker.style.setProperty("--dir", faceWest ? "-1" : "1");
+      const w = WALKER[base];
+      for (const [pose, at] of w.frames)
+        e.timers.push(
+          setTimeout(() => {
+            if (errands.get(fromId) !== e) return;
+            show(walker, pose);
+            av()?.classList.toggle("face-west", faceWest);
+          }, at),
+        );
+      e.timers.push(setTimeout(() => errands.get(fromId) === e && e.hit(), w.hit));
+      // the walk back: the errand ends and drawMap takes them home
+      e.timers.push(
+        setTimeout(() => {
+          if (errands.get(fromId) !== e) return;
+          errands.delete(fromId);
+          walker.classList.remove("errand", "at-spot");
+          av()?.classList.remove("face-west");
+          delete walker.dataset.spot;
+          liveTick();
+        }, w.ms),
+      );
+    };
+    if (near(tileOf(walker), spot)) play();
+    else walk(walker, spot, false, "stand", play);
+  }
+
+  // A walker whose state changes, or who leaves, cuts their errand short
+  // (INT-13.11, INT-13.13): checked against each new room
+  function checkErrands() {
+    if (!view) return;
+    const all = everyone(view);
+    for (const [id, e] of errands) {
+      const m = all.find((x) => x.id === id);
+      if (!m) {
+        cutShort(id, "left");
+        continue;
+      }
+      if (stateAt(m, nowServer()) === "lifting") cutShort(id, "state");
+      if (!all.some((x) => x.id === e.to)) cutShort(id, "left");
+    }
   }
 
   type Who = { id: number; name: string };
-  function onInteraction(e: { kind: Kind; from: Who; to: Who; targetState: string; at: number }) {
-    react(e.to.id, e.kind);
-    if (e.to.id === meId()) banner(BANNER[e.kind](e.from.name, e.targetState === "resting" || e.targetState === "slacking"), e.from.id);
-    if (e.from.id === meId()) limits.set(e.to.id, e.at + 10_000);
+  const DONY = 0; // his id (dony.ts)
+  // BOT-8.8: while a move is on its way to Dony, his pops wait, and go half
+  // a second after it hits him; never later than 3.5 s after its event
+  const DONY_WAIT_MAX = 3500;
+  const DONY_AFTER_HIT = 500;
+  type DonyHold = { releaseBy: number; hitAt?: number; queue: Parameters<typeof onEmote>[0][]; timer?: ReturnType<typeof setTimeout> };
+  let donyHold: DonyHold | undefined;
+  function releaseDony(hold: DonyHold) {
+    if (donyHold !== hold) return;
+    clearTimeout(hold.timer);
+    donyHold = undefined;
+    for (const e of hold.queue) onEmote({ ...e, held: true });
+  }
+  // the hold's timer: half a second after the hit, else the 3.5 s cap
+  function armDony(hold: DonyHold) {
+    clearTimeout(hold.timer);
+    const at = Math.min(hold.hitAt !== undefined ? hold.hitAt + DONY_AFTER_HIT : Infinity, hold.releaseBy);
+    hold.timer = setTimeout(() => releaseDony(hold), Math.max(0, at - performance.now()));
+  }
+  function onInteraction(e: { id: number; kind: Kind | Reply; from: Who; to: Who; targetState: string; fromState?: string; at: number; answers?: number }) {
+    const me = meId();
+    const toDony = e.to.id === DONY;
+    let hold: DonyHold | undefined;
+    if (toDony && !reducedMotion.matches) {
+      // a newer move to him starts a new hold; what the old one held goes now
+      if (donyHold) releaseDony(donyHold);
+      hold = donyHold = { releaseBy: performance.now() + DONY_WAIT_MAX, queue: [] };
+      armDony(hold);
+    }
+    // INT-13.9: the reaction, banner and sound land with the hit
+    actOut(e.kind, e.from.id, e.to.id, e.fromState ?? "idle", () => {
+      if (hold) {
+        hold.hitAt = performance.now();
+        armDony(hold);
+      }
+      const a = avatarOf(e.from.id);
+      const b = avatarOf(e.to.id);
+      hitTarget(e.to.id, e.kind, !!a && !!b && tileOf(a)[0] < tileOf(b)[0]);
+      if (e.to.id === me && personIn(e.to.id)) {
+        const resting = e.targetState === "resting" || e.targetState === "slacking";
+        // INT-9.1: a Cheer, Poke or Slap carries its answer; an answer none
+        const answer = e.kind in REPLY ? REPLY[e.kind as Kind] : undefined;
+        banner(BANNER[e.kind](e.from.name, resting), e.from.id, {
+          act: answer && { word: ANSWER_WORD[answer], icon: LOG_ICON[answer], data: { answers: String(e.id), kind: answer } },
+        });
+        blip(e.kind === "cheer" ? "cheer" : e.kind === "thanks" ? "thanks" : e.kind.startsWith("poke") ? "poke" : "slap");
+      }
+    });
+    if (e.from.id === me) limits.set(e.to.id, e.at + 10_000);
+    // what's answerable changed: the answered one goes, a new one comes
+    if (e.answers !== undefined) answers = answers.filter((a) => a.id !== e.answers);
+    if (e.kind in REPLY) {
+      answers = [...answers.filter((a) => !(a.from === e.from.id && a.to === e.to.id)), { id: e.id, from: e.from.id, to: e.to.id, kind: REPLY[e.kind as Kind], until: e.at + REPLY_MS }];
+    }
     addLog({ kind: e.kind, from: e.from, to: e.to, at: e.at });
-    if (menuOn) drawMenu();
+    redrawAnswers();
+  }
+
+  // ---------- the High-five (INT-10; F.4) ----------
+  // An open offer: the offerer's palm up towards the target, and an
+  // "@Ji-woo · Up top ✋" bubble, for as long as it's open, on every screen
+  function drawOffers() {
+    const open = stillOpen(offers);
+    for (const fx of document.querySelectorAll<SVGElement>(".map .avatar svg.fx-offer")) {
+      const id = Number(fx.closest<HTMLElement>(".avatar")!.dataset.id);
+      if (!open.some((o) => o.from === id)) fx.remove();
+    }
+    for (const say of document.querySelectorAll<HTMLElement>(".map .says .say.offer")) {
+      if (!open.some((o) => o.from === Number(say.dataset.id))) say.remove();
+    }
+    for (const o of open) {
+      const b = avatarOf(o.from);
+      const to = avatarOf(o.to);
+      if (!b) continue;
+      if (!b.querySelector("svg.fx-offer")) {
+        const fx = document.createElementNS(SVG, "svg");
+        const west = !!to && tileOf(to)[0] < tileOf(b)[0];
+        fx.setAttribute("class", `fx fx-offer${west ? " face-west" : ""}`);
+        fx.setAttribute("viewBox", `0 0 ${TILE} ${TILE}`);
+        fx.setAttribute("aria-hidden", "true");
+        const use = document.createElementNS(SVG, "use");
+        use.setAttribute("href", "#fx-highfive-1");
+        fx.append(use);
+        b.append(fx);
+      }
+      const says = document.querySelector<HTMLElement>(".map .says.offers");
+      if (says && !says.querySelector(`.say.offer[data-id="${o.from}"]`)) {
+        document.querySelectorAll(`.map .says .say[data-id="${o.from}"]`).forEach((s) => s.remove());
+        const p = document.createElement("p");
+        p.className = "say offer";
+        p.dataset.id = String(o.from);
+        const name = document.createElement("span");
+        name.className = "to";
+        name.textContent = `@${personIn(o.to)?.name ?? ""}`;
+        p.append(name, "Up top ✋");
+        p.style.animationDuration = `${Math.max(0, o.until - nowServer())}ms`;
+        says.append(p);
+        placeBubble(p);
+      }
+    }
+  }
+
+  // A lapse is told only to the offerer, when their own offer runs out with
+  // no answer (INT-10.10); no event comes for it
+  const lapseTimers = new Map<number, ReturnType<typeof setTimeout>>();
+  function watchLapse(o: Open) {
+    clearTimeout(lapseTimers.get(o.id));
+    // one Dony will take ends with his High-five, not a lapse (BOT-7.2)
+    if (o.taken) return;
+    lapseTimers.set(
+      o.id,
+      setTimeout(() => {
+        lapseTimers.delete(o.id);
+        offers = offers.filter((x) => x.id !== o.id);
+        drawOffers();
+        // it happened (its timer was cleared), or either of them left: no line
+        const m = personIn(o.to);
+        if (m && personIn(o.from)) tell(`${m.name} left you hanging ✋`, false, o.to);
+      }, Math.max(0, o.until - nowServer()) + 50),
+    );
+  }
+
+  function onHighFive(e: {
+    id: number;
+    from: Who;
+    to: Who;
+    at: number;
+    until?: number;
+    done?: number;
+    taken?: boolean;
+    fromState?: string;
+    toState?: string;
+  }) {
+    const me = meId();
+    if (e.done === undefined) {
+      // an offer
+      offers = [...offers.filter((o) => o.id !== e.id), { id: e.id, from: e.from.id, to: e.to.id, until: e.until! }];
+      drawOffers();
+      if (e.from.id === me) {
+        watchLapse({ id: e.id, from: e.from.id, to: e.to.id, until: e.until!, taken: e.taken });
+        limits.set(e.to.id, e.at + 10_000);
+      }
+      if (e.to.id === me) {
+        banner(BANNER.highfive(e.from.name, false), e.from.id, {
+          act: { word: "High-five", icon: "high-five", data: { offer: String(e.id), kind: "highfive" } },
+        });
+        blip("offer");
+      }
+      redrawAnswers();
+      return;
+    }
+    // it happened (INT-16, A.9): the offerer walks if they can, else the
+    // accepter; both Lifting, both wave and the palms meet halfway
+    offers = offers.filter((o) => o.id !== e.id);
+    clearTimeout(lapseTimers.get(e.id));
+    drawOffers();
+    document.querySelector(".banner-act[data-offer]")?.closest(".banner")?.remove();
+    if (e.to.id === me) limits.set(e.from.id, Math.max(limits.get(e.from.id) ?? 0, e.done + 10_000));
+    if (e.from.id === me) limits.set(e.to.id, Math.max(limits.get(e.to.id) ?? 0, e.at + 10_000));
+    addLog({ kind: "highfive", from: e.from, to: e.to, at: e.done });
+    redrawAnswers();
+    // at the smack: both play it, and the banners, line and sound
+    const smacked = () => {
+      const a = avatarOf(e.from.id);
+      const b = avatarOf(e.to.id);
+      const fromWest = !!a && !!b && tileOf(a)[0] <= tileOf(b)[0];
+      if (a && b && !reducedMotion.matches) smack(tileOf(a), tileOf(b));
+      hitTarget(e.from.id, "highfive", !fromWest);
+      hitTarget(e.to.id, "highfive", fromWest);
+      if (e.from.id === me) banner(`${e.to.name} high-fived you 🙌`, e.to.id);
+      if (e.to.id === me) say(`You high-fived ${e.from.name}`);
+      if (e.from.id === me || e.to.id === me) {
+        lastBlip = -Infinity; // the High-five always gets its own sound
+        blip("highfive");
+      }
+    };
+    const fromState = e.fromState ?? "idle";
+    const toState = e.toState ?? "idle";
+    if (notMoving(fromState)) return actOut("highfive", e.from.id, e.to.id, fromState, smacked);
+    if (notMoving(toState)) return actOut("highfive", e.to.id, e.from.id, toState, smacked);
+    // both Lifting: each waves, the palms fly to meet in the middle
+    const a = avatarOf(e.from.id);
+    const b = avatarOf(e.to.id);
+    if (!a || !b || reducedMotion.matches) {
+      if (a && b) {
+        gesture(e.from.id, tileOf(b)[0] < tileOf(a)[0]);
+        gesture(e.to.id, tileOf(a)[0] < tileOf(b)[0]);
+      }
+      return smacked();
+    }
+    gesture(e.from.id, tileOf(b)[0] < tileOf(a)[0]);
+    gesture(e.to.id, tileOf(a)[0] < tileOf(b)[0]);
+    const [ax, ay] = tileOf(a);
+    const [bx, by] = tileOf(b);
+    const mid: Tile = [Math.round((ax + bx) / 2), Math.max(Math.round((ay + by) / 2), ay <= 1 && by <= 1 ? 2 : 0)];
+    let landed = 0;
+    const meet = () => ++landed === 2 && smacked();
+    flyTo("highfive", tileOf(a), mid, meet);
+    flyTo("highfive", tileOf(b), mid, meet);
+  }
+
+  // a flight to a tile, not a person: the two palms meeting halfway (A.9)
+  function flyTo(base: Base, from: Tile, to: Tile, landed: () => void) {
+    const layer = document.querySelector<HTMLElement>(".map .flights");
+    if (!layer) return landed();
+    const n = Math.min(8, Math.max(1, Math.max(Math.abs(to[0] - from[0]), Math.abs(to[1] - from[1]))));
+    const svg = document.createElementNS(SVG, "svg");
+    svg.setAttribute("class", `flight${to[0] < from[0] ? " face-west" : ""}`);
+    svg.setAttribute("viewBox", `0 0 ${TILE} ${TILE}`);
+    const use = document.createElementNS(SVG, "use");
+    svg.append(use);
+    layer.append(svg);
+    let i = 0;
+    const step = () => {
+      const f = i / n;
+      svg.style.setProperty("--fx", String(from[0] + (to[0] - from[0]) * f));
+      svg.style.setProperty("--fy", String(from[1] + (to[1] - from[1]) * f + 0.5));
+      use.setAttribute("href", `#fx-${FLIGHT[base]}-${(i % 2) + 1}`);
+      if (i++ >= n) {
+        svg.remove();
+        return landed();
+      }
+      setTimeout(step, Math.min(125, 1000 / n));
+    };
+    step();
+  }
+
+  // ---------- a personal best (GYM-17, GYM-18; F.5, F.8) ----------
+  const flexing = new Map<number, number>(); // who is flexing, until when (local ms)
+  function onPb(e: { from: Who; exercise: { id: number; name: string }; at: number }) {
+    const me = meId();
+    pbs = [...pbs.filter((p) => p.userId !== e.from.id), { userId: e.from.id, exercise: e.exercise, until: e.at + PB_MS }];
+    flex(e.from.id);
+    fanfare();
+    if (e.from.id !== me) {
+      const lift = e.exercise.name.toLowerCase();
+      banner(`${e.from.name} hit a PB on ${lift} 🏆`, e.from.id, {
+        room: true,
+        label: `${e.from.name} hit a personal best on ${lift}`,
+        act: { word: "Cheer", icon: "cheer", data: { room: "1" } },
+      });
+    }
+    // never Dony's in the log (BOT-5)
+    if (e.from.id !== 0) addLog({ kind: "pb", from: e.from, exercise: e.exercise.name, at: e.at });
+    redrawAnswers();
+  }
+
+  // F.5: on the aisle tile in front of their station, flex1 and flex2 in
+  // turn for 1.9 s, then on to where their state puts them. Reduced motion:
+  // flex2 still for a second. Only from the live event, never replayed.
+  const FLEX: [figure: "flex1" | "flex2", at: number][] = [
+    ["flex1", 0],
+    ["flex2", 300],
+    ["flex2", 700],
+    ["flex1", 1100],
+    ["flex2", 1500],
+  ];
+  function flex(id: number) {
+    const b = avatarOf(id);
+    if (!b) return;
+    const still = reducedMotion.matches;
+    const ms = still ? 1000 : 1900;
+    flexing.set(id, performance.now() + ms);
+    // stop any walk, and stand on the aisle in front of the station, off the
+    // machine, which goes back to idle (drawStations); the walk resumes after
+    const going = walks.get(b);
+    if (going) clearInterval(going.timer);
+    walks.delete(b);
+    const [x, y] = tileOf(b);
+    if (b.classList.contains("on-station") || b.classList.contains("on-machine")) place(b, [x, y + 1]);
+    b.classList.remove("on-station");
+    b.classList.add("flexing");
+    const swap = (figure: "flex1" | "flex2") => {
+      show(b, figure);
+      drawStations();
+    };
+    if (still) swap("flex2");
+    else for (const [figure, at] of FLEX) setTimeout(() => flexing.has(id) && swap(figure), at);
+    // the confetti
+    b.querySelector("svg.fx")?.remove();
+    const fx = document.createElementNS(SVG, "svg");
+    fx.setAttribute("class", `fx fx-pb${still ? " still" : ""}`);
+    fx.setAttribute("viewBox", `0 0 ${TILE} ${TILE}`);
+    fx.setAttribute("aria-hidden", "true");
+    const frames: Frame[] = still ? [["pb-1", 0, 1000]] : [["pb-1", 300, 400], ["pb-2", 700, 400], ["pb-1", 1100, 400], ["pb-2", 1500, 400]];
+    for (const [href, at, d] of frames) {
+      const use = document.createElementNS(SVG, "use");
+      use.setAttribute("href", `#fx-${href}`);
+      use.style.setProperty("--at", `${at}ms`);
+      use.style.setProperty("--d", `${d}ms`);
+      fx.append(use);
+    }
+    b.append(fx);
+    const av = b.querySelector<SVGElement>("svg.av");
+    if (av && !still) {
+      av.style.animationDuration = "1000ms";
+      setTimeout(() => av.classList.add("jolt-hop"), 300);
+      setTimeout(() => av.classList.remove("jolt-hop"), 1300);
+    }
+    setTimeout(() => {
+      flexing.delete(id);
+      fx.remove();
+      b.classList.remove("flexing");
+      // back to what the room says they're doing, walking there as always
+      liveTick();
+    }, ms);
   }
 
   // ---------- preset bubbles (INT-5; I.6) ----------
   const bubbleTimers = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
   function bubble(from: number, to: string, text: string, at: number) {
-    const says = document.querySelector<HTMLElement>(".map .says");
+    const says = document.querySelector<HTMLElement>(".map .says:not(.offers)");
     const b = avatarOf(from);
     const left = at + 5000 - nowServer();
     if (!says || !b || left <= 0) return;
     // a newer one from the same sender replaces theirs (INT-5.5)
-    says.querySelector(`.say[data-id="${from}"]`)?.remove();
+    document.querySelectorAll(`.map .says .say[data-id="${from}"]`).forEach((s) => s.remove());
     const p = document.createElement("p");
     p.className = "say";
     p.dataset.id = String(from);
@@ -2850,6 +3941,9 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     // only the addressee hears it, once (INT-5.11); you hear your own
     const news = document.querySelector<HTMLElement>("#sheet-news");
     const line = e.to.id === me ? `${e.from.name}: ${e.text}` : e.from.id === me ? `Sent to ${e.to.name}: ${e.text}` : "";
+    // INT-12.1: a soft one for a preset to you, the landed blip for your own
+    if (e.to.id === me) blip("say");
+    else if (e.from.id === me) blip("sent");
     if (news && line) {
       news.textContent = "";
       setTimeout(() => (news.textContent = line), 50);
@@ -2857,7 +3951,11 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   }
 
   // ---------- emoji pops (INT-8, BOT-6; I.8) ----------
-  function onEmote(e: { emoji: string; from: Who; at: number }) {
+  function onEmote(e: { emoji: string; from: Who; at: number; held?: boolean }) {
+    // BOT-8.8 (settled 5 Nov): Dony answers after the move reaches him, so
+    // while one is on its way to him his pop waits for its hit, plus half a
+    // second, never more than 3.5 s
+    if (e.from.id === DONY && donyHold && !e.held) return void donyHold.queue.push(e);
     const pops = document.querySelector<HTMLElement>(".map .pops");
     const b = avatarOf(e.from.id);
     if (!pops || !b) return;
@@ -2942,6 +4040,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     clearTimeout(coolTimer);
     if (r.ok) {
       wear(emoji);
+      blip("sent"); // INT-12.1: a soft pop for your own emoji landing
       const news = document.querySelector<HTMLElement>("#sheet-news");
       if (news) {
         news.textContent = "";
@@ -2994,8 +4093,9 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     const me = Number(shown.dataset.me);
     const li = document.createElement("li");
     li.dataset.at = String(entry.at);
-    li.classList.toggle("you", entry.from.id === me || entry.to.id === me);
-    li.append(tpl(`log-${entry.kind}`));
+    li.classList.toggle("you", entry.from.id === me || ("to" in entry && entry.to.id === me));
+    li.classList.toggle("pb", entry.kind === "pb");
+    li.append(tpl(`log-${LOG_ICON[entry.kind]}`));
     const l = logLine(entry, me);
     const line = document.createElement("span");
     line.className = "line";
@@ -3041,13 +4141,43 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     }
   }, 30_000);
 
+  // ---------- the sound setting (INT-12.3 to INT-12.8; F.11) ----------
+  const SOUND_WORD: Record<SoundSetting, string> = { all: "All sounds", rest: "Rest timer only", off: "Sound off" };
+  const NEXT_SOUND: Record<SoundSetting, SoundSetting> = { all: "rest", rest: "off", off: "all" };
+  function drawSound() {
+    const b = document.querySelector<HTMLButtonElement>(".map-panel .sound");
+    if (!b || b.dataset.sound === sound) return;
+    b.dataset.sound = sound;
+    b.querySelector(".sound-box > svg")?.replaceWith(tpl(`sound-${sound}`));
+    b.querySelector(".sound-word")!.textContent = SOUND_WORD[sound];
+  }
+  document.addEventListener("click", (e) => {
+    const b = (e.target as Element).closest?.<HTMLButtonElement>(".map-panel .sound");
+    if (!b) return;
+    setSound(NEXT_SOUND[sound]);
+    drawSound();
+    say(`Sound: ${SOUND_WORD[sound].toLowerCase()}`);
+  });
+
   // ---------- on each room shown ----------
   // a bubble still within its 5 s shows for its time left (INT-5.6)
   document.addEventListener("astro:page-load", () => {
     readLimits();
     closeMenu(false);
+    drawSound();
     const gym = document.querySelector<HTMLElement>(".gym");
     if (!gym) return;
+    // what's open as the server drew the room, until the stream's first message
+    if (!view && gym.dataset.moments) {
+      const m = JSON.parse(gym.dataset.moments) as Pick<RoomView, "offers" | "answerable" | "pbs">;
+      answers = m.answerable;
+      offers = m.offers;
+      pbs = m.pbs;
+      setTimeout(drawOffers, 300); // once the people are placed
+      redrawAnswers();
+    }
+    // a lapse is only told to the offerer, so their own open offers are watched
+    for (const o of offers) if (o.from === meId()) watchLapse(o);
     for (const e of JSON.parse(gym.dataset.says ?? "[]") as Extract<LogEntry, { kind: "say" }>[]) {
       const at = e.at;
       // the room's people are only placed once the first message is in
@@ -3943,6 +5073,354 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     pointer-events: none;
   }
 
+  /* ===== room feel (4 Nov; criteria/room-feel.md; room spec "Room feel, Nov 4") ===== */
+
+  /* a banner with one button (INT-9.1, INT-10.2, GYM-18.1; F.2): the text
+     box's ▶ prompt becomes the answer, drawn as a highlighted menu row; the
+     box still lets taps through; 6 s */
+  :global(.banner.has-act) {
+    flex-wrap: wrap;
+    padding-right: var(--px);
+    animation-name: banner-6;
+    animation-duration: 6s;
+  }
+  :global(.banner-line) {
+    flex: 1 1 10rem;
+    min-width: 0;
+  }
+  :global(.night .banner-act) {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    margin: 0 0 0 auto;
+    padding: 0 0.75rem 0 0.5rem;
+    font: 16px/1 var(--display);
+    color: var(--ink);
+    background: var(--leaf);
+    border: 2px solid var(--ink);
+    box-shadow: none;
+    transform: none;
+    pointer-events: auto;
+  }
+  :global(.night .banner-act:hover) {
+    background: var(--leaf-hover);
+  }
+  :global(.night .banner-act:active) {
+    transform: translateY(2px);
+  }
+  /* its first half second it ignores taps (R1); the cursor shows when it's live */
+  :global(.banner-act .cur) {
+    animation: banner-arm 500ms steps(1) both;
+  }
+  @keyframes banner-arm {
+    0% {
+      visibility: hidden;
+    }
+    100% {
+      visibility: visible;
+    }
+  }
+  @keyframes banner-6 {
+    0% {
+      clip-path: inset(0 -16px 100% -16px);
+    }
+    2.667%,
+    97.333% {
+      clip-path: inset(-16px);
+    }
+    100% {
+      clip-path: inset(0 -16px 100% -16px);
+      visibility: hidden;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.banner.has-act) {
+      animation: none;
+    }
+  }
+  /* the room's banner for a PB (GYM-18.1; F.8): a gold ring and a PB tab */
+  :global(.banner.room) {
+    position: relative;
+    margin-top: 0.75rem;
+    box-shadow:
+      0 0 0 var(--px) var(--finished),
+      var(--px) calc(var(--px) * 2) 0 var(--px) #000;
+  }
+  :global(.banner-tab) {
+    position: absolute;
+    top: calc(var(--px) * -0.5);
+    left: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    font: 8px/1 var(--display);
+    color: var(--ink);
+    background: var(--finished);
+    border: 2px solid var(--ink);
+    transform: translateY(-50%);
+  }
+  :global(.banner-tab svg) {
+    width: 8px;
+    height: 8px;
+  }
+  /* never over the person it's about (F.2): on a laptop, when they stand in
+     the top three rows, the slot drops to the map's bottom wall */
+  @media (min-width: 900px) {
+    :global(.map .banner-slot.low) {
+      top: auto;
+      bottom: calc(var(--t) * 0.25);
+    }
+  }
+
+  /* the menu: an answer as its first row (INT-9.10; F.3), and the PB line */
+  :global(.menu-acts li.answer) {
+    padding-bottom: var(--px);
+    border-bottom: 2px dashed var(--edge);
+  }
+  :global(.menu-acts li[hidden]) {
+    display: none;
+  }
+  :global(.menu-acts .answer-icon) {
+    display: contents;
+  }
+  :global(.menu-news) {
+    display: flex;
+    align-items: center;
+    gap: var(--px);
+    margin: 0 0 0.5rem;
+    color: var(--finished);
+  }
+  :global(.menu-news[hidden]) {
+    display: none;
+  }
+
+  /* reactions, livelier (INT-11; F.6): each frame its own start and length,
+     and the whole sprite may move with it (.jolt-*); the tag never moves */
+  :global(.fx use) {
+    animation-duration: var(--d, var(--f));
+    animation-delay: var(--at, 0s);
+  }
+  :global(.fx.still use) {
+    visibility: visible;
+    animation: none;
+  }
+  :global(.map .avatar .av.jolt-hop) {
+    animation: jolt-hop 1s steps(1);
+  }
+  :global(.map .avatar .av.jolt-nudge) {
+    animation: jolt-nudge 1s steps(1);
+  }
+  :global(.map .avatar .av.jolt-shake) {
+    animation: jolt-shake 1.2s steps(1);
+  }
+  @keyframes jolt-hop {
+    20% {
+      translate: 0 calc(var(--s) * -2px);
+    }
+    45% {
+      translate: 0;
+    }
+  }
+  /* --dir: 1 east (poke: away from the finger; the western High-five
+     partner), -1 west (the eastern partner) */
+  @keyframes jolt-nudge {
+    25% {
+      translate: calc(var(--s) * var(--dir, 1) * 1px) 0;
+    }
+    45% {
+      translate: 0;
+    }
+  }
+  @keyframes jolt-shake {
+    12.5% {
+      translate: calc(var(--s) * 2px) 0;
+    }
+    19% {
+      translate: calc(var(--s) * -1px) 0;
+    }
+    26% {
+      translate: calc(var(--s) * 1px) 0;
+    }
+    32.5% {
+      translate: 0;
+    }
+  }
+  /* the High-five is drawn for a partner to the east; mirrored for the west */
+  :global(.map .avatar .fx.face-west) {
+    transform: translateX(-50%) scaleX(-1);
+  }
+  /* an open offer: the palm held up, bobbing a sprite pixel */
+  :global(.fx-offer use) {
+    visibility: visible;
+    animation: offer-bob 800ms steps(1) infinite;
+  }
+  @keyframes offer-bob {
+    50% {
+      translate: 0 -1px;
+    }
+  }
+  /* the offer's bubble lasts as long as the offer; the script sets the time left */
+  :global(.map .says .say.offer) {
+    animation-duration: 10s;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.map .avatar .av[class*="jolt-"]),
+    :global(.fx-offer use) {
+      animation: none;
+    }
+  }
+
+  /* the sender's confirmation line (INT-11.5; F.9): where refusals go,
+     solid leaf with a tick */
+  :global(.note.sent) {
+    display: flex;
+    align-items: center;
+    gap: var(--px);
+    color: var(--leaf);
+    border-style: solid;
+    border-color: var(--leaf);
+  }
+  :global(.note.sent svg) {
+    flex: none;
+  }
+
+  /* the room log's PB line (F.10) */
+  .room-log :global(li.pb > svg) {
+    color: var(--finished);
+  }
+
+  /* the sound setting (INT-12.8; F.11): a sign on the map panel's bottom
+     border, at the right; the button 44 px tall, the sign in it 28 px */
+  :global(.map-panel:has(.sound)) {
+    margin-bottom: 2.5rem;
+  }
+  :global(.night .map-panel .sound) {
+    position: absolute;
+    right: 0.75rem;
+    bottom: calc(var(--px) * -0.5);
+    z-index: 20;
+    min-height: 44px;
+    margin: 0;
+    padding: 0;
+    font: 20px/24px var(--body);
+    text-transform: none;
+    color: var(--paper);
+    background: none;
+    box-shadow: none;
+    transform: translateY(50%);
+  }
+  :global(.sound-box) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0 0.5rem;
+    background: var(--night);
+    border: 2px solid var(--edge);
+    box-shadow: 0 0 0 var(--px) var(--panel);
+  }
+  :global(.night .map-panel .sound:hover .sound-box) {
+    background: var(--floor);
+  }
+  :global(.sound svg) {
+    flex: none;
+    color: var(--leaf);
+  }
+  :global(.night .map-panel .sound[data-sound="off"]),
+  :global(.sound[data-sound="off"] svg) {
+    color: var(--dim);
+  }
+  :global(.night .map-panel .sound:focus-visible) {
+    outline: none;
+  }
+  :global(.sound:focus-visible .sound-box) {
+    outline: var(--px) solid var(--focus);
+    outline-offset: 2px;
+  }
+  /* ===== room feel end ===== */
+
+  /* ===== acting it out (5 Nov; criteria/room-acting.md; room spec "Acting it out, Nov 5") ===== */
+  /* the errand (INT-13; A.2): a walker is the same button, stepped by walk() */
+  :global(.map .avatar.errand) {
+    z-index: calc(var(--y) + 0.5);
+  }
+  /* at the meeting spot the body leans towards the target; the tag stays */
+  :global(.map .avatar.errand.at-spot .av) {
+    translate: calc(var(--t) * var(--lean, 0.25) * var(--dir, 1)) 0;
+  }
+  /* the tag draws over its own body and effects (INT-15.5) */
+  :global(.map .avatar .tag) {
+    position: relative;
+    z-index: 1;
+  }
+  /* bodies are drawn facing east, flipped to face a partner to the west */
+  :global(.map .avatar .av.face-west) {
+    scale: -1 1;
+  }
+  /* the target's body reaction (INT-15; A.4): the hop and the lean */
+  :global(.map .avatar .av.lift-2) {
+    translate: 0 calc(var(--s) * -2px);
+  }
+  :global(.map .avatar .av.lift-4) {
+    translate: 0 calc(var(--s) * -4px);
+  }
+  :global(.map .avatar .av.lean-2) {
+    translate: calc(var(--s) * -2px * var(--dir, 1)) 0;
+  }
+  /* the lifter's gesture (INT-14; A.6): a hand over the machine's front */
+  :global(.map .avatar .gesture) {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    z-index: 1;
+    width: var(--t);
+    height: var(--t);
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+  :global(.map .avatar .gesture.face-west) {
+    transform: translateX(-50%) scaleX(-1);
+  }
+  :global(.map .avatar.on-station:not(.on-machine) .gesture) {
+    bottom: calc(var(--t) * -0.375);
+  }
+  /* the travelling effect (INT-14.4, INT-13.14; A.7): over avatars, under
+     bubbles, banners and menus; stepped a tile at a time by the script */
+  :global(.map .flights) {
+    position: absolute;
+    inset: 0;
+    z-index: 16;
+    pointer-events: none;
+  }
+  :global(.map .flight),
+  :global(.map .smack) {
+    position: absolute;
+    left: calc(var(--fx) * var(--t));
+    top: calc(var(--fy) * var(--t) - var(--t) * 0.5);
+    width: var(--t);
+    height: var(--t);
+    overflow: visible;
+  }
+  :global(.map .smack) {
+    left: calc(var(--fx) * var(--t) - var(--t) * 0.5);
+  }
+  :global(.map .flight.face-west) {
+    transform: scaleX(-1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.map .flights) {
+      display: none;
+    }
+    :global(.map .avatar.errand.at-spot .av),
+    :global(.map .avatar .av[class*="lift-"]),
+    :global(.map .avatar .av.lean-2) {
+      translate: none;
+    }
+  }
+  /* ===== acting it out end ===== */
+
   /* ---------- bubbles and pops: two layers over the map (I.6, I.8) ----------
      Each placed from its sender's tile (--x, --y; --dy for the slacker's
      drop). Pops draw under every avatar, so a tag is never covered;
@@ -3958,6 +5436,11 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   }
   :global(.map .says) {
     z-index: 18;
+  }
+  /* an offer's bubble lasts 10 s, so it goes under every avatar, as pops do:
+     a neighbour's tag and head always draw over it (INT-11.3, settled 5 Nov) */
+  :global(.map .says.offers) {
+    z-index: 0;
   }
   /* the anchor: the top of the sender's tag (20 px of tag over the tile) */
   :global(.map .say),
