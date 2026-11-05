@@ -20,7 +20,8 @@
 - **Date**: 4 Nov 2026 (drafted and agreed the same day: the user accepted
   every recommendation, F1 to F10, and R1 to R11 stand; F11 to F13 added
   5 Nov 2026 from qa's round two, under the user's standing instruction;
-  see Decisions).
+  F14 and F15 added 5 Nov 2026 by the user, reconciling GYM-17 with
+  `logbook.md`'s records; see Decisions).
   Numbering: **F1 to F10** are this file's decisions, **R1 to R11** the ones
   made by recommendation; a bare **D** number (D9, D14, D24, D27) is always
   a decision in `int.md`.
@@ -61,7 +62,8 @@ Read this before the criteria. Everything not listed here in `int.md`,
 | **"Sound. No sound goes with any animation."** in Scope, Out | `animations.md` | Reversed for reactions and the personal-best flex (INT-12). Exercise animations stay silent. | F6 |
 | **Section 11**: reactions "last under 1 s"; "the rest-over sound is the only one on by default"; "one sound toggle lives in the gym menu" | `docs/design/system.md` | Reactions may last up to 1.5 s (INT-11.4). All sounds are on by default. There is no gym menu today: the designer places the sound setting on the room page (INT-12.8). | F7, R10 |
 | **LOG-5**: when rest ends the page plays a sound and flashes | spec | The sound can now be turned off by the person (setting "Off"); the flash and the words are unchanged and always show. | F7 |
-| **"Personal records"** in the spec's Out table, cut from the MVP spec | `spec-4-weeks.md` | GYM-17 (already P1 in the same spec) brings back **a personal-best moment in the room only**: no records page, no records on history or the summary. The spec contradicts itself today; "Spec changes this needs" narrows the Out row so GYM-17 is in. | F3 |
+| **"Personal records"** in the spec's Out table, cut from the MVP spec | `spec-4-weeks.md` | GYM-17 (already P1 in the same spec) brings back **a personal-best moment in the room**. Records themselves, on the lifter's own pages, came back with `logbook.md` LB-4; this file only adds the room's moment for them. | F14 |
+| **LB-4.13**: "nobody else in the room can tell" a record was set (no animation, banner, room-log line, squad change or stream event); "GYM-17, if built, should be a setting" | `logbook.md` | **Overridden** for the room's moment: a Done that sets a record is a PB, and the room sees the flex, the room banner (no numbers), the room-log line and hears the fanfare (GYM-17.7, GYM-18). No setting in this build. Everything else about records (which ones, the numbers, the marks) stays private to the lifter, as LB-4 says. LB-4.13 is marked superseded in `logbook.md`. | F15 |
 
 **Not overridden** (they shape this file): `int.md` D4 (anyone, any state),
 D5 (Slap refused while the target is Lifting or Finished; Slap back follows
@@ -90,12 +92,15 @@ those meanings.
   it only **happens** if the other **accepts** within 10 s. Otherwise the
   offer **lapses**.
 - **Open offer**: a High-five offer that has neither happened nor lapsed.
-- **PB** (personal best, the Australian word): a set that beats every
-  earlier set of the same exercise by the same person, by what that
-  exercise's kind measures (GYM-17.1 to GYM-17.4).
-- **Earlier sets**: every set of that exercise the person has logged
-  before, in any workout and any room, as those sets are stored now (edited
-  values count; deleted sets don't).
+- **Record** and **record type**: as `logbook.md` defines them (Terms,
+  LB-4): a working set (not a warm-up) whose value for a record type
+  (Heaviest, Best e1RM and Most reps for weight lifts; Most reps and
+  Heaviest added for bodyweight; Longest hold; Longest distance and Longest
+  time for cardio) is strictly greater than every earlier working set's.
+  The first set to measure a type sets nothing.
+- **PB** (personal best, the Australian word): a Done that stores a set
+  which is a record for at least one record type (F14). One Done is at most
+  one PB, however many types it breaks.
 - **Flex**: the short body pose an avatar plays on a PB, seen by everyone in
   the room.
 - **Room banner**: a banner that goes to everyone in the room at once, not
@@ -116,9 +121,9 @@ those meanings.
   from the sender's menu, for 30 s after an interaction arrives.
 - **High-five (INT-10).** Offered from the menu, accepted from a banner or
   the menu, happening on both avatars on every screen.
-- **PBs (GYM-17).** What counts, worked out on the server when Done stores
-  the set; a flex on every screen; the lifter's own confirmation in the
-  logged stamp.
+- **PBs (GYM-17).** A Done that sets a logbook record (F14), worked out on
+  the server when Done stores the set; a flex on every screen; the lifter's
+  own confirmation is logbook's record mark on the logged stamp.
 - **The room's PB moment (GYM-18).** A room banner on everyone else's screen
   with a one-tap Cheer, a room log line, a short window where the lifter's
   menu suggests Cheer and High-five.
@@ -153,11 +158,13 @@ those meanings.
   who hasn't started is pressure, not banter; the others are counters. PB is
   the one moment that celebrates effort without comparing people. They can
   be asked for later.
-- **PBs on history, the summary or the home page**, and a records page.
-  Those are Logbook pages (another design group) and the MVP spec's records
-  (LOG-12) are a bigger question; history already shows each workout's Best.
-- **Repetition PBs at a given weight, estimated one-rep max, volume PBs**
-  (the MVP spec's LOG-12). One rule per kind (F3).
+- **Anything about records on the lifter's own pages** (the marks on
+  history, the summary and the exercise page, the "N new records" count).
+  That is `logbook.md` LB-4's, unchanged here. This file adds only the
+  room's moment.
+- **A PB of its own definition.** A PB is exactly a logbook record (F14),
+  so there is one idea of "you beat your best", not two. Volume PBs stay
+  out, as they are out of LB-4.
 - **Vibration.** iPhone browsers can't vibrate (MVP spec), so half a squad
   would never feel it.
 - **Sound for other people's interactions, emoji or presets, or for Dony's
@@ -183,7 +190,8 @@ those meanings.
   the numbers (F5) is the MVP spec's own rule for public rooms ("weights …
   off in public rooms"); a stranger room would also need a per-person
   "share my PBs with the room" setting, in the vision's "who you let see
-  you" question.
+  you" question. `logbook.md` LB-4.13 asked for that setting now; F15 puts
+  it off until public rooms, because today's rooms are friends-only.
 - **Mute (MVP spec)** would have to silence a muted person's sounds, hide
   their High-five offers and drop their replies, not only their bubbles.
 - **The room log fills faster.** Replies, High-fives and PBs share its
@@ -197,6 +205,15 @@ those meanings.
   (heaviest, most reps at a weight, estimated one-rep max). A PB announced
   under this file's rule might not be a record under that one; the two
   would need reconciling, not two words for nearly the same thing.
+  *(Resolved 5 Nov, F14: a PB is a logbook record.)*
+- **More PBs from people who don't mark warm-ups.** Under F14, a second
+  set heavier than the first is a record (LB-4.3 only spares the very first
+  set). A Drifter who ramps up 40, 50, 60 kg without tapping Warm-up gets a
+  PB on each new exercise's second set and again on the third, each with a
+  room banner. F4's "whole first workout sets the bar" guarded against
+  that; the user chose logbook's rule knowing this. If it proves noisy, the
+  lever is the room's moment (for example, one PB moment per exercise per
+  workout), not the record rule.
 - **The sound setting lives in one browser** (F7). A settings page later
   (ACC-5) won't know it; moving it to the account is small, but people
   would set it once more.
@@ -223,11 +240,10 @@ those meanings.
   the audio context is unlocked on the first **pointer** press only. A
   keyboard-only person never unlocks sound today, so they'd never hear the
   rest-over beep either. INT-12.11 fixes that.
-- **The best set** is already defined per kind by `topSet` in
-  `src/lib/logbook.ts` (distance then time for cardio, hold for duration,
-  reps then added weight for bodyweight, weight then reps for weight), and
-  ADR 0002 says GYM-17 should use it. F3 decides exactly that, plus
-  "strictly better" (equal is never a PB).
+- **Records** are decided by `logbook.md` LB-4 when a set is stored, per
+  record type, from working sets only. GYM-17 reads that result (F14); it
+  never defines a best of its own, and `topSet` (a workout's "Best" line)
+  is not used for it.
 - **Done lands in `logSet`** (`src/lib/workouts.ts`), followed by a redirect
   and the logged stamp. A PB is decided there, in the same step that stores
   the set, so it can never slow Done.
@@ -246,17 +262,15 @@ In `docs/product/spec-4-weeks.md`:
    INT-12 (sound and the sound setting) in Interactions and messages;
    GYM-18 (the room's PB moment) in The gym; BOT-7 (Dony and the new
    things) in Dony.
-2. **GYM-17 reworded**: "A set that beats every earlier set of that
-   exercise by what its kind measures (heaviest weight, then reps; most
-   reps, then added weight; longest hold; longest distance, then faster
-   time) is a personal best, from a person's second workout with that
-   exercise on. It plays a flex everyone sees." (F3, F4)
-3. **The "Out" table's personal-records row narrowed**, so GYM-17 is in:
-   "80 seeded exercises, custom exercises, warm-up sets, a personal-records
-   page and records history, units switching" (in place of "… warm-up
-   sets, personal records, units switching"), with the reason extended:
-   "A personal best is only celebrated in the room (GYM-17, GYM-18)." This
-   resolves today's contradiction between that row and GYM-17.
+2. **GYM-17 reworded** (F14, F15): "A Done that sets at least one personal
+   record (LB-4: working sets only; the first set to measure a record type
+   sets nothing) is a personal best. It plays a flex everyone in the room
+   sees, with a room banner and log line that name the exercise but no
+   numbers (GYM-18)." And LB-4's row loses "Nobody else in the room is
+   told (GYM-17 stays separate)", which F15 overturns.
+3. **The "Out" table's personal-records row**: GYM-17 is in. (Already
+   reworded on main by the logbook work: personal records came back with
+   LB-4, and the row says a personal best is celebrated in the room.)
 4. **INT-1** reworded: the menu also offers **High-five**, and a reply as
    its first row while one is open to you.
 5. **INT-3**: a banner may carry one button (a reply, a High-five, or Cheer
@@ -277,13 +291,14 @@ In `docs/product/spec-4-weeks.md`:
     setting, one blip a second at most).
 12. **Candidate checks**: a second reply to the same interaction is refused;
     a reply after 30 s is refused; a High-five accepted after 10 s is
-    refused; a set equal to the best is not a PB; a first workout with an
-    exercise has no PB.
+    refused; a set equal to the best is not a PB; a warm-up is never a PB;
+    the first set to measure a record type is not a PB.
 
 In `docs/design/system.md`:
 
 13. **Section 3, copy bank**: every line marked *(new)* below (reply
-    banners, High-five lines, "left you hanging", the PB banner and stamp,
+    banners, High-five lines, "left you hanging", the PB banner (the stamp
+    uses logbook's record mark),
     the confirmation lines, "Too late to answer that one.", "Already
     answered.", "Ji-woo's away right now.", "Too slow. Mia's hand is
     down.").
@@ -569,45 +584,45 @@ box never covers a tag's box; after a preset, the palm is still shown)
 
 ### GYM-17: a personal best
 
-> A new personal best (heaviest weight on an exercise) plays a flex animation
-> everyone sees. *(The spec's current wording. F3 widens "heaviest weight"
-> to each kind's own best, as ADR 0002 planned, and F4 starts PBs from a
-> person's second workout with an exercise; the reworded row is in "Spec
-> and design-system changes this needs".)*
+> A Done that sets at least one personal record (`logbook.md` LB-4) is a
+> personal best, and plays a flex everyone in the room sees. *(F14 and F15,
+> 5 Nov; the spec's row is reworded to match.)*
 
-**GYM-17.1** Given Mia's earlier sets of Bench press (a weight exercise) are
-100 kg × 5 at best, when Done stores 102.5 kg × 1, then it is a PB; 100 kg ×
-6 is a PB (more reps at the same weight, F3); 100 kg × 5 again is
-not (equal is never a PB); 97.5 kg × 12 is not. *HTTP*
+**GYM-17.1** Given Mia's Done stores a set that is a record for at least one
+record type (`logbook.md` LB-4.1), then that Done is a PB; given it is a
+record for none, it isn't. One Done is one PB however many types it breaks:
+Mia's best bench was 100 kg × 5, and 100 kg × 6 (a record for Most reps and
+Best e1RM, LB-4.2) is one PB, with one flex and one room banner. 100 kg × 5
+again is not a PB (equal is never a record); 102.5 kg × 1 is (Heaviest);
+60 kg × 12 after a best of 60 kg × 10 is (Most reps) (F14). *HTTP*
 
-**GYM-17.2** Given the other kinds, then a PB is decided by what that kind
-measures, strictly better than every earlier set (F3):
-- bodyweight (Pull-up, Hanging leg raise, Push-ups): more reps, or the same
-  reps with more added weight;
-- duration (Plank): a longer hold;
-- cardio (Run, Incline walk): a longer distance, or the same distance in
-  less time.
+**GYM-17.2** Given every kind, then a PB follows the record types of
+`logbook.md`'s Terms with nothing added or left out: Heaviest, Best e1RM
+and Most reps for weight lifts; Most reps and Heaviest added for bodyweight
+lifts; Longest hold; Longest distance and Longest time for cardio (F14).
 *HTTP*
 
-**GYM-17.3** Given Mia has never logged Back squat before today's workout,
-then no Back squat set in today's workout is a PB, however many she logs or
-how much each goes up: her first workout with an exercise sets the bar. From
-her next workout on, a set is a PB if it beats every earlier set, including
-earlier sets in that same workout (F4). *HTTP*
+**GYM-17.3** Given the first set to measure a record type (Mia's first ever
+working set of Back squat, or her first pull-up with weight added), then it
+is not a record (LB-4.3, LB-4.6), so it is not a PB. Her next working set
+that beats it is, even in the same workout: there is no "first workout"
+rule (F14, replacing F4). *HTTP*
 
-**GYM-17.4** Given Mia logs two PBs on Bench press in one workout (102.5 kg,
-then 105 kg), then both are PBs, each beating everything before it. *HTTP*
+**GYM-17.4** Given a Warm-up set, then it is never a PB and never the bar a
+later set must beat (`logbook.md` LB-2.10, LB-4.4). Given Mia logs two
+records on Bench press in one workout (102.5 kg, then 105 kg), then both
+Dones are PBs. *HTTP*
 
 **GYM-17.5** Given Mia's PB is decided, then it is decided by the server in
-the same step that stores the set, from her earlier sets as stored at that
+the same step that stores the set, from the record rule as it stands at that
 moment. Given two Dones from two of her tabs reach the server at the same
-moment with the same new best weight, then exactly one is a PB (the one
-stored first); the other is equal to it. *HTTP*
+moment with the same new best weight, then exactly one is a record and a PB
+(the one stored first); the other is equal to it. *HTTP*
 
-**GYM-17.6** Given Mia edits or deletes a set (LOG-8), then no PB is
-announced, and none already announced is taken back; the edited values count
-as earlier sets for her later Dones. A PB is only ever announced on Done.
-*HTTP* (decided, R4)
+**GYM-17.6** Given Mia edits or deletes a set (LOG-8), then `logbook.md`
+LB-4.9 may move record marks on her own pages, but no PB is announced to the
+room, and none already announced is taken back: the room's moment happens
+only on Done, and a PB once announced stays in the room log. *HTTP* (R4)
 
 **GYM-17.7** Given Mia's Done is a PB, then within a second, on every open
 screen in the room, her avatar plays the flex once, then goes on to where
@@ -617,13 +632,14 @@ her sheet, Done, Start set or anything she can tap. *browser*
 
 **GYM-17.8** Given Mia's PB is on cardio (after a cardio Done she stays
 Lifting on the treadmill, LOG-4), then the flex plays where she is and she
-goes back to running on the treadmill afterwards (F3). *browser*
+goes back to running on the treadmill afterwards. *browser*
 
-**GYM-17.9** Given Mia's Done is a PB, then on her own screen the logged
-stamp says so as well as what was logged (for example "Set 3 logged: 105 kg
-× 5 · New PB 🏆" *(new)*), and her screen reader hears that line once. This is
-the only place her own screen confirms it: she gets no room banner
-(GYM-18.3), and nothing new appears over or beside Done. *browser*
+**GYM-17.9** Given Mia's Done is a PB, then on her own screen the
+confirmation is `logbook.md`'s record mark on the logged stamp, naming each
+record the set broke ("New record: heaviest, best e1RM", LB-4.10), which her
+screen reader hears once. There is no separate "New PB" stamp or wording:
+she gets no room banner (GYM-18.3), and nothing new appears over or beside
+Done (F14). *browser*
 
 **GYM-17.10** Given Mia's Done is a PB, then the time from her tap to her
 Resting sheet is the same as for a Done that isn't one. *judged* (on a
@@ -702,10 +718,12 @@ keyboard path is Mia's menu, where Cheer is highlighted (GYM-18.6).
 **GYM-18.8** Given a PB happened while Priya was Away or had the room closed,
 then she never gets its banner later; she finds it in the room log. *browser*
 
-**GYM-18.9** Given Mia's PB, then nothing anywhere counts, ranks or compares
-it: no "third PB this week", no PB tally, no list of who has the most, no
-mention of anyone else's numbers. *judged* (and *HTTP*: no page or stream
-carries a PB count)
+**GYM-18.9** Given Mia's PB, then nothing the room can see counts, ranks or
+compares it: no "third PB this week", no PB tally, no list of who has the
+most, no mention of anyone's numbers or of which record types were broken.
+(Mia's own summary counting her records, `logbook.md` LB-4.12, is hers
+alone and unchanged.) *judged* (and *HTTP*: no room page or stream carries a
+PB count, a record type or a number)
 
 **GYM-18.10** Given the showcase (nobody lifting real sets), then the room's
 PB moment still happens, through Dony (BOT-7.5); and given a real squad, a
@@ -957,8 +975,9 @@ hanging"), not as broken. *judged*
 ## Open questions
 
 None. All ten were settled on 4 Nov 2026 (F1 to F10), R1 to R11 stand as
-written, and three gaps found by qa in round two were settled on 5 Nov 2026
-(F11 to F13); see Decisions.
+written, three gaps found by qa in round two were settled on 5 Nov 2026
+(F11 to F13), and the clash with `logbook.md` on 5 Nov 2026 (F14, F15);
+see Decisions.
 
 ## Decisions
 
@@ -970,7 +989,11 @@ decided by recommendation in the draft and the user let them stand.
 F11 to F13 are dated **5 Nov 2026**: gaps qa found in round two, settled by
 recommendation under the user's standing instruction of 4 Nov (translated):
 "any pending questions afterwards, go with what you recommend." They can be
-overruled like any recommendation. The criteria above are written to match.
+overruled like any recommendation.
+
+F14 and F15 are dated **5 Nov 2026**, settled by the user directly when
+merging main brought in `logbook.md`; they replace F3 and F4. The criteria
+above are written to match.
 (F and R numbers are this file's; a bare D number is a decision in
 `int.md`.)
 
@@ -978,9 +1001,9 @@ overruled like any recommendation. The criteria above are written to match.
 | --- | --- | --- | --- | --- |
 | F1 (Q1) | How does someone answer an interaction? | **Both**: a one-tap reply on the banner and in the sender's menu (INT-9), **and** a mutual High-five that only happens when both press (INT-10). **Reverses `int.md`'s exclusion of High-five.** If they ship apart, the reply comes first. | A reply makes a slap something you can return, which is what makes it banter for the Drifter, and it works when only one or two people are there (the usual case). The High-five is the two-person moment for a full room, and needs both to agree, the right shape for strangers later. Neither touches the dock. | INT-9 (all), INT-10 (all), BOT-7.2 to BOT-7.4 |
 | F2 (Q2) | What can each interaction be answered with? | Thanks to a Cheer, Poke back to a Poke, Slap back to a Slap. Slap back follows Slap's rule. A reply can't be answered. | "Thanks" is what people say to a cheer and is safe from a stranger; returning a poke or slap in kind is the playful part; nobody is slapped mid-set by a reply; no ping-pong. | INT-9.1 to INT-9.4, INT-9.9 |
-| F3 (Q3) | What counts as a PB? | Every kind, by what history already calls each exercise's "Best": weight then reps; reps then added weight; longest hold; longest distance then faster time. Strictly better than every earlier set; equal is never a PB. GYM-17's "heaviest weight" is widened to match. | One rule that matches history's "Best", as ADR 0002 planned; otherwise five of the sixteen exercises could never celebrate. | GYM-17.1, GYM-17.2, GYM-17.8 |
-| F4 (Q4) | Can a first workout with an exercise produce a PB? | No: the whole first workout with an exercise sets the bar; PBs start from the next workout. | A new user's warm-ups would otherwise be a burst of fake PBs in front of the room. Dony covers the showcase (F9). | GYM-17.3 |
-| F5 (Q5) | What does the room see of a PB? | The name and exercise, no numbers, in a room banner (with Cheer) and in the room log. The lifter sees their numbers in the logged stamp. | Numbers invite comparison (shame about ability); the banner is the whole-room moment; the log line reaches people who were away. | GYM-18.1, GYM-18.5, BOT-7.5 |
+| F3 (Q3) | What counts as a PB? **Replaced by F14 (5 Nov).** | Every kind, by what history already calls each exercise's "Best": weight then reps; reps then added weight; longest hold; longest distance then faster time. Strictly better than every earlier set; equal is never a PB. GYM-17's "heaviest weight" is widened to match. | One rule that matches history's "Best", as ADR 0002 planned; otherwise five of the sixteen exercises could never celebrate. (F14 keeps the "every kind" and "strictly better" parts, through LB-4's record types.) | (GYM-17.1, GYM-17.2, now under F14) |
+| F4 (Q4) | Can a first workout with an exercise produce a PB? **Replaced by F14 (5 Nov).** | No: the whole first workout with an exercise sets the bar; PBs start from the next workout. | A new user's warm-ups would otherwise be a burst of fake PBs in front of the room. Dony covers the showcase (F9). | (GYM-17.3, now under F14) |
+| F5 (Q5) | What does the room see of a PB? | The name and exercise, no numbers, in a room banner (with Cheer) and in the room log. The lifter sees their numbers in the logged stamp, with logbook's record mark (F14). | Numbers invite comparison (shame about ability); the banner is the whole-room moment; the log line reaches people who were away. | GYM-18.1, GYM-18.5, BOT-7.5 |
 | F6 (Q6) | Which sounds exist? | Sounds for things about you (an interaction, reply, High-five offer or preset to you), a confirmation for your own moves and emoji landing, the High-five sound for both people, the PB fanfare for everyone, and the rest-over sound. Never for other people's moves or emoji, or Dony's emoji. **Reverses D27.** | Pressing things should feel like something to the sender too; the fanfare makes the whole room notice; other people's moves stay silent, or a room of emoji becomes noise. | INT-12.1, INT-12.2, INT-12.14, INT-12.15, BOT-7.8 |
 | F7 (Q7) | Sound default, choices, where remembered | On by default; three values (All sounds, Rest timer only, Off); remembered per browser, nothing on the server. Placement on the room page is the designer's, within INT-12.8. LOG-5's sound can now be turned off; the flash and words always show. | Off by default means nobody hears it; three values let the Anchor keep only the rest beep and a lecture-room laptop go silent; sound belongs to the device and place. | INT-12.3 to INT-12.8 |
 | F8 (Q8) | Does Dony accept High-fives? | Yes, about a second after the offer, sharing his one-answer-every-10-s cap with his emoji answers; otherwise he leaves you hanging. He still never starts anything. | Rooms are usually one person plus Dony, so this makes the High-five work alone; twelve offers giving one High-five is the joke. | BOT-7.1 to BOT-7.4, BOT-7.8 |
@@ -996,6 +1019,14 @@ instruction (gaps raised by qa, round two):**
 | F12 | The High-five offer's bubble can cover a neighbour's name tag, for 10 s. | The offer's bubble is drawn under every avatar, as emoji pops are (`int.md` INT-8.23): tags and heads always draw over it. A preset from the same sender replaces it as their bubble (`int.md` INT-5.5); the raised palm on their avatar stays while the offer is open. | Tags carry who and what state, so they always win (`int.md` D20); the palm keeps the offer visible and acceptable. | INT-10.2, INT-10.18 (new) |
 | F13 | How does the accepter's room log read for a High-five? | The viewer first, as "You", on either side: "You and Mia high-fived" on Ji-woo's screen, the same shape as the offerer's "You and Ji-woo high-fived". | One line shape for both people, as `int.md` D28 did for presets. | INT-10.6 |
 
+**Settled 5 Nov 2026 by the user directly, reconciling GYM-17 with
+`logbook.md` (agreed, merged from main):**
+
+| # | Question | Decision | Why | Criteria |
+| --- | --- | --- | --- | --- |
+| F14 | `logbook.md` LB-4 defines records per record type (Heaviest, Best e1RM, Most reps; Most reps, Heaviest added; Longest hold; Longest distance, Longest time), working sets only, the first set to measure a type setting nothing, marked "New record: …" on the lifter's stamp. This file defined a PB as one combined best per kind (F3), from the second workout on (F4), with its own "New PB 🏆" stamp. Which wins? The user chose: "use logbook's records to trigger the room-wide moment." | **A PB is any Done that sets at least one logbook record.** F3 and F4 are replaced by LB-4's rule (so only the first set of a type sets nothing, not the whole first workout); warm-ups never count (LB-2.10). The room's moment is unchanged: flex, room banner without numbers, room-log line, fanfare, 30 s menu highlight (GYM-17.7 onwards, GYM-18). The lifter's confirmation is logbook's record mark on the stamp (LB-4.10); there is no separate "New PB" stamp. This is what `logbook.md` D18 anticipated. | One idea of "you beat your best" across the app, so the room and the lifter's own pages never disagree; the Anchor's real records drive the moment. Cost, accepted: more PBs early on from unmarked warm-ups (see "What this makes harder later"). | GYM-17.1 to GYM-17.6, GYM-17.8, GYM-17.9; Terms (Record, PB); Scope; overrides |
+| F15 | `logbook.md` LB-4.13 says nobody else in the room can tell a record was set ("GYM-17, if built, should be a setting"). The user chose: "public, overturn LB-4.13." | **Public, with no setting in this build.** The room sees a PB's moment as GYM-17 and GYM-18 describe, never the numbers or which record types. LB-4.13 is superseded for that moment and marked so in `logbook.md`; everything else in LB-4 stays private to the lifter. A per-person setting comes with public rooms. | Rooms are friends-only by passcode; the room is shown no numbers, so it celebrates without comparing; a setting is needed when strangers can be in the room, not before. | Overrides table; GYM-17.7 to GYM-17.15, GYM-18 (as written), GYM-18.9 |
+
 **Decided by recommendation in the draft, left standing by the user:**
 
 | # | Decision | Why | Criteria |
@@ -1006,7 +1037,7 @@ instruction (gaps raised by qa, round two):**
 | R4 | A PB is announced on Done only; editing or deleting a set never announces or withdraws one. | Corrections should be quiet; logging is where the moment is; nothing un-plays. | GYM-17.6 |
 | R5 | For 30 s after a PB, menus on that person highlight Cheer and High-five. | Points the room at the one thing to do, the way the MVP spec highlights High-five after a PB. | GYM-18.6 |
 | R6 | A PB's room banner is announced to every screen reader in the room, once. | Rare and celebratory; otherwise screen-reader users miss the whole-room moment. | GYM-18.7 |
-| R7 | The lifter's PB confirmation is in the existing logged stamp; the lifter gets no room banner. | It's where their thumb and eyes already are after Done, and it leaves the banner free for the cheers. | GYM-17.9, GYM-18.3 |
+| R7 | The lifter's PB confirmation is in the existing logged stamp (since F14, logbook's record mark there); the lifter gets no room banner. | It's where their thumb and eyes already are after Done, and it leaves the banner free for the cheers. | GYM-17.9, GYM-18.3 |
 | R8 | At most one interaction sound per second per screen; the PB fanfare and the rest-over sound always play. | A cheer cascade would otherwise be a wall of blips. | INT-12.9 |
 | R9 | The sender's confirmation line shows only when the target's avatar is out of view. | On a laptop the reaction beside the menu is the confirmation; on a phone scrolled to the fields there's none today. | INT-11.5 |
 | R10 | Reactions may last up to 1.5 s (the flex up to 2 s), up from system.md's "under 1 s". | "Too short" is part of the user's complaint; 1.5 s still never queues behind the next. | INT-11.4 |

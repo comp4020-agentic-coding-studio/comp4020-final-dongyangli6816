@@ -76,7 +76,7 @@ Two situations are designed for:
 | Report, block, mute, kick, admin page, text filtering pipeline, moderation API | Only needed with strangers; a passcode room is a closed group |
 | Email verification, password reset, Google or Apple sign-in, 18+ age gate | No email service in the setup; no strangers |
 | PWA install, web push notifications, offline logging and sync, wake lock | Large effort, and iPhone push needs home-screen install; in-page sound and visual alerts instead |
-| 80 seeded exercises, custom exercises, warm-up sets, a personal-records page and records history, units switching | 16 exercises on 8 pieces of equipment, kg only. Four tracking kinds came back in on 8 Oct (ADR 0002). A personal best is only celebrated in the room (GYM-17, GYM-18) |
+| 80 seeded exercises, custom exercises, units switching | 16 exercises on 8 pieces of equipment, kg only. Four tracking kinds came back in on 8 Oct (ADR 0002); warm-up sets and personal records came back in on 4 Nov (LB-2, LB-4); a personal best is celebrated in the room (GYM-17, GYM-18) |
 | Tiled map editor, sprite sheets drawn per avatar layer, ~20 animations, free walking and A* pathfinding | Sprites are drawn in code with two-frame animations; avatars walk along fixed aisles |
 | Layered avatar creator with thousands of combinations | A handful of choices, done by palette swaps |
 | Success metrics, retention targets, running-cost planning, scaling path | Product-launch concerns, not course concerns |
@@ -133,6 +133,23 @@ delivery plan below.
 | LOG-8 | P1 | Edit or delete a set after logging it. |
 | LOG-9 | P1 | Sets carry a client-generated ID, so a retried request on a slow connection never logs the same set twice. |
 
+### The logbook (added 4 Nov)
+
+Criteria and decisions: `docs/product/criteria/logbook.md`. Logging stays one
+set at a time, because Done, rest and Start set drive the avatar. All seven
+are P1, built in this order and cut from the end: LB-1, LB-2 (types and RPE),
+LB-4, LB-6, LB-5, LB-2 (notes), LB-3, LB-7 (added 5 Nov).
+
+| ID | Pri | Requirement |
+| --- | --- | --- |
+| LB-1 | P1 | Choosing an exercise shows every set of it from the last workout that included it, not just the last set. Pre-fill is unchanged (LOG-3). |
+| LB-2 | P1 | A set can be Normal, Warm-up or Failure, and carry an RPE from 1 to 10 in half steps. One note per exercise per workout, shown again under Last time. |
+| LB-3 | P1 | Plans: saved from a finished workout (exercises and a set count each), managed on `/plans`, loaded in the room's sheet. A loaded plan never chooses an exercise by itself. |
+| LB-4 | P1 | Personal records per exercise and kind (heaviest, best estimated 1RM by Epley, most reps, longest hold, longest distance and time), marked on the set that set them. Warm-ups and a first-ever set never set one. The numbers and record types stay private; the room is only told that someone set one, by name and exercise (GYM-17; changed 5 Nov, `criteria/room-feel.md` F15). |
+| LB-5 | P1 | `/exercises/:id`: every past set of an exercise, its current records and a line chart of its best per workout, with a table of the same points. |
+| LB-6 | P1 | History opens with this week's workouts, volume and distance, and a streak of consecutive Monday-to-Sunday weeks trained, in Australia/Sydney time. |
+| LB-7 | P1 | Beside each exercise's name on history and the summary, and in the exercise page's head, the person's own avatar doing it on its machine: the gym's two-frame animation, decorative, still under reduced motion. |
+
 ### The gym
 
 The gym is one fixed pixel-art room with **12 stations**, one per person a room
@@ -169,8 +186,8 @@ equipment.
 | GYM-3 | P0 | Each station holds at most one piece of equipment, and each piece of equipment is used by one person at a time. The same kind of equipment can be on several stations at once (five people benching means five benches). A person keeps their station while resting, slacking or Away, and holds none while Idle. |
 | GYM-4 | P0 | Choosing an exercise releases the station the person was using, then claims one, in this order: (1) a station that already has that equipment and nobody using it; (2) an empty station, which triggers a delivery; (3) the station whose equipment has gone unused longest, which triggers a swap. Any equipment can be swapped out, including the four a room opens with, as long as nobody is using it. |
 | GYM-5 | P0 | The server makes the claim in one database transaction, so two people who want the same station at the same moment never both get it. Whoever commits second falls through to the next rule in GYM-4, and, by the argument above, still finds a station (ADR 0004). |
-| GYM-6 | P0 | **Delivery:** a muscular gym worker walks in from the entrance carrying the equipment, puts it down on the claimed station, and walks out. Every screen in the room plays this. A **swap** is the same, except the worker first carries the old equipment out. |
-| GYM-7 | P0 | The delivery never blocks logging. The person can tap **Start set** at once; their avatar waits by the station until the worker has put the equipment down. |
+| GYM-6 | P0 | **Delivery:** a muscular gym worker walks in from the entrance carrying the equipment, puts it down on the claimed station, and walks out. Every screen in the room plays this. A **swap** is one trip: the worker carries the new equipment in, swaps it at the station and carries the old one out (changed 4 Nov, `criteria/delivery.md`). |
+| GYM-7 | P0 | The delivery never blocks logging. The person can tap **Start set** at once; their avatar waits where it is until the worker has put the equipment down and gone, then walks to it (changed 5 Nov, `criteria/delivery.md`). |
 | GYM-8 | P0 | The equipment layout is stored per room, so anyone who arrives later, reloads, or comes back after a restart sees the equipment where it was left, with no replay of the delivery. |
 | GYM-9 | P0 | Each person is in exactly one state: **Idle**, **Lifting**, **Resting**, **Slacking** or **Finished**. |
 | GYM-10 | P0 | Avatars walk between stations along the aisles (straight segments on the tile grid, no free pathfinding). **Start set** plays the equipment's exercise loop. **Done** sends the avatar to the water cooler. |
@@ -180,7 +197,7 @@ equipment.
 | GYM-14 | P0 | A person whose connection drops shows as **Away** (avatar faded) after 60 s, and keeps their state and station. When they return, they pick up where they left off. |
 | GYM-15 | P0 | Below the gym, a text list of everyone in the room, their state and their equipment mirrors the map, for keyboard and screen-reader users and for small screens. |
 | GYM-16 | P1 | **Work in:** instead of having another one delivered, someone can ask to share a piece of equipment that's in use, taking turns with its user between sets, the way people do in a real gym. |
-| GYM-17 | P1 | A set that beats every earlier set of that exercise by what its kind measures (heaviest weight, then reps; most reps, then added weight; longest hold; longest distance, then faster time) is a personal best, from a person's second workout with that exercise on. It plays a flex everyone sees (changed 4 Nov: every kind, not heaviest weight only). |
+| GYM-17 | P1 | A Done that sets at least one personal record (LB-4: working sets only; the first set to measure a record type sets nothing) is a personal best. It plays a flex everyone in the room sees; the room is told the person and the exercise, never the numbers (GYM-18). The lifter's own confirmation is LB-4's record mark on the stamp (changed 5 Nov: a personal best is a logbook record, and the room is told; `criteria/room-feel.md` F14, F15). |
 | GYM-18 | P1 | When someone hits a personal best, everyone else in the room gets a banner naming them and the exercise, without numbers, with a one-tap Cheer. The personal best goes in the room log. For 30 s their menu suggests Cheer and High-five. |
 
 ### Interactions and messages
@@ -217,7 +234,7 @@ Criteria for INT-9 to INT-12, GYM-17, GYM-18 and BOT-7 are in
 | --- | --- | --- |
 | BOT-1 | P1 | The back wall's poster is "Member of the month: Dony". Anyone in the room can tap it (by touch, click or keyboard) to summon Dony: on every screen the poster goes empty and he hops down onto the walkway. The server records the summon (when, by whom). He can be summoned again any number of times after being sent back; each summon is a fresh visit with a new schedule. |
 | BOT-2 | P1 | Dony is drawn on the people's body frames, so he has every pose and animation a person has, with his own head (an Asian character's hair and glasses) over them and his fixed violet colours; his hop is his only frame of his own. Plus the poster's full and empty frames, within the art rules. He can't be picked in the avatar editor. |
-| BOT-3 | P1 | Dony trains by a schedule worked out from the room and his summon time: blocks of 4 to 6 lifts over 45 to 60 minutes, 3 to 5 sets each, realistic set lengths and rests, 3 to 6 minutes Idle between blocks, mostly on equipment already on the floor (at most two deliveries a block). He goes Idle, Lifting, Resting and Slacking (about one rest in eight, at most twice a block) through the same station rules (GYM-4), never Finished, and every screen sees each change within about a second (GYM-13). His emoji (BOT-6) are part of the same schedule. |
+| BOT-3 | P1 | Dony trains by a schedule worked out from the room and his summon time: blocks of 4 to 6 lifts over 45 to 60 minutes, 3 to 5 sets each, realistic set lengths and rests, 3 to 6 minutes Idle between blocks, only on equipment already on the floor, so he never causes a delivery (changed 4 Nov, `criteria/delivery.md`). He goes Idle, Lifting, Resting and Slacking (about one rest in eight, at most twice a block) through the same station rules (GYM-4), never Finished, and every screen sees each change within about a second (GYM-13). His emoji (BOT-6) are part of the same schedule. |
 | BOT-4 | P1 | Anyone in the room can tap the empty poster to send Dony back: he stops whatever he's doing, frees his station, walks back and hops into the poster. He can be sent back at any moment; after a send back the poster rests for 30 seconds before he can be summoned again. A tap only acts if the poster is still as its tapper saw it (full for a summon, empty for a send back) and, for a summon, isn't resting; otherwise it does nothing, silently. |
 | BOT-5 | P1 | Dony appears on the map and in the squad list like a person, with no bot marker. He never counts as a member, toward the 12, as host or as room activity. A station he holds is always free for a person to take. The room closes when the last real person leaves, as now, and he goes with it. He appears in no logbook, summary, history or friends list, and nothing he does, his emoji included, counts as room activity. |
 | BOT-6 | P1 | While he's out, Dony sends the same emoji as people (INT-8): 👋 when he lands, then about one every 2 minutes (never two within 60 s) fitting his state, and an answer about a second after a Cheer, Poke or Slap aimed at him (at most one answer every 10 s, shared with his High-five acceptances, never to presets). Planned from the room, his summon time and the stored interactions, like the rest of his schedule. |
@@ -298,15 +315,17 @@ row, so a cold start restores the gym exactly.
 | `exercises` | `id`, `name`, `equipment` | Seeded, 16 rows |
 | `workouts` | `id`, `user_id`, `room_id` (nullable), `started_at`, `ended_at` | |
 | `sets` | `id`, `workout_id`, `exercise_id`, `weight_kg`, `reps`, `completed_at`, `rest_target_s`, `slack_s` | `slack_s` written when the next set starts |
+| `sets` (4 Nov) | + `set_type`, `rpe` | Null on sets logged before LB-2: they read as Normal with no RPE |
+| `exercise_notes` | `workout_id`, `exercise_id`, `body` | One note per exercise per workout (LB-2) |
+| `plans`, `plan_exercises` | `id`, `user_id`, `name`; `plan_id`, `position`, `exercise_id`, `sets` | A plan made from a finished workout (LB-3); `workouts.plan_id` is the plan loaded there |
 | `interactions` | `id`, `room_id`, `from_user_id`, `to_user_id`, `kind`, `created_at` | Also enforces INT-4. Gains the reply and High-five kinds, a link from a reply to what it answers (INT-9), and High-five offers with their outcome (INT-10). The interaction event (and Dony's High-five acceptance) carries the sender's state at acceptance, so every screen agrees who walks (INT-13, INT-14); nothing new is stored |
 | `messages` | `id`, `room_id`, `sender_id`, `preset_key`, `body`, `created_at` | `body` only for free text (INT-6) |
+| `personal_bests` (5 Nov) | `set_id`, `room_id`, `user_id`, `exercise_id`, `created_at` | A set that set a logbook record when it was logged (GYM-17): the room's moment, kept so an edit never takes it back |
 
-Whether a set is a personal best (GYM-17) is recorded when it is logged or
-derived from the person's earlier sets; either way it survives a restart.
-
-A delivery is not a table. A client that sees a station whose `placed_at` is
-less than a few seconds old plays the worker's animation; any later client
-just draws the equipment in place (GYM-8).
+A delivery is not a table. A screen that is already open when a station's
+change arrives plays the worker's animation if the change's `placed_at` is
+under 3 s old; a screen that opens or reloads, or hears of it later, just
+draws the equipment in place (GYM-8).
 
 ## Stack
 
@@ -334,8 +353,10 @@ Fly in this course (Crit 7 used the same stack). Each choice gets an ADR in
 | Avatar editor | Live preview, choices, randomise, save |
 | `/join/:code` | Joins the room, or asks the person to sign in or sign up first and then joins |
 | Gym (`/rooms/:id`) | Top bar with passcode, invite link and leave; the gym map; the people list; a bottom panel that changes with your state |
-| Workout summary | Duration, sets, volume, slacking time |
-| History | Past workouts with their sets |
+| Workout summary | Duration, sets, volume, slacking time, records set, Save as plan |
+| History | This week's stats and streak, then past workouts with their sets (LB-6) |
+| `/exercises/:id` | One exercise's records, chart and every past set (LB-5) |
+| `/plans` | Your plans: rename, delete; made with Save as plan on a summary (LB-3) |
 | `/readme/` | `README.md` rendered in full |
 
 The gym's bottom panel, by state:

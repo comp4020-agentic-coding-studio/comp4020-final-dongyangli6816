@@ -200,7 +200,9 @@ const steps = [
               {last && last.sets.length > 0 ? (
                 byExercise(last.sets).map((g) => (
                   <tr>
-                    <td>{g.name}</td>
+                    <td>
+                      <a href={`/exercises/${g.sets[0].exerciseId}`}>{g.name}</a>
+                    </td>
                     <td class="num">{g.sets.length}</td>
                     <td class="num">{bestLabel(g.sets)}</td>
                   </tr>
@@ -220,9 +222,15 @@ const steps = [
                 </a>
               )}
               <a href="/history" class="button secondary">All history</a>
+              <a href="/plans" class="to-plans">Your plans</a>
             </div>
           ) : (
-            <p class="hint">Your first set lands here once you log it in a room.</p>
+            <>
+              <p class="hint">Your first set lands here once you log it in a room.</p>
+              <div class="actions">
+                <a href="/plans" class="to-plans">Your plans</a>
+              </div>
+            </>
           )}
         </section>
       </>
@@ -580,6 +588,23 @@ const steps = [
   .logbook .empty {
     padding: 1rem 0.6rem;
     color: var(--muted);
+  }
+  /* LB-5.7: each lift's name goes to its page, 44 px tall without making the
+     row taller (history's .log th.lift a) */
+  .logbook td a {
+    display: inline-block;
+    min-height: 44px;
+    margin: -0.5rem 0;
+    padding: 0.5rem 0;
+  }
+  .logbook td a:hover {
+    color: var(--deep);
+  }
+  /* LB-3.11: Your plans, the summary's link, last in the card's row */
+  .to-plans {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
   }
 
   @media (max-width: 420px) {

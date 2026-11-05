@@ -51,6 +51,26 @@ export const POST: APIRoute = async ({ params, locals, request }) => {
   const back = <T>(column: T) => sql`${column} - ${Math.round(ms)}`;
 
   db.transaction((tx) => {
+    // workout=<id>: one of the caller's own workouts in this room, open or
+    // finished, and its sets (the logbook contract, spec/logbook.test.ts)
+    if (form.has("workout")) {
+      const workoutId = Number(form.get("workout"));
+      const own = tx
+        .select({ id: workouts.id })
+        .from(workouts)
+        .where(and(eq(workouts.id, workoutId), eq(workouts.userId, locals.user!.id), eq(workouts.roomId, roomId)))
+        .get();
+      if (!own) return;
+      tx.update(workouts)
+        .set({ startedAt: back(workouts.startedAt), endedAt: back(workouts.endedAt) })
+        .where(eq(workouts.id, own.id))
+        .run();
+      tx.update(sets)
+        .set({ completedAt: back(sets.completedAt), restEndedAt: back(sets.restEndedAt) })
+        .where(eq(sets.workoutId, own.id))
+        .run();
+      return;
+    }
     if (form.get("room") === "1") {
       tx.update(rooms)
         .set({

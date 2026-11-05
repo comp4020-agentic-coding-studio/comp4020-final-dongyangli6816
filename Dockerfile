@@ -17,7 +17,9 @@ RUN pnpm build && pnpm prune --prod
 
 FROM docker.io/library/node:24.21.0-slim
 WORKDIR /app
-ENV NODE_ENV=production HOST=0.0.0.0 DATA_DIR=/data
+# TZ: calendar days, weeks and streaks are the squad's, in Sydney (LB-6, D21);
+# Node carries its own time zone data, so the slim image needs nothing more
+ENV NODE_ENV=production HOST=0.0.0.0 DATA_DIR=/data TZ=Australia/Sydney
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY package.json README.md ./

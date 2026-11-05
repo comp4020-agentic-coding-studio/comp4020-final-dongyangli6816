@@ -51,41 +51,7 @@ const dist = distanceKm(sets);
 </dl>
 
 <style>
-  /* 2 px ink lines come from the gaps, so any count of boxes, in any
-     arrangement, is ruled the same way */
-  .tally {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: auto;
-    gap: 2px;
-    margin: 0 0 1rem;
-    background: var(--ink);
-    border: 2px solid var(--ink);
-  }
-  .tally div {
-    padding: 0.25rem 0.5rem;
-    background: var(--paper);
-  }
-  .tally dt {
-    font: 8px/1.4 var(--display);
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-  .tally dd {
-    margin: 0;
-    font-size: 28px;
-    line-height: 1.1;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
-  @media (max-width: 420px) {
-    /* four boxes don't fit a 360 px card in one row: 2 × 2 */
-    .tally:has(> :nth-child(4)) {
-      grid-auto-flow: row;
-      grid-template-columns: auto auto;
-    }
-  }
-
+  /* the base tally is global, in Layout.astro, so every logbook page has it */
   /* the summary's size: 48 px figures, 24 px units */
   .tally.big dd {
     font-size: 48px;

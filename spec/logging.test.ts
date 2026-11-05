@@ -1,3 +1,4 @@
+import { JSDOM } from "jsdom";
 import { describe, expect, it } from "vitest";
 import { Browser, createRoom, openEvents, signUp } from "./helpers.ts";
 
@@ -49,11 +50,15 @@ describe("each exercise asks for what it measures", () => {
   it("starts a run empty, so the stopwatch counts from zero, and shows the last one", async () => {
     const { b, path } = await inRoom();
     await b.post(path, { exercise_id: RUN, distance_km: "3.2", minutes: "18", seconds: "5" });
+    // Last time is the previous session, never the open workout (logbook LB-1.3)
+    await b.post(path, { action: "finish" });
+    await b.post(path, { action: "choose", exercise: RUN });
     const form = await (await b.get(`${path}?exercise=${RUN}`)).text();
     expect(form).toMatch(/name="distance_km"[^>]*value(="")?[ >]/);
     expect(form).toMatch(/name="minutes"[^>]*value(="")?[ >]/);
     expect(form).toMatch(/name="seconds"[^>]*value(="")?[ >]/);
-    expect(form).toMatch(/Last time <b[^>]*>3\.2 km · 18:05/);
+    const last = new JSDOM(form).window.document.querySelector("[data-last] [data-set]");
+    expect(last?.textContent?.replace(/\s+/g, " ").trim() ?? "no [data-last] [data-set]").toMatch(/^3\.2 km · 18:05/);
   });
 
   it("says what Done logged", async () => {

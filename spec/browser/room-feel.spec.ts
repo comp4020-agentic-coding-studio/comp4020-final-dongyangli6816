@@ -17,7 +17,8 @@ import { backdate, join, openRoom, person, post } from "./helpers.ts";
 // - the menu's answer row `.menu li.answer .act.hot`; the PB line `.menu-news`.
 // - an open offer: `svg.fx.fx-offer` on the offerer, and `.map .says .say.offer`.
 // - the High-five on both avatars: `svg.fx` with `fx-highfive`.
-// - the flex: the avatar takes `.flexing`; the stamp `p.stamp.pb`.
+// - the flex: the avatar takes `.flexing`; the lifter's stamp is logbook's, its
+//   set `.stamp [data-set]` with `data-records` (LB-4.10).
 // - the sound setting: `.map-panel button.sound[data-sound]`, words in
 //   `.sound-word`, kept in localStorage.
 
@@ -209,10 +210,14 @@ test("Mia hits a PB on bench: Tom sees her flex and the room banner, cheers from
   await expect(tom.locator(`${BANNER} .banner-act`)).toHaveAccessibleName("Cheer Mia");
   await expect(tom.locator(BANNER)).not.toContainText("105");
   await expect.poll(() => flexed(tom), { message: "Mia flexed on Tom's screen" }).toEqual(["Mia"]);
-  // Mia: resting at once, the gold stamp with her numbers, no banner of her own
+  // Mia: resting at once; her stamp shows the set with logbook's Record mark
+  // (LB-4.10: in words, naming the records), no banner of her own
   await expect(miaPage.locator(MAIN)).toHaveText("Start set");
-  await expect(miaPage.locator("p.stamp.pb")).toContainText("New PB: 105 kg × 5");
-  await expect(miaPage.locator("p.stamp.pb .pb-mark")).toHaveText("🏆");
+  const stampSet = miaPage.locator(".stamp [data-set]");
+  await expect(stampSet).toHaveText("105 kg × 5");
+  await expect(stampSet).toHaveAttribute("data-records", /\bheaviest\b/);
+  await expect(stampSet).toHaveAttribute("data-records", /\be1rm\b/);
+  await expect(miaPage.locator(".stamp")).toContainText(/record/i);
   await expect(miaPage.locator(BANNER)).toHaveCount(0);
   await expect(logLines(tom).first()).toContainText("Mia hit a PB on bench press");
   await expect(logLines(miaPage).first()).toContainText("You hit a PB on bench press");

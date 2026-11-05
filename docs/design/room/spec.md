@@ -88,6 +88,37 @@ design in "Interactions, Oct 22" at the end. No existing field, `action` or
 state changes; the only change to an existing element is that others'
 avatars and squad rows gain `aria-haspopup="menu"` and a click.
 
+**Revision, 4 Nov 2026 (the gym worker; GYM-6, GYM-7, decided in
+`docs/product/criteria/delivery.md`, D1 to D7).** New equipment no longer
+just appears on its station. A **gym worker** in a hi-vis vest, with
+shoulders wider than any member's, walks in from the door mat with the
+machine held over his head, puts it down, and walks out. In a swap he
+carries the old piece out on the same trip, swaying. Several workers walk
+in single file, and one whose station changes mid-run turns round with a
+"?". The claimer's avatar waits on the aisle tile in front of the station,
+and her dock carries the copy-bank line as a **delivery docket** until the
+put-down. Nothing else on the page changes: no field, `action`, tab stop or
+list row. Full design in "Delivery, Nov 4" at the end.
+
+**Revision, 5 Nov 2026 (the claimer waits where she is).** The user,
+after trying the built room: the worker and the claimer walking together
+looks messy. The worker now comes in, puts the equipment down and walks
+out; only once he has gone does the claimer's avatar walk to the station.
+Until then it stands where it is, tag Lifting. Changed: "Delivery, Nov 4"
+D.9, D.5's put-down row, D.12's two storyboard rows, D.14's GYM-7.5 row,
+and the delivery and swap storyboards in the mockup.
+
+**Revision, 4 Nov 2026 (the logbook refactor; `docs/product/criteria/logbook.md`,
+LB-1 to LB-4).** The sheet and This workout only. Last time lists every set
+of the previous session, with the one to match lit, and stays through the
+rest; the set gains a type (three radio chips) and an optional RPE (one
+row; built as a number field, logbook.md Decisions) under the numbers; an exercise note folds to one line once the lift
+has a set; a loaded plan is a box of Choose buttons with Up next lit; the
+stamp, the rest block and This workout carry the Logbook group's marks. The
+map, Dony, the squad, interactions and emoji don't change, and the dock's
+button keeps its box, place and label everywhere. Full design in "Logbook
+refactor, Nov 4" at the end; it supersedes 3.3 items 8 and 10's `p.last`.
+
 The mockup suffixes ids (`weight_kg-1`, `set-log-5`, `pick-2`) only because
 it shows many states on one page. The real ids are `weight_kg`, `reps`,
 `minutes`, `seconds`, `distance_km`, `exercise`, `set-error`, `set-edit`,
@@ -554,7 +585,7 @@ month poster only make sense on a gym wall.
 | "scaled by the largest whole number that fits, and recomputed on resize" (4-week, Rendering) | The scale script in 3.8; CSS media queries are the no-JS fallback. |
 | GYM-2 "A new room starts with the treadmill, flat bench, squat rack and dumbbell rack on four stations, and eight empty stations" | Slots 1 to 4 (the row along the mirrors) hold those four; slots 5 to 12 are numbered empty bays. State "Room alone". |
 | GYM-4 / brief: "you are told which station you claimed" | `.station.mine` (leaf corners), the leaf ring on your tag, `p.spot` "Your spot: Lifting platform 5" in the sheet, and your row in the list. Choosing posts `action=choose` (as the server now expects). |
-| Brief: "Equipment that is delivered this week simply appears on its station" | A station's equipment is drawn from the room's layout; a change arrives over SSE and the sprite is swapped in place. No animation, no message. |
+| ~~Brief: "Equipment that is delivered this week simply appears on its station"~~ *Retired 4 Nov* (criteria/delivery.md) | GYM-6 and GYM-7: the gym worker carries it in. See "Delivery, Nov 4" (D.10). The in-place swap stays only for reduced motion, a catching-up screen and a claim learnt of 3 s or more late. |
 | GYM-9, GYM-10 (states on the map) | Lifting: on the machine, in that machine's two-frame animation ("Exercise animations, Oct 19"). Resting: rest spots by the cooler, bottle. Slacking: in front of the machine, sitting with phone. Idle: idle spots by the lockers. Finished: idle spots, trophy-yellow tag. Positions in 3.2. |
 | GYM-10 "Avatars walk between stations along the aisles" | Route in 3.2; one tile per 125 ms in `steps()`; reduced motion jumps. |
 | GYM-10 "**Start set** plays the equipment's exercise loop. **Done** sends the avatar to the water cooler"; system 2.1 "a normal set is two taps: Start set, then Done" | While a rest runs (Resting, Rest up, Slacking) the dock's button is **Start set**: it ends the rest and makes you Lifting the same exercise, so your avatar walks from the cooler (or stands up) to your station and plays the loop. Then the dock's button is **Done**, which logs and sends you back to the cooler. State "Lifting (after Start set)". |
@@ -1205,7 +1236,7 @@ stations, avatars and rows from it.
 | **Lifting (after Start set)** | Start set tapped | No rest block; tab Lifting; "Last time 140 kg × 5"; your spot; fields as typed; **Done** in the dock. On the map you walk from the cooler to your station and lift. |
 | **Reconnecting** | The event stream has been down for 3 s | `.conn` shows the dashed `Reconnecting…` chip with the signal icon. Everything else stays: the map holds its last picture, times keep ticking, Done still posts. When the stream reopens, `Live` returns and the room redraws. After 60 s down, the others see you as Away; your own screen doesn't. |
 | **Someone Away** | Their last heartbeat is 60 s old | Their sprite fades, the phone-off icon joins their tag, `Away` joins their list row. They keep their spot and station. |
-| **Equipment arrives** | Someone claims an empty bay (GYM-4) | The bay's sprite becomes the equipment, in place, on every screen. No animation this week. |
+| **Equipment arrives** | Someone claims an empty bay (GYM-4) | *Replaced 4 Nov:* the worker carries it in on every live screen ("Delivery, Nov 4", states "Delivery" to "Phone 360, delivery on its way"). In place only under reduced motion, on a catching-up screen, or 3 s or more late. |
 | **Phone, first screen** | A 390 × 660 phone (browser bars showing) | The whole map, then the sheet; the fixed dock covers the lower half of the big timer, so the dock shows its copy beside Start set. With the bars collapsed (about 750 tall) the big timer is clear and the copy hides. |
 | **Phone, scrolled** | Scrolled to the squad list | The dock stays with its timer copy and Start set. |
 | **No sets yet** (8 Oct) | You've just entered a room (joined, created or come back) and logged nothing | The sheet's border carries the clock from `0:00`, counting up (drawn at `0:41`, Idle, Pick a lift). No This workout panel and so no Finish. The Room panel's leave note reads "Nothing logged yet, so there's no workout to save." Drawn as Priya joining Mia's busy room (Mia is host, so no End room). "Room alone" is the same moment for the room's creator, at `0:08`. |
@@ -5230,3 +5261,1122 @@ flying over their head; 6 the two-frame wave; 7 a flight between two back-row
 people drops to the aisle row; 8 the gesture as a body-less pose, as drawn.
 The server's part is the contract addendum in `spec/room-acting.test.ts`:
 `fromState` on interaction events, `fromState` and `toState` on a done High-five.
+
+## Delivery, Nov 4
+
+From `docs/product/criteria/delivery.md` (agreed 4 Nov, D1 to D7): GYM-6
+and GYM-7, with GYM-10.18, 10.19 and 10.21 from `animations.md`. The
+criteria decide behaviour and timings; this section decides how the worker
+looks, where he walks, how he is layered, and where the claimer's line
+sits. Mockup states are named in brackets.
+
+### D.1 Plan
+
+**Shared** (unchanged, section 1 and I.1): Night surface, `.panel` boxes,
+one primary button in the dock, people drawn one way, state shown three
+ways, other people's changes quiet, banter where there's room for it.
+
+**Who and when.**
+- *The Anchor, choosing a lift that isn't on the floor, phone in one hand.*
+  They want Done at once and no waiting. They glance at the map once: a
+  bloke in hi-vis is hauling their pull-up bar across the gym. Then they
+  log.
+- *The showcase.* Twelve people choosing lifts to see what happens. The
+  first Choose sends a worker in; five Chooses send a single-file conga of
+  hi-vis staff, each holding a machine over his head. It has to read as a
+  funny rush hour, not as a mess (GYM-6.41).
+- *Mia alone* (the usual case): the worker is the only other figure on the
+  map, so the gym feels staffed rather than empty (GYM-6.42).
+- *A stranger in the room* (vision): a swap takes a free machine away, so
+  it must never look like another member's doing. It's staff, following a
+  rule, and aimed at nobody (GYM-6.11, 6.43).
+
+**The one job is unchanged: log the next set.** The worker is a third
+layer of the map, under every person and every tag, and never reaches the
+sheet. Of everything here, only the docket touches the claimer's panel:
+one line, no button, gone at the put-down.
+
+**Hierarchy.** On the map: tags, then people, then the worker, then the
+stations. He is the loudest moving thing for 2 to 3 s (orange on dark
+green), but he never covers a tag, and every person draws over him. On
+the sheet: Done, then the fields, then the docket, which is as quiet as
+the emoji tab beside it.
+
+**Reuse.** Equipment: the eight existing idle drawings (`eq-<machine>`),
+lifted whole; nothing new is drawn for it. Walking: the people's route,
+`route()` in `src/lib/floor.ts`, 125 ms a tile in `steps(1)`, frames
+swapped once a tile like the people's walk. The waiting tile: the aisle
+tile `route()` already passes through below each station. The docket: the
+emoji tab's border-tab language (`.emote`), mirrored on the left. The
+announcement: the existing `#sheet-news`. New: `.crew`, `.worker`,
+`.worker .load`, `.worker .body`, `.worker .huh`, `.dock .eta`, and seven
+grids in a new `src/sprites/worker.ts`.
+
+**Template check.** The generic version is a progress spinner on the
+station, a "Delivering…" toast and a disabled Start button, the way any
+app shows a wait. Swap the colours and it's any loading state. What
+changed:
+- **A person brings it**, the way a real gym's staff wheel in a rack: a
+  hi-vis vest with reflective bands and a cap, so nobody takes him for a
+  member or for Dony.
+- **The joke is in the load**: arms locked over his head under a whole
+  treadmill, teeth gritted, a dip on every other step. Then a "ta-da" with
+  sweat flying at the put-down. In a swap he staggers out with the old
+  bench, swaying.
+- **The wait has a place**: your avatar stands where it is, tag Lifting,
+  and lets the worker do his job before walking over, like someone
+  waiting for the rack to be set up. On your
+  dock, a dashed docket ("Equipment's on its way. Start whenever 🚚")
+  rides beside the emoji tab like a delivery slip.
+- **Rush hour is single file**, a conga of staff with machines held up,
+  which is what a crowd of claims looks like.
+
+Would a Gen Z squad screenshot it? Five orange workers in a row with a
+treadmill, two cable machines and a pull-up bar held up, and someone's
+"huh?" as his machine is cancelled mid-carry: yes.
+
+### D.2 The worker's look (GYM-6.1, 6.43)
+
+- **32 × 32, drawn on the tile like a person**: same baseline (boots end
+  on sprite row 30, where people's sneakers end), same size, so he stands
+  in the same world.
+- **Build**: a small head under a cap; navy deltoids out to columns 1 and
+  30, two columns wider each side than any member's shoulders (3 to 28),
+  so he is the only figure that fills the tile edge to edge. Under them,
+  an orange vest with two paper reflective bands narrows to his belt: the
+  V that makes the shoulders read big at 1×.
+- **The fixed palette**, 7 colours, outlined in ink. These are raw hex
+  values allowed only inside a sprite palette (system 5), and none of them
+  is offered in the editor:
+
+  | Letter | Colour | What |
+  | --- | --- | --- |
+  | `k` | `#0b2416` (`--ink`) | outline |
+  | `s` / `S` | `#ad7447` / `#8f5a36` | skin, and its shade (a fixed tone; staff, not a person, so no choice) |
+  | `h` / `H` | `#2a3550` / `#1a2236` | navy sleeves and trousers, and the cap's brim and boots |
+  | `t` / `T` | `#ff9419` / `#cc6a0a` | hi-vis orange vest and cap, and its shade |
+  | `w` | `#e8f0d8` (`--paper`) | reflective bands, the cap badge, the eyes' catchlights and gritted teeth (exempt, as on people) |
+  | `m` | `#8fa896` (`--dim`) | boot soles (exempt, as people's soles) |
+  | `r` | `#7cc6e8` (`--resting`) | the sweat drops only (exempt) |
+
+  Hi-vis orange is not a state colour, not a shirt swatch (orange
+  `#e07b28` is the nearest, and the paper bands and navy sleeves tell them
+  apart), and not Dony's violet. Unlike a state tag, it is never a filled
+  box with a word.
+- **Facing**: towards the viewer, like people (`animations.md` D1). He
+  never turns sideways; his direction of travel shows only in where he
+  moves, as for people.
+- **Never aimed at anyone** (GYM-6.43): his expressions are effort (teeth
+  gritted under the load), relief (eyes shut at the put-down) and a plain
+  smile walking out. He never looks at, points at or reacts to a member.
+
+### D.3 His frames (`src/sprites/worker.ts`, grids in D.13)
+
+| Frame | When | What |
+| --- | --- | --- |
+| `carry1` | Carrying, odd steps | Arms locked straight up, fists at rows 3 to 5, the load resting on them; teeth gritted; left boot planted, right lifted |
+| `carry2` | Carrying, even steps | The same a row lower (fists at rows 4 to 6, the dip), right boot planted, left lifted |
+| `putdown` | 500 ms at the put-down (delivery) | Arms flung out wide at shoulder height, eyes shut, "o" mouth, both boots planted: ta-da. Always with `sweat` |
+| `walk1`, `walk2` | Walking out empty-handed | Arms down by his sides, a row of swing, the same strides as carry, a plain smile |
+| `sweat` | Overlay | Two blue drops beside the cap (rows 3 to 6). On the put-down, and on every frame of a swap's walk out |
+| `huh` | Overlay, 12 × 12 | A paper "?" in ink, beside his load for 500 ms when he turns round (D.7) |
+
+Frames swap once a tile, like the people's walk (125 ms). The spec's art
+table asked for "walk carrying in 4 directions × 2; put down × 1": since
+he faces the viewer like everyone (the criteria leave this to the
+designer), the four directions are one pair, and walking out empty-handed
+gets its own pair.
+
+### D.4 The equipment, in place and carried
+
+**In place** is the station's drawing as today (`eq-<machine>` idle, or
+the frames' back layer while someone is on it).
+
+**Carried** is the same idle drawing, whole and unchanged, drawn one tile
+above the worker's: its bottom edge sits on his fists, 5 sprite rows down
+from the top of his tile (`bottom: 27/32 × --t` of his tile; 26/32 on
+`carry2`, so the load dips with him). Its floor shadow is cut off (the
+`n` row at the bottom of each idle grid: one row, two for the pull-up
+bar, none for the treadmill) with a `clip-path`, so it floats. Nothing
+new is drawn and nothing is scaled: at 1× and 2× it's the same machine
+you'll see on the station a second later, which is what makes it
+recognisable (GYM-6.4, 6.9).
+
+| Machine | Carried, what reads at 1× |
+| --- | --- |
+| Treadmill | the console and lit belt stripes on top, rails either side |
+| Flat bench | a tall green pad between two uprights |
+| Squat rack | a box with a bar across its top |
+| Dumbbell rack | the paper-lit row of dumbbells |
+| Lifting platform | a wide dark-green square, the bar along its foot |
+| Pull-up bar | the padded column between tall posts |
+| Cable machine | a wide frame with the two striped stacks |
+| Exercise mat | a green roll with its spiral end |
+
+State "Worker art" shows all eight in place and carried at 2×. The load
+reaches up to one tile above his, so on the back row (stations 1 to 4) it
+overlaps the wall's lower half, as tags already do. It stays inside
+`.map` and is never clipped by it.
+
+### D.5 Where he walks (GYM-6.5, 6.6, 6.7)
+
+**Route**: in, `route(DOOR, station)` from `src/lib/floor.ts`, so up the
+central walkway (column 4) to the station's aisle row, along it, onto the
+station's tile. Out, `route(station, DOOR)`, which is the same path
+reversed, ending on the mat at (4,9). He appears on (4,9) and is removed
+there. No new route code: the worker's path is every member's path.
+
+**Timing**, one rule for both kinds, with n = the number of steps in
+`route(DOOR, station)`:
+
+| t | What |
+| --- | --- |
+| 0 | He appears on the mat (4,9), carrying, frame `carry1` |
+| 125 ms × k | He is on the route's k-th tile, frames alternating |
+| 125 × n | He steps onto the station's tile, load overhead. The station keeps its old drawing (the empty bay, or in a swap the old machine) |
+| 125 × (n + 1) | **Put-down.** The station's drawing becomes the new equipment, and he steps back onto the waiting tile (empty: since 5 Nov the claimer waits where she is, D.9). A delivery shows `putdown` + `sweat` there for 500 ms (four ticks, so the ta-da lands at 1×), then `walk1`/`walk2` out. A swap shows `carry` with the old equipment as his load + `sweat`, and walks straight out, swaying |
+| delivery 125 × (2n + 3), swap 125 × 2n | He reaches the mat |
+| + 125 ms | He is removed |
+
+| Station | n | Put-down | Delivery gone | Swap gone |
+| --- | --- | --- | --- | --- |
+| 1 | 11 | 1500 | 3250 | 2875 |
+| 2 | 9 | 1250 | 2750 | 2375 |
+| 3 | 10 | 1375 | 3000 | 2625 |
+| 4 | 12 | 1625 | 3500 | 3125 |
+| 5 | 9 | 1250 | 2750 | 2375 |
+| 6 | 7 | 1000 | 2250 | 1875 |
+| 7 | 8 | 1125 | 2500 | 2125 |
+| 8 | 10 | 1375 | 3000 | 2625 |
+| 9 | 7 | 1000 | 2250 | 1875 |
+| 10 | 5 | 750 | 1750 | 1375 |
+| 11 | 6 | 875 | 2000 | 1625 |
+| 12 | 8 | 1125 | 2500 | 2125 |
+
+The farthest is station 4: down at 1.625 s (GYM-6.7 allows 2.5) and gone
+at 3.5 s after a delivery, 3.125 s after a swap (allows 4.5). The build should compute these from `route()`,
+not from this table.
+
+**The swap tiles** (D2, GYM-6.10). At the put-down, the station goes from
+the old drawing to the new in one frame, and the old piece becomes his
+load in the same frame: never both, never empty. On the walk out the
+whole `.worker` sways one sprite pixel left on odd steps and right on
+even ones (`.sway-l`, `.sway-r`, a `translateX` of `--t / 32`), with
+`sweat` on every frame: the stagger. Same speed: the criteria's timings
+hold.
+
+**Drawn as**: state "Delivery (storyboard)" (Priya's pull-up bar to bay
+9: in the door, on the walkway, on the bay, ta-da, back out) and state
+"Swap (storyboard)" (Tom's cable machine for the flat bench on 2: in,
+on the station, the swap, staggering out).
+
+### D.6 Several runs at once (D1, GYM-6.12, 6.13)
+
+- **One worker per run, all at once, no cap.** Each run's clock starts
+  when its own screen learns of its claim.
+- **Single file**: a run that would start within 125 ms of another's
+  start, measured on this screen, starts on the next free 125 ms tick
+  after it. So workers leave the mat at least one step apart, and on the
+  shared way in (the walkway) no two share a tile. Twelve claims inside
+  one tick: the twelfth starts at 1375 ms and, at worst (station 4, a
+  delivery), is gone by 4875 ms, inside the criteria's 5.5 s. The delay is
+  the screen's own; every screen agrees within a tick.
+- A worker walking out may share a tile with one walking in (GYM-6.13
+  allows it); both stay visible, since bodies draw over loads (D.8).
+- **Drawn as**: state "Rush hour" (four claims in half a second, 125 ms
+  apart: two frames, 750 ms in, spread along the aisles, and 375 ms in,
+  nose to tail on the walkway).
+
+### D.7 The turn-round (D4, GYM-6.16, 6.17)
+
+When a station's equipment changes on the server while a worker is still
+carrying the earlier piece to it on this screen (he hasn't put it down):
+
+1. On the next 125 ms tick he turns round on the tile he's on, and
+   `huh` shows beside his load (top right of his load, at `--t × 26/32`
+   across) for 500 ms (4 ticks). He walks back out along his route,
+   reversed, still carrying what he holds, and is removed at the mat.
+   Still `carry` frames, no sweat.
+2. On the same tick, a **new worker** starts a run for the newest
+   equipment, against whatever the station shows on this screen at that
+   moment: a swap if it shows equipment, a plain delivery if it shows the
+   empty bay. He doesn't wait for the first (they pass on the walkway).
+3. A change that lands after the put-down is an ordinary swap. A change
+   whose newest equipment is the one already being carried (GYM-6.15)
+   isn't a change: nothing turns round.
+4. If the station changes again while the second worker is carrying, the
+   same rule applies to him: every station settles within 4.5 s of its
+   last change.
+
+**Drawn as**: state "Turn-round" (a full room; Mia's cable machine to 7
+cancelled by her switch to Push-ups, which swaps 7 for a mat).
+
+### D.8 Layering, taps and focus (GYM-6.26 to 6.29, GYM-7.4)
+
+```html
+<!-- in .map, after the stations and before the first avatar; built by the script -->
+<div class="crew" aria-hidden="true" inert>
+  <div class="worker" style="--x: 4; --y: 6">
+    <svg class="load" viewBox="0 0 32 32" data-equipment="pull-up-bar"><use href="#eq-pull-up-bar"/></svg>
+    <svg class="body" viewBox="0 0 32 32"><use href="#wk-carry2"/></svg>
+  </div>
+</div>
+```
+
+- **One `.crew` layer per map**, `position: absolute; inset: 0; z-index:
+  0; pointer-events: none`, `aria-hidden="true"` and `inert`. It sits
+  above the floor and the stations and below every `.avatar` (whose
+  `z-index` is its row, at least 1). So every person, tag, focus ring,
+  menu, bubble, reaction, banner and note draws over him, and every tap,
+  click or hover goes through to whatever is under him (GYM-6.26).
+- **Pops** (`.pops`, `z-index: 0`) come before `.crew` in source order, so
+  he draws over an emoji pop and under the tag it hangs beside, and the
+  tag stays readable. Bubbles (`.says`, 18) and reactions stay over him.
+- **Inside `.crew`**, each `.worker` has no `z-index` and no transform, so
+  all loads (`z-index: 1`) and all bodies (`2`) share one stacking
+  context: every worker's body draws over every carried load. Nose to tail
+  on the walkway, each man is whole and each load peeks out above the
+  fists of the man behind.
+- **The poster** (`z-index: 0`, earlier in source order) stays under the
+  crew; the back-row loads overlap the wall, not the poster's button (the
+  poster tile is (5,0) and no load is ever drawn on column 5's wall, since
+  no station is under it).
+- **Nothing to focus**: no element in `.crew` is focusable, it has no
+  accessible name, and it is never announced (GYM-6.28, 6.29). The
+  squad list, the floor line and every avatar's name come from the server's
+  layout the moment the screen learns of the claim (D6).
+- **Never near the dock**: `.crew` lives inside `.map`, which never
+  overlaps the sheet at either width. The docket (D.10) is the only
+  delivery element in the sheet, and it takes no taps.
+
+### D.9 The claimer's avatar (GYM-7.5, GYM-10.18, 10.19)
+
+**Revised 5 Nov 2026** (the user, after trying the built room: the worker
+and the claimer walking together looked messy). The worker has the floor
+to himself; the claimer only sets off once he has gone. This replaces the
+4 Nov rule, in which she waited on the waiting tile and swapped tiles with
+him at the put-down.
+
+- **While any run for her station is playing on this screen** (from the
+  moment the screen learns of the claim until the last worker for that
+  station has been removed at the door), the claimer's avatar **stays
+  where it is, standing**: the `stand` figure with its idle bob, tag
+  Lifting, accessible name already "Priya (you), lifting, pull-up on
+  pull-up bar 9". The station's claim corners are already on (GYM-6.8).
+  If she was on another machine, she steps down onto that station's aisle
+  tile (the tile below it) and stands there; from the cooler, the lockers
+  or anywhere else, she stays on her spot.
+- **When the worker has gone**, she walks to the station by the usual
+  route, 125 ms a tile, and the machine's animation starts on arrival. For
+  bay 9 from the lockers (8,7): the worker is gone at 2250 ms, she arrives
+  at 3375 ms. If a run turned round (D.7), she waits for every worker for
+  that station, the turned one included.
+- **The docket still goes at the put-down** (D.10), not when she arrives.
+- **Done while waiting** (GYM-7.7): the avatar leaves for the cooler at
+  once, from wherever it is standing, never playing the machine; the run
+  carries on to its put-down and out.
+- **Anyone else heading to that station**, Dony included (GYM-6.32),
+  stands where they are the same way until every run for it is over, then
+  walks. Dony always gets off a station a swap takes before the worker
+  arrives (GYM-6.31): his walk away is unchanged.
+- **Opened, reloaded or reconnected mid-run, and reduced motion**: on the
+  machine at once, as before (D.11, GYM-6.19, 6.25).
+- **The waiting tile** (the aisle tile below a station, (x, y + 1)) is now
+  only where the worker stands for his ta-da or steps down to in a swap
+  (D.5), and where someone who was on another machine stands while they
+  wait for theirs. No person stands on it during a run for that station,
+  so the worker and the claimer never share or swap a tile.
+
+### D.10 The docket: "Delivery on the way" (GYM-7.6)
+
+```html
+<div class="dock">
+  <p class="eta" aria-hidden="true"><span>Equipment’s on its way.</span><span>Start whenever 🚚</span></p>
+  <button type="button" class="emote" …>…</button>
+  <button type="submit" form="set-log" class="wide">Done</button>
+</div>
+```
+
+- **Where**: the copy-bank line, on the claimer's own dock, as a **tab
+  rising out of the dock's top border on the left**: the mirror of the
+  emoji tab on the right, the same 48 px tall, a dashed leaf border on
+  three sides, `--night` fill. Two lines in VT323 20 px: "Equipment’s on
+  its way." in paper, "Start whenever 🚚" in leaf (the second line is the
+  instruction, so it's the louder one). Width is the text's, about 200 px,
+  capped at the dock's width less the emoji tab's (5.5 rem).
+- **Why there**: the emoji tab already keeps the 48 px band above the
+  dock clear on every width (I.7), so the docket takes no width from Done
+  and moves nothing (GYM-7.4: Done's box is the same with and without it).
+  On a laptop it sits in the dock's 4 rem top margin; on a phone it stands
+  over the bottom edge of the sheet, as the emoji tab and the stamp do.
+  One line (340 px) doesn't fit beside the tab on a 360 px phone, so it is
+  always two.
+- **When**: from the moment this screen learns of its own claim that
+  needs a run, to the put-down on this screen; never more than 2.5 s. It
+  comes in with the stamp's motion (160 ms, `steps(4)`, from the border
+  up) and goes in one frame at the put-down. It is never shown under
+  reduced motion, after a reload or reconnect, for an "already" claim, or
+  on anyone else's screen (D6). Tapping Done during it (GYM-7.7) swaps the
+  panel to Resting, and the docket goes with the Lifting dock.
+- **It never meets the stamp**: the stamp follows Done (4 s), and the
+  docket only follows a Choose. If Done is tapped mid-docket, the new
+  Resting dock has the stamp and no docket.
+- **A refusal note or a failure line** (I.3, I.7) that shows during the
+  docket stands 3.5 rem above the dock instead of 1 rem, so it sits above
+  the docket rather than on it.
+- **Announced once** (GYM-7.6): the docket itself is `aria-hidden` (the
+  Choose swap replaces the dock, so a `role="status"` inside it wouldn't
+  be heard). The script writes "Equipment’s on its way. Start whenever"
+  to `#sheet-news` once (the emoji is dropped, since a screen reader
+  would read out "delivery truck"). Nothing is announced at the put-down.
+- **Taps go through it**: `pointer-events: none`, like the stamp.
+- **Strangers**: it's about your own claim only, so it reads the same in a
+  room of strangers.
+
+**Drawn as**: state "Claimer’s panel, delivery on its way" (laptop, with
+her squad row already saying "Pull-up · pull-up bar 9"), "Phone,
+delivery on its way" (390 × 660) and "Phone 360, delivery on its way".
+
+### D.11 Reduced motion, catching up, late (GYM-6.19 to 6.22, 6.25)
+
+- **Reduced motion**: no `.crew` at all (the build doesn't create one; the
+  CSS also hides it). The station shows the new equipment the moment the
+  screen learns of the claim; in a swap it replaces the old in one frame.
+  The claimer appears straight on it (GYM-10.23). No docket.
+- **Catching up** (first render, reload, reconnect) and **late** (3 s or
+  more after the placed time): the same in-place picture, on any device.
+  State "Reduced motion, or opened mid-run".
+- **Background tab** (GYM-6.22): the run's clock is the time the screen
+  learnt of the claim, not a count of ticks. On each frame the script
+  places every worker where `now − start` says, and removes those whose
+  runs are over. So a tab shown again after 2 s shows him on the right
+  tile, or gone.
+- **Resize between 1× and 2×** (GYM-6.30): `.worker` is positioned in
+  tiles (`--x`, `--y` times `--t`), so a new `--s` redraws him on the same
+  tile at the new scale.
+
+### D.12 States (in `mockup.html`)
+
+| State | Trigger | What it shows |
+| --- | --- | --- |
+| delivery (storyboard) | Priya, by the lockers, chooses Pull-up; bay 9 empty | Six frames (5 Nov): in the door (route dotted), up the walkway, on the bay, ta-da with sweat, back out empty-handed, Priya standing by the lockers throughout, tag Lifting; then her walk in once he has gone |
+| swap (storyboard) | Tom chooses Lat pulldown in a full room; bench 2 unused longest | Five frames (5 Nov): in with the cable machine, on the station over the bench, the swap (bench up, sweat), staggering out, Tom standing by the lockers throughout; then his walk in |
+| rush hour (several runs at once) | Four claims in half a second | 750 ms: four workers along two aisles, four people following; 375 ms: single file on the walkway |
+| turn-round (station changes mid-run) | Mia's cable machine to 7 cancelled by her Push-ups | On the way; "huh?" and the turn, the second worker in the door; settled, with Mia on the mat |
+| reduced motion, or opened mid-run | Reduced motion, reload, reconnect, 3 s late | The bar on bay 9, Priya on it, no worker, no docket |
+| claimer's panel, delivery on its way | Priya's own screen, laptop | The map mid-run, Done in place, the docket beside the emoji tab, her row already "Pull-up · pull-up bar 9" |
+| phone, delivery on its way | 390 × 660 | The docket on the pinned dock's edge, Done untouched |
+| phone 360, delivery on its way | 360 × 660 | The docket and the tab both fit beside each other |
+| worker art | Reference | His six frames and "huh?", a member and Dony beside him, the eight machines in place and carried |
+
+### D.13 The art: `src/sprites/worker.ts` (new)
+
+Seven grids, in a new module (the repo map: sprites live only in
+`src/sprites/`). Slot letters are the people's (`k s S h H t T`, plus the
+exempt `m w r`), so `scripts/sprites.ts` can draw them with its
+`slots()` and `WORKER_VARS` on a `<g>`, as it does Dony with `DONY_VARS`.
+Publish them as `wk-carry1`, `wk-carry2`, `wk-putdown`, `wk-walk1`,
+`wk-walk2`, `wk-sweat` and `wk-huh`. Built 4 Nov: the mockup now draws
+them from `/sprites.svg#wk-*`, and its own copy is gone. The room page renders them through the same path as
+avatars. `wk-huh` is 12 × 12 and only uses `k w`.
+
+```ts
+// The gym worker (GYM-6; docs/design/room/spec.md, "Delivery, Nov 4"):
+// staff, not a person. A fixed palette nobody can pick, shoulders wider
+// than any member's, facing the viewer like everyone. Slots as a person's:
+// s/S skin, h/H navy (sleeves, trousers, brim, boots), t/T hi-vis orange;
+// m soles, w bands and catchlights, r sweat (exempt, system 10). 32 x 32,
+// boots on row 30; carried equipment rests on his fists, 5 rows from the top.
+export const WORKER_VARS =
+  "--av-skin: #ad7447; --av-skin-2: #8f5a36; --av-hair: #2a3550; --av-hair-2: #1a2236; --av-shirt: #ff9419; --av-shirt-2: #cc6a0a";
+
+export const WORKER_CARRY1 = [
+  "................................",
+  "................................",
+  "................................",
+  "....kkkk................kkkk....",
+  "...kssssk..............kssssk...",
+  "...ksSsSk....kkkkkk....ksSsSk...",
+  "...ksssSk...kttttttk...ksssSk...",
+  "...ksssSk..kttwwtttTk..ksssSk...",
+  "...ksssSk.kHHHHHHHHHHk.ksssSk...",
+  "...ksssSk..ksssssssSk..ksssSk...",
+  "...ksssSk..kswksswkSk..ksssSk...",
+  "...ksssSk..kskksskkSk..ksssSk...",
+  "...ksssSk..kssssssSSk..ksssSk...",
+  "...ksssSk..kskwwwwkSk..ksssSk...",
+  "...khhhHk...kssssSSk...khhhHk...",
+  "...khhhHk..............khhhHk...",
+  "..kkkkkkkkkkkSSSSSSkkkkkkkkkkk..",
+  ".khhhhhhhkttttSSttttTTkhhhhhhHk.",
+  ".khhhhhhhktttttttttttTkhhhhhhHk.",
+  ".kHhhhhhHkwwwwwwwwwwwwkHhhhhHHk.",
+  "..kkkkkkktttttttttttTkkkkkkk....",
+  "........kttttttttttTTk..........",
+  "........kwwwwwwwwwwwwk..........",
+  "........kttttttttttTTk..........",
+  "........kkkkkkkkkhhhhHk.........",
+  ".........khhhhhkkhhhhHk.........",
+  ".........khhhhHkkHHHHHHk........",
+  ".........khhhhHkkmmmmmmk........",
+  "........kHHHHHHk.kkkkkk.........",
+  "........kmmmmmmk................",
+  ".........kkkkkk.................",
+  "................................",
+];
+
+export const WORKER_CARRY2 = [
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "....kkkk................kkkk....",
+  "...kssssk....kkkkkk....kssssk...",
+  "...ksSsSk...kttttttk...ksSsSk...",
+  "...ksssSk..kttwwtttTk..ksssSk...",
+  "...ksssSk.kHHHHHHHHHHk.ksssSk...",
+  "...ksssSk..ksssssssSk..ksssSk...",
+  "...ksssSk..kswksswkSk..ksssSk...",
+  "...ksssSk..kskksskkSk..ksssSk...",
+  "...ksssSk..kssssssSSk..ksssSk...",
+  "...ksssSk..kskwwwwkSk..ksssSk...",
+  "...khhhHk...kssssSSk...khhhHk...",
+  "...khhhHk..............khhhHk...",
+  "..kkkkkkkkkkkSSSSSSkkkkkkkkkkk..",
+  ".khhhhhhhkttttSSttttTTkhhhhhhHk.",
+  ".khhhhhhhktttttttttttTkhhhhhhHk.",
+  ".kHhhhhhHkwwwwwwwwwwwwkHhhhhHHk.",
+  "..kkkkkkktttttttttttTkkkkkkk....",
+  "........kttttttttttTTk..........",
+  "........kwwwwwwwwwwwwk..........",
+  "........kttttttttttTTk..........",
+  "........kkhhhhHkkkkkkk..........",
+  ".........khhhhHkkhhhhHk.........",
+  "........kHHHHHHkkhhhhHk.........",
+  "........kmmmmmmkkhhhhHk.........",
+  ".........kkkkkk.kHHHHHHk........",
+  "................kmmmmmmk........",
+  ".................kkkkkk.........",
+  "................................",
+];
+
+export const WORKER_PUTDOWN = [
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  ".............kkkkkk.............",
+  "............kttttttk............",
+  "...........kttwwtttTk...........",
+  "..........kHHHHHHHHHHk..........",
+  "...........ksssssssSk...........",
+  "...........kssssssSSk...........",
+  "...........kskksskkSk...........",
+  "...........kssssssSSk...........",
+  "kkkk.......kssskkkSSk.......kkkk",
+  "kssk........kssssSSk........ksSk",
+  "ksskkkkkkkkkkSSSSSSkkkkkkkkkksSk",
+  "kskhhhhhhkttttSSttttTTkhhhhhhkSk",
+  "kkhhhhhhhktttttttttttTkhhhhhhHkk",
+  ".kHhhhhhHkwwwwwwwwwwwwkHhhhhHHk.",
+  "..kkkkkkktttttttttttTkkkkkkk....",
+  "........kttttttttttTTk..........",
+  "........kwwwwwwwwwwwwk..........",
+  "........kttttttttttTTk..........",
+  "........kkkkkkkkkkkkkk..........",
+  ".........khhhhhkkhhhhHk.........",
+  ".........khhhhHkkhhhhHk.........",
+  ".........khhhhHkkhhhhHk.........",
+  "........kHHHHHHkkHHHHHHk........",
+  "........kmmmmmmkkmmmmmmk........",
+  ".........kkkkkk..kkkkkk.........",
+  "................................",
+];
+
+export const WORKER_WALK1 = [
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  ".............kkkkkk.............",
+  "............kttttttk............",
+  "...........kttwwtttTk...........",
+  "..........kHHHHHHHHHHk..........",
+  "...........ksssssssSk...........",
+  "...........kswksswkSk...........",
+  "...........kskksskkSk...........",
+  "...........kssssssSSk...........",
+  "...........ksskkkkSSk...........",
+  "............kssssSSk............",
+  "..kkkkkkkkkkkSSSSSSkkkkkkkkkkk..",
+  ".khhhhhhhkttttSSttttTTkhhhhhhHk.",
+  ".khhhhhhhktttttttttttTkhhhhhhHk.",
+  ".kHhhhhhHkwwwwwwwwwwwwkHhhhhkHk.",
+  ".khkkkkkktttttttttttTkkkkkkkkHk.",
+  ".khk....kttttttttttTTk......ksk.",
+  ".ksk....kwwwwwwwwwwwwk......kSk.",
+  ".kSk....kttttttttttTTk.......k..",
+  "..k.....kkkkkkkkkhhhhHk.........",
+  ".........khhhhhkkhhhhHk.........",
+  ".........khhhhHkkHHHHHHk........",
+  ".........khhhhHkkmmmmmmk........",
+  "........kHHHHHHk.kkkkkk.........",
+  "........kmmmmmmk................",
+  ".........kkkkkk.................",
+  "................................",
+];
+
+export const WORKER_WALK2 = [
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  ".............kkkkkk.............",
+  "............kttttttk............",
+  "...........kttwwtttTk...........",
+  "..........kHHHHHHHHHHk..........",
+  "...........ksssssssSk...........",
+  "...........kswksswkSk...........",
+  "...........kskksskkSk...........",
+  "...........kssssssSSk...........",
+  "...........ksskkkkSSk...........",
+  "............kssssSSk............",
+  "..kkkkkkkkkkkSSSSSSkkkkkkkkkkk..",
+  ".khhhhhhhkttttSSttttTTkhhhhhhHk.",
+  ".khhhhhhhktttttttttttTkhhhhhhHk.",
+  ".khkhhhhHkwwwwwwwwwwwwkHhhhhHHk.",
+  ".khkkkkkktttttttttttTkkkkkkkkHk.",
+  ".ksk....kttttttttttTTk......kHk.",
+  ".kSk....kwwwwwwwwwwwwk......ksk.",
+  "..k.....kttttttttttTTk......kSk.",
+  "........kkhhhhHkkkkkkk.......k..",
+  ".........khhhhHkkhhhhHk.........",
+  "........kHHHHHHkkhhhhHk.........",
+  "........kmmmmmmkkhhhhHk.........",
+  ".........kkkkkk.kHHHHHHk........",
+  "................kmmmmmmk........",
+  ".................kkkkkk.........",
+  "................................",
+];
+
+export const WORKER_SWEAT = [
+  "................................",
+  "................................",
+  "................................",
+  "..........k..........k..........",
+  ".........kwk........kwk.........",
+  ".........krk........krk.........",
+  "..........k..........k..........",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+  "................................",
+];
+
+// the turn-round's "huh?", 12 x 12, paper on ink
+export const WORKER_HUH = [
+  "..kkkkkkk...",
+  ".kwwwwwwwk..",
+  "kwwkkkkwwwk.",
+  "kwwk..kwwwk.",
+  "kkkk.kwwwk..",
+  "....kwwwk...",
+  "....kwwk....",
+  "....kkkk....",
+  "....kwwk....",
+  "....kwwk....",
+  "....kkkk....",
+  "............",
+];
+```
+
+### D.14 Requirements covered
+
+| Requirement (criteria/delivery.md) | Element |
+| --- | --- |
+| GYM-6.1 fixed uniform, bigger shoulders, no tag, no state | D.2: hi-vis palette not in the editor, shoulders to columns 1 and 30; no tag or chip; state "Worker art" beside a member and Dony |
+| GYM-6.2, 6.3 not a person: no row, count, log, button, name; never in the first render | `.crew` is built by the script only, `aria-hidden`, `inert`; nothing in the server's render |
+| GYM-6.4 appears at the entrance carrying a recognisable machine | D.4: the station's own idle drawing, whole, overhead; D.5 appears on (4,9) |
+| GYM-6.5 only the aisles, 8 tiles/s, in steps | D.5: `route()`, 125 ms a tile, `steps(1)` |
+| GYM-6.6 steps on, puts down, empty marker until then, walks back | D.5 timing; the bay keeps its number until the put-down |
+| GYM-6.7 ≤ 4.5 s, down ≤ 2.5 s | D.5 table: worst 3.5 s and 1.625 s |
+| GYM-6.8 claim corners from the moment the screen learns | D.9; storyboard frame 1 |
+| GYM-6.9, 6.10 one-trip swap, never both, never empty, stagger out | D.5 "The swap tiles"; state "Swap" |
+| GYM-6.12, 6.13 one each, single file, a step apart, 12 gone ≤ 5.5 s | D.6; state "Rush hour" |
+| GYM-6.14, 6.15 the run carries on; same station back, no new run | D.7 point 3; D.9 |
+| GYM-6.16, 6.17 turn round, a new worker, settle | D.7; state "Turn-round" |
+| GYM-6.18 to 6.24 no replay, 3 s late, background tab, nothing for non-changes | D.11; state "Reduced motion, or opened mid-run" |
+| GYM-6.25 reduced motion | D.11 |
+| GYM-6.26 to 6.29 taps through, never covers tags or menus, no focus, quiet | D.8 |
+| GYM-6.30 resize | D.11 |
+| GYM-6.31, 6.32 Dony gets off first; anyone waits | D.9 |
+| GYM-6.34 to 6.36 finish, close, Away | Nothing new: the run carries on (finish, leave) or the page goes (close); a faded avatar draws over him like any |
+| GYM-6.37 to 6.39 plays once, only after acceptance, no run on repeat | Script: runs come only from a room update that changes a station's equipment on this screen (D.15) |
+| GYM-6.41, 6.42, 6.43 rush hour, staffed, banter not shame | D.1, D.2, D.6 |
+| GYM-7.1, 7.2, 7.3 Done at once | No change to the panel; the docket takes no taps |
+| GYM-7.4 never covers, moves or disables Done, the tab or fields | D.8, D.10: the docket in the band the emoji tab already keeps; same dock box |
+| GYM-7.5 the avatar waits, then goes to the machine (revised 5 Nov: waits where it is, standing, tag Lifting, and walks only once the worker has gone) | D.9 |
+| GYM-7.6 the copy-bank line until the put-down, announced once, only for the claimer | D.10 |
+| GYM-7.7 Done while waiting | D.9, D.10 |
+| GYM-7.8 Start set, no run | Nothing new; if a run is still on, she waits as D.9 |
+| GYM-7.9 others' runs reach nothing in your panel | D.10: only your own claim |
+
+### D.15 Notes for the build
+
+- **Which update starts a run** (GYM-6.20, 6.24, 6.37): only a live
+  screen's room update in which a station's equipment differs from what
+  this screen draws, and whose placed time is less than 3 s ago on this
+  screen's clock. The panel swap after Choose doesn't touch the map's
+  stations, so the run starts once, from the room update.
+- **Whether it's yours**: the station's holder is you. Only then the
+  docket and the `#sheet-news` line.
+- **The station's drawing during a run** stays what this screen drew
+  before (empty bay or old machine) until the put-down. The squad list,
+  the floor line and avatar names update at once (D6).
+- **Ticks**: drive workers from one `requestAnimationFrame` loop that
+  computes each worker's tile from `now − start` (D.11), quantised to
+  125 ms, so they move in steps and stay correct after a hidden tab.
+- **The fallback cap of 6** (criteria Scope, D1) is not built. If the
+  showcase rehearsal asks for it, the seventh and later runs on a screen
+  are drawn as reduced motion.
+
+### D.16 Departures
+
+1. **A fixed skin tone on staff.** System 10's six skin tones are a
+   member's choice; the worker isn't a member, so he has one fixed tone,
+   like Dony. It's tone 4's value, on every run (D.17, decision 2).
+2. **New colours inside a sprite palette only** (system 5): hi-vis orange
+   `#ff9419` / `#cc6a0a` and navy `#2a3550` / `#1a2236`.
+3. **A figure wider than a person.** People's shoulders end at columns 3
+   and 28; his reach 1 and 30, on purpose (system 10 asks for "bigger
+   shoulders"). Still inside his 32 × 32 tile.
+4. **Art that reaches the tile above.** The carried load draws one tile
+   above the worker, as tags do; on the back row it overlaps the wall.
+5. **A dock tab on the left.** The emoji tab was the dock's only border
+   tab; the docket is a second, mirrored. Same height, so the band they
+   share is the one I.7 already reserved.
+6. **The spec's art table** ("walk carrying in 4 directions × 2; put down
+   × 1"): two carry frames facing the viewer, a put-down, and two
+   empty-handed walk frames, because he faces the viewer like everyone
+   (`animations.md` D1). One frame more than the table; four fewer
+   drawings.
+
+### D.17 Decisions
+
+All settled by the user on **4 Nov 2026**, each as drawn. None is open.
+
+1. **The docket's place**: on the dock's left edge, beside the emoji tab
+   (D.10), not a line in the sheet.
+2. **One worker look** on every run, as GYM-6.1 already decides.
+3. **The ta-da hold**: the worker's, 500 ms on the aisle tile in front
+   of the bay at a delivery's put-down (D.5); none on a swap.
+4. **The "?" on a turn-round** (D.7) stays: 500 ms, beside his load.
+
+## Logbook refactor, Nov 4
+
+From `docs/product/criteria/logbook.md` (agreed 4 Nov), LB-0, LB-1, LB-2,
+LB-3 "Loading and working through a plan", LB-4.10 and LB-4.13. The sheet
+(3.3) and This workout (3.5) only; making plans, `/plans`, the summary,
+history and the exercise page are the Logbook group's. Mockup: the states
+from `<!-- state: lb intro -->` to `<!-- state: lb phone 360, first set -->`,
+just before the art sheet; CSS at the end of `<style id="page">`, under
+`/* ===== Logbook refactor, Nov 4 */`. The mockup's global block is now
+Layout.astro's as it stands (with `.vh`, the badge modifiers and `.marks`).
+
+### L.1 Plan
+
+**Shared (the Gym group is this page; this is what it shares with Logbook).**
+A set is written one way everywhere: `setLabel`, then ` @ 8` for an RPE,
+then `span.marks` with the type mark before any record mark. The marks are
+the Logbook group's, named in `history/spec.md` "Shared marks", unchanged
+(L.6). One primary button, always the dock's: nothing in this section is a
+primary button, and nothing touches `.dock` except the stamp's second line.
+
+**Who and when.** Between sets, one hand, 60 to 180 s: the person wants
+"what did I do last time on this set" in one glance, and then Start set. The
+Anchor also wants to mark a warm-up and type an RPE without slowing a normal
+set. The Drifter touches none of it, and must not pay for it (LB-0.1). It
+works the same for someone who knows nobody in the room: everything here is
+private to its owner and nothing reaches the map, the squad or the stream
+(LB-0.2, LB-1.11, LB-2.25, LB-3.25, LB-4.13).
+
+**The one job.** Still: log the next set, Start set then Done. The new
+parts answer "what am I aiming for" (Last time, the plan) and "what was that
+set" (type, RPE, note), and all of them are optional.
+
+**Hierarchy, top to bottom, unchanged at the top.** 1. The rest timer (or
+the cardio block). 2. The lift and its set number, now "Set 3 of 4" with a
+plan. 3. The plan, folded to one line while you're on a lift with sets to
+go. 4. Last time, the set to match lit. 5. The big numbers. 6. Type and RPE,
+small. 7. The note, one folded line. 8. Load a plan, a link at the foot. The
+numbers that must read at a glance: the timer, Last time's lit line, the
+fields, "n of m" in the plan.
+
+**Reuse.** `.badge` and its three modifiers (Layout), `.marks` (Layout),
+`.pips`'s box shape for planned sets, the menu's `▶` cursor and leaf "hot"
+fill for Up next and the set to match, `.recent`'s chip-buttons for the plan
+rows, `details` with a summary for every fold (as Change and Delete do),
+`.tool` for small secondary buttons, `.error` and `.hint`. New: four small
+blocks (`.last-time`, `.set-type`, `.set-rpe`, `.ex-note`) and two for plans
+(`.plan-offer`, `.plan`). No new icon: `i-record` is already in the sheet.
+
+**Template check, and what it changed.** A set-type segmented control, an
+RPE slider and a "routine progress" bar fit any lifting app. What made it
+Spotter's: Last time is drawn as a page of the logbook (numbered lines,
+warm-ups marked W, the note in pencil under a dashed rule), not a card; the
+set to match and Up next wear the **same ▶ cursor and leaf fill as the
+interaction menu's suggested move**, so "the game suggests this" reads the
+same across the gym; planned sets are the Room panel's pips, filling in leaf
+as you go, like loading plates. The slider was dropped (a drag gesture,
+system 14) for a select. And the type chips are drawn like the marks they
+make, so Warm-up's chip is dashed before you even tap it.
+
+### L.2 Requirements covered
+
+| Requirement | Element |
+| --- | --- |
+| LB-0.1 two taps, dock button unchanged with or without a plan | Nothing new is in `.dock` or `position: fixed`; the plan and offer are in the sheet's flow; type defaults Normal, RPE empty, note folded |
+| LB-0.6 keyboard, focus, names, not colour alone | Native radios, select, textarea, `details`, buttons; marks are words; the lit line also has ▶ and "the one to match" for screen readers |
+| LB-0.7 pending and failed forms | L.5 "Pending", "Note too long" |
+| LB-1.1, 1.2, 1.3 every set of the previous session, day, kind | `div.last-time[data-last]`: `p.last-head` "Last time" + day, `ol.last-sets` of `[data-set]` |
+| LB-1.4 types, RPE, note in Last time | Marks per line; `p.last-note > [data-note]` |
+| LB-1.5 first time | `p.last` "First time on this one. Ease into it." unchanged, in place of the block |
+| LB-1.6 shows Lifting and resting, not editing or Idle | L.3 item 1 (replaces `showLast`) |
+| LB-1.7 the set to match | `li.match` with `[data-match]` |
+| LB-1.9 twelve sets, never moves the dock | The list grows in the flow; the dock is fixed (phone) or the sheet's foot (laptop) |
+| LB-1.12 readable at arm's length | 24 px lines, one leaf line |
+| LB-2.1, 2.4, 2.5, 2.8 type, Normal default, echoed by Start set | `fieldset.set-type`, radios `name="set_type"` |
+| LB-2.2, 2.3 marked wherever written | Stamp, rest block, This workout, Last time (L.6) |
+| LB-2.6, 2.17 edit type and RPE | The edit form gets both (L.3 item 8) |
+| LB-2.11 only working sets numbered | `.set-no` and the stamp's "Warm-up logged" (L.3 items 2, 6) |
+| LB-2.13 to 2.16 optional RPE, error, shorthand | `div.set-rpe` select `name="rpe"`; `.error` under it; ` @ 8` + `.vh` ", RPE 8" |
+| LB-2.19 to 2.24 the note | `details.ex-note`, `textarea name="note"`, Save note |
+| LB-3.12 load control | `details.plan-offer` with `form` `action=plan-load` |
+| LB-3.13, 3.15, 3.19, 3.20 the loaded plan | `details.plan[data-plan]`, `li[data-plan-item][data-exercise]`, "n of m", `[data-next]` |
+| LB-3.14 Up next preselected | the picker's `option selected` |
+| LB-3.16 one tap from the plan | each row is a `button name="exercise"` in an `action=choose` form |
+| LB-3.17 the last planned set leaves Start set | Unchanged dock; "Set 5 of 4" |
+| LB-3.21 replace, clear | Swap and Clear in `.plan-tools` |
+| LB-4.10 record on the stamp and This workout, never "Best" | `.badge.record` + `.rec-for` (L.6) |
+| LB-4.13 nobody else can tell | Nothing on the map, squad or log changes |
+
+### L.3 Structure (the sheet, top to bottom; changes only)
+
+Every set written on the sheet or in This workout is an element with
+`data-set`, plus `data-type="warmup|failure"` (absent for Normal) and
+`data-records="heaviest e1rm reps added hold distance time"` (the ones it
+set; absent if none), as the QA contract says (`spec/logbook.test.ts`). Its
+text is `setLabel` with ` @ 8`; the RPE's spoken `span.vh` ", RPE 8" goes
+**after** the `[data-set]` element, never inside it. The RPE's ` @ 8` is in
+`span.rpe[aria-hidden]`.
+
+1. **Last time** (replaces `p.last` when there is a previous session;
+   supersedes the `showLast` rule of 3.3 item 10 and the 8 Oct "after Done"
+   item 3). Inside `form#set-log`, before the fields, whenever an exercise is
+   chosen and you're not editing, **including a rest after the same lift**
+   (D3). Not while Idle or editing.
+
+   ```html
+   <div class="last-time" data-last>
+     <p class="last-head">Last time <b>Tue 27 Oct</b></p>   <!-- dayLabel -->
+     <ol class="last-sets">
+       <li class="warm"><span class="n" aria-hidden="true">W</span>
+         <span class="what"><span data-set data-type="warmup">40 kg × 10</span>
+           <span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></span></li>
+       <li><span class="n" aria-hidden="true">1</span>
+         <span class="what"><span class="vh">Set 1: </span><span data-set>60 kg × 8</span></span></li>
+       <li class="match"><span class="n" aria-hidden="true">▶</span>
+         <span class="what"><span class="vh">Set 2, the one to match: </span><span data-set data-match>62.5 kg × 8<span class="rpe" aria-hidden="true"> @ 8</span></span><span class="vh">, RPE 8</span></span></li>
+     </ol>
+     <p class="last-note"><Sprite pencilIcon 2/><span class="vh">Note: </span><span data-note>Seat on 4.</span></p>
+   </div>
+   ```
+
+   - Working sets numbered 1, 2, 3 in a dim column; warm-ups get `W` and dim
+     figures. Every set shown, none folded (LB-1.9).
+   - **The set to match** (LB-1.7): working set *n*, where *n* is your working
+     sets of this lift in this workout plus one. Its `li.match` is leaf with
+     ink text, and its number becomes `▶`. Done more than last time had: no
+     `li.match`.
+   - Records set in that session show their `.badge.record` + `.rec-for`.
+   - `p.last-note` only when that session had a note for the lift.
+   - **First time** (LB-1.5): no block; `p.last` "First time on this one.
+     Ease into it." as today.
+   - Cardio and holds: the same list ("1 km · 4:52 · 4:52 /km", "1:30").
+2. **The lift row.** `.set-no` counts **working** sets only (D8), so a
+   warm-up doesn't advance it ("Set 1" after a warm-up). With a plan loaded
+   and the lift in it: `Set 3 of 4` (the planned count), and past it `Set 5
+   of 4`. Lifts not in the plan, or no plan: `Set 3` as today.
+3. **Type**, straight after `SetFields`, in the set form (Lifting and every
+   rest state):
+
+   ```html
+   <fieldset class="set-type">
+     <legend class="vh">Set type</legend>
+     <label><input type="radio" name="set_type" value="normal" checked />Normal</label>
+     <label class="t-warmup"><input type="radio" name="set_type" value="warmup" />Warm-up</label>
+     <label><input type="radio" name="set_type" value="failure" />Failure</label>
+   </fieldset>
+   ```
+
+   Three 48 px chips in one row (fits 360 px), 8 px display labels. The
+   checked one is leaf with ink text and an 8 px square bullet; Warm-up's
+   border is dashed in every state, like its mark. The radio is the whole
+   chip (invisible, `inset: 0`), so it's one tap and arrow keys move
+   between them; focus ring `--focus` on the chip. Checked comes from the
+   echo (error, Start set) or Normal; never from the last set (D7).
+4. **RPE**, straight after the type:
+
+   ```html
+   <div class="set-rpe">
+     <label for="rpe">RPE</label>
+     <select id="rpe" name="rpe" aria-describedby="rpe-hint"><option value="">–</option><option>10</option>…<option>1</option></select>
+     <p class="hint" id="rpe-hint">Optional. 10 is nothing left</p>
+   </div>
+   ```
+
+   One row: the label, a 6.5 rem select, the hint. Options `–` (value "",
+   selected unless echoed) then 10 down to 1 in half steps, so the common
+   7 to 9.5 are near the top. A select, not a slider or 19 buttons: one tap
+   to open, the phone's own wheel, no drag, and it takes one line. Never
+   pre-filled (LB-2.13). That is the "collapsed" RPE: one small row, nothing
+   to dismiss.
+5. **The note** (LB-2.19), after the RPE, only when the lift has at least one
+   set in this workout and you're not editing:
+
+   ```html
+   <details class="ex-note">
+     <summary><Sprite pencilIcon 2/>
+       <span class="if-closed add">Add a note</span>            <!-- no note yet -->
+       <!-- or: <span class="if-closed"><span class="vh">Note: </span><span data-note>Seat on 4.</span></span> -->
+       <span class="if-open">Note on this lift</span></summary>
+     <label class="vh" for="note">Note on this lift</label>
+     <textarea id="note" name="note" maxlength="140" rows="2">Seat on 4.</textarea>
+     <div class="note-save">
+       <button type="submit" form="set-log" name="action" value="note" formnovalidate class="button secondary tool">Save note</button>
+       <p class="hint">It also saves with your next set.</p>
+     </div>
+   </details>
+   ```
+
+   - Folded, it is one 44 px line: "Add a note" (leaf, underlined), or the
+     saved note's text. Open, a 2-row textarea and **Save note**.
+   - It is inside `form#set-log`, so Start set and Done post `note` with the
+     set (LB-2.20), and Save note posts the same form with `action=note`
+     (`formnovalidate`, so empty weight or reps don't block it; the server
+     reads only `exercise_id` and `note`). Its 303 to `?exercise=<id>` keeps
+     the fields as the redirect renders them.
+   - Open when the page renders with a note error, or the note's text was
+     typed and echoed; otherwise folded.
+6. **The stamp** (3.3 item 8) gains, for a warm-up, the word: `Warm-up
+   logged: <b data-set data-type="warmup">80 kg × 3</b>`, and `.marks` with
+   the Warm-up badge; a working set is `Set {n} logged:` with *n* counting
+   working sets. A Failure set adds the Failure badge, a record adds
+   `.badge.record` + `.rec-for`. With marks, the stamp wraps to a second line
+   and grows upward (`.stamp:has(.marks)`), so it still never covers the
+   button. The screen-reader copy (3.3 item 11) reads the whole stamp, so a
+   record is announced: "Set 3 logged: 65 kg × 6, RPE 9, New Record:
+   heaviest".
+7. **The rest block** after a record: `p.marks.rest-rec` with the same
+   record mark, between `.rest-top` and `.rest-adjust`, for the whole rest,
+   so it is still there after the stamp's 4 s (the moment you'd screenshot).
+8. **Editing** (3.3, the `editing` branch): the edit form gets the type
+   chips and the RPE, filled from the set (`set_type`, `rpe`; `rpe=""`
+   clears). No Last time, note or plan while editing.
+9. **Plans** (LB-3.12 to 3.24). None of this is shown to someone with no
+   plans.
+   - **Not loaded** (Idle, or a lift chosen and not editing): at the sheet's
+     foot, after the form and before the dock, `details.plan-offer`: folded,
+     a `Plan` badge and "Load a plan" (leaf, underlined); open, a `form`
+     with `action=plan-load`, a `select name="plan_id"` (newest first),
+     **Load** (`.tool`), and "Loading chooses nothing. You pick the lift."
+   - **Loaded**: `details.plan[data-plan]`, **above** the picker when Idle,
+     **after the lift row and spot** otherwise:
+
+     ```html
+     <details class="plan" data-plan open>
+       <summary><span class="badge">Plan</span><span class="plan-name">Push day</span><span class="plan-sum">1 of 4 lifts</span></summary>
+       <form method="post" class="plan-choose">
+         <input type="hidden" name="action" value="choose" />
+         <ol class="plan-items">
+           <li data-plan-item data-exercise="3" class="full"><button type="submit" name="exercise" value="3" aria-current="true">
+             <span class="cur" aria-hidden="true">▶</span><span class="ex">Bench press</span>
+             <span class="count"><span class="planned" aria-hidden="true"><i class="done"></i>…</span>4 of 4</span></button></li>
+           <li data-plan-item data-exercise="4" data-next><button type="submit" name="exercise" value="4" class="hot">
+             <span class="cur" aria-hidden="true">▶</span><span class="ex">Incline bench press <span class="badge up">Up next</span></span>
+             <span class="count"><span class="planned" aria-hidden="true"><i></i><i></i><i></i></span>0 of 3</span></button></li>
+         </ol>
+       </form>
+       <p class="plan-done">Plan done. Anything else is a bonus 🏆</p>   <!-- only when all are full -->
+       <div class="plan-tools">
+         <form method="post" class="plan-pick"><input type="hidden" name="action" value="plan-load" />
+           <label class="vh" for="swap">Load another plan</label><select id="swap" name="plan_id">…other plans…</select>
+           <button type="submit" class="button secondary tool">Swap</button></form>
+         <form method="post"><input type="hidden" name="action" value="plan-clear" />
+           <button type="submit" class="button secondary tool">Clear</button></form>
+       </div>
+     </details>
+     ```
+
+     - Each row is one 48 px button: a Choose (LB-3.16), the same as a
+       `.recent` chip. **Up next** (`button.hot`) is leaf with ink, the ▶
+       cursor and an `Up next` badge (ink on leaf, inverted). The lift
+       you're on has a paper edge (`aria-current`). A full lift's name dims;
+       its boxes stay leaf.
+     - **Boxes** (`.planned i`): one per planned set, the pips' shape;
+       `.done` fills leaf; sets past the plan get one leaf **outline** box
+       each (`.done.over`), and the text says "5 of 4".
+     - **Folded or open** (no JS needed; the server sets `open`): open when
+       Idle, when a rest is running and the lift you're on is full (so the
+       next one is a tap away, LB-3.17), and when every lift is full; folded
+       (one 44 px line) while you're on a lift that still has planned sets,
+       so it never pushes Last time and the numbers down mid-lift. A tap on
+       the summary opens or folds it either way.
+     - **Idle with a plan**: the picker's `option` for Up next is `selected`
+       (LB-3.14), so the dock's Choose takes it.
+     - **Plan done** (LB-3.20): no `data-next`, no `.hot`, `p.plan-done`
+       "Plan done. Anything else is a bonus 🏆". Nothing else changes.
+     - Swap's select lists the other plans; with only one plan, no Swap
+       form, just Clear.
+10. **Order of the sheet when lifting**: tab, clock, rest or cardio block,
+    lift row, spot, plan (if loaded), form (Last time, fields, stopwatch,
+    type, RPE, note, error), plan offer (if not loaded), dock.
+
+**This workout (3.5)**, per row: `td.set` holds the `[data-set]` element,
+then `.marks`; a warm-up row is `tr.warm` (dim figures); after an
+exercise's last row in a run, if it has a note, `tr.note > td[colspan=3]`
+with the pencil, `.vh` "Note: " and `span[data-note]` (escaped text). The
+pencil link's `.vh` names the set with its RPE. Ditto marks unchanged.
+
+### L.4 States (all drawn, at 390 and 1280)
+
+| State | Trigger | What changes |
+| --- | --- | --- |
+| **Lifting, first set** | A lift chosen, no set of it today, a previous session | Last time with set 1 lit and its note; type Normal; RPE –; no note field; Load a plan folded |
+| **Resting, Last time stays** | Done on set 2 | Last time stays, set 3 lit; stamp "Set 2 logged: 62.5 kg × 8 @ 8"; type back to Normal, RPE –; "Add a note" |
+| **Warm-up chosen** | Tap Warm-up | The chip lit (dashed); Set 1 still after an earlier warm-up |
+| **Warm-up logged** | Done on a warm-up | Stamp "Warm-up logged: 80 kg × 3" + Warm-up mark; rest as usual; Normal again |
+| **Record** | Done on a set that beats every earlier one | Stamp on two lines with Record · heaviest; the rest block keeps the mark; nothing lit in Last time once you pass its sets |
+| **Note open** | Tap the note line | Textarea and Save note; Start set unmoved |
+| **RPE error** | Done with RPE outside 1 to 10 (400) | "RPE is 1 to 10." under the RPE, its select `aria-invalid`; still Lifting, fields kept. A bad type: "Set type is Normal, Warm-up or Failure." under the chips |
+| **Note too long** | Done with a note over 140 (400, set logged) | Resting, the note open with its text, "Notes are up to 140 characters." under it; no stamp (a 400) |
+| **Pending** | Done on a slow connection | Dock button disabled, label kept; fields read-only; type fieldset and RPE disabled. Save note, Load, Swap, Clear: disabled, label kept |
+| **Save failed** | Note save, load, swap or clear fails offline | "That didn't save. Try again." where the note's hint is, or under the plan's row of buttons; nothing typed is cleared |
+| **Idle, plans to load** | Idle, has plans, none loaded | Load a plan opened: select and Load |
+| **Idle, plan loaded** | After Load | Plan open above the picker; Up next lit and preselected; Choose in the dock as before |
+| **Lifting, plan folded** | A plan lift with sets to go | Plan one line; "Set 2 of 3" |
+| **Resting, plan's next lift** | Done on the last planned set | Plan opens; next lift Up next; Start set still the current lift; "Set 5 of 4" |
+| **Plan done** | Every lift full | No Up next; "Plan done. Anything else is a bonus 🏆" |
+| **Edit set** | The pencil | Type and RPE filled from the set; no note, plan or Last time |
+| **This workout** | Sets with types, RPE, a record and a note | Marks, dim warm-ups, `@` RPE, note row |
+| **Phone, resting with a plan** | 390 × 660 after Done | Timer, lift row, folded plan, Last time with the lit line above the dock |
+| **Phone 360, first set** | 360 px | Type chips on one row, RPE row, Done unmoved |
+| No plans / sets from before | — | No plan control at all; old sets have no marks, no RPE, no note (LB-0.3) |
+
+### L.5 What the build adds
+
+- `<style id="page">`'s new block (end of the mockup's page styles), into the
+  room page's styles. About 400 lines, all from tokens.
+- **Layout.astro**: nothing more is required. The mockup proposes three
+  Night rules for the shared marks (`.night .badge.warmup`, `.night
+  .badge.failure`: paper text, `--edge` border; `.night .badge.record`:
+  `--leaf` border; `.night .rec-for`: leaf), marked `/* shared: logbook
+  marks on Night */`. They belong in Layout's Night block beside the other
+  `.night` rules, since the summary or history may one day sit on Night;
+  until then they can live in the room page.
+- `SetFields.astro`: unchanged. The type and RPE are written in the room
+  page after `<SetFields>`, so the edit and log forms share them; a small
+  `SetExtras.astro` (type and RPE, with `values.set_type`, `values.rpe`,
+  `invalid`) is the tidy way if the build prefers.
+- The script: none needed for any of this. `details` folds, radios and the
+  select are native; the existing pending code disables the fieldset and
+  select along with the fields (add `fieldset, select, textarea` to what it
+  disables); the after-Done announce already reads the whole stamp.
+
+### L.6 Shared marks
+
+The Logbook group's names (`docs/design/history/spec.md`, "Shared marks"),
+used unchanged on the sheet, the stamp, the rest block, Last time and This
+workout. Nothing new is a primitive.
+
+| Mark | Class | Word | On Night |
+| --- | --- | --- | --- |
+| Warm-up | `.badge.warmup` | `Warm-up` (`.vh` "Set type: " before) | paper text, dashed 2 px `--edge` border, no fill |
+| Failure | `.badge.failure` | `Failure` (`.vh` "Set type: ") | paper text, solid `--edge` border, no fill |
+| Record | `.badge.record` + `span.rec-for` | `Record` + `heaviest`, `best e1RM`, `most reps`, `heaviest added`, `longest hold`, `longest distance`, `longest time` (`.vh` "New " before, ":" after) | leaf on ink, `i-record` star, `--leaf` border; `.rec-for` in leaf |
+| RPE | `span.rpe[aria-hidden]` + `.vh` ", RPE 8" after `[data-set]` | ` @ 8` | the set's own colour |
+| Note | `[data-note]` with the pencil icon | the text | dim, under a dashed rule |
+| Row | `.marks` (Layout) holds type then record | | 20 px in the sheet and This workout |
+
+Two sheet-only uses of the same pieces: the **set to match** (`li.match`)
+and **Up next** (`button.hot`, `.badge.up`) borrow the interaction menu's ▶
+cursor and leaf fill. They are not marks on a set, and history never shows
+them.
+
+### L.7 Departures
+
+1. **The type chips are radios drawn as chips** (system 9 has no segmented
+   control). Built from the `.recent` chip and the menu's lit state; each is
+   48 px.
+2. **RPE is a select, not a stepper** (system 9's `.stepper` is for weight
+   and reps). A stepper with 19 values in half steps is up to 18 taps; a
+   select is two, and takes one line.
+3. **The stamp can take two lines** with marks (3.3 item 8 said "one line,
+   always"). It grows upward, so the button and its box are untouched.
+4. **Plans and strangers.** Nothing here is shown to anyone else, so a
+   stranger room changes nothing on this page. A shared plan (the squad
+   doing Push day together) would want a sign on the map, and would be a
+   new decision.
+
+### L.8 Not decided by the criteria (for the user)
+
+1. **Swapping or clearing during an Idle state with Up next preselected**:
+   after Clear, the picker falls back to no preselection. Not decided by
+   LB-3.21; drawn that way.
+2. **Does Swap need a confirm?** Drawn without (LB-3.21: her sets are
+   untouched, so nothing is lost). Same for Clear.
+3. **The plan's folded or open default** per state (L.3 item 9) is the
+   design's call; whether a manual fold should stick across the next swap
+   (it can't without script or storage) is not decided. Drawn: the server's
+   rule wins on each render.
+4. **The lift row's "Set 3 of 4"** for a lift that is in the plan: the
+   criteria say the plan shows "Bench press 2 of 4", not the lift row.
+   Recommended as drawn; say if it should stay "Set 3".
+5. **Save note's place in the form**: it posts `form#set-log` with
+   `action=note`. The contract names `action=note` with `exercise_id` and
+   `note`; the set form's other fields go along and the server should
+   ignore them. Confirm with the contract owner.
+6. **An RPE on a warm-up** is allowed by the criteria (any set); drawn as
+   allowed.
+7. **The plan while you're on a lift that isn't in it** (LB-3.15 allows
+   it): not drawn. Recommended: folded, like a plan lift with sets to go,
+   since you chose to go off-plan.
+8. **"Save failed"** (LB-0.7) is described, not drawn as its own state: the
+   copy stands where the note's hint is, or under the plan's buttons.

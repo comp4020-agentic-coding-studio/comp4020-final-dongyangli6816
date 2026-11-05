@@ -258,3 +258,253 @@ exist in `Layout.astro`.
 2. **The ute.** It is the one joke on the page. If it doesn't land with the
    squad, swap the first row of the copy table for `{kg} kg in the book.
    Nice one 🏆`.
+
+## Logbook refactor, Nov 4
+
+The criteria are `docs/product/criteria/logbook.md` (LB-2, LB-3.1 to
+LB-3.7, LB-3.11, LB-4.10, LB-4.12, LB-5.7). This section adds the record
+count, the marked set table and **Save as plan**. It **supersedes**:
+
+- section 1's "Shared" block where the Nov 4 shared block below differs;
+- section 3's structure: a records line in the trophy card, and a new last
+  card (see Structure below);
+- the avatar in the mockup: it now draws the 32 × 32 `av-stand-ponytail` at
+  2× (64 px) and 3× (96 px), as the built page does.
+
+Unchanged: the bubble's copy table, `Room … closed`, Back home and All
+history, and the Paper surface (Oct open question 1 still stands).
+
+### 1. Plan
+
+#### Shared: the Logbook group, Nov 4 (`history`, `summary`, `exercise`, `plans`)
+
+Identical in the four Logbook specs. It extends the Oct "Shared: the Logbook
+group" block in `history/spec.md` and `summary/spec.md`, which still holds
+except where this says otherwise.
+
+**The rule, widened:** a set is written the same way wherever it appears,
+and so is a plan. History, the summary and the exercise page all draw sets
+with the one `table.log`; the summary and `/plans` both draw a plan with the
+one `ol.plan-list`. Same words, same marks, same order.
+
+- **Surface.** All four are Paper, under the same top bar (History stays the
+  only nav link; `/plans` and `/exercises/<id>` are reached from the pages,
+  see "Links").
+- **How a page opens.** An `h1` and one muted line under it (`p.lede`, or
+  `p.when` on the summary). Pages about one thing open with its pixel art:
+  the summary with your avatar (Oct), the exercise page with its station's
+  equipment sprite in a 64 px floor-tile frame. History and Plans have no
+  art in their head.
+- **Cards.** Every block is a `.card` with an `h2`, in the order the eye
+  should take them. The page's one primary button, if any, sits in the
+  thumb zone as before (Resume, Back home); everything new is secondary.
+- **Writing a set** (LB-2.16, LB-0.3). `setLabel` exactly as today, then:
+  - **RPE** after the figures in lifter's shorthand, `85 kg × 5 @ 9.5`.
+    The ` @ 9.5` is `aria-hidden`, followed by a `.vh` `, RPE 9.5`, so a
+    screen reader says "85 kg × 5, RPE 9.5". No RPE: nothing added.
+  - **Marks** on a line under the figures (`span.marks`), right-aligned:
+    the set type first, then any record. See "Shared marks" in
+    `history/spec.md`. A Normal set has no type mark.
+  - **A warm-up row** (`tr.warm`) has muted figures, so working sets read
+    first. Its mark still carries the word.
+  - **The note** for that exercise in that workout is a last row of its
+    group, `tr.note > td[colspan=2]`: the pencil icon, `.vh` "Note: ", then
+    the text as typed (escaped, LB-2.24), muted, 21 px, dashed top rule.
+  - Sets from before this change have none of these, so they look exactly
+    as they did (LB-0.3).
+- **"Best" stays, and "Record" is new.** `span.best` under a group's name is
+  still the best set *in that group* (`bestLabel`). A record is the
+  all-time mark on a set and is always called "Record" (LB-4.10). The two
+  never share a line.
+- **Links** (LB-5.7, LB-3.11).
+  - On history and the summary every exercise name in `th.lift` is a link to
+    `/exercises/<id>`, 44 px tall (`.log th.lift a`). The room's sheet has
+    none (D20).
+  - On the exercise page the group is a session, and its day is the link to
+    that workout's summary, with the pixel arrow, exactly as history's
+    entry heads. An open workout's day is not a link and wears the `Live`
+    badge.
+  - A plan's exercise names link to their exercise pages too.
+  - `/plans` is reached from the summary ("Your plans", under Save as
+    plan) and from home (Lobby group, see Open questions).
+- **The tally** (`dl.tally`) is reused for two new figure rows: history's
+  "Week so far" and the exercise page's "Records" (with the day under each
+  figure). Same 2 px ruling, same 8 px labels, same 28 px VT323 figures.
+- **Forms, errors, pending** (LB-0.7). The group's forms are Save as plan
+  (summary), Rename and Delete (plans). Field errors go in `.error`
+  directly under the field, with `aria-invalid` on it; a failed request
+  shows "That didn't save. Try again." under the button, and keeps what was
+  typed. Pending: the submit button `disabled`, label kept, no spinner.
+- **Ask once more** (LB-3.9). The room's confirm pattern (`details.confirm`,
+  whose `summary` button turns into its own Cancel in place, then a
+  `.confirm-box` form), on Paper: paper fill, ink border. Works without JS.
+- **Success** is a `.bubble[role=status]` in place, never a new page.
+- **Voice.** Figures, labels, errors: plain. One joke per page at most, in a
+  bubble or an empty line, about progress against your own past, never
+  against anyone else (LB-4.14), never about bodies. Streaks are stated,
+  never defended (LB-6.6).
+- **Shared CSS.** Everything under `/* shared: logbook */` in the four
+  mockups' `<style id="page">` is written the same in each. The `table.log`
+  rules (now with links, marks, warm-up rows and notes) belong in
+  `WorkoutSets.astro`; `.tally` in `WorkoutTally.astro`; `.plan-list` and
+  `.planned` in a new `PlanList.astro` (summary and plans);
+  `.badge.warmup|failure|record` in `Layout.astro` (see "Layout changes"
+  in `history/spec.md`).
+
+**Template check, for the group.** "Stat boxes, a line chart, a list of
+saved routines" is every fitness app. What keeps these Spotter's:
+
+- **A record is drawn like a lit day.** The record mark is leaf on ink, the
+  same as a trained day in history's M T W T F S S strip, with a pixel
+  star. The chart's record points are the same lit square. One visual
+  idea: *lit means you did something*.
+- **The chart is a Game Boy screen**: leaf on ink, a stepped line in one
+  `--px` stroke, square points, no curves, no gradients, no tooltips.
+- **The streak is plates on a bar**, one per week, this week's plate in
+  leaf: the logo's dumbbell, loading up. Zero weeks draws nothing at all.
+- **A plan is a walk through the gym**: each exercise sits beside the
+  station sprite it's done at, and its planned sets are the empty boxes the
+  sheet will fill in, the room's `.pips` shape.
+- **The exercise page opens on its equipment** from the gym floor, so
+  "Bench press" is the flat bench you claimed, not a stock icon.
+
+#### This page
+
+**Who and when.** As Oct, plus **the Anchor who wants to do it again.** Push
+day went well; they save it now so next Tuesday's sheet walks them through
+it.
+
+**The one job.** Unchanged: show what you did, as one screenshot, then leave.
+Saving a plan is a second, smaller job, so it is a secondary button in the
+last card, below the sets it's made from. **Back home** stays the one
+primary.
+
+**Hierarchy.**
+
+1. The bubble. 2. You and when. 3. The tally at 48 px.
+4. **New: the records line**, `[★ 3 new records] Past you just got beaten
+   🏆`, the second thing worth screenshotting.
+5. Every set, with its marks. 6. Save as plan.
+
+**Reuse.** The trophy card, tally, table and bubble as before; the shared
+`.plan-list` (the same list `/plans` shows); the layout's `input`, `label`,
+`.error`, `.button.secondary`, `.bubble`. New in the page block:
+`.records-line`, `.save-plan`, `.save-row`, `.saved`, `.to-plans`.
+
+**Template check.** "Save as template" with a name field is a settings form
+from any app. What makes it Spotter's:
+
+- **The preview is the plan, drawn as the gym**: each exercise beside the
+  station sprite you'll claim for it, and a box per working set, the empty
+  boxes the sheet will fill in. You see the walk before you save it.
+- **The name is optional and defaults to the day** ("Wed 4 Nov"), shown as
+  the field's placeholder, so one tap saves.
+- **The records line stays inside the trophy card**, so it's in the
+  screenshot, and it's about beating *past you*, never anyone else
+  (LB-4.14).
+
+### 2. Requirements covered
+
+| Requirement (source) | Element that meets it |
+| --- | --- |
+| LB-4.12 "3 new records"; with none, say nothing | `p.records-line` only when the count > 0; state "no records" has none |
+| LB-4.10 record marks in the summary | The shared `table.log` marks |
+| LB-2.2, LB-2.16, LB-2.23 types, RPE and notes in the summary | The shared `table.log` |
+| LB-5.7 exercise names link to their pages | `th.lift > a[href=/exercises/{id}]` |
+| LB-3.1 "Save as plan" with an optional name; a blank name becomes the date; confirmed in place, naming the plan | `section.save-plan`: `input[name=name][maxlength=30][placeholder="Wed 4 Nov"]`, button "Save plan"; then `p.bubble[role=status]` "Saved as Push day…" |
+| LB-3.2 exercises in order, planned sets = working sets, warm-ups left out | `ol.plan-list` preview, built by the same rule; the hint says warm-ups stay out |
+| LB-3.2 only warm-ups refused | `.error` "Only warm-ups in this one. Nothing to plan yet." |
+| LB-3.4 already saved: "Saved as Push day", linking to plans, not offered again | `p.saved` with `a[href=/plans]` instead of the form |
+| LB-3.5 names over 30 refused | `.error` "Names are up to 30 characters." under the field, with `aria-invalid` |
+| LB-3.6 a 21st plan refused | `.error` "That's 20 plans. Delete one to make room.", with "Your plans" right under it |
+| LB-3.7 no Save as plan on an open or someone else's workout | The page already redirects for an open workout and 404s for others' (Oct) |
+| LB-3.11 `/plans` one tap from a summary | `a.to-plans` "Your plans" in the last card, in every state |
+| LB-0.7 pending and failure | `button[disabled]`, label kept; "That didn't save. Try again." under the button, the name kept |
+
+### 3. Structure
+
+Changes only:
+
+1. `section.card.trophy`: after `dl.tally.big`, **`p.records-line`** when the
+   workout set at least one record: `span.badge.record` (the star and
+   "{n} new record(s)") then the text `Past you just got beaten 🏆`.
+2. `div.actions.after`: unchanged.
+3. "Every set": the shared `table.log` with links, marks and notes.
+4. **New `section.card.save-plan[aria-labelledby]`**, last, when the
+   workout has at least one set:
+   - **Not yet saved:** `h2` "Save as plan"; `p.hint` "Do this one again:
+     the lifts in order, a box per working set. Warm-ups stay out."; the
+     shared `ol.plan-list` preview; `form[method=post]` with `label` "Name
+     (optional)", `div.save-row` (the `input`, then `button.button.secondary`
+     "Save plan"), then any `.error`; then `a.to-plans[href=/plans]` "Your
+     plans".
+   - **Just saved:** the form gives way to `p.bubble[role=status]` `Saved as
+     <a href=/plans>Push day</a>. Load it from the sheet next time 📋`. The
+     preview stays.
+   - **Already saved** (a later visit): `h2` "Plan" and `p.saved` "Saved as
+     <a href=/plans>Push day</a>. Load it from your sheet next time." No form.
+   - **Only warm-ups:** the form shows, and the server's refusal appears
+     under the button, as LB-3.2 names it.
+
+A preview row is `li` > `svg.art` (the exercise's equipment sprite,
+`/sprites.svg#eq-<equipment>`, 32 px), `a[href=/exercises/{id}]` with the
+name, and `span.n` "{n} sets" over `span.planned` (n empty boxes,
+`aria-hidden`). The list is an `ol`, so its order is announced.
+
+### 4. States
+
+| State | Trigger | What shows |
+| --- | --- | --- |
+| **Just finished** | `?done=1`, three record sets | Bubble, records line, the marked table, Save as plan with its preview |
+| **Saved** | A successful save | The save card's bubble naming the plan, preview kept, "Your plans" |
+| **Revisited, already a plan** | A later visit, the plan exists | No bubble; the card reads "Saved as Push day" |
+| **No records** | No set carries a mark | No records line; no marks in the table |
+| **Cardio with a warm-up** | A warm-up walk, then a run | The preview holds Run · 1 set only |
+| **Save pending** | A slow save | `Save plan` disabled, label kept, name kept |
+| **Save errors** | Refusals and failures | Name too long: under the field. No connection, 20 plans, only warm-ups: under the button. Text kept in each |
+| **Signed out, not yours, unfinished, empty** | — | As Oct. A workout with no sets has no Save as plan card |
+| **Narrow / wide** | 390 / 1280 | At 390 the field and button stack, and the preview's set count sits right with its boxes under it. At 1280 the field and button share a row |
+
+### 5. Departures
+
+- **A form on a page whose Oct spec said "no form"**: Save as plan. It is
+  secondary and last, so the page's one primary stays Back home.
+
+Otherwise none.
+
+### Layout changes
+
+None beyond the badge modifiers named in `history/spec.md`, "Layout
+changes" (Nov 4).
+
+### Open questions (behaviour the criteria don't decide)
+
+1. **What "3 new records" counts** (LB-4.12): sets that carry a record mark,
+   or record types broken? A set that is both Heaviest and Best e1RM would
+   count 1 or 2. The mockup uses three single-type sets, so it reads either
+   way.
+2. **The confirmation's words.** LB-3.1 asks for an in-place confirmation
+   naming the plan; drawn as the bubble above. LB-3.4's "Saved as Push day"
+   is used on later visits. The copy is the user's to approve.
+
+## Exercise art, Nov 5
+
+LB-7 in `docs/product/criteria/logbook.md` (D36 to D43). "Every set" shares
+history's table, so it shows the same art in the same place (LB-7.2): your
+avatar lifting on each exercise's machine, **32 × 32 px (1×)**, inside the
+name's link. It follows history's option A, picked on Nov 5: from 421 px
+the art has its own column, with a 12 px gap and the name and Best line on
+one left edge; on phones it stands above the name with an 8 px gap. The
+scale, markup, CSS (with the arrow-margin fix), the focus-ring limit and
+the reasons are in `history/spec.md`, "Exercise art, Nov 5"; nothing
+differs here.
+
+- **Not in the plan preview** in "Save as plan" (D41, LB-7.16): its rows
+  keep their still station sprite.
+- **The trophy card's avatar** is unchanged: standing, with the Finished
+  chip. The just-finished state now draws Mia in LB-7's look (ponytail, pink
+  hair, skin tone 2, white shirt), so the trophy card and the table show
+  the same person. The other states keep the Nov 4 look.
+- Shown in the **Just finished** state only, as asked.
+
+Departures and layout changes: none beyond history's.

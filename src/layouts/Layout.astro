@@ -586,6 +586,98 @@ const here = (href: string) => (Astro.url.pathname.replace(/\/$/, "") === href ?
     background: var(--leaf);
     border: 2px solid var(--ink);
   }
+  /* The logbook's tally (history, summary, exercise page, home): boxed
+     figures, 2 px ink lines from the gaps, so any count of boxes, in any
+     arrangement, is ruled the same way. WorkoutTally.astro adds .big. */
+  dl.tally {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: auto;
+    gap: 2px;
+    margin: 0 0 1rem;
+    background: var(--ink);
+    border: 2px solid var(--ink);
+  }
+  dl.tally div {
+    padding: 0.25rem 0.5rem;
+    background: var(--paper);
+  }
+  dl.tally dt {
+    font: 8px/1.4 var(--display);
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  dl.tally dd {
+    margin: 0;
+    font-size: 28px;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  @media (max-width: 420px) {
+    /* four boxes don't fit a 360 px card in one row: 2 × 2 */
+    dl.tally:has(> :nth-child(4)) {
+      grid-auto-flow: row;
+      grid-template-columns: auto auto;
+    }
+  }
+
+  /* text for screen readers only */
+  .vh {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  /* A set's type and records, on every page that writes a set
+     (docs/design/history/spec.md, "Shared marks"). Always a word too. */
+  .badge.warmup,
+  .badge.failure,
+  .badge.record {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--px);
+    margin: 0;
+    white-space: nowrap;
+  }
+  .badge.warmup {
+    background: transparent;
+    border-style: dashed;
+  }
+  .badge.failure {
+    background: transparent;
+  }
+  .badge.record {
+    color: var(--leaf);
+    background: var(--ink);
+  }
+  /* on Night (the room's sheet) the same marks, readable on the dark panel
+     (docs/design/history/spec.md, "Shared marks") */
+  .night .badge.warmup,
+  .night .badge.failure {
+    color: var(--paper);
+    border-color: var(--edge);
+  }
+  .night .badge.record {
+    border-color: var(--leaf);
+  }
+  .night .rec-for {
+    color: var(--leaf);
+  }
+  .marks {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: var(--px) 0.5rem;
+    margin: var(--px) 0 0;
+    font-size: 21px;
+    line-height: 1.1;
+    white-space: normal;
+    text-align: right;
+  }
 
   @media (max-width: 420px) {
     body {

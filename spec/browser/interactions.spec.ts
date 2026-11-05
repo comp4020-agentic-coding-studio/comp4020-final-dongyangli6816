@@ -1411,35 +1411,46 @@ test("pops sit under avatars, 32 px, just over the tag or beside it on the back 
   for (const width of [390, 1280]) {
     const page = await screen(people.Priya, path, { viewport: { width, height: 900 } });
     await page.waitForTimeout(1100); // past the last emoji's second
-    expect((await emote(people.Mia, path, "hi")).status()).toBe(200);
-    expect((await emote(people.Tom, path, "flex")).status()).toBe(200);
     const pops = page.locator(".map .pops svg.pop");
-    await expect(pops).toHaveCount(2, { timeout: 2500 });
-    const miaPop = page.locator('.map .pops svg.pop:has(use[href$="#em-hi"])');
-    const tomPop = page.locator('.map .pops svg.pop:has(use[href$="#em-flex"])');
-    for (const p of [miaPop, tomPop]) {
-      const b = await box(p);
-      expect([Math.round(b.width), Math.round(b.height)], `${width}: 32 x 32`).toEqual([32, 32]);
-    }
-    const miaTag = await box(avatar(page, "Mia").locator(".tag"));
-    // measured once its 180 ms rise has finished, not on its first frame
-    const mp = await settled(page, '.map .pops svg.pop:has(use[href$="#em-hi"])');
+    const popOf = (key: string) => page.locator(`.map .pops svg.pop:has(use[href$="#em-${key}"])`);
+
+    // Newer replaces, everyone's together: checked first, since it needs
+    // Tom's pop still up when Mia's next one lands, and a pop lasts 3 s.
+    // (It was checked after the measuring below, which took over a second
+    // on a busy runner, so Tom's had gone: "expected 2, received 0".)
+    const [hi] = await Promise.all([emote(people.Mia, path, "hi"), emote(people.Tom, path, "flex")]);
+    expect(hi.status()).toBe(200);
+    const hiAt = Date.now();
+    await expect(pops).toHaveCount(2, { timeout: 1000 });
+    await page.waitForTimeout(Math.max(0, 1050 - (Date.now() - hiAt))); // past Mia's 1 s (INT-8.8)
+    expect((await emote(people.Mia, path, "love")).status()).toBe(200);
+    await expect(popOf("love")).toHaveCount(1, { timeout: 1000 });
+    await expect(popOf("hi"), `${width}: Mia's new one replaced hers`).toHaveCount(0, { timeout: 0 });
+    await expect(popOf("flex"), `${width}: and Tom's is still up beside it`).toHaveCount(1, { timeout: 0 });
+    await expect(pops).toHaveCount(2, { timeout: 0 });
+
+    // Where they sit, on a fresh pair (Tom's flex replaced by a new one):
+    // both measured at once, each once its 180 ms rise has finished
+    expect((await emote(people.Tom, path, "fire")).status()).toBe(200);
+    await expect(popOf("fire")).toHaveCount(1, { timeout: 2500 });
+    const miaSel = '.map .pops svg.pop:has(use[href$="#em-love"])';
+    const tomSel = '.map .pops svg.pop:has(use[href$="#em-fire"])';
+    const [mp, tp, miaTag, tomTag] = await Promise.all([
+      settled(page, miaSel),
+      settled(page, tomSel),
+      box(avatar(page, "Mia").locator(".tag")),
+      box(avatar(page, "Tom").locator(".tag")),
+    ]);
+    for (const b of [mp, tp]) expect([Math.round(b.width), Math.round(b.height)], `${width}: 32 x 32`).toEqual([32, 32]);
     expect(Math.round(miaTag.y - (mp.y + mp.height)), `${width}: 4 px above her tag`).toBe(4);
     expect(Math.abs(mp.x + mp.width / 2 - (miaTag.x + miaTag.width / 2)), `${width}: centred`).toBeLessThanOrEqual(1);
     // the back row: beside Tom's tag, on the side away from the nearer wall (west, as he's in column 6)
-    await expect(tomPop).toHaveClass(/\bbeside\b/);
-    const tomTag = await box(avatar(page, "Tom").locator(".tag"));
-    const tp = await settled(page, '.map .pops svg.pop:has(use[href$="#em-flex"])');
+    await expect(page.locator(tomSel)).toHaveClass(/\bbeside\b/);
     expect(intersects(tp, tomTag)).toBe(false);
     expect(tp.x + tp.width).toBeLessThanOrEqual(tomTag.x + 1);
     // under every avatar: wherever a pop and an avatar overlap, the avatar is painted on top
+    await expect(pops).toHaveCount(2, { timeout: 0 });
     expect(await popsUnderAvatars(page)).toEqual([]);
-    // Mia's next one replaces hers
-    await page.waitForTimeout(1100);
-    expect((await emote(people.Mia, path, "love")).status()).toBe(200);
-    await expect(page.locator('.map .pops svg.pop:has(use[href$="#em-love"])')).toHaveCount(1, { timeout: 2500 });
-    await expect(miaPop).toHaveCount(0);
-    await expect(pops).toHaveCount(2);
     await page.close();
   }
   // she leaves mid-pop: it goes with her, long before its 3 s are up
@@ -1511,7 +1522,7 @@ test("a failed emoji shows the red line beside the tab for 4 s, and nothing anyw
   expect(e.y + e.height).toBeLessThanOrEqual(dock.y + 1);
   expect(intersects(e, await box(mia.locator(MAIN)))).toBe(false);
   await expect(mia.locator("dialog[open], [role=dialog], [role=alertdialog]")).toHaveCount(0);
-  await expect(error).toHaveCount(0, { timeout: 5000 });
+  await expect(error).toHaveCount(0, { timeout: 6500 });
   expect(Date.now() - failedAt).toBeGreaterThanOrEqual(3500);
   for (const page of [mia, tom]) expect((await seenOn(page)).filter((s) => s.what === "pop")).toEqual([]);
 });

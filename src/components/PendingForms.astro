@@ -1,0 +1,52 @@
+---
+// LB-0.7 for the logbook's forms off the gym floor (Save as plan, Rename,
+// Delete): while one is on its way its button is disabled, label kept; a
+// refusal (400) swaps in the card the server drew, with its error; anything
+// that doesn't reach the server or fails on it says "That didn't save. Try
+// again." beside the button, and nothing typed is cleared. A redirect is
+// followed as a normal page load.
+//
+// It listens in the capture phase and stops the event there, so the client
+// router (ADR 0003) never sees these forms: without that, both sent the post
+// and the router left the page on a failure (qa round two, 5 Nov).
+//
+// Mark a form with data-pending, and the block to swap on a refusal with
+// data-swap (the form's nearest one is used).
+---
+
+<script>
+  document.addEventListener(
+    "submit",
+    async (event) => {
+      const form = event.target;
+      if (!(form instanceof HTMLFormElement) || !form.matches("form[data-pending]")) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const button = (event.submitter as HTMLButtonElement | null) ?? form.querySelector<HTMLButtonElement>("button[type=submit]");
+      const body = new FormData(form, event.submitter);
+      form.querySelector("[data-failed]")?.remove();
+      if (button) button.disabled = true;
+      const fail = () => {
+        const p = Object.assign(document.createElement("p"), { className: "error", textContent: "That didn't save. Try again." });
+        p.dataset.failed = "";
+        p.setAttribute("role", "alert");
+        form.append(p);
+        if (button) button.disabled = false;
+      };
+      try {
+        const res = await fetch(location.pathname + location.search, { method: "POST", body });
+        if (res.redirected) return location.assign(res.url);
+        if (res.status !== 400) return fail();
+        const block = form.closest("[data-swap]");
+        const id = block?.id;
+        const fresh = id ? new DOMParser().parseFromString(await res.text(), "text/html").getElementById(id) : null;
+        if (!block || !fresh) return fail();
+        block.replaceWith(fresh);
+        fresh.querySelector<HTMLElement>("[aria-invalid=true]")?.focus();
+      } catch {
+        fail();
+      }
+    },
+    true,
+  );
+</script>

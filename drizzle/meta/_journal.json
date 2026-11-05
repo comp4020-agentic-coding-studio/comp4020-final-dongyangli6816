@@ -57,6 +57,20 @@
       "when": 1792664364798,
       "tag": "0007_interactions",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1793784665421,
+      "tag": "0008_zippy_joseph",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1793865363159,
+      "tag": "0009_room_feel",
+      "breakpoints": true
     }
   ]
 }

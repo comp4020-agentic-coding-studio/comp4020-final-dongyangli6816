@@ -68,7 +68,10 @@ export type RoomEvent = {
     station: { slot: number; equipment: string } | null;
     slackAt: number | null;
   }[];
-  stations: { slot: number; equipment: string | null }[];
+  // placedAt: when the station's current equipment was put there, ms since
+  // epoch on the server's clock; null on an empty station (the contract at
+  // the top of spec/delivery.test.ts)
+  stations: { slot: number; equipment: string | null; placedAt: number | null }[];
   // room-wide lists (docs/product/criteria/room-feel.md; the contract at the
   // top of spec/room-feel.test.ts), so a reload or reconnect can draw them.
   // `from`/`to` are written as ids or as {id, name}: readers take either.
@@ -288,6 +291,19 @@ export async function backdate(b: Browser, roomPath: string, target: { user: num
   if (res.status !== 204) {
     throw new Error(
       `POST ${roomPath}/qa answered ${res.status}: this check needs the test hook, so the app must run with SPOTTER_TEST_HOOKS=1 (the contract at the top of spec/interactions.test.ts)`,
+    );
+  }
+}
+
+// The logbook's test hook (contract at the top of spec/logbook.test.ts): one
+// of the caller's own workouts in this room, open or finished, as if it had
+// happened ms earlier (its start, end, and every set's logged time and rest
+// end). Nothing else moves. Only on an app run with SPOTTER_TEST_HOOKS=1.
+export async function backdateWorkout(b: Browser, roomPath: string, workout: number | string, ms: number): Promise<void> {
+  const res = await b.post(`${roomPath}/qa`, { op: "backdate", ms: String(Math.round(ms)), workout: String(workout) });
+  if (res.status !== 204) {
+    throw new Error(
+      `POST ${roomPath}/qa op=backdate workout=${workout} answered ${res.status}: this check needs the test hook, so the app must run with SPOTTER_TEST_HOOKS=1 (the contract at the top of spec/logbook.test.ts)`,
     );
   }
 }

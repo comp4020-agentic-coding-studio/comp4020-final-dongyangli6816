@@ -12,6 +12,8 @@ import {
   type RoomWatch,
   type Who,
 } from "./helpers.ts";
+import { JSDOM } from "jsdom";
+import { workoutSets } from "./logbook-helpers.ts";
 
 // How the gym room feels (docs/product/criteria/room-feel.md): answering an
 // interaction (INT-9), the High-five (INT-10), personal bests (GYM-17), the
@@ -596,28 +598,38 @@ describe("the High-five", () => {
 // ===========================================================================
 // GYM-17 and GYM-18: personal bests, and the room's moment for one
 // ===========================================================================
+//
+// A personal best (GYM-17, as the user changed it on 5 Nov) is any Done that
+// sets at least one logbook record (docs/product/criteria/logbook.md LB-4:
+// heaviest, best e1RM, most reps, added weight, longest hold, longest
+// distance, longest time; working sets only; the first set to measure a type
+// sets nothing). Which records a Done set is read from its stamp's
+// `<b data-set data-records="…">` (logbook contract); the room's moment (the
+// `pb` event, the log line, the 30 s pbs list) goes out exactly when that
+// list is not empty. LB-4's own rules are spec/logbook-records.test.ts's.
 
-const isPb = (res: Response) => /[?&]pb=1(&|$)/.test(res.headers.get("location") ?? "");
+// the records the Done's stamp says it set (sorted), from the page it lands on
+async function stampRecords(b: Browser, res: Response): Promise<string[]> {
+  expect(res.status, "Done").toBe(303);
+  const html = await (await b.follow(res)).text();
+  const stamp = html.match(/<p[^>]*class="[^"]*\bstamp\b[^"]*"[\s\S]*?<\/p>/)?.[0] ?? "";
+  const records = stamp.match(/data-records="([^"]*)"/)?.[1] ?? "";
+  return records.split(/\s+/).filter(Boolean).sort();
+}
 
-// Mia's first workout with these sets, in a room of her own she then leaves
-// (which closes it): her history, before the room the test watches
+// Mia's earlier sets, in a room of her own she then leaves: her history
 async function history(sets: Record<string, string>[]) {
   const mia = new Browser();
   await signUp(mia, freshEmail(), "correct horse", "Mia");
   const own = await createRoom(mia);
-  const results: boolean[] = [];
-  for (const s of sets) {
-    const res = await mia.post(own.path, { action: "log", ...s });
-    expect(res.status, "Done").toBe(303);
-    results.push(isPb(res));
-  }
+  for (const s of sets) expect((await mia.post(own.path, { action: "log", ...s })).status, "Done").toBe(303);
   await mia.post(own.path, { action: "leave" });
-  return { mia, firstWorkout: results };
+  return mia;
 }
 
 // Mia, with that history, joins Tom's room; Tom watches
 async function pbRoom(ctx: TestContext, sets: Record<string, string>[]) {
-  const { mia, firstWorkout } = await history(sets);
+  const mia = await history(sets);
   const tomB = new Browser();
   await signUp(tomB, freshEmail(), "correct horse", "Tom");
   const { path, passcode } = await createRoom(tomB);
@@ -626,41 +638,40 @@ async function pbRoom(ctx: TestContext, sets: Record<string, string>[]) {
   ctx.onTestFinished(() => tom.close());
   const first = await tom.next("room", () => true, 2000);
   const ids = Object.fromEntries(first.members.map((m) => [m.name, m.id]));
-  const done = async (s: Record<string, string>) => {
-    const res = await mia.post(path, { action: "log", ...s });
-    expect(res.status, "Done").toBe(303);
-    return isPb(res);
+  // a Done: the records its stamp names
+  const done = async (s: Record<string, string>) => stampRecords(mia, await mia.post(path, { action: "log", ...s }));
+  // every Done in turn, then the pb events that went out for them, one each
+  // for exactly the Dones with records
+  const doneAll = async (sets: Record<string, string>[]) => {
+    const records: string[][] = [];
+    for (const s of sets) records.push(await done(s));
+    await tom.during("pb", 600);
+    return records;
   };
-  return { mia, tomB, path, tom, ids, firstWorkout, done };
+  return { mia, tomB, path, tom, ids, done, doneAll };
 }
+const isPb = (records: string[]) => records.length > 0;
 
 describe("personal bests", () => {
-  // GYM-17.1 (weight then reps; equal is never one), GYM-17.3 (the first
-  // workout with an exercise sets the bar; later sets in the same workout
-  // count as earlier sets), GYM-17.4 (two in one workout), GYM-17.10 (said
-  // in the Done's own answer), GYM-18.1 (the event on another member's
+  // GYM-17.1 as changed (a PB is a Done setting a record; the first set of a
+  // type and an equal set set none), GYM-17.4 (two in one workout), GYM-17.10
+  // (said by the Done's own answer), GYM-18.1 (the event on another member's
   // stream: who and the exercise, no numbers), GYM-18.5 (the log line, no
   // numbers), GYM-18.6 (in the room view for 30 s), GYM-18.9 (nothing counts
-  // them), and "any earlier workout, in any room"
-  it("finds a PB by weight then reps, from a person's second workout on, and tells the room without numbers", async (ctx) => {
-    const r = await pbRoom(ctx, [
-      { exercise_id: BENCH, weight_kg: "90", reps: "5" },
-      { exercise_id: BENCH, weight_kg: "100", reps: "5" },
-      { exercise_id: BENCH, weight_kg: "97.5", reps: "12" },
+  // them), and records across workouts and rooms
+  it("announces a Done that sets a record, and no other, to the room without numbers", async (ctx) => {
+    const r = await pbRoom(ctx, [{ exercise_id: BENCH, weight_kg: "100", reps: "5" }]);
+    const records = await r.doneAll([
+      { exercise_id: BENCH, weight_kg: "100", reps: "5" }, // equal to her earlier best: no record
+      { exercise_id: BENCH, weight_kg: "95", reps: "5" }, // lighter, as many reps: none
+      { exercise_id: BENCH, weight_kg: "100", reps: "6" }, // most reps and best e1RM
+      { exercise_id: BENCH, weight_kg: "100", reps: "6" }, // equal to that: none
+      { exercise_id: BENCH, weight_kg: "102.5", reps: "1" }, // heaviest
     ]);
-    expect(r.firstWorkout, "nothing in a first workout is a PB").toEqual([false, false, false]);
+    expect(records).toEqual([[], [], ["e1rm", "reps"], [], ["heaviest"]]);
 
-    const results = [];
-    for (const [w, reps] of [["100", "5"], ["97.5", "12"], ["100", "6"], ["100", "6"], ["102.5", "1"]]) {
-      results.push(await r.done({ exercise_id: BENCH, weight_kg: w, reps }));
-    }
-    // equal to the old best; equal to an older lighter set; more reps at the
-    // best weight; equal to this workout's own earlier PB; heavier
-    expect(results).toEqual([false, false, true, false, true]);
-
-    await r.tom.during("pb", 500);
     const pbs = r.tom.all("pb");
-    expect(pbs, "one event per PB").toHaveLength(2);
+    expect(pbs, "one event for each Done that set a record").toHaveLength(records.filter(isPb).length);
     for (const e of pbs) {
       const { arrivedAt: _, ...data } = e;
       expect(Object.keys(data).sort(), "who, what and when: no numbers").toEqual(["at", "exercise", "from"]);
@@ -674,57 +685,70 @@ describe("personal bests", () => {
       expect(p).toMatchObject({ userId: r.ids.Mia, exercise: { id: Number(BENCH), name: "Bench press" } });
     }
     const latest = Math.max(...fresh.map((p) => p.until));
-    expect(Math.abs(latest - (pbs[1].at + 30_000)), "fresh for 30 s from the newest PB").toBeLessThan(1000);
+    expect(Math.abs(latest - (pbs.at(-1)!.at + 30_000)), "fresh for 30 s from the newest PB").toBeLessThan(1000);
 
     const tomLog = (await logOf(r.tomB, r.path))!;
     expect(tomLog.filter((l) => /PB/.test(l))).toEqual(["Mia hit a PB on bench press", "Mia hit a PB on bench press"]);
     expect((await logOf(r.mia, r.path))!.filter((l) => /PB/.test(l))).toEqual(["You hit a PB on bench press", "You hit a PB on bench press"]);
   }, 30_000);
 
-  // GYM-17.2: each kind by what it measures
-  it("finds bodyweight, duration and cardio PBs by what each measures", async (ctx) => {
+  // GYM-17.2 as changed: each kind by its record types (most reps, added
+  // weight, longest hold, longest distance, longest time); a warm-up never
+  it("announces bodyweight, duration and cardio records, and never a warm-up", async (ctx) => {
     const r = await pbRoom(ctx, [
       { exercise_id: PULL_UP, reps: "8", weight_kg: "" },
+      { exercise_id: PULL_UP, reps: "6", weight_kg: "5" }, // first with weight added: sets the bar for it
       { exercise_id: PLANK, minutes: "1", seconds: "0" },
       { exercise_id: RUN, distance_km: "5", minutes: "25", seconds: "0" },
     ]);
-    const pull = [];
-    for (const [reps, kg] of [["8", ""], ["8", "5"], ["9", ""], ["7", "20"]]) pull.push(await r.done({ exercise_id: PULL_UP, reps, weight_kg: kg }));
-    // equal; same reps, more added weight; more reps; fewer reps, however heavy
-    expect(pull, "pull-ups").toEqual([false, true, true, false]);
-    const plank = [];
-    for (const [m, s] of [["1", "0"], ["0", "59"], ["1", "5"]]) plank.push(await r.done({ exercise_id: PLANK, minutes: m, seconds: s }));
-    expect(plank, "plank").toEqual([false, false, true]);
-    const run = [];
-    for (const [km, m] of [["5", "25"], ["5", "24"], ["4", "15"], ["5.5", "30"]]) run.push(await r.done({ exercise_id: RUN, distance_km: km, minutes: m, seconds: "0" }));
-    // equal; same distance faster; shorter, however fast; further, however slow
-    expect(run, "runs").toEqual([false, true, false, true]);
+    const records = await r.doneAll([
+      { exercise_id: PULL_UP, reps: "8", weight_kg: "" }, // equal: none
+      { exercise_id: PULL_UP, reps: "6", weight_kg: "10" }, // heaviest added
+      { exercise_id: PULL_UP, reps: "9", weight_kg: "" }, // most reps
+      { exercise_id: PULL_UP, reps: "12", weight_kg: "", set_type: "warmup" }, // a warm-up: never
+      { exercise_id: PLANK, minutes: "0", seconds: "59" }, // shorter: none
+      { exercise_id: PLANK, minutes: "1", seconds: "5" }, // longest hold
+      { exercise_id: RUN, distance_km: "4", minutes: "15", seconds: "0" }, // shorter and quicker: none
+      { exercise_id: RUN, distance_km: "5.5", minutes: "30", seconds: "0" }, // longest distance and time
+    ]);
+    expect(records).toEqual([[], ["added"], ["reps"], [], [], ["hold"], [], ["distance", "time"]]);
+    expect(r.tom.all("pb").map((e) => e.exercise.id), "one event per Done with a record, on its lift").toEqual(
+      [PULL_UP, PULL_UP, PLANK, RUN].map(Number),
+    );
   }, 30_000);
 
-  // GYM-17.5: two Dones at once with the same new best: exactly one PB
+  // GYM-17.5: two Dones at once with the same new best: exactly one sets the
+  // record (LB-4.1: strictly greater than every earlier set, in the order
+  // stored), so exactly one is announced
   it("makes exactly one of two simultaneous Dones with the same new best a PB", async (ctx) => {
     const r = await pbRoom(ctx, [{ exercise_id: BENCH, weight_kg: "100", reps: "5" }]);
-    const both = await Promise.all([r.done({ exercise_id: BENCH, weight_kg: "110", reps: "5" }), r.done({ exercise_id: BENCH, weight_kg: "110", reps: "5" })]);
-    expect(both.filter(Boolean)).toHaveLength(1);
-    await r.tom.during("pb", 500);
+    // both sent at once; each page the redirect leads to shows the newest
+    // set's stamp, so the two are read from This workout afterwards
+    const sent = await Promise.all([1, 2].map(() => r.mia.post(r.path, { action: "log", exercise_id: BENCH, weight_kg: "110", reps: "5" })));
+    for (const res of sent) expect(res.status, "Done").toBe(303);
+    const thisWorkout = workoutSets(new JSDOM(await (await r.mia.get(`${r.path}?exercise=${BENCH}`)).text()).window.document);
+    const the110s = thisWorkout.filter((s) => s.text === "110 kg × 5");
+    expect(the110s, "both stored").toHaveLength(2);
+    expect(the110s.filter((s) => s.records.length > 0), "exactly one of the two set records").toHaveLength(1);
+    await r.tom.during("pb", 600);
     expect(r.tom.all("pb")).toHaveLength(1);
   }, 30_000);
 
-  // GYM-17.6: editing or deleting a set announces nothing, and edited values
-  // count as earlier sets (deleted ones don't)
+  // GYM-17.6 (an edit or a delete announces nothing, LB-4.9 works marks out
+  // again from what's stored), so a later Done is judged against the edited sets
   it("never announces a PB on an edit or a delete, and judges later Dones against the edited sets", async (ctx) => {
     const r = await pbRoom(ctx, [{ exercise_id: BENCH, weight_kg: "100", reps: "5" }]);
-    expect(await r.done({ exercise_id: BENCH, weight_kg: "100", reps: "5" })).toBe(false);
+    expect(await r.done({ exercise_id: BENCH, weight_kg: "100", reps: "5" }), "equal: no record").toEqual([]);
     const setId = (await (await r.mia.get(r.path)).text()).match(/\?edit=(\d+)/)![1];
-    const edited = await r.mia.post(r.path, { action: "edit", set_id: setId, weight_kg: "110", reps: "5" });
-    expect(edited.status).toBe(303);
-    expect(isPb(edited), "an edit is never a PB").toBe(false);
-    expect(await r.done({ exercise_id: BENCH, weight_kg: "105", reps: "5" }), "under the edited 110").toBe(false);
-    const deleted = await r.mia.post(r.path, { action: "delete", set_id: setId });
-    expect(deleted.status).toBe(303);
-    expect(isPb(deleted)).toBe(false);
-    expect(await r.done({ exercise_id: BENCH, weight_kg: "107.5", reps: "5" }), "the 110 is gone, so this beats 105").toBe(true);
-    await r.tom.during("pb", 500);
+    expect((await r.mia.post(r.path, { action: "edit", set_id: setId, weight_kg: "110", reps: "5" })).status).toBe(303);
+    await r.tom.during("pb", 600);
+    expect(r.tom.all("pb"), "an edit that makes a record announces nothing").toEqual([]);
+    expect(await r.done({ exercise_id: BENCH, weight_kg: "105", reps: "5" }), "under the edited 110").toEqual([]);
+    expect((await r.mia.post(r.path, { action: "delete", set_id: setId })).status).toBe(303);
+    await r.tom.during("pb", 600);
+    expect(r.tom.all("pb"), "a delete announces nothing").toEqual([]);
+    expect(isPb(await r.done({ exercise_id: BENCH, weight_kg: "107.5", reps: "5" })), "the 110 is gone, so this beats 105").toBe(true);
+    await r.tom.during("pb", 600);
     expect(r.tom.all("pb"), "only the Done").toHaveLength(1);
   }, 30_000);
 
@@ -732,7 +756,7 @@ describe("personal bests", () => {
   // and the 10 s limit holds)
   it("takes a Cheer on someone's PB as any Cheer", async (ctx) => {
     const r = await pbRoom(ctx, [{ exercise_id: BENCH, weight_kg: "100", reps: "5" }]);
-    expect(await r.done({ exercise_id: BENCH, weight_kg: "105", reps: "5" })).toBe(true);
+    expect(isPb(await r.done({ exercise_id: BENCH, weight_kg: "105", reps: "5" }))).toBe(true);
     await r.tom.next("pb", () => true, 2000);
     accepted(await interact(r.tomB, r.path, r.ids.Mia, "cheer"), "Tom cheers Mia's PB");
     expect(answerableIn(await now(r.tomB, r.path)).filter((a) => a.from === r.ids.Tom && a.to === r.ids.Mia).map((a) => a.kind)).toEqual(["thanks"]);

@@ -3,8 +3,21 @@ import Sprite from "../components/Sprite.astro";
 import WorkoutSets from "../components/WorkoutSets.astro";
 import WorkoutTally from "../components/WorkoutTally.astro";
 import Layout from "../layouts/Layout.astro";
-import { dayLabel, distanceKm, kg, km, midnight, minutes, timeOfDay, timeRange, volume } from "../lib/logbook.ts";
-import { history } from "../lib/workouts.ts";
+import {
+  dayLabel,
+  distanceKm,
+  kg,
+  km,
+  minutes,
+  monday,
+  recordsBySet,
+  streak,
+  timeOfDay,
+  timeRange,
+  volume,
+} from "../lib/logbook.ts";
+import { lookOf } from "../lib/avatars.ts";
+import { history, notesOf, setsForRecords } from "../lib/workouts.ts";
 import { arrowIcon } from "../sprites/icons.ts";
 import { bigDumbbell } from "../sprites/props.ts";
 
@@ -12,14 +25,27 @@ const user = Astro.locals.user;
 if (!user) return Astro.redirect("/signin?next=/history", 303);
 const workouts = history(user.id);
 const now = Date.now();
+// LB-7.6 (D39): the art shows her look as it is now
+const look = lookOf(user.id);
+
+// LB-4: which sets were records, from every set of the exercises shown
+const records = recordsBySet(setsForRecords(user.id, workouts.flatMap((w) => w.sets.map((s) => s.exerciseId))));
+const notes = notesOf(workouts.map((w) => w.id));
+
+// LB-6: this week, Monday to Monday in the server's time zone (Sydney, D21).
+// history() only lists workouts with a set, which are the ones that count.
+const thisWeek = workouts.filter((w) => monday(w.startedAt) === monday(now));
+const weekSets = thisWeek.flatMap((w) => w.sets);
+const weekVolume = volume(weekSets);
+const weekKm = distanceKm(weekSets);
+const weeks_ = streak(
+  workouts.map((w) => w.startedAt),
+  now,
+);
+const trainedThisWeek = thisWeek.length > 0;
 
 // Dates are calendar dates in the server's time zone, Monday-first weeks.
 const DAY = 86_400_000;
-const monday = (ms: number) => {
-  const d = new Date(midnight(ms));
-  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-  return d.getTime();
-};
 const dayIndex = (ms: number) => (new Date(ms).getDay() + 6) % 7;
 const fmt = (ms: number, o: Intl.DateTimeFormatOptions) => new Date(ms).toLocaleString("en-AU", o);
 
@@ -74,6 +100,54 @@ const live = workouts.find((w) => w.endedAt === null && w.roomId !== null);
           {workouts.length} workout{workouts.length === 1 ? "" : "s"} · {kg(total)} kg
           {distance > 0 && ` · ${km(distance)} km`} in the book
         </p>
+        <section
+          class="so-far"
+          aria-labelledby="so-far"
+          data-week=""
+          data-workouts={thisWeek.length}
+          data-volume={weekVolume}
+          data-km={weekKm}
+          data-streak={weeks_ >= 1 ? weeks_ : undefined}
+        >
+          <h2 id="so-far">Week so far</h2>
+          <div class="so-far-row">
+            <dl class="tally">
+              <div>
+                <dt>Workouts</dt>
+                <dd>{thisWeek.length}</dd>
+              </div>
+              {weekVolume > 0 && (
+                <div>
+                  <dt>Volume</dt>
+                  <dd>
+                    {kg(weekVolume)}
+                    <span class="unit"> kg</span>
+                  </dd>
+                </div>
+              )}
+              {weekKm > 0 && (
+                <div>
+                  <dt>Distance</dt>
+                  <dd>
+                    {km(weekKm)}
+                    <span class="unit"> km</span>
+                  </dd>
+                </div>
+              )}
+            </dl>
+            {weeks_ >= 1 && (
+              <p class="streak">
+                <span class="plates" aria-hidden="true">
+                  {Array.from({ length: Math.min(weeks_, 8) }, (_, i) => (
+                    <i class:list={{ now: trainedThisWeek && i === Math.min(weeks_, 8) - 1 }} />
+                  ))}
+                  {weeks_ > 8 && <span class="more">+{weeks_ - 8}</span>}
+                </span>
+                {weeks_}-week streak
+              </p>
+            )}
+          </div>
+        </section>
         {weekHeads.map((wk, i) => {
           const head = (
             <>
@@ -122,7 +196,7 @@ const live = workouts.find((w) => w.endedAt === null && w.roomId !== null);
                   </p>
                 </header>
                 <WorkoutTally sets={w.sets} startedAt={w.startedAt} endedAt={w.endedAt} now={now} />
-                <WorkoutSets sets={w.sets} />
+                <WorkoutSets sets={w.sets} records={records} notes={notes.get(w.id)} look={look} />
               </article>
             );
           });
@@ -163,14 +237,63 @@ const live = workouts.find((w) => w.endedAt === null && w.roomId !== null);
     margin: 0;
     color: var(--muted);
   }
-  /* text for screen readers only */
-  .vh {
+  /* LB-6: the week so far, then the streak as plates loaded on a bar, one
+     per week, this week's in leaf (docs/design/history/spec.md, Nov 4) */
+  .so-far {
+    margin: 0 0 1.5rem;
+  }
+  .so-far h2 {
+    margin: 0 0 0.75rem;
+  }
+  .so-far-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1.5rem;
+  }
+  .so-far .tally {
+    margin: 0;
+  }
+  .streak {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0;
+    font-size: 24px;
+  }
+  .plates {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    height: 32px;
+    padding: 0 var(--px) 0 calc(var(--px) * 3);
+  }
+  .plates::before {
+    content: "";
     position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: var(--px);
+    margin-top: -2px;
+    background: var(--muted);
+  }
+  .plates i {
+    position: relative;
+    width: 8px;
+    height: 28px;
+    background: var(--green);
+    border: 2px solid var(--ink);
+  }
+  .plates i.now {
+    background: var(--leaf);
+  }
+  .plates .more {
+    position: relative;
+    padding: 0 0.25rem;
+    font-size: 21px;
+    background: var(--paper);
   }
 
   /* a week of the logbook: a ruled divider, the label, the day strip */

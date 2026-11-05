@@ -1,0 +1,239 @@
+---
+// LB-5: one exercise, everything about it: the current records, a chart of
+// the best per session, and every set, newest session first
+// (docs/design/exercise/spec.md). Only ever the signed-in person's own sets.
+import ExerciseArt from "../../components/ExerciseArt.astro";
+import ProgressChart, { type Point } from "../../components/ProgressChart.astro";
+import Sprite from "../../components/Sprite.astro";
+import WorkoutSets from "../../components/WorkoutSets.astro";
+import Layout from "../../layouts/Layout.astro";
+import { EQUIPMENT, exerciseById } from "../../lib/exercises.ts";
+import { chartValue, currentRecords, dayLabel, recordsBySet, recordText, type RecordKey } from "../../lib/logbook.ts";
+import { lookOf } from "../../lib/avatars.ts";
+import { exerciseLog } from "../../lib/workouts.ts";
+import { bigDumbbell } from "../../sprites/props.ts";
+
+const user = Astro.locals.user;
+const raw = Astro.params.id ?? "";
+// LB-5.1: the path is digits only by then, so it needs no escaping
+if (!user) return Astro.redirect(`/signin?next=/exercises/${/^\d+$/.test(raw) ? raw : ""}`, 303);
+const exercise = /^\d+$/.test(raw) ? exerciseById(Number(raw)) : undefined;
+if (!exercise) return new Response("Not found", { status: 404 });
+
+const now = Date.now();
+const sessions = exerciseLog(user.id, exercise.id); // newest first
+const all = sessions.flatMap((s) => s.sets);
+const marks = recordsBySet(all);
+
+// LB-5.2 (D25, D26): each type's current holder, open workout included
+const current = currentRecords(exercise.kind, all);
+
+// LB-5.3 (D19): what the chart plots, per kind
+const PLOT: Record<string, { key: RecordKey; measure: string; caption: string }> = {
+  weight: { key: "e1rm", measure: "Best e1RM", caption: "Estimated one-rep max, best set, per session." },
+  bodyweight: { key: "reps", measure: "Most reps", caption: "Most reps in one set, per session." },
+  duration: { key: "hold", measure: "Longest hold", caption: "Longest hold, per session." },
+  cardio: { key: "distance", measure: "Longest distance", caption: "Longest distance in one go, per session." },
+};
+const plot = PLOT[exercise.kind];
+// LB-5.10 (D27): a point is lit when that session set a record of the type plotted
+const points: Point[] = [...sessions]
+  .reverse()
+  .map((s) => ({
+    day: dayLabel(s.startedAt, now),
+    value: chartValue(exercise.kind, s.sets),
+    record: s.sets.some((x) => marks.get(x.id)?.includes(plot.key)),
+  }))
+  .filter((p): p is Point => p.value !== null);
+
+const TITLE: Record<RecordKey, string> = {
+  heaviest: "Heaviest",
+  e1rm: "Best e1RM",
+  reps: "Most reps",
+  added: "Heaviest added",
+  hold: "Longest hold",
+  distance: "Longest distance",
+  time: "Longest time",
+};
+const figure = (key: RecordKey, v: number) => {
+  const t = recordText(key, v);
+  const m = t.match(/^(.*?)( kg| km| reps)$/);
+  return m ? { n: m[1], unit: m[2] } : { n: t, unit: "" };
+};
+
+// LB-5.2, LB-5.8 (D27): sessions as the set table's groups, six open
+const groups = sessions.map((s) => ({
+  name: dayLabel(s.startedAt, now),
+  href: s.endedAt !== null ? `/workouts/${s.id}` : undefined,
+  live: s.endedAt === null,
+  note: s.note,
+  sets: s.sets,
+}));
+const open = groups.slice(0, 6);
+const older = groups.slice(6);
+const first = sessions.at(-1);
+---
+
+<Layout title={exercise.name}>
+  <header class="ex-head">
+    {/* LB-7.3: her avatar doing it, on its machine, in the head (also when never logged) */}
+    <ExerciseArt e={exercise.equipment} look={lookOf(user.id)} size={64} class="art" />
+    <div>
+      <h1>{exercise.name}</h1>
+      <p>
+        {
+          first
+            ? `${sessions.length} session${sessions.length === 1 ? "" : "s"}${sessions.length === 1 ? ", " : " since "}${dayLabel(first.startedAt, now)}`
+            : EQUIPMENT[exercise.equipment]
+        }
+      </p>
+    </div>
+  </header>
+
+  {
+    sessions.length === 0 ? (
+      <div class="card empty">
+        <Sprite sprite={bigDumbbell} scale={2} />
+        <p>No sets of {exercise.name} yet. Pick it in a room and it lands here.</p>
+        <a href="/history" class="button secondary">
+          All history
+        </a>
+      </div>
+    ) : (
+      <>
+        <section class="card" aria-labelledby="records">
+          <h2 id="records">Records</h2>
+          {current.length > 0 ? (
+            <dl class="tally records">
+              {current.map((r) => {
+                const f = figure(r.key, r.value);
+                return (
+                  <div data-record={r.key}>
+                    <dt>{TITLE[r.key]}</dt>{" "}
+                    <dd>
+                      {f.n}
+                      {f.unit && <span class="unit">{f.unit}</span>}
+                    </dd>{" "}
+                    <dd class="on">{dayLabel(r.set.completedAt, now)}</dd>
+                  </div>
+                );
+              })}
+            </dl>
+          ) : (
+            <p class="none">Nothing to beat yet. Records start from your second working set.</p>
+          )}
+        </section>
+
+        <section class="card" aria-labelledby="chart">
+          <h2 id="chart">{plot.measure}</h2>
+          {points.length > 0 ? (
+            <ProgressChart points={points} measure={plot.measure} caption={plot.caption} unit={plot.key} />
+          ) : (
+            <p class="none">Warm-ups aren't charted. Your first working set starts the line.</p>
+          )}
+        </section>
+
+        <section class="card" aria-labelledby="every-set">
+          <h2 id="every-set">Every set</h2>
+          <WorkoutSets groups={open} records={marks} head="Session" />
+          {older.length > 0 && (
+            <details class="fold older">
+              <summary>
+                {older.length} older session{older.length === 1 ? "" : "s"} <span class="toggle" />
+              </summary>
+              <WorkoutSets groups={older} records={marks} head="Session" />
+            </details>
+          )}
+        </section>
+      </>
+    )
+  }
+</Layout>
+
+<style>
+  /* the station it's done at, on a floor tile, then the name */
+  .ex-head {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 0 0 1.5rem;
+  }
+  /* LB-7.3 (exercise/spec.md, "Exercise art, Nov 5"): the art at 2× on the
+     floor tile, the border outside the 64 px so the sprite stays a whole 2× */
+  .ex-head :global(.ex-art.art) {
+    box-sizing: content-box;
+    background: var(--tile);
+    border: var(--px) solid var(--ink);
+  }
+  .ex-head h1 {
+    margin: 0 0 0.25rem;
+  }
+  .ex-head p {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  /* the current records, the shared tally with the day under each figure */
+  .tally.records {
+    grid-auto-columns: 1fr;
+  }
+  .tally.records dd.on {
+    font-size: 21px;
+    line-height: 1.15;
+    color: var(--muted);
+    white-space: normal;
+  }
+  @media (max-width: 420px) {
+    .tally.records {
+      grid-auto-flow: row;
+      grid-template-columns: 1fr 1fr;
+    }
+    .tally.records > :last-child:nth-child(odd) {
+      grid-column: 1 / -1;
+    }
+  }
+  .none {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  /* the chart's table and older sessions fold, as history's weeks do */
+  :global(.fold) > :global(summary) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 44px;
+    cursor: pointer;
+    list-style: none;
+  }
+  :global(.fold) > :global(summary)::-webkit-details-marker {
+    display: none;
+  }
+  :global(.fold) :global(.toggle) {
+    color: var(--green);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+  }
+  :global(.fold) :global(.toggle)::before {
+    content: "Show";
+  }
+  :global(.fold[open]) :global(.toggle)::before {
+    content: "Hide";
+  }
+  :global(.fold[open]) > :global(summary) {
+    margin-bottom: 0.5rem;
+  }
+  .older {
+    margin-top: 0.5rem;
+  }
+
+  .empty {
+    text-align: center;
+  }
+  .empty :global(svg) {
+    display: block;
+    margin: 0.5rem auto 1rem;
+  }
+</style>

@@ -1,0 +1,89 @@
+---
+// LB-7: a person doing an exercise on its machine, as the gym draws them
+// lifting (GymMap.astro): the machine's back layer, the avatar in the
+// machine's pose, the machine's front layer, stacked on one 32 × 32 tile.
+// Its two frames swap person and machine together at the gym's pace (400 ms
+// a frame, 250 ms on the treadmill; D38), from CSS alone, and hold Frame 1
+// under reduced motion. Decorative: aria-hidden, since the exercise's name
+// beside it is the text (LB-7). The gym keeps its own copy of the swap,
+// scoped to the map, so the room is untouched by this.
+import type { Look } from "../sprites/avatar.ts";
+import type { Equipment } from "../lib/exercises.ts";
+import Avatar from "./Avatar.astro";
+import MachineArt from "./MachineArt.astro";
+
+interface Props {
+  e: Equipment;
+  look: Look;
+  // the drawn size in px: 32 × a whole number (system.md section 10)
+  size: number;
+  class?: string;
+}
+const { e, look, size, class: className } = Astro.props;
+---
+
+<span
+  class:list={["ex-art", className]}
+  data-pose={e}
+  aria-hidden="true"
+  style={`--ex-size: ${size}px`}
+>
+  <MachineArt e={e} part="back" />
+  <Avatar look={look} pose={e} />
+  <MachineArt e={e} part="front" />
+</span>
+
+<style is:global>
+  .ex-art {
+    --frame: 400ms;
+    position: relative;
+    display: inline-block;
+    flex: none;
+    width: var(--ex-size);
+    height: var(--ex-size);
+    vertical-align: middle;
+  }
+  .ex-art[data-pose="treadmill"] {
+    --frame: 250ms;
+  }
+  .ex-art > svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .ex-art > .av {
+    z-index: 1;
+  }
+  .ex-art > .machine.front {
+    z-index: 2;
+  }
+  /* the two frames, person and machine together (the gym's own rule) */
+  .ex-art .frame-2 {
+    display: inline;
+    visibility: hidden;
+  }
+  .ex-art .frame-1 {
+    animation: ex-frame-1 calc(var(--frame) * 2) steps(1) infinite;
+  }
+  .ex-art .frame-2 {
+    animation: ex-frame-2 calc(var(--frame) * 2) steps(1) infinite;
+  }
+  @keyframes ex-frame-1 {
+    50% {
+      visibility: hidden;
+    }
+  }
+  @keyframes ex-frame-2 {
+    50% {
+      visibility: visible;
+    }
+  }
+  /* reduced motion: Frame 1, still */
+  @media (prefers-reduced-motion: reduce) {
+    .ex-art .frame-1,
+    .ex-art .frame-2 {
+      animation: none;
+    }
+  }
+</style>

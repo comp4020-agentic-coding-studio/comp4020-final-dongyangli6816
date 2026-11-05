@@ -39,8 +39,9 @@ export type RoomView = {
   now: number;
   closed: boolean;
   members: MemberView[];
-  // GYM-8: what is on each of the twelve stations
-  stations: { slot: number; equipment: Equipment | null }[];
+  // GYM-8: what is on each of the twelve stations, and since when; GYM-6:
+  // a live screen that sees placedAt change plays the worker's run
+  stations: { slot: number; equipment: Equipment | null; placedAt: number | null }[];
   // BOT-1 to BOT-5: whether Dony is out of his poster, when the poster can be
   // tapped again, and him while he's out. Never among the members, so
   // nothing that counts people counts him.
@@ -143,7 +144,7 @@ export function roomView(roomId: number, now = Date.now()): RoomView {
     dony,
     donyNext: pb && now < pb.at && (donyNext === null || pb.at < donyNext) ? pb.at : donyNext,
     ...moments(roomId, present, pb, now),
-    stations: floor.map(({ slot, equipment }) => ({ slot, equipment })),
+    stations: floor.map(({ slot, equipment, placedAt }) => ({ slot, equipment, placedAt })),
     members: members.map((m) => {
       const set = latest.get(m.id);
       const restEnd = set ? set.completedAt + set.restTargetS * 1000 : 0;
