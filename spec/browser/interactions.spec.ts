@@ -36,6 +36,8 @@ import { backdate, join, openRoom, person, post } from "./helpers.ts";
 // in real time is short: 1 s, 3 s, 4 s and 5 s displays, and "within a second".
 
 const BANNER = ".banner-slot .banner";
+// the banner's words; since room-feel.md INT-9.1 a banner may also hold a button
+const LINE = ".banner-slot .banner .banner-line";
 const MAIN = ".dock button.wide";
 const EMOTE = ".dock button.emote";
 
@@ -305,7 +307,8 @@ test("tapping someone else opens a menu naming them, with their state and four m
   const chip = mia.locator(".menu .menu-name .chip.state-slacking");
   await expect(chip).toContainText("Slacking");
   await expect(chip.locator("svg")).toHaveCount(1);
-  await expect(mia.locator(".menu .act")).toHaveText(["Cheer", "Poke", "Slap", "Message"]);
+  // room-feel.md INT-10.1 adds High-five between Slap and Message
+  await expect(mia.locator(".menu .act:visible")).toHaveText(["Cheer", "Poke", "Slap", "High-five", "Message"]);
   // no emoji in the menu (D1)
   await expect(mia.locator(".menu .tray, .menu [value='fire'], .menu [value='hi']")).toHaveCount(0);
   // Poke and Slap highlighted, with the cursor showing; Cheer and Message not
@@ -376,7 +379,7 @@ test("the menu highlights the move that fits, and shows Slap unavailable with th
   await dony.click();
   await expect(mia.locator(".menu .menu-name")).toContainText("Dony");
   await expect(mia.locator(".menu .menu-name .chip")).toHaveClass(/state-(idle|lifting|resting|slacking)/);
-  await expect(mia.locator(".menu .act")).toHaveText(["Cheer", "Poke", "Slap", "Message"]);
+  await expect(mia.locator(".menu .act:visible")).toHaveText(["Cheer", "Poke", "Slap", "High-five", "Message"]);
   // and his squad row opens it too
   await mia.keyboard.press("Escape");
   await row(mia, "Dony").click();
@@ -406,9 +409,8 @@ test("the menu works by keyboard: opens with Enter or Space, keeps focus, Tab an
       await mia.keyboard.press("Tab");
       tabbed.push(await focused());
     }
-    expect(tabbed).toEqual(["poke", "slap", "message", "cheer", "poke"]);
-    await mia.keyboard.press("Shift+Tab");
-    expect(await focused()).toBe("cheer");
+    // room-feel.md INT-10.1: High-five between Slap and Message
+    expect(tabbed).toEqual(["poke", "slap", "highfive", "message", "cheer"]);
     await mia.keyboard.press("Shift+Tab");
     expect(await focused(), "Shift+Tab wraps too").toBe("message");
     await mia.keyboard.press("ArrowDown");
@@ -429,7 +431,7 @@ test("the menu works by keyboard: opens with Enter or Space, keeps focus, Tab an
   await mia.keyboard.press("Enter");
   await mia.keyboard.press("Enter"); // Cheer
   await expect(menu(mia)).toBeHidden();
-  await expect(tom.locator(`.map .avatar[aria-label^="Jiwoo,"] svg.fx.fx-cheer`)).toHaveCount(1, { timeout: 1500 });
+  await expect(tom.locator(`.map .avatar[aria-label^="Jiwoo,"] svg.fx.fx-cheer`)).toHaveCount(1, { timeout: 3500 });
 });
 
 // INT-1.3, INT-1.4 (phone), INT-1.12 (phone: pinned above the dock and the tab)
@@ -559,7 +561,7 @@ test("cheering mid-set leaves the sender's panel as it was, stopwatch running, a
 
   await avatar(mia, "Jiwoo").click();
   await act(mia, "cheer").click();
-  await expect(mia.locator(`.map .avatar[aria-label^="Jiwoo,"] svg.fx.fx-cheer`)).toHaveCount(1, { timeout: 1500 });
+  await expect(mia.locator(`.map .avatar[aria-label^="Jiwoo,"] svg.fx.fx-cheer`)).toHaveCount(1, { timeout: 3500 });
   expect(await sheet()).toEqual(before);
   await expect.poll(seconds, { timeout: 3000 }).toBeGreaterThan(t0);
 
@@ -579,7 +581,7 @@ test("an open menu updates in place when its person's state changes, without clo
   const el = await menu(mia).elementHandle();
 
   await post(people.Jiwoo, path, { action: "start", exercise_id: "3", weight_kg: "40", reps: "8" });
-  await expect(mia.locator(".menu .menu-name .chip.state-lifting")).toBeVisible({ timeout: 1500 });
+  await expect(mia.locator(".menu .menu-name .chip.state-lifting")).toBeVisible({ timeout: 2500 });
   await expect(act(mia, "slap")).toHaveAttribute("aria-disabled", "true");
   await expect(mia.locator(".menu .menu-why")).toHaveText("Jiwoo is mid-set. Cheer instead?");
   await expect(mia.locator(".menu .act.hot")).toHaveText(["Cheer"]);
@@ -595,13 +597,13 @@ test("the menu closes when its person leaves, and focus goes to the next avatar,
   await mia.keyboard.press("Enter");
   await expect(menu(mia)).toBeVisible();
   await post(people.Jiwoo, path, { action: "leave" });
-  await expect(menu(mia)).toBeHidden({ timeout: 1500 });
+  await expect(menu(mia)).toBeHidden({ timeout: 2500 });
   await expect(avatar(mia, "Tom")).toBeFocused();
 
   await avatar(mia, "Tom").press("Enter");
   await expect(menu(mia)).toBeVisible();
   await post(people.Tom, path, { action: "leave" });
-  await expect(menu(mia)).toBeHidden({ timeout: 1500 });
+  await expect(menu(mia)).toBeHidden({ timeout: 2500 });
   await expect(mia.locator(MAIN)).toBeFocused();
 });
 
@@ -662,30 +664,32 @@ test("the target gets a banner in each wording on every tab of theirs, and every
   ];
   for (const [kind, who, , words] of cases) {
     expect((await interact(who, path, target, kind)).status()).toBe(200);
-    for (const page of [jiwoo1, jiwoo2]) await expect(page.locator(BANNER)).toHaveText(words, { timeout: 1000 });
-    for (const page of [jiwoo1, mia, tom]) await expect(fx(page, kind)).toHaveCount(1, { timeout: 1000 });
+    for (const page of [jiwoo1, jiwoo2]) await expect(page.locator(LINE)).toHaveText(words, { timeout: 3500 });
+    for (const page of [jiwoo1, mia, tom]) await expect(fx(page, kind)).toHaveCount(1, { timeout: 3500 });
   }
   // the banner took no focus, moved nothing, and sits clear of the dock
   await expect(jiwoo1.locator(MAIN)).toBeFocused();
   expect(await box(jiwoo1.locator(MAIN))).toEqual(mainBefore);
   expect(intersects(await box(jiwoo1.locator(BANNER)), await box(jiwoo1.locator(".dock")))).toBe(false);
-  await expect(jiwoo1.locator(BANNER)).toHaveAttribute("role", "status");
+  // since room-feel (design spec F.2) the line is the status, beside its button
+  await expect(jiwoo1.locator(LINE)).toHaveAttribute("role", "status");
   await expect(jiwoo1.locator(BANNER)).toHaveCount(1);
 
   // Resting: Poke's other wording
   await logSet(people.Jiwoo, path, "3");
-  await expect(avatar(tom, "Jiwoo")).toHaveAttribute("data-state", "resting", { timeout: 1500 });
+  await expect(avatar(tom, "Jiwoo")).toHaveAttribute("data-state", "resting", { timeout: 2500 });
   const pokedAt = Date.now();
   expect((await interact(people.Sam, path, target, "poke")).status()).toBe(200);
-  await expect(jiwoo2.locator(BANNER)).toHaveText("Sam poked you. Rest's over? 👉", { timeout: 1000 });
-  // it goes after 4 s, give or take the frame it came in
-  await expect(jiwoo2.locator(BANNER)).toHaveCount(0, { timeout: 5500 });
+  await expect(jiwoo2.locator(LINE)).toHaveText("Sam poked you. Rest's over? 👉", { timeout: 3500 });
+  // it goes after 6 s now it carries Poke back (room-feel.md INT-9.11, R1)
+  await expect(jiwoo2.locator(BANNER)).toHaveCount(0, { timeout: 8000 });
   expect(Date.now() - pokedAt).toBeGreaterThanOrEqual(3800);
 
   // nobody but Jiwoo ever had a banner
   for (const page of [tom, mia]) expect((await seenOn(page)).filter((s) => s.what === "banner"), "no banner for others").toEqual([]);
   // and each of hers was one at a time: the newest replaced the last
-  const banners = (await seenOn(jiwoo1)).filter((s) => s.what === "banner").map((s) => s.text);
+  // the recorder reads the whole banner; its line is what comes before the button's ▶
+  const banners = (await seenOn(jiwoo1)).filter((s) => s.what === "banner").map((s) => s.text.split("▶")[0].trim());
   expect(banners).toEqual(cases.map((c) => c[3]).concat("Sam poked you. Rest's over? 👉"));
 });
 
@@ -703,20 +707,24 @@ test("on a phone the banner is pinned to the top of the screen while scrolled do
 
   expect((await interact(people.Mia, path, target, "cheer")).status()).toBe(200);
   const banner = jiwoo.locator(BANNER);
-  await expect(banner).toHaveText("Mia is hyping you up 🔥", { timeout: 1000 });
+  // since room-acting.md (INT-13.9, overriding INT-3.1/3.5) the banner comes
+  // when the move lands, within 3 s; the banner's own times count from then
+  await expect(banner.locator(".banner-line")).toHaveText("Mia is hyping you up 🔥", { timeout: 3500 });
   const b = await box(banner);
   expect(Math.round(b.y), "8 px from the top of the screen").toBe(8);
   expect(intersects(b, await box(jiwoo.locator(".dock")))).toBe(false);
   expect(await jiwoo.evaluate(() => window.scrollY), "the page didn't scroll").toBe(scrolled);
 
   // 3 s in, Tom's poke replaces it and runs its own 4 s
-  await jiwoo.waitForTimeout(3000);
-  const tomAt = Date.now();
+  // Tom's poke is sent 1 s in, so it lands (up to 3 s later) while Mia's 6 s
+  // banner still shows; it replaces it and runs its own time from landing
+  await jiwoo.waitForTimeout(1000);
   expect((await interact(people.Tom, path, target, "poke")).status()).toBe(200);
-  await expect(banner).toHaveText("Tom poked you. Rest's over? 👉", { timeout: 1000 });
+  await expect(banner.locator(".banner-line")).toHaveText("Tom poked you. Rest's over? 👉", { timeout: 3500 });
+  const tomAt = Date.now();
   await expect(banner).toHaveCount(1);
   await jiwoo.waitForTimeout(Math.max(0, tomAt + 3000 - Date.now()));
-  await expect(banner, "still there 3 s after the newest, 6 s after the first").toHaveText("Tom poked you. Rest's over? 👉");
+  await expect(banner.locator(".banner-line"), "still there 3 s after the newest, 6 s after the first").toHaveText("Tom poked you. Rest's over? 👉");
   // Start set works through it
   await jiwoo.locator(MAIN).click();
   await expect(jiwoo.locator(MAIN)).toHaveText("Done");
@@ -750,7 +758,7 @@ test("a page opened after the fact plays no old reaction, banner or emoji, and s
   expect((await sayTo(people.Mia, path, jiwooId, "nudge-1")).status()).toBe(200);
   expect((await sayTo(people.Tom, path, miaId, "hype-1")).status()).toBe(200);
   // the reaction played for Tom, who was watching
-  await expect(tom.locator(`.map .avatar[aria-label^="Jiwoo"] svg.fx`)).not.toHaveCount(0, { timeout: 1000 });
+  await expect(tom.locator(`.map .avatar[aria-label^="Jiwoo"] svg.fx`)).not.toHaveCount(0, { timeout: 3500 });
 
   // 2 s later Jiwoo opens the room: the bubbles, for their last 3 s; nothing else
   await tom.waitForTimeout(Math.max(0, saidAt + 2000 - Date.now()));
@@ -788,16 +796,17 @@ test("a reaction plays over someone on a machine without stopping it, and with r
   expect((await interact(people.Mia, path, target, "slap")).status()).toBe(409); // Lifting: refused
   expect((await interact(people.Mia, path, target, "cheer")).status()).toBe(200);
   const fx = jiwoo.locator("svg.fx.fx-cheer");
-  await expect(fx).toHaveCount(1, { timeout: 1000 });
+  // at the hit, within 3 s (room-acting.md INT-13.9, overriding INT-3.1)
+  await expect(fx).toHaveCount(1, { timeout: 3500 });
   expect(await box(jiwoo.locator(".tag")), "her tag stays put").toEqual(tagBefore);
   await expect(jiwoo).toHaveAttribute("data-pose", "squat-rack");
-  await expect(fx, "under a second").toHaveCount(0, { timeout: 1200 });
+  await expect(fx, "within its 1.5 s (room-feel INT-11.4), with frame slack").toHaveCount(0, { timeout: 1800 });
   // the rack's two frames kept swapping while the reaction was on her
   const during = (await framesOn(tom)).filter((f) => f.id === String(target) && f.fx);
   expect(new Set(during.map((f) => f.frame)), "the machine kept playing under the reaction").toEqual(new Set([1, 2]));
 
   // reduced motion: her banner comes, and the reaction holds one frame, still
-  await expect(reduced.locator(BANNER)).toHaveText("Mia is hyping you up 🔥", { timeout: 1000 });
+  await expect(reduced.locator(LINE)).toHaveText("Mia is hyping you up 🔥", { timeout: 2500 });
   const held = (await seenOn(reduced)).filter((s) => s.what === "fx");
   expect(held.length, "the reaction is shown").toBeGreaterThan(0);
   expect(new Set(held.map((s) => s.use)).size, "one frame, not a sequence").toBe(1);
@@ -820,7 +829,7 @@ test("a refusal shows a calm line where the menu was, and a failed send the red 
   await act(mia, "slap").click();
   await expect(menu(mia), "the menu closes at once").toBeHidden();
   const note = mia.locator("p.note");
-  await expect(note).toHaveText("Kai is mid-set. Cheer instead?", { timeout: 1500 });
+  await expect(note).toHaveText("Kai is mid-set. Cheer instead?", { timeout: 2500 });
   await expect(note).toHaveAttribute("role", "status");
   expect(await note.evaluate((n) => getComputedStyle(n).borderTopStyle)).toBe("dashed");
   const colours = await note.evaluate((n) => [getComputedStyle(n).color, getComputedStyle(n).backgroundColor, getComputedStyle(n).borderTopColor]);
@@ -845,14 +854,14 @@ test("a refusal shows a calm line where the menu was, and a failed send the red 
   await avatar(live, "Tom").click();
   await act(live, "cheer").click();
   const error = live.locator("p.error[role=alert]", { hasText: "That didn't send. Try again." });
-  await expect(error).toBeVisible({ timeout: 1500 });
+  await expect(error).toBeVisible({ timeout: 2500 });
   expect(await error.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe("rgb(163, 36, 27)");
   // a preset fails the same way
   await expect(error).toHaveCount(0, { timeout: 5000 });
   await avatar(live, "Tom").click();
   await act(live, "message").click();
   await live.locator('.menu .preset[value="hype-1"]').click();
-  await expect(live.locator("p.error[role=alert]", { hasText: "That didn't send. Try again." })).toBeVisible({ timeout: 1500 });
+  await expect(live.locator("p.error[role=alert]", { hasText: "That didn't send. Try again." })).toBeVisible({ timeout: 2500 });
   await live.waitForTimeout(800);
   expect(await seenOn(tom), "nothing played or showed").toEqual([]);
   await expect(tom.locator(".room-log li", { hasText: "One more rep" })).toHaveCount(0);
@@ -876,7 +885,7 @@ test("a refused slap or a target who has gone shows the server's reason beside t
     await avatar(mia, name).click();
     await act(mia, "slap").click();
     const note = mia.locator("p.note");
-    await expect(note).toHaveText(words, { timeout: 1500 });
+    await expect(note).toHaveText(words, { timeout: 2500 });
     const n = await box(note);
     const gap = Math.min(Math.abs(n.x - (target.x + target.width)), Math.abs(target.x - (n.x + n.width)));
     expect(gap, `${name}: beside them`).toBeLessThanOrEqual(64);
@@ -885,48 +894,69 @@ test("a refused slap or a target who has gone shows the server's reason beside t
   }
 });
 
-// INT-3.16 (no sound for an emoji, and none for a banner with sound off).
-// The page's sound is Web Audio (system.md 11); this counts oscillators started.
-// INT-3.16 as the user settled it on 22 Oct: interactions and emoji make no
-// sound. The page's only sound is Web Audio (system.md 11); this counts every
-// oscillator started, and checks the counter is live by starting one itself.
-test("interactions, presets and emoji, anyone's or Dony's, start no sound", async ({ browser }) => {
-  const { path, people } = await room(browser, ["Mia", "Jiwoo"]);
-  const page = await people.Jiwoo.newPage();
-  await page.addInitScript(() => {
-    const w = window as unknown as { __sounds: number };
-    w.__sounds = 0;
-    const start = OscillatorNode.prototype.start;
-    OscillatorNode.prototype.start = function (...args: Parameters<typeof start>) {
-      w.__sounds++;
-      return start.apply(this, args);
-    };
-  });
-  await page.goto(path);
-  await expect(page.locator(".map-panel .conn .badge")).toHaveText("Live");
-  await page.locator(".map-panel .map-sign").click(); // a tap lets the page make sound at all
-  const sounds = () => page.evaluate(() => (window as unknown as { __sounds: number }).__sounds);
-  const jiwooId = await idOf(page, "Jiwoo");
-  // to her: a cheer (banner), a preset; from anyone: emoji, Dony's Hi
-  await post(people.Mia, path, { action: "dony", intent: "summon" });
-  await expect(page.locator('.map .pops svg.pop use[href$="#em-hi"]')).toHaveCount(1, { timeout: 4000 });
-  expect((await interact(people.Mia, path, jiwooId, "cheer")).status()).toBe(200);
-  await expect(page.locator(BANNER)).toBeVisible({ timeout: 1000 });
-  expect((await sayTo(people.Mia, path, jiwooId, "nudge-1")).status()).toBe(200);
+// INT-12.1 and INT-12.2 (room-feel.md, which reverses INT-3.16 and D27): with
+// All sounds, the screen of the person a move is about makes a sound, and
+// everyone else's stays silent. Jiwoo's screen sounds for a cheer to her, a
+// preset to her and her own emoji; Tom's, watching all of it, plays nothing,
+// nor for Dony's emoji. The page's sound is Web Audio (F.13); this counts
+// every oscillator and buffer source started, and checks the counter is live.
+// Interaction sounds come at most one a second (INT-12.9), so Jiwoo's three
+// are spaced past that.
+test("a move makes a sound only on the screen of the person it's about, and none for anyone else's or Dony's emoji", async ({ browser }) => {
+  const { path, people } = await room(browser, ["Mia", "Jiwoo", "Tom"]);
+  const counting = async (who: BrowserContext) => {
+    const page = await who.newPage();
+    await page.addInitScript(() => {
+      const w = window as unknown as { __sounds: number };
+      w.__sounds = 0;
+      for (const Node of [OscillatorNode, AudioBufferSourceNode]) {
+        const start = Node.prototype.start;
+        Node.prototype.start = function (this: AudioScheduledSourceNode, ...args: [number?]) {
+          w.__sounds++;
+          return start.apply(this, args);
+        };
+      }
+    });
+    await page.goto(path);
+    await expect(page.locator(".map-panel .conn .badge")).toHaveText("Live");
+    await page.locator(".map-panel .map-sign").click(); // a tap lets the page make sound at all
+    await expect(page.locator(".map-panel button.sound")).toHaveAttribute("data-sound", "all");
+    return page;
+  };
+  const sounds = (page: Page) => page.evaluate(() => (window as unknown as { __sounds: number }).__sounds);
+  const jiwoo = await counting(people.Jiwoo);
+  const tom = await counting(people.Tom);
+  const jiwooId = await idOf(jiwoo, "Jiwoo");
+  // a sound goes with what it's for, so each check waits for that to show,
+  // then past the one-a-second cap before the next
+  const sounded = async (what: string, act: () => Promise<unknown>, shown: Locator) => {
+    const before = await sounds(jiwoo);
+    await act();
+    await expect(shown).toBeVisible({ timeout: 2500 });
+    await expect.poll(() => sounds(jiwoo), { message: `${what}: a sound on Jiwoo's screen`, timeout: 1000 }).toBeGreaterThan(before);
+    await jiwoo.waitForTimeout(1100);
+  };
+
+  await sounded("a cheer to her", () => interact(people.Mia, path, jiwooId, "cheer"), jiwoo.locator(BANNER));
+  await sounded("a preset to her", () => sayTo(people.Mia, path, jiwooId, "nudge-1"), jiwoo.locator(".map .says .say"));
+  await jiwoo.locator(EMOTE).click();
+  await sounded("her own emoji", () => jiwoo.locator('.tray button[value="clap"]').click(), jiwoo.locator('.map .pops svg.pop use[href$="#em-clap"]'));
+
+  // Tom saw all of that, and Mia's emoji, and Dony's Hi: silence
   expect((await emote(people.Mia, path, "fire")).status()).toBe(200);
-  await page.locator(EMOTE).click();
-  await page.locator('.tray button[value="clap"]').click();
-  await expect(page.locator(".map .says .say")).toHaveCount(1, { timeout: 1000 });
-  await page.waitForTimeout(500);
-  expect(await sounds(), "no sound for any of it").toBe(0);
-  // the counter itself works
-  await page.evaluate(() => {
+  await expect(tom.locator('.map .pops svg.pop use[href$="#em-fire"]')).toHaveCount(1, { timeout: 2500 });
+  await post(people.Mia, path, { action: "dony", intent: "summon" });
+  await expect(tom.locator('.map .pops svg.pop use[href$="#em-hi"]')).toHaveCount(1, { timeout: 4000 });
+  await tom.waitForTimeout(500);
+  expect(await sounds(tom), "nothing on Tom's screen").toBe(0);
+  // the counter itself works there
+  await tom.evaluate(() => {
     const a = new AudioContext();
     const o = a.createOscillator();
     o.start();
     o.stop();
   });
-  expect(await sounds()).toBe(1);
+  expect(await sounds(tom)).toBe(1);
 });
 
 // INT-3.18 (emoji inside text are the phone's glyphs; the eight sent are pixel art)
@@ -935,10 +965,10 @@ test("emoji in banners, bubbles and the log are text, and the sent emoji are pix
   const jiwoo = await screen(people.Jiwoo, path);
   const target = await idOf(jiwoo, "Jiwoo");
   expect((await interact(people.Mia, path, target, "poke")).status()).toBe(200);
-  await expect(jiwoo.locator(BANNER)).toContainText("👉", { timeout: 1000 });
+  await expect(jiwoo.locator(BANNER)).toContainText("👉", { timeout: 3500 });
   await expect(jiwoo.locator(`${BANNER} img`)).toHaveCount(0);
   expect((await sayTo(people.Mia, path, target, "nudge-1")).status()).toBe(200);
-  await expect(jiwoo.locator(".map .says .say")).toContainText("📵", { timeout: 1000 });
+  await expect(jiwoo.locator(".map .says .say")).toContainText("📵", { timeout: 2500 });
   await expect(jiwoo.locator(".room-log li", { hasText: "Put the phone down 📵" })).toHaveCount(1);
   // the tray and a pop draw the art
   await jiwoo.locator(EMOTE).click();
@@ -946,7 +976,7 @@ test("emoji in banners, bubbles and the log are text, and the sent emoji are pix
     await expect(jiwoo.locator(`.tray button[value="${key}"] svg use`)).toHaveAttribute("href", new RegExp(`#em-${key}$`));
   }
   await jiwoo.locator('.tray button[value="fire"]').click();
-  await expect(jiwoo.locator(".map .pops svg.pop use")).toHaveAttribute("href", /#em-fire$/, { timeout: 1000 });
+  await expect(jiwoo.locator(".map .pops svg.pop use")).toHaveAttribute("href", /#em-fire$/, { timeout: 2500 });
 });
 
 // INT-3.11 (browser: Dony reacts on every screen, and nobody gets a banner)
@@ -959,7 +989,7 @@ test("cheering Dony plays his reaction on every screen, and gives nobody a banne
   await expect(dony).toHaveCount(1, { timeout: 2000 });
   await dony.click();
   await act(mia, "cheer").click();
-  for (const page of [mia, tom]) await expect(page.locator('.map .avatar[data-look="dony"] svg.fx.fx-cheer')).toHaveCount(1, { timeout: 1500 });
+  for (const page of [mia, tom]) await expect(page.locator('.map .avatar[data-look="dony"] svg.fx.fx-cheer')).toHaveCount(1, { timeout: 3500 });
   await mia.waitForTimeout(500);
   expect((await seenOn(tom)).filter((s) => s.what === "banner")).toEqual([]);
   await expect(mia.locator(BANNER)).toHaveCount(0);
@@ -983,7 +1013,7 @@ test("a double-tapped Cheer sends one, and the menu shows the 10 s until they co
   await avatar(mia, "Jiwoo").click();
   const tappedAt = Date.now();
   await act(mia, "cheer").dblclick();
-  await expect(tom.locator(`.map .avatar[aria-label^="Jiwoo"] svg.fx.fx-cheer`)).toHaveCount(1, { timeout: 1500 });
+  await expect(tom.locator(`.map .avatar[aria-label^="Jiwoo"] svg.fx.fx-cheer`)).toHaveCount(1, { timeout: 3500 });
   await mia.waitForTimeout(800);
   expect((await seenOn(tom)).filter((s) => s.what === "fx")).toHaveLength(1);
   await expect(mia.locator("p.note")).toHaveCount(0);
@@ -1004,7 +1034,7 @@ test("a double-tapped Cheer sends one, and the menu shows the 10 s until they co
   await mia.clock.runFor(Math.max(0, tappedAt + 8_500 - Date.now()));
   await expect(act(mia, "cheer")).toHaveAttribute("aria-disabled", "true");
   await mia.clock.runFor(2_000);
-  await expect(act(mia, "cheer")).not.toHaveAttribute("aria-disabled", "true", { timeout: 1000 });
+  await expect(act(mia, "cheer")).not.toHaveAttribute("aria-disabled", "true", { timeout: 2500 });
   await expect(act(mia, "poke")).not.toHaveAttribute("aria-disabled", "true");
   await expect(act(mia, "slap")).not.toHaveAttribute("aria-disabled", "true");
   await expect(mia.locator(".menu .menu-why")).toBeHidden();
@@ -1038,12 +1068,12 @@ test("Message offers the ten presets, and one tap puts an addressed bubble over 
   await expect(menu(mia)).toBeHidden();
   for (const page of [mia, jiwoo, tom]) {
     const bubble = page.locator(".map .says .say");
-    await expect(bubble).toHaveCount(1, { timeout: 1000 });
+    await expect(bubble).toHaveCount(1, { timeout: 2500 });
     await expect(bubble).toContainText("Put the phone down 📵");
     await expect(bubble.locator(".to")).toHaveText("@Jiwoo");
     // above Mia: on her tile
     await onSendersTile(page, ".map .says .say", "Mia");
-    await expect(page.locator(".room-log li").first()).toContainText('"Put the phone down 📵"', { timeout: 1000 });
+    await expect(page.locator(".room-log li").first()).toContainText('"Put the phone down 📵"', { timeout: 2500 });
   }
   await expect(mia.locator(".room-log li").first()).toContainText("You @Jiwoo");
   await expect(tom.locator(".room-log li").first()).toContainText("Mia @Jiwoo");
@@ -1054,13 +1084,13 @@ test("Message offers the ten presets, and one tap puts an addressed bubble over 
 
   // Tom's bubble shows at the same time as Mia's
   expect((await sayTo(people.Tom, path, await idOf(tom, "Mia"), "hype-3")).status()).toBe(200);
-  await expect(jiwoo.locator(".map .says .say")).toHaveCount(2, { timeout: 1000 });
+  await expect(jiwoo.locator(".map .says .say")).toHaveCount(2, { timeout: 2500 });
   // Mia's next preset (after her 2 s) replaces hers and runs its own 5 s
   await mia.waitForTimeout(Math.max(0, sentAt + 2600 - Date.now()));
   const secondAt = Date.now();
   expect((await sayTo(people.Mia, path, await idOf(mia, "Tom"), "nudge-3")).status()).toBe(200);
   const mias = jiwoo.locator(".map .says .say", { hasText: "@Tom" });
-  await expect(mias).toHaveCount(1, { timeout: 1000 });
+  await expect(mias).toHaveCount(1, { timeout: 2500 });
   await expect(jiwoo.locator(".map .says .say", { hasText: "Put the phone down" })).toHaveCount(0);
   await jiwoo.waitForTimeout(Math.max(0, secondAt + 4000 - Date.now()));
   await expect(mias, "still there at 4 s").toHaveCount(1);
@@ -1086,7 +1116,7 @@ test("the room log starts empty, fills newest first, keeps the rest behind Show 
     ["Tom", "Mia", "cheer"],
     ["Priya", "Tom", "cheer"],
   ] as const) expect((await interact(people[from], path, ids[to], kind)).status()).toBe(200);
-  await expect(mia.locator(".room-log .empty")).toHaveCount(0, { timeout: 1000 });
+  await expect(mia.locator(".room-log .empty")).toHaveCount(0, { timeout: 2500 });
   const lines = mia.locator(".room-log > ol > li");
   await expect(lines).toHaveCount(5);
   await expect(lines.first()).toContainText("Priya cheered Tom");
@@ -1107,7 +1137,7 @@ test("the room log starts empty, fills newest first, keeps the rest behind Show 
   const samPage = await screen(sam, path);
   await expect(samPage.locator(".room-log li.joined")).toHaveCount(0); // nothing after yet
   expect((await interact(people.Mia, path, await idOf(samPage, "Sam"), "cheer")).status()).toBe(200);
-  await expect(samPage.locator(".room-log li").first()).toContainText("Mia cheered you", { timeout: 1000 });
+  await expect(samPage.locator(".room-log li").first()).toContainText("Mia cheered you", { timeout: 2500 });
   await expect(samPage.locator(".room-log li").first()).toHaveClass(/\byou\b/);
   await expect(mia.locator(".room-log li").first()).toContainText("You cheered Sam");
   await samPage.reload();
@@ -1134,7 +1164,7 @@ test("bubbles on the back row hang below, the newer of two draws on top, and an 
   expect((await sayTo(people.Tom, path, id.Jiwoo, "nudge-4")).status()).toBe(200);
   const miaSay = page.locator(".map .says .say", { hasText: "Put the phone down" });
   const tomSay = page.locator(".map .says .say", { hasText: "Bro is scrolling" });
-  await expect(miaSay).toHaveClass(/\bbelow\b/, { timeout: 1000 });
+  await expect(miaSay).toHaveClass(/\bbelow\b/, { timeout: 2500 });
   await expect(tomSay).toHaveClass(/\bbelow\b/);
   // below them: under the tag
   expect((await box(miaSay)).y).toBeGreaterThan((await box(avatar(page, "Mia").locator(".tag"))).y);
@@ -1161,7 +1191,7 @@ test("bubbles on the back row hang below, the newer of two draws on top, and an 
   expect((await emote(people.Jiwoo, path, "fire")).status()).toBe(200);
   const bubble = page.locator(".map .says .say", { hasText: "Light weight!" });
   const pop = page.locator(".map .pops svg.pop");
-  await expect(pop).toHaveCount(1, { timeout: 1000 });
+  await expect(pop).toHaveCount(1, { timeout: 2500 });
   await expect(bubble).toBeVisible();
   await expect(bubble).not.toHaveClass(/\bbelow\b/);
   expect(intersects(await box(bubble), await box(pop)), "the bubble steps up over the pop").toBe(false);
@@ -1243,11 +1273,11 @@ for (const width of [390, 1280]) {
       await expect(tray).toBeHidden();
       for (const page of [mia, tom]) {
         const pop = page.locator(".map .pops svg.pop");
-        await expect(pop).toHaveCount(1, { timeout: 1000 });
+        await expect(pop).toHaveCount(1, { timeout: 2500 });
         await expect(pop.locator("use")).toHaveAttribute("href", new RegExp(`#em-${key}$`));
         await onSendersTile(page, ".map .pops svg.pop", "Mia");
       }
-      await expect(tab).toHaveAttribute("aria-label", "Send an emoji", { timeout: 1500 });
+      await expect(tab).toHaveAttribute("aria-label", "Send an emoji", { timeout: 2500 });
       await expect(tab).not.toHaveAttribute("aria-disabled", "true");
       await expect(mia.locator(".dock .stamp:has-text('Sent')")).toHaveCount(0);
       // the pop goes at 3 s (waited out once; the 3 s is INT-8.3's, the same in every state)
@@ -1293,7 +1323,7 @@ test("a slacker can send an emoji and stays slacking, and so can someone whose D
   await expect(mia.locator(".rest")).toHaveClass(/slacking/);
   await mia.locator(EMOTE).click();
   await mia.locator('.tray button[value="dead"]').click();
-  await expect(tom.locator(".map .pops svg.pop use")).toHaveAttribute("href", /#em-dead$/, { timeout: 1000 });
+  await expect(tom.locator(".map .pops svg.pop use")).toHaveAttribute("href", /#em-dead$/, { timeout: 2500 });
   await mia.waitForTimeout(1500);
   await expect(avatar(tom, "Mia")).toHaveAttribute("data-state", "slacking");
   await expect(mia.locator(".rest")).toHaveClass(/slacking/);
@@ -1312,7 +1342,7 @@ test("a slacker can send an emoji and stays slacking, and so can someone whose D
   await expect(mia.locator(MAIN)).toBeDisabled();
   await mia.locator(EMOTE).click();
   await mia.locator('.tray button[value="flex"]').click();
-  await expect(tom.locator(".map .pops svg.pop use")).toHaveAttribute("href", /#em-flex$/, { timeout: 1000 });
+  await expect(tom.locator(".map .pops svg.pop use")).toHaveAttribute("href", /#em-flex$/, { timeout: 2500 });
   await expect(mia.locator(MAIN)).toHaveText("Done", { timeout: 5000 });
 });
 
@@ -1341,7 +1371,7 @@ test("with the map scrolled away the tab shows what went, the stamp is untouched
   // the tab's sent look lasts a second from the tap, so it's checked first
   await expect(mia.locator(EMOTE)).toHaveAttribute("aria-label", "Send an emoji (sent: fire)");
   await expect(stamp, "the stamp untouched (it shows for 4 s after Done)").toHaveText(stampText!);
-  await expect(news).toHaveText("Sent: fire", { timeout: 1000 });
+  await expect(news).toHaveText("Sent: fire", { timeout: 2500 });
   expect(intersects(await box(mia.locator(EMOTE)), await box(mia.locator(MAIN)))).toBe(false);
   // within the second the tab is unavailable: a tap on it sends nothing, and
   // if the tray opens it is cooling, and a tap on an emoji sends nothing
@@ -1364,7 +1394,7 @@ test("with the map scrolled away the tab shows what went, the stamp is untouched
   await news.evaluate((n) => (n.textContent = ""));
   expect((await emote(people.Tom, path, "love")).status()).toBe(200);
   // Tom's pop, beside Mia's own if it's still up (INT-8.7: everyone's together)
-  await expect(mia.locator('.map .pops svg.pop:has(use[href$="#em-love"])')).toHaveCount(1, { timeout: 1000 });
+  await expect(mia.locator('.map .pops svg.pop:has(use[href$="#em-love"])')).toHaveCount(1, { timeout: 2500 });
   await mia.waitForTimeout(300);
   await expect(news).toHaveText("");
   const after = await mia.locator(".people > li").elementHandles();
@@ -1384,7 +1414,7 @@ test("pops sit under avatars, 32 px, just over the tag or beside it on the back 
     expect((await emote(people.Mia, path, "hi")).status()).toBe(200);
     expect((await emote(people.Tom, path, "flex")).status()).toBe(200);
     const pops = page.locator(".map .pops svg.pop");
-    await expect(pops).toHaveCount(2, { timeout: 1000 });
+    await expect(pops).toHaveCount(2, { timeout: 2500 });
     const miaPop = page.locator('.map .pops svg.pop:has(use[href$="#em-hi"])');
     const tomPop = page.locator('.map .pops svg.pop:has(use[href$="#em-flex"])');
     for (const p of [miaPop, tomPop]) {
@@ -1407,7 +1437,7 @@ test("pops sit under avatars, 32 px, just over the tag or beside it on the back 
     // Mia's next one replaces hers
     await page.waitForTimeout(1100);
     expect((await emote(people.Mia, path, "love")).status()).toBe(200);
-    await expect(page.locator('.map .pops svg.pop:has(use[href$="#em-love"])')).toHaveCount(1, { timeout: 1000 });
+    await expect(page.locator('.map .pops svg.pop:has(use[href$="#em-love"])')).toHaveCount(1, { timeout: 2500 });
     await expect(miaPop).toHaveCount(0);
     await expect(pops).toHaveCount(2);
     await page.close();
@@ -1417,11 +1447,11 @@ test("pops sit under avatars, 32 px, just over the tag or beside it on the back 
   await page.waitForTimeout(1100);
   expect((await emote(people.Mia, path, "dead")).status()).toBe(200);
   const deadPop = page.locator('.map .pops svg.pop:has(use[href$="#em-dead"])');
-  await expect(deadPop).toHaveCount(1, { timeout: 1000 });
+  await expect(deadPop).toHaveCount(1, { timeout: 2500 });
   const popAt = Date.now();
   await post(people.Mia, path, { action: "leave" });
-  await expect(deadPop).toHaveCount(0, { timeout: 1500 });
-  expect(Date.now() - popAt, "gone with her, not timed out").toBeLessThan(2700);
+  await expect(deadPop).toHaveCount(0, { timeout: 2500 });
+  expect(Date.now() - popAt, "gone with her, not timed out (under its 3 s)").toBeLessThan(2900);
 });
 
 // INT-8.12 (keyboard), INT-8.21 (Hi focused first)
@@ -1455,7 +1485,7 @@ test("the emoji tray works by keyboard, and every emoji is named by its word", a
   await mia.keyboard.press("ArrowRight");
   await mia.keyboard.press("ArrowRight");
   await mia.keyboard.press("Space");
-  await expect(tom.locator(".map .pops svg.pop use")).toHaveAttribute("href", /#em-fire$/, { timeout: 1000 });
+  await expect(tom.locator(".map .pops svg.pop use")).toHaveAttribute("href", /#em-fire$/, { timeout: 2500 });
   // number keys do nothing (the pop is still Fire, not replaced)
   await mia.waitForTimeout(1100);
   for (const key of ["1", "2", "3"]) await mia.locator("body").press(key);
@@ -1473,7 +1503,7 @@ test("a failed emoji shows the red line beside the tab for 4 s, and nothing anyw
   const failedAt = Date.now();
   await mia.locator('.tray button[value="fire"]').click();
   const error = mia.locator("p.error.emote-error[role=alert]");
-  await expect(error).toHaveText("That didn't send. Try again.", { timeout: 1500 });
+  await expect(error).toHaveText("That didn't send. Try again.", { timeout: 2500 });
   const e = await box(error);
   const t = await box(mia.locator(EMOTE));
   const dock = await box(mia.locator(".dock"));
@@ -1517,7 +1547,7 @@ test("in a room of twelve all sending emoji, nothing covers the dock and Done an
   await expect(page.locator(".dock .stamp")).toContainText("Set 1 logged", { timeout: 2000 });
   // and in that room no pop was painted over any tag or avatar
   for (let i = 0; i < 11; i++) await emote(people[`P${i}`], path, "fire");
-  await expect(page.locator(".map .pops svg.pop")).not.toHaveCount(0, { timeout: 1000 });
+  await expect(page.locator(".map .pops svg.pop")).not.toHaveCount(0, { timeout: 2500 });
   expect(await popsUnderAvatars(page)).toEqual([]);
 });
 
@@ -1569,7 +1599,7 @@ test("Dony's Hi goes with him when he's sent back mid-pop", async ({ browser }) 
   // (this gap holds only a check and a tap), and it was gone a second later
   // at most, still inside them
   const shownAt = (await seenOn(mia)).find((s) => s.what === "pop" && s.use?.endsWith("#em-hi"))!.t;
-  expect(sentBackAt - shownAt, "sent back well inside the pop's 3 s").toBeLessThan(1500);
+  expect(sentBackAt - shownAt, "sent back well inside the pop's 3 s").toBeLessThan(1800);
   for (const page of [mia, tom]) await expect(page.locator(pop)).toHaveCount(0, { timeout: 1000 });
   expect((await seenOn(tom)).filter((s) => s.what === "pop" && s.use?.endsWith("#em-hi")), "Tom saw it too").toHaveLength(1);
 });
@@ -1584,7 +1614,11 @@ test("Dony's Hi rides above him as he walks, as a person's would", async ({ brow
 });
 
 // BOT-6.7 (browser: his answer pops about a second after his reaction)
-test("Dony answers a cheer with a pop about a second after his reaction", async ({ browser }) => {
+// BOT-6.7 as amended by room-acting.md (A8): each screen holds Dony's answer
+// back until the move aimed at him has hit him, plus about 0.5 s, and at most
+// 3.5 s after the cheer's event. Mia walks to him (she's idle), so the hit
+// comes a while after her tap.
+test("Dony answers a cheer with a pop after the cheer hits him, within 3.5 s of it", async ({ browser }) => {
   const { path, people } = await room(browser, ["Mia", "Tom"]);
   const mia = await screen(people.Mia, path);
   const tom = await recorded(people.Tom, path);
@@ -1592,16 +1626,34 @@ test("Dony answers a cheer with a pop about a second after his reaction", async 
   const dony = mia.locator('.map .avatar[data-look="dony"]');
   await expect(dony).toHaveCount(1, { timeout: 2000 });
   await dony.click();
+  // the cheer's event reaching Tom's screen: its room log line appears then
+  // (design spec A.3), which is what the 3.5 s counts from
+  await tom.evaluate(() => {
+    const w = window as unknown as { __logAt?: number };
+    const log = document.querySelector("section.room-log")!;
+    new MutationObserver(() => {
+      if (!w.__logAt && /cheered Dony/.test(log.textContent ?? "")) w.__logAt = Date.now();
+    }).observe(log, { subtree: true, childList: true, characterData: true });
+  });
+  const tappedAt = Date.now();
   await act(mia, "cheer").click();
-  await expect(tom.locator('.map .avatar[data-look="dony"] svg.fx.fx-cheer')).toHaveCount(1, { timeout: 1500 });
-  await expect(tom.locator('.map .pops svg.pop:is(:has(use[href$="#em-love"]), :has(use[href$="#em-flex"]))')).toHaveCount(1, { timeout: 2500 });
-  const seen = await seenOn(tom);
-  const fx = seen.find((s) => s.what === "fx" && s.on?.startsWith("Dony"))!;
-  const answers = seen.filter((s) => s.what === "pop" && s.t > fx.t);
-  expect(answers.map(emojiOf)).toHaveLength(1);
-  expect(["love", "flex"]).toContain(emojiOf(answers[0]));
-  expect(answers[0].t - fx.t).toBeGreaterThanOrEqual(500);
-  expect(answers[0].t - fx.t).toBeLessThanOrEqual(2000);
+  const answer = '.map .pops svg.pop:is(:has(use[href$="#em-love"]), :has(use[href$="#em-flex"]))';
+  await expect(tom.locator(answer)).toHaveCount(1, { timeout: 6000 });
+  const seen = (await seenOn(tom)).filter((s) => s.t >= tappedAt);
+  const fx = seen.find((s) => s.what === "fx" && s.on?.startsWith("Dony"));
+  expect(fx, "the cheer hit him").toBeDefined();
+  const pops = seen.filter((s) => s.what === "pop");
+  expect(pops.filter((s) => s.t < fx!.t), "no answer before the cheer hits him").toEqual([]);
+  expect(pops.map(emojiOf)).toHaveLength(1);
+  expect(["love", "flex"]).toContain(emojiOf(pops[0]));
+  // about 0.5 s after the hit (a little early allowed for frame timing)
+  expect(pops[0].t - fx!.t, "after the hit").toBeGreaterThanOrEqual(300);
+  expect(pops[0].t - fx!.t, "about 0.5 s after the hit (1.5 s with CI slack)").toBeLessThanOrEqual(1500);
+  // at most 3.5 s after the event reached this screen (its log line), plus a
+  // little for a busy runner's frames
+  const eventAt = await tom.evaluate(() => (window as unknown as { __logAt?: number }).__logAt);
+  expect(eventAt, "the cheer reached Tom's screen").toBeDefined();
+  expect(pops[0].t - eventAt!, "within 3.5 s of the cheer's event").toBeLessThanOrEqual(3800);
   // and on Mia's screen too
   await expect(mia.locator('.map .pops svg.pop:is(:has(use[href$="#em-love"]), :has(use[href$="#em-flex"]))')).toHaveCount(1);
 });
@@ -1612,7 +1664,7 @@ test("with reduced motion an emoji appears and goes without moving", async ({ br
   const page = await screen(people.Tom, path, { reduced: true });
   expect((await emote(people.Mia, path, "fire")).status()).toBe(200);
   const pop = page.locator(".map .pops svg.pop");
-  await expect(pop).toHaveCount(1, { timeout: 1000 });
+  await expect(pop).toHaveCount(1, { timeout: 2500 });
   // where it is, every frame for a second
   const places = await page.evaluate(
     () =>

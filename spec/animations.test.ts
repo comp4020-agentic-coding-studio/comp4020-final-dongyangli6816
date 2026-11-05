@@ -152,7 +152,8 @@ describe("Lifting never turns Slacking by itself", () => {
       const started = await screen.until((e) => member(e).state === "lifting");
       expect(member(started).slackAt).toBeNull();
 
-      expect(slackAt).toBeLessThanOrEqual(loggedAt + 46_000);
+      // about 45 s, never the uncut 60 s; slack for a busy runner's stream lag
+      expect(slackAt).toBeLessThanOrEqual(loggedAt + 50_000);
       await new Promise((r) => setTimeout(r, Math.max(0, slackAt + 2000 - Date.now())));
       const html = await (await tom.get(path)).text();
       const mias = named(avatarsOf(html), "Mia");

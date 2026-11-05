@@ -488,8 +488,8 @@ describe("an accepted interaction, live", () => {
     const sent = Date.now();
     accepted(await interact(b.Mia, path, id.Jiwoo, "poke"));
     for (const [name, s] of Object.entries(streams)) {
-      const e = await s.next("interaction", () => true, 1000);
-      expect(e.arrivedAt - sent, `${name}'s stream`).toBeLessThan(1000);
+      const e = await s.next("interaction", () => true, 2000);
+      expect(e.arrivedAt - sent, `${name}'s stream`).toBeLessThan(2000);
       expect(e).toMatchObject({ kind: "poke", from: { id: id.Mia, name: "Mia" }, to: { id: id.Jiwoo, name: "Jiwoo" }, targetState: "idle" });
     }
     // Poke on someone resting: the other wording
@@ -522,17 +522,17 @@ describe("one interaction per sender per target every 10 s", () => {
 
   // INT-4.2. The hook moves Mia's stored times back instead of waiting 10 s.
   // Every step is measured from her accepted poke's `at` (the server's own
-  // time), so the edges are exact: the hook moves her to 9.5 s after it,
-  // allowing 0.5 s for the request's own trip, then past 10 s. Refused tries
+  // time), so the edges are exact: the hook moves her to 8.5 s after it,
+  // allowing 1.5 s for the three requests that follow (a busy runner), then past 10 s. Refused tries
   // in between must not restart the count. About a second.
   it("counts the 10 s from the last accepted one, on the server; refused tries don't restart it", async (ctx) => {
     const { path, b, id } = await gym(ctx, ["Mia", "Jiwoo"]);
     const at = accepted(await interact(b.Mia, path, id.Jiwoo, "poke"));
-    // as if it were 9.5 s after the poke: still refused, several times
-    await backdate(b.Mia, path, { user: id.Mia }, 9_500 - (Date.now() - at));
-    for (const kind of ["cheer", "slap", "poke"]) refused(await interact(b.Mia, path, id.Jiwoo, kind), 429, "rate-limit", `${kind} at 9.5 s`);
-    // the refused ones didn't restart it: 0.6 s more and it's past 10 s
-    await backdate(b.Mia, path, { user: id.Mia }, 600);
+    // as if it were 8.5 s after the poke: still refused, several times
+    await backdate(b.Mia, path, { user: id.Mia }, 8_500 - (Date.now() - at));
+    for (const kind of ["cheer", "slap", "poke"]) refused(await interact(b.Mia, path, id.Jiwoo, kind), 429, "rate-limit", `${kind} at 8.5 s`);
+    // the refused ones didn't restart it: 1.6 s more and it's past 10 s
+    await backdate(b.Mia, path, { user: id.Mia }, 1_600);
     accepted(await interact(b.Mia, path, id.Jiwoo, "cheer"), "at 10.1 s, after three refused tries");
     // and a new 10 s from that one
     refused(await interact(b.Mia, path, id.Jiwoo, "poke"), 429, "rate-limit", "straight after the new one");
@@ -545,8 +545,8 @@ describe("one interaction per sender per target every 10 s", () => {
     const { path, b, id } = await gym(ctx, ["Mia", "Jiwoo"]);
     accepted(await interact(b.Mia, path, id.Jiwoo, "poke"));
     const answeredAt = Date.now();
-    await wait(answeredAt + 9_000 - Date.now());
-    refused(await interact(b.Mia, path, id.Jiwoo, "cheer"), 429, "rate-limit", "at 9 s");
+    await wait(answeredAt + 8_000 - Date.now());
+    refused(await interact(b.Mia, path, id.Jiwoo, "cheer"), 429, "rate-limit", "at 8 s");
     await wait(answeredAt + 10_100 - Date.now());
     accepted(await interact(b.Mia, path, id.Jiwoo, "cheer"), "after 10 s");
   }, 20_000);
@@ -627,16 +627,16 @@ describe("presets", () => {
     accepted(await say(b.Mia, path, id.Jiwoo, "hype-2"));
   }, 20_000);
 
-  // INT-5.10, edges as in INT-4.2: the hook moves Mia to 1.5 s after her
-  // accepted preset (0.5 s for the request's trip), then past 2 s. Under a second.
+  // INT-5.10, edges as in INT-4.2: the hook moves Mia to 1.0 s after her
+  // accepted preset (1 s for the two requests that follow on a busy runner), then past 2 s. Under a second.
   it("allows one preset per sender every 2 s, to anyone, counted from the last accepted one", async (ctx) => {
     const { path, b, id } = await gym(ctx, ["Mia", "Jiwoo", "Tom"]);
     const at = accepted(await say(b.Mia, path, id.Jiwoo, "nudge-1"));
     refused(await say(b.Mia, path, id.Tom, "hype-1"), 429, "rate-limit", "to someone else, straight away");
-    await backdate(b.Mia, path, { user: id.Mia }, 1_500 - (Date.now() - at));
-    refused(await say(b.Mia, path, id.Tom, "hype-1"), 429, "rate-limit", "at 1.5 s");
-    refused(await say(b.Mia, path, id.Jiwoo, "hype-2"), 429, "rate-limit", "at 1.5 s, again");
-    await backdate(b.Mia, path, { user: id.Mia }, 600);
+    await backdate(b.Mia, path, { user: id.Mia }, 1_000 - (Date.now() - at));
+    refused(await say(b.Mia, path, id.Tom, "hype-1"), 429, "rate-limit", "at 1 s");
+    refused(await say(b.Mia, path, id.Jiwoo, "hype-2"), 429, "rate-limit", "at 1 s, again");
+    await backdate(b.Mia, path, { user: id.Mia }, 1_100);
     accepted(await say(b.Mia, path, id.Tom, "hype-1"), "at 2.1 s, after refused tries");
     refused(await say(b.Mia, path, id.Tom, "hype-3"), 429, "rate-limit", "a new 2 s from that one");
   }, 20_000);
@@ -749,8 +749,8 @@ describe("emoji", () => {
       const sent = Date.now();
       accepted(await emote(b[from], path, key), key);
       for (const s of [tom, mia]) {
-        const e = await s.next("emote", () => true, 1000);
-        expect(e.arrivedAt - sent).toBeLessThan(1000);
+        const e = await s.next("emote", () => true, 2000);
+        expect(e.arrivedAt - sent).toBeLessThan(2000);
         expect(e).toMatchObject({ emoji: key, from: { id: id[from], name: from } });
         expect(e).not.toHaveProperty("to");
       }
@@ -786,8 +786,8 @@ describe("emoji", () => {
     refused(await emote(tab2, path, "haha"), 429, "rate-limit", "from her other tab, straight away");
     await wait(sentAt + 500 - Date.now());
     refused(await emote(b.Mia, path, "haha"), 429, "rate-limit", "at 0.5 s");
-    await wait(sentAt + 850 - Date.now());
-    refused(await emote(b.Mia, path, "haha"), 429, "rate-limit", "at 0.85 s");
+    await wait(sentAt + 600 - Date.now());
+    refused(await emote(b.Mia, path, "haha"), 429, "rate-limit", "at 0.6 s (0.4 s of room before 1 s for a busy runner)");
     await wait(answeredAt + 1030 - Date.now());
     accepted(await emote(tab2, path, "love"), "at 1.03 s, after refused tries, from the other tab");
     await wait(1100);

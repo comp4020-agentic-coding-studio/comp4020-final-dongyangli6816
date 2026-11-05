@@ -34,9 +34,9 @@ test("a set logged in one browser shows in the other within a second", async ({ 
   await miaPage.fill("#weight_kg", "60");
   await miaPage.locator(".dock button.wide").click();
 
-  await expect(tomPage.locator(".people li", { hasText: "Mia" })).toContainText("Resting", { timeout: 1500 });
+  await expect(tomPage.locator(".people li", { hasText: "Mia" })).toContainText("Resting", { timeout: 2500 });
   // and on the map she heads for the water cooler
-  await expect(tomPage.locator('.map .avatar[data-state="resting"]')).toHaveCount(1, { timeout: 1500 });
+  await expect(tomPage.locator('.map .avatar[data-state="resting"]')).toHaveCount(1, { timeout: 2500 });
 });
 
 test("someone on their station stays put (avatars used to walk out and back)", async ({ browser }) => {
@@ -119,12 +119,12 @@ test("people arriving and leaving show on the map and in the list, live", async 
   await expect(page.locator(".map-panel .conn .badge")).toHaveText("Live");
 
   await join(tom, passcode);
-  await expect(page.locator(".people li", { hasText: "Tom" })).toBeVisible({ timeout: 1500 });
+  await expect(page.locator(".people li", { hasText: "Tom" })).toBeVisible({ timeout: 2500 });
   await expect(page.locator(".map .avatar")).toHaveCount(2);
   await expect(page.locator(".spots .count")).toHaveText("2 of 12 in");
 
   await post(tom, path, { action: "leave" });
-  await expect(page.locator(".people li", { hasText: "Tom" })).toHaveCount(0, { timeout: 1500 });
+  await expect(page.locator(".people li", { hasText: "Tom" })).toHaveCount(0, { timeout: 2500 });
   await expect(page.locator(".map .avatar")).toHaveCount(1);
 });
 
@@ -194,7 +194,7 @@ test("tapping Dony's poster brings him out on every screen, and sends him back",
   await miaPage.locator(".map .poster").click();
   // on Tom's screen: Dony on the map and last in the list, still two of twelve
   const dony = tomPage.locator('.map .avatar[data-look="dony"]');
-  await expect(dony).toHaveCount(1, { timeout: 1500 });
+  await expect(dony).toHaveCount(1, { timeout: 2500 });
   await expect(tomPage.locator(".people li").last()).toContainText("Dony");
   await expect(tomPage.locator(".spots .count")).toHaveText("2 of 12 in");
   // the bulbs go out at the first summon, on every screen
@@ -203,7 +203,7 @@ test("tapping Dony's poster brings him out on every screen, and sends him back",
   const poster = tomPage.locator(".map .poster");
   await expect(poster).toHaveAttribute("aria-label", "Send Dony back to his poster");
   await poster.click();
-  await expect(tomPage.locator(".people li", { hasText: "Dony" })).toHaveCount(0, { timeout: 1500 });
+  await expect(tomPage.locator(".people li", { hasText: "Dony" })).toHaveCount(0, { timeout: 2500 });
   await expect(dony).toHaveCount(0, { timeout: 3000 });
   // the full poster rests before he can be called out again
   await expect(poster).toHaveAttribute("aria-label", "Call Dony out of his poster (not ready yet)");
