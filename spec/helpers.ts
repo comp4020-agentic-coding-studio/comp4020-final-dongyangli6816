@@ -265,3 +265,16 @@ export async function backdate(b: Browser, roomPath: string, target: { user: num
     );
   }
 }
+
+// The logbook's test hook (contract at the top of spec/logbook.test.ts): one
+// of the caller's own workouts in this room, open or finished, as if it had
+// happened ms earlier (its start, end, and every set's logged time and rest
+// end). Nothing else moves. Only on an app run with SPOTTER_TEST_HOOKS=1.
+export async function backdateWorkout(b: Browser, roomPath: string, workout: number | string, ms: number): Promise<void> {
+  const res = await b.post(`${roomPath}/qa`, { op: "backdate", ms: String(Math.round(ms)), workout: String(workout) });
+  if (res.status !== 204) {
+    throw new Error(
+      `POST ${roomPath}/qa op=backdate workout=${workout} answered ${res.status}: this check needs the test hook, so the app must run with SPOTTER_TEST_HOOKS=1 (the contract at the top of spec/logbook.test.ts)`,
+    );
+  }
+}
