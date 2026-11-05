@@ -852,9 +852,11 @@ test("a rest that runs over walks her to her machine to sit with a glowing phone
   const log = await samples(tomPage);
   const track = trackOf(log, id);
 
-  await test.step("GYM-11.1: within a second she walks from the cooler and sits in front of her machine, bar in place", async () => {
+  await test.step("GYM-11.1: within about 1.5 s she walks from the cooler and sits in front of her machine, bar in place", async () => {
     const turned = track.find((s) => s.state === "slacking")!.t - slackPoint;
-    expect.soft(turned, "ms after her slack point").toBeLessThanOrEqual(1000);
+    // the page shows the turn on its 1 s tick, so up to 1 s after the slack
+    // point plus a loaded browser's lag (CI saw 1087 ms); 5 Nov, user's call
+    expect.soft(turned, "ms after her slack point").toBeLessThanOrEqual(1500);
     expect.soft(await avatar(tomPage, "Mia").locator(".tag").getAttribute("class")).toMatch(/state-slacking/);
     const { walking, arrived } = walkOf(track, COOLER.join(","), TILE[2].join(","));
     expectAWalk(walking, "cooler to station 2");
