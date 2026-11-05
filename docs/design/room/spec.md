@@ -3976,4 +3976,1257 @@ frames as `cheerFx1` … `slapFx4`), five icons in `icons.ts` (`cheerIcon`,
    them on 👀". Change if the voice is off.
 5. **Sound.** Not drawn: a short square-wave blip for a banner (target only)
    and none for emoji, quieter than the rest-over sound, behind the existing
-   sound toggle (system 11). Confirm or drop.
+   sound toggle (system 11). Confirm or drop. *(Superseded 4 Nov: see "Room
+   feel, Nov 4", F.11 and F.13.)*
+
+## Room feel, Nov 4
+
+From `docs/product/criteria/room-feel.md` (agreed 4 Nov 2026; F1 to F10, R1
+to R11): INT-9 (answering), INT-10 (High-five), GYM-17 (a personal best),
+GYM-18 (the room's PB moment), INT-11 (livelier reactions), INT-12 (sound
+and the sound setting) and BOT-7 (Dony and all of these). The criteria
+decide behaviour; this section decides how it looks and where it sits, and
+lists what they leave open (F.18). Mockup states are named in brackets, as
+in `mockup.html`, where they follow "phone, room log" under the comment
+`room feel (4 Nov …)`. Everything in "Interactions, Oct 22" (I.1 to I.15)
+still holds unless a subsection here says otherwise. New CSS is the block
+between `/* ===== room feel (4 Nov …` and `/* ===== room feel end ===== */`
+in `<style id="page">`.
+
+### F.1 Plan
+
+**Shared** (the Gym group is this page alone; unchanged): the Night
+surface, `.panel` boxes named on their border, one primary button in the
+dock, state shown three ways, the Lobby avatar sprite everywhere, the RPG
+text box for banners, the START menu, plain words for refusals, banter in
+banners.
+
+**Who and when.**
+- *Between sets, phone in one hand.* Gets slapped while scrolling, and
+  wants to return it in one tap with the free thumb, never by accident with
+  a tap meant for a field. The banner is at the top of the screen and the
+  dock at the bottom, so the answer goes in the banner, as far from Done as
+  the screen allows.
+- *The one who just hit a PB.* Their eyes are on the dock, where Done was.
+  The confirmation goes in the stamp they're already looking at; the room's
+  reaction arrives as cheers.
+- *Everyone else in the room.* Mid-rest, glancing up: "Mia hit a PB on back
+  squat". One tap says "go Mia". No numbers, so it reads "go Mia", never
+  "I lift less".
+- *The showcase.* Twelve laptops, nobody lifting, Dony out. Within ten
+  minutes Dony flexes, the fanfare plays on every laptop and the room piles
+  on with Cheer; a roomful of offers to Dony reads "Dony left you hanging".
+- *The laptop in a lecture.* Has to turn sound off in one tap, from
+  somewhere obvious, without hunting through a menu.
+- *A newcomer who knows nobody* (vision). The High-five is the right first
+  step with a stranger, because it only happens if both press; Thanks is the
+  safest answer to a stranger's cheer. Slap back is not (F.17, 9).
+
+**The one job is unchanged: log the next set.** Nothing here sits between
+the person and Start set or Done, covers the dock, or delays the sheet
+(system 2.1, GYM-17.7). The second-layer jobs are "answer that in one tap"
+(banner, menu), "make the whole room notice" (flex, room banner, fanfare)
+and "feel it land" (reactions, the confirmation line, sound).
+
+**Hierarchy.** On the map: tags first (state), then the flex (the one body
+pose that isn't a state, under 2 s), then reactions, bubbles, pops. At the
+top: the banner, whose ▶ button is the only new thing a thumb can hit. On
+the sheet: the dock's button stays loudest, and the stamp (gold for a PB)
+comes second. The sound setting is a small sign on the map's border,
+quieter than the passcode.
+
+**Reuse.** The banner gains a button drawn as the menu's `.act.hot` row; the
+menu gains rows of the same `.act`; the room banner is `.banner` with a
+`--finished` ring and a chip-style tab; the confirmation line is `.note`
+made solid; the PB stamp is `.stamp` in gold; the open offer is a `.say`
+bubble plus a held `.fx`; the sound setting borrows the map border's sign
+language (`.map-sign`, `.conn .lost`). New classes: `.banner.has-act`,
+`.banner-line`, `.banner-act`, `.banner.room`, `.banner-tab`,
+`.banner-slot.low`, `li.answer`, `.menu-news`, `.fx-offer`,
+`.fx.face-west`, `.av.jolt-*`, `.say.offer`, `.stamp.pb`, `.pb-mark`,
+`.note.sent`, `li.pb`, `.sound`, `.sound-box`. Art: two flex figures, ten
+reaction frames and six icons (F.12).
+
+**Template check.** The generic version is a toast with "Reply" and
+"Dismiss" links, a confetti overlay across the whole screen, a modal "New
+personal record!" with a share button, a speaker icon behind a settings
+cog, and "3 people liked this". What changed:
+- **The answer is the text box's ▶ prompt.** In the games, the ▶ at the
+  bottom right of a text box is what you press to go on; here it's the one
+  thing you can press, drawn as the menu's highlighted row so it reads as a
+  move, not a link. It arms after half a second, the way the prompt appears
+  once the text has printed (R1).
+- **The High-five is two avatars across the room**: a palm up with an
+  "@Ji-woo · Up top ✋" bubble, then two palms facing each other and a
+  smack. No modal, no Accept and Decline.
+- **The PB is a body, not an overlay.** The lifter steps off the station and
+  does a double biceps with confetti, in the room, on the map. The room
+  banner is the same RPG box with a gold ring and a medal tab: the whole
+  room's moment, still in one box.
+- **The lifter's confirmation is the logbook stamp turning gold.** No modal,
+  no share sheet, nothing new near Done.
+- **Sound is a sign on the gym wall**: "All sounds", "Rest timer only",
+  "Sound off" in words on the map's border, opposite the passcode, flipped
+  in one tap like a switch by the door.
+- **No counters anywhere**: no "3 cheers", no PB tally (system 14).
+
+Would a Gen Z squad screenshot it? Dony in his violet top doing a double
+biceps in confetti while everyone's banner says "Dony hit a PB on deadlift
+🏆 ▶ CHEER": yes. "Ji-woo left you hanging ✋" is the group-chat screenshot.
+
+### F.2 The banner with one button (INT-9.1, INT-9.11, INT-9.12, INT-10.2, GYM-18.1, GYM-18.4)
+
+```html
+<div class="banner-slot">
+  <div class="banner has-act">
+    <svg class="av">…the sender's head…</svg>
+    <span class="banner-line" role="status">Ji-woo slapped you back to work 👋</span>
+    <button type="button" class="banner-act"><span class="cur" aria-hidden="true">▶</span><svg>i-slap</svg>Slap back<span class="vh"> Ji-woo</span></button>
+  </div>
+</div>
+```
+
+- **The button** is the banner's last child, at its bottom right, drawn as
+  the menu's highlighted row (`.act.hot`: leaf fill, ink border, the move's
+  8 × 8 icon, Press Start 2P 16 px, 44 px tall). On a laptop it shares the
+  line's row; when the banner is narrower than about 26 rem (a phone) it
+  wraps under the line, right-aligned, under the thumb. Its accessible name
+  says who it answers ("Slap back Ji-woo", INT-9.12), the name in a `.vh`
+  span.
+- **Which button**, one at most:
+
+  | Banner | Button | Icon |
+  | --- | --- | --- |
+  | "Mia is hyping you up 🔥" | Thanks | `i-thanks` |
+  | Either Poke wording | Poke back | `i-poke` |
+  | "Mia slapped you back to work 👋" | Slap back | `i-slap` |
+  | "Mia wants a high-five ✋" | High-five | `i-high-five` |
+  | "Mia hit a PB on back squat 🏆" (room banner, F.8) | Cheer | `i-cheer` |
+  | Replies, "… high-fived you 🙌" | none | |
+
+- **Taps.** The box stays `pointer-events: none`; only the button takes
+  taps. It ignores them for its first 500 ms: the ▶ cursor is hidden for
+  that half second (`banner-arm`) and appears when the button goes live;
+  the script ignores clicks until then (CSS can't).
+- **Time.** 6 s with a button (`banner-6`: in over 160 ms in 4 steps, held,
+  out the same way), 4 s without. The newest banner of any kind still
+  replaces it at once (D9). A tap on the button removes the banner.
+- **Pending.** Between the tap and the answer the button takes the layout's
+  disabled look (held down, label kept). Accepted: the banner goes. Refused:
+  the banner goes and the refusal line shows (F.9).
+- **Focus.** It never moves to the button by itself. While the banner shows,
+  the button is in tab order right after the map's sign; if it had focus
+  when the banner goes, focus returns to whatever had it before (the avatar
+  or the dock's button). The line is the `role="status"`, announced once.
+- **It goes early** when the answer stops being possible: the sender leaves
+  (INT-9.14), or you answered from the menu.
+- **Never over the person it's about** (new, laptop only). If the banner
+  carries someone standing in rows 0 to 2 (the sender, or the PB's lifter),
+  the slot takes `.low` and sits over the map's bottom wall (`bottom: 0.25`
+  tile) instead of the top. On a phone the slot is fixed to the top of the
+  screen, not over the map, so nothing changes there. See [high-five
+  completed] and [pb flex on the map …].
+
+States: [banners with a button (each kind)], [banners without a button
+(replies and high-fives)], [slapped, slap back on the banner (target's
+screen)], [phone, cheered mid-set, thanks on the banner].
+
+### F.3 The menu: the answer row, High-five, the PB window (INT-9.10, INT-10.1, INT-10.3, INT-10.14, GYM-18.6)
+
+```html
+<ul class="menu-acts">
+  <li class="answer"><button type="button" class="act hot" role="menuitem" name="kind" value="slap-back" aria-label="Slap back Ji-woo"><span class="cur" aria-hidden="true">▶</span><svg>i-slap</svg>Slap back</button></li>
+  <li>…Cheer</li><li>…Poke</li><li>…Slap</li>
+  <li><button type="button" class="act" role="menuitem" name="kind" value="highfive"><span class="cur" aria-hidden="true">▶</span><svg>i-high-five</svg>High-five</button></li>
+  <li>…Message</li>
+</ul>
+```
+
+- **High-five** is a permanent row between Slap and Message. It is
+  unavailable (`aria-disabled`, dashed, I.2's rule) while the target is Away,
+  with "Ji-woo's away right now." in `p.menu-why`, and during the 10 s with
+  the others ("Easy, give them 10 seconds."). Dony's menu has it too.
+- **The answer row** (`li.answer`) is first, highlighted with the cursor,
+  with a 2 px dashed `--edge` rule under it (the "You walked in" line's
+  language), so it reads as "about what just happened". Labels: Thanks, Poke
+  back, Slap back, or High-five to accept an open offer.
+- **Never two High-fives.** While an offer from this person to you is open,
+  the High-five row moves up into the answer row (the permanent row isn't
+  drawn), so pressing High-five accepts. With an offer and a reply both
+  open, the answer row is the offer (INT-9.10's order); the reply takes the
+  row when the offer ends, if still within its 30 s.
+- **Highlight order** (INT-9.10): an open offer from them, then a reply,
+  then their fresh PB, then I.2's rule. With an answer row, it is the only
+  `.hot` row, and opening the menu focuses it.
+- **The PB window** (GYM-18.6): for 30 s after their PB, Cheer and High-five
+  are `.hot`, and one gold line sits between the header and the rows,
+  `p.menu-news` with `i-pb`: "Just hit a PB on back squat" (no numbers). The
+  line and the highlight go when the 30 s are up.
+- **In place.** The answer row comes and goes without the menu closing. On a
+  phone the menu is anchored by its bottom (I.2), so the rows under the
+  thumb never move when the top row goes; on a laptop it's anchored by its
+  top and the rows move up one, acceptable for a pointer.
+- **Slap back refused by Slap's rule** (INT-9.9): the answer row stays,
+  dashed, with I.2's reason ("Mia is mid-set. Cheer instead?"), because the
+  slap stays answerable for its 30 s and may come back.
+
+States: [menu with a reply row] (six cases), [phone, menu with a reply row].
+
+### F.4 The High-five on the map (INT-10.2, INT-10.6, INT-10.10, INT-10.12, INT-10.15)
+
+**An open offer**, on every screen, the offerer's included:
+- the offerer's avatar wears `svg.fx.fx-offer` with `fx-highfive-1`, a
+  yellow palm up at the shoulder (off the face), on the side towards the
+  target (`.face-west` when the target has a smaller `--x`). The palm bobs:
+  up one sprite pixel for 400 ms in every 800 (`offer-bob`);
+- a `.say.offer` bubble over the offerer in the bubbles layer, "@Ji-woo"
+  then "Up top ✋" *(new)*, placed by I.6's rules (`.west`, `.east`,
+  `.below`), for as long as the offer is open: 10 s, or the time left after
+  a reload (INT-10.12);
+- **no countdown anywhere** (system 14). Bubble and palm go at once when it
+  happens, lapses, or either person leaves. Reduced motion: no bob.
+
+**It happens** (INT-10.6). At the same moment on every screen the bubble
+and palm go, and both avatars play the High-five (1 s, F.6) where they
+stand, each palm towards the other: the eastern avatar's effect is
+`.face-west`. During the smack each sprite leans one pixel towards the
+other (`.jolt-nudge`, `--dir: 1` on the western one, `-1` on the eastern).
+Nobody walks. The offerer gets "Ji-woo high-fived you 🙌" (no button); the
+accepter's offer banner goes and `#sheet-news` says "You high-fived Mia".
+Reduced motion: frame 2, still, for 1 s.
+
+**It lapses** (INT-10.10). Bubble and palm go everywhere; only the offerer,
+if their page is open, gets `p.note` "Ji-woo left you hanging ✋" for 4 s
+where refusals go (beside the target on a laptop, above the dock on a
+phone). Dashed: news, not a failure. Nothing else anywhere.
+
+States: [high-five offered (offerer waiting)], [high-five offered (target's
+view, accept)], [phone, high-five offered (target's view)], [high-five
+completed], [high-five lapsed (left you hanging)], [phone, high-five
+lapsed].
+
+### F.5 The flex (GYM-17.7, GYM-17.8, GYM-17.11 to GYM-17.14, BOT-7.5)
+
+A body pose, the one `animations.md` set aside for GYM-17. The PB arrives
+with the state change from the same Done. On every screen, instead of
+walking straight to where the new state puts them, the lifter:
+
+1. stands on the aisle tile in front of their station (`y + 1`, the tile a
+   slacker's feet drop onto), off the machine, which goes back to idle;
+2. flexes once, 1.9 s, every change `steps(1)`:
+
+   | Frame | Time | Body | Effect |
+   | --- | --- | --- | --- |
+   | 1 | 0 to 300 ms | `flex1` (one arm up) | none |
+   | 2 | 300 to 700 ms | `flex2` (double biceps); the whole sprite up 2 sprite px from 300 to 500 ms | `fx-pb-1` |
+   | 3 | 700 to 1100 ms | `flex2` | `fx-pb-2` |
+   | 4 | 1100 to 1500 ms | `flex1` | `fx-pb-1` |
+   | 5 | 1500 to 1900 ms | `flex2` | `fx-pb-2` |
+
+3. then goes on to where the state puts them, walking as always: the cooler
+   after a weight, bodyweight or duration set, back onto the treadmill after
+   cardio (GYM-17.8).
+
+- **Their own sheet never waits**: it turns Resting on the response, as on
+  any Done; the flex is on the map only.
+- **The tag** says the new state the whole time and doesn't move with the
+  hop (INT-11.2).
+- **The confetti** changes 2.5 times a second and covers a small part of
+  the tile, well under three flashes a second (INT-11.7), and keeps off the
+  face (columns 11 to 20, rows 8 to 12).
+- **Reduced motion**: frame 2, still, for 1 s, then the avatar is drawn
+  where its state puts it, without the walk (GYM-17.12).
+- **Never replayed** on reload or reconnect: it comes only from the live
+  event (GYM-17.11).
+- **Dony** flexes the same, with his head (`dony-flex1`, `dony-flex2`).
+
+States: [pb flex, frame by frame] (Mia on the squat rack, Kai on the
+treadmill, Dony on the platform), [pb flex on the map, room banner with
+cheer (everyone else)].
+
+### F.6 Reactions, livelier (INT-11.1 to INT-11.4, INT-11.6, INT-11.7, INT-11.10)
+
+Still effects over any pose (`animations.md` D7), in the same `svg.fx` with
+one `<use>` per frame. New: each frame has its own start and length (the
+page sets `--at` and `--d` inline on each `<use>`, which `.fx use` reads);
+the sprite underneath may move as a whole (`svg.av` gets `.jolt-hop`,
+`.jolt-nudge` or `.jolt-shake` for the reaction's length, then loses it;
+the tag never moves); and each lasts about a second, never more than 1.5 s.
+All `steps(1)`: frames swap, nothing tweens. A newer reaction on the same
+avatar restarts it, as today. Times in ms; px are sprite pixels (× `--s`).
+
+| Kind | Frames (start/length) | Sprite moves | Total | ★ still frame |
+| --- | --- | --- | --- | --- |
+| Cheer | `cheer-1` 0/200, `cheer-2` 200/250, `cheer-4` 450/350 (new, the big burst), `cheer-3` 800/300 | hop 2 px, 200 to 450 (`jolt-hop`) | 1100 | `cheer-4` |
+| Poke | `poke-1` 0/250, `poke-2` 250/350, `poke-3` 600/400 | nudge 1 px east, away from the finger, 250 to 450 (`jolt-nudge`) | 1000 | `poke-2` |
+| Slap | `slap-1` 0/150, `slap-2` 150/300, `slap-3` 450/350, `slap-4` 800/400 | shake +2, −1, +1, 0 px at 150, 230, 310, 390 (`jolt-shake`) | 1200 | `slap-2` |
+| Thanks (new) | `thanks-1` 0/300, `thanks-2` 300/450, `thanks-3` 750/350 | hop 2 px, 200 to 450, as Cheer | 1100 | `thanks-2` |
+| Poke back (new) | Poke's, plus `back-1` held top left 0/1000 | as Poke | 1000 | `poke-2` + `back-1` |
+| Slap back (new) | Slap's, plus `back-1` at x 22 (top right) 0/450 | as Slap | 1200 | `slap-2` + `back-1` |
+| High-five (new), on both | `highfive-1` 0/250, `highfive-2` 250/350, `highfive-3` 600/400 | lean 1 px towards the partner, 250 to 450 (`jolt-nudge` with `--dir`) | 1000 | `highfive-2` |
+| Open offer | `highfive-1`, held while open | the palm bobs 1 px, 400 up in every 800 | up to 10 s | `highfive-1`, still |
+| The flex | F.5 | F.5 | 1900 | `flex2` + `pb-1` |
+
+The `jolt-*` keyframes in `<style id="page">` are written for a 1 s (hop,
+nudge) and 1.2 s (shake) run; the page sets the animation's duration to the
+reaction's total.
+
+- **Telling them apart at a glance** (INT-11.1) is colour and place. Cheer:
+  paper and yellow sparkles in the four corners. Poke: a white finger from
+  the left and a white "!" top right. Slap: a white glove, a yellow POW at
+  the cheek, then yellow stars round the head. Thanks: pink hearts rising
+  from the shoulders. Poke back and Slap back: the original plus the leaf
+  hook arrow, which nothing else uses. High-five: a yellow palm on the
+  partner's side and a smack star. PB: confetti over a body pose.
+- **Reduced motion** (INT-11.6): the ★ frame alone, still, for 1 s; no jolt;
+  sound unchanged.
+- **Never over a tag, the dock or a menu; never takes a tap** (INT-11.3): the
+  svg is the tile's size inside the avatar button and draws under the tag;
+  effects reach the tile's edge at most. `pointer-events: none`.
+- **Still slapstick** (INT-11.10): the shake is a cartoon's three pixels,
+  never a red mark.
+- **Emoji pops are unchanged** (INT-11.9): the two-step rise already reads,
+  and a bigger pop would cover more of a room of twelve.
+
+State: [reactions, room feel (frames and timing)].
+
+### F.7 The lifter's PB in the stamp (GYM-17.9, GYM-17.10, GYM-18.3)
+
+```astro
+<p class:list={["stamp", isPb && "pb"]}>
+  <Sprite sprite={isPb ? pbIcon : tickIcon} scale={2} />
+  {isPb
+    ? <><span>New PB: <b>{setLabel(latest!)}</b></span><span class="pb-mark">🏆</span></>
+    : <span>Set {loggedNo} logged: <b>{setLabel(latest!)}</b></span>}
+</p>
+```
+
+- **Gold**: text and border in `--finished`, the medal (`pbIcon`) for the
+  tick. Same place on the dock's top border, same 4 s, same rise and sink,
+  same `pointer-events: none`. One line: a long set is cut with an ellipsis
+  at the end, as a long run already is; `.pb-mark` (the 🏆) never is.
+- **Why "New PB: 105 kg × 5 🏆"** rather than the criteria's example "Set 3
+  logged: 105 kg × 5 · New PB 🏆" (copy the criteria let the designer tune):
+  beside the emoji tab, at 390 px and in the 24 rem laptop sheet, the long
+  form was drawn and cut the reps off, and a PB whose numbers are cut is the
+  one stamp that mustn't be. The set number is in This workout and in what's
+  announced. Open question 3.
+- **Announced** once through `#sheet-news`: for a PB, `afterDone()` writes
+  "Set 3 logged: 105 kg × 5. New personal best" (not the stamp's text).
+- **No banner** on the lifter's own screens (GYM-18.3); the cheers that
+  follow arrive as ordinary banners with Thanks.
+- **The Done response says it's a PB** (GYM-17.10): no second request.
+  Whether the GET after the redirect learns it from the stored set or from a
+  flag beside `rested=1` is the main agent's call.
+
+States: [pb stamp, weight (the lifter's screen)], [pb stamp, bodyweight (the
+lifter's screen)] (actually a long cardio run, to show the cut), [phone, pb
+stamp (the lifter's screen)].
+
+### F.8 The room's PB banner (GYM-18.1, GYM-18.2, GYM-18.4, GYM-18.7, GYM-18.8, BOT-7.5)
+
+```html
+<div class="banner-slot low">
+  <div class="banner has-act room">
+    <span class="banner-tab" aria-hidden="true"><svg>i-pb</svg>PB</span>
+    <svg class="av">…the lifter's head…</svg>
+    <span class="banner-line" role="status" aria-label="Mia hit a personal best on back squat">Mia hit a PB on back squat 🏆</span>
+    <button type="button" class="banner-act"><span class="cur" aria-hidden="true">▶</span><svg>i-cheer</svg>Cheer<span class="vh"> Mia</span></button>
+  </div>
+</div>
+```
+
+- F.2's banner plus `.room`: a 4 px `--finished` ring in place of the edge
+  ring, and a gold tab on its top border with the medal and "PB" (Press
+  Start 2P 8 px, chip-style). Gold says "the whole room's moment" in the
+  colour that already means "done well", never red or leaf.
+- **The lift in lower case** ("on back squat"), as the criteria write it.
+  Never numbers (F5).
+- **Screen readers** (GYM-18.7) hear "Mia hit a personal best on back squat"
+  once, from the line's `aria-label` ("PB" is read as letters and 🏆 as
+  "trophy").
+- **Everyone but the lifter**, Dony's PB included; never later (GYM-18.8).
+- **Cheer** is exactly the menu's Cheer (GYM-18.2); its refusal ("Easy,
+  give them 10 seconds.") shows where refusals do.
+- **Placement**: F.2's `.low` rule, by the lifter's row. Lifters are
+  usually on the back row's machines, so on a laptop it usually sits at the
+  map's foot.
+
+States: [banners with a button (each kind)] (last), [pb flex on the map,
+room banner with cheer (everyone else)], [phone, pb room banner].
+
+### F.9 Refusals and the confirmation line (INT-9.5, INT-9.6, INT-9.14, INT-10.3, INT-10.5, INT-10.10, INT-11.5)
+
+**Refusals** are I.3's `p.note` (dashed, 4 s, beside the target on a laptop,
+above the dock on a phone), with the new lines: "Too late to answer that
+one.", "Already answered.", "Ji-woo's away right now.", "Too slow. Mia's
+hand is down.", "Ji-woo left you hanging ✋" ("Dony left you hanging ✋").
+Slap back refused by Slap's rule uses Slap's words. A double tap shows
+nothing (INT-9.6).
+
+**The confirmation line**, `p.note.sent[role=status]`: the same box with a
+solid `--leaf` border, leaf text and the tick first, for 2 s, in the
+refusal's place. It shows only when the target's avatar is out of view
+when the server says yes (the avatar's box against the viewport);
+otherwise the reaction is the confirmation (R9). Either way `#sheet-news`
+says it once, without the emoji ("Slapped Ji-woo"). Lines *(new)*:
+
+| What you did | Line |
+| --- | --- |
+| Cheer, Poke, Slap | "You cheered Mia 🔥", "You poked Mia 👉", "You slapped Ji-woo 👋" |
+| Thanks, Poke back, Slap back | "You thanked Mia 🙏", "You poked Tom back 👉", "You returned Ji-woo's slap 👋" |
+| Offer, accept | "You offered Ji-woo a high-five ✋", "You high-fived Mia 🙌" |
+
+A confirmation, a refusal and the emoji error share the place: the newest
+replaces the last.
+
+States: [phone, sent with the target off screen (confirmation line)],
+[refusals and confirmations, room feel].
+
+### F.10 The room log (INT-5.8 extended, INT-9.2, INT-9.3, INT-10.6, GYM-18.5, BOT-7.5)
+
+I.9's panel, its shape unchanged. New lines, each with its icon; lines
+involving you are `li.you` (leaf edge), as before:
+
+| Event | Line, everyone else | Line, you | Icon |
+| --- | --- | --- | --- |
+| Thanks | "Ji-woo thanked Mia" | "You thanked Mia", "Ji-woo thanked you" | `i-thanks` |
+| Poke back | "Ji-woo poked Mia back" | "Ji-woo poked you back", "You poked Mia back" | `i-poke` |
+| Slap back | "Ji-woo returned Mia's slap" | "Ji-woo returned your slap", "You returned Mia's slap" | `i-slap` |
+| High-five | "Mia and Ji-woo high-fived" | "You and Ji-woo high-fived" | `i-high-five` |
+| PB | "Mia hit a PB on bench press" | "You hit a PB on bench press" | `i-pb` in `--finished` (`li.pb`) |
+
+Never in it: a PB's numbers, an offer (lapsed or open), emoji, Dony's PB
+(BOT-5).
+
+State: [room log with replies, high-fives and pbs].
+
+### F.11 The sound setting (INT-12.3 to INT-12.8, INT-12.11)
+
+**Where: a sign on the map panel's bottom border, at the right**, the
+corner across from the passcode on the top border.
+
+```html
+<section class="panel map-panel">
+  <h1 class="map-sign">…</h1><p class="conn">…</p><div class="map">…</div>
+  <button type="button" class="sound" data-sound="all"><span class="sound-box"><svg>i-sound</svg><span class="vh">Sound: </span>All sounds</span></button>
+</section>
+```
+
+Why there:
+- **Outside the dock and every menu** (INT-12.8). On a phone it scrolls with
+  the map at the top of the page, as far from Start set and Done as
+  anything can be; on a laptop it's in the left column, the sheet on the
+  right.
+- **It belongs to the room, not to a set.** Sound is "how loud this gym is
+  on my device". The map's border already carries the room's sign and its
+  connection; its third corner takes its sound.
+- **There in every state**, mid-set included: the map is always there.
+- **No new chrome.** System 8 pictures "a menu with Invite, sound and
+  Leave" in the top bar, but the layout's top bar is shared by every page
+  and holds only History and Sign out, and there's no gym menu (F.17, 2).
+  The Room panel was the other candidate: at the bottom of a phone page,
+  three scrolls down, it's hard to find in a hurry.
+
+**Look**: a 44 px tall transparent button holding `.sound-box`, a 28 px sign
+in `--night` with a 2 px `--edge` border and the panel-coloured ring (the
+Reconnecting chip's shape), VT323 20 px, the icon in leaf. Sound off is all
+`--dim`. The map panel gains 2.5 rem of bottom margin so the sign never
+touches the next panel. The value is always in words (INT-12.8):
+
+| `data-sound` | Icon | Words | What plays |
+| --- | --- | --- | --- |
+| `all` (default) | `i-sound` | All sounds | everything in INT-12.1 |
+| `rest` | `i-bell` | Rest timer only | the rest-over sound only (today's behaviour) |
+| `off` | `i-sound-off` | Sound off | nothing |
+
+("Sound off" rather than "Off": alone on a wall, "Off" doesn't say what.)
+
+**Behaviour**:
+- A tap, or Enter or Space, moves to the next value: All sounds, Rest timer
+  only, Sound off, and round. The new value is announced once through
+  `#sheet-news` ("Sound: rest timer only"). Takes effect at once; Sound off
+  stops a sound already playing (INT-12.7).
+- Kept in `localStorage` (`spotter-sound`). If storage is blocked or throws,
+  the page starts on All sounds each time and everything else works
+  (INT-12.6).
+- **Tab order**: after the map's avatars and Dony's poster, before the
+  sheet. The yellow Night focus ring goes round the sign (`.sound-box`),
+  not the taller hit area.
+- **Never prompts** or suggests turning sound on (INT-12.8).
+- **Unlocking** (INT-12.11): the page's one-time `pointerdown` unlock gets a
+  `keydown` twin; whichever comes first unlocks.
+
+States: [sound setting: all sounds (default)], [sound setting: rest timer
+only], [sound setting: off], [sound setting, keyboard focus], [phone, sound
+setting].
+
+### F.12 The art (`src/sprites/`, already added)
+
+Added, because the mockup draws all art from the sheet. `scripts/sprites.ts`
+and `GymMap.astro` needed no change: their loops publish every figure and
+every `<kind>Fx<n>` export.
+
+- **`avatar.ts`**: `FLEX1` and `FLEX2` in `FIGURES` (`Figure` gains
+  `"flex1" | "flex2"`), drawn on `BODY`. The hanging arm (both, for flex2)
+  is taken off the body and drawn raised in the props: fist above the
+  head's edge, forearm up, a two-pixel bicep bump, the sleeve meeting the
+  shoulder, so the hair draws under the arm. The arm is the body's own
+  width: proud, not bigger (GYM-17.14). Published as `av-flex1-<hair>`,
+  `dony-flex1` and the same for flex2; every skin, hair and shirt works
+  (they're slots). **For the build**: `Avatar.astro` bobs `.av-top` for
+  `stand` and `rest`; the flex shouldn't (it has its own hop), so the page
+  needs a `flex` pose in `poses.ts` with the two drawings, swapped on F.5's
+  timings by the room's script rather than the machines' 400 ms loop.
+- **`emoji.ts`**: `cheerFx4` (the big burst, four corners); `thanksFx1` to
+  `3` (pink hearts rising); `highfiveFx1` to `3` (a yellow palm facing
+  east, the smack star, a spark); `backFx1` (the leaf hook arrow, 10 × 8 at
+  the tile's top left; placed at x 22 for Slap back); `pbFx1`, `pbFx2`
+  (confetti in yellow, leaf, paper and pink, two pixels each, off the
+  face). The FX palette gains `Y` `#c99a2e` and `p` `#e46fae`, both already
+  in the emoji palette.
+- **`icons.ts`**: `thanksIcon` (a heart), `highFiveIcon` (a palm), `pbIcon`
+  (a medal on its ribbon; Finished keeps the trophy), `soundIcon` (a
+  speaker with two waves), `bellIcon` (Rest timer only), `soundOffIcon` (a
+  speaker and a cross), published as `i-thanks`, `i-high-five`, `i-pb`,
+  `i-sound`, `i-bell`, `i-sound-off`.
+
+`tsc --noEmit` passes with them. State: [room feel art].
+
+### F.13 Sound design (INT-12.1, INT-12.2, INT-12.9, INT-12.14, BOT-7.8)
+
+Not drawn; a first draft for the main agent, to be judged by ear. Web Audio,
+square wave unless noted, no files. The rest-over beep is gain 0.08; every
+interaction sound is quieter (0.04), the fanfare 0.06.
+
+| Event (whose screen) | Sound |
+| --- | --- |
+| Cheer to you | 660 then 990 Hz, 70 ms each, rising |
+| Poke or Poke back to you | 520 Hz, 50 ms, twice 60 ms apart ("tap tap") |
+| Slap or Slap back to you | a triangle drop from 300 to 150 Hz over 90 ms ("whap") |
+| Thanks to you | 880 then 660 Hz, 80 ms each, falling |
+| A High-five offer to you | 784 Hz, 60 ms, twice |
+| A preset to you | 440 Hz, 40 ms, gain 0.03 |
+| Your move or emoji accepted | 1320 Hz, 25 ms, gain 0.03 |
+| A High-five happened (both) | 523, 659, 784 Hz, 50 ms each, then 30 ms of noise (the smack) |
+| Any PB (everyone) | 523, 659, 784, 1047 Hz, 90 ms each, the last held 200 ms |
+| Rest over | unchanged |
+
+At most one interaction sound a second; the fanfare and the rest-over beep
+always play, and nothing starts under them (INT-12.9). Nothing for a
+refusal, a lapse, a bubble, anyone else's moves or Dony's emoji (INT-12.2).
+
+### F.14 States (all in `mockup.html`)
+
+| State | Trigger | What it shows |
+| --- | --- | --- |
+| banners with a button (each kind) | An interaction, offer or PB reaches you | Six banners, each with its one button |
+| banners without a button (replies and high-fives) | A reply or a High-five reaches you | Five banners, no button |
+| slapped, slap back on the banner (target's screen) | Ji-woo slaps Priya, Slacking | The slap on Priya; ▶ Slap back at the top of the map; Start set untouched |
+| phone, cheered mid-set, thanks on the banner | Mia cheers Priya, scrolled to her fields | The banner fixed at the top with Thanks; Done pinned |
+| menu with a reply row | Six cases | Slap back; Thanks (Slap dashed); Poke back (High-five dashed, Away); accepting an offer; the PB window; within 10 s |
+| phone, menu with a reply row | Tapping the slapper 12 s later | Slap back on top, the menu above the dock |
+| high-five offered (offerer waiting) | Priya offers Ji-woo | Priya's palm and "@Ji-woo · Up top ✋" |
+| high-five offered (target's view, accept) | Ji-woo's screen | The banner with ▶ High-five; Priya's palm |
+| phone, high-five offered (target's view) | The same on a phone | Banner at the top, dock at the bottom |
+| high-five completed | Ji-woo accepts | Both palms, frame 2; the banner at the map's foot; the pair, frame by frame |
+| high-five lapsed (left you hanging) | 10 s, no answer | The calm line beside Ji-woo |
+| phone, high-five lapsed | The same on a phone | The line above the dock |
+| pb flex, frame by frame | A PB | Five frames for a lifter, a runner and Dony |
+| pb flex on the map, room banner with cheer (everyone else) | Mia's PB | Mia flexing; the gold banner at the map's foot |
+| phone, pb room banner | The same, on a phone mid-set | The gold banner at the top; Done pinned |
+| pb stamp, weight (the lifter's screen) | Mia's PB Done | "New PB: 105 kg × 5 🏆" in gold |
+| pb stamp, bodyweight (the lifter's screen) | A long cardio PB | The set cut at the pace, the 🏆 kept |
+| phone, pb stamp (the lifter's screen) | Priya's PB on a phone | The stamp on the dock, her flex on the map above |
+| room log with replies, high-fives and pbs | A busy room | Every new kind of line |
+| sound setting: all sounds (default), rest timer only, off | Each value | The sign, in words |
+| sound setting, keyboard focus | Tab | The yellow ring round the sign |
+| phone, sound setting | A phone | The sign under the map |
+| phone, sent with the target off screen (confirmation line) | A slap from the squad list | The leaf line above the dock |
+| refusals and confirmations, room feel | Each case | Six refusals, six confirmations |
+| reactions, room feel (frames and timing) | Each kind | Every frame with its timing |
+| room feel art | Reference | The flex for every hair and Dony; six icons |
+
+The open offer, the reactions and the flex are drawn frozen; reduced motion
+is described per piece (F.4 to F.6).
+
+### F.15 Requirements covered
+
+| Requirement (criteria/room-feel.md) | Element |
+| --- | --- |
+| INT-9.1 one button on the banner, per kind | `.banner-act`, F.2's table; [banners with a button] |
+| INT-9.2, INT-9.3 the reply's reaction, banner and log line | F.6 (Thanks, back); [banners without a button]; F.10 |
+| INT-9.4 no button for a reply, no reply row for it | F.2 ("none"), F.3 |
+| INT-9.5, INT-9.6 refusals | F.9; [refusals and confirmations] |
+| INT-9.9 Slap back by Slap's rule | F.3 (the dashed answer row), F.9 |
+| INT-9.10 the first row, highlight order, goes in place | `li.answer`, F.3; [menu with a reply row] |
+| INT-9.11 6 s, the half-second arm, taps pass through | `banner-6`, `banner-arm`, `pointer-events`; F.2 |
+| INT-9.12 never over the dock, Tab, the button's name | F.2 Focus; [phone, cheered mid-set …] |
+| INT-9.13, INT-9.14 reload keeps the menu row; a leaver removes it | F.2 "It goes early", F.3 |
+| INT-10.1 High-five in the menu | F.3, between Slap and Message |
+| INT-10.2 an open offer that says who it's for; the target's banner | `.fx-offer` + `.say.offer`; F.4 |
+| INT-10.3 refused while Away, row dashed | F.3; [menu with a reply row] (Tom) |
+| INT-10.6 both play it; banners; the log | F.4, F.6, F.10 |
+| INT-10.10 the lapse, told only to the offerer | F.4; [high-five lapsed] |
+| INT-10.12 a late screen sees the offer for the time left | F.4 |
+| INT-10.14 by keyboard: High-five first in the menu | F.3 "Never two High-fives" |
+| INT-10.15 reduced motion | F.4, F.6 |
+| GYM-17.7, GYM-17.8 the flex on every screen, then the state's place | F.5 |
+| GYM-17.9 the stamp says it, announced once | `.stamp.pb`, F.7 |
+| GYM-17.11, GYM-17.12 never replayed; a still frame | F.5 |
+| GYM-17.13, GYM-17.14 any look; proud, not strain | F.12; [room feel art] |
+| GYM-18.1 the room banner, no numbers, Cheer | `.banner.room`, F.8 |
+| GYM-18.3 no room banner for the lifter | F.7 |
+| GYM-18.4 the newest replaces; 6 s | F.2 |
+| GYM-18.5 the log line | `li.pb`, F.10 |
+| GYM-18.6 Cheer and High-five highlighted for 30 s | `.menu-news`, F.3 |
+| GYM-18.7 announced once to the whole room | F.8 |
+| GYM-18.9 nothing counts | No counter anywhere |
+| INT-11.1, INT-11.2, INT-11.4 tell them apart; the tag still; ≤ 1.5 s, flex ≤ 2 s | F.6's table; F.5 (1.9 s) |
+| INT-11.3 never over a tag, the dock or a menu; no taps | F.6 |
+| INT-11.5 the confirmation line when out of view | `.note.sent`, F.9 |
+| INT-11.6, INT-11.7 reduced motion; the three-flash limit | F.6 (★ frames), F.5 (confetti rate) |
+| INT-11.9 emoji pops | F.6 (unchanged) |
+| INT-12.1, INT-12.2, INT-12.9, INT-12.14 which sounds | F.13 |
+| INT-12.3 to INT-12.8 the setting | `.sound`, F.11; the sound states |
+| INT-12.11 a key press unlocks sound | F.11 |
+| BOT-7.2, BOT-7.5 Dony's High-five and PB | [banners without a button] (Dony); [pb flex, frame by frame] (Dony) |
+
+### F.16 What the page needs from the server
+
+Beyond I.12:
+- **Per other member, in the room view**: an answerable interaction from
+  them (`{ kind: "thanks" | "poke-back" | "slap-back", answers: id, until }`);
+  an open offer from them to you (`{ id, until }`); an open offer from you
+  to them (for the bubble after a reload); their fresh PB
+  (`{ exercise, until }`); whether they're Away (already there). Each
+  `until` is a server time, so the menu removes rows with one `setTimeout`.
+- **Events**: reply accepted (kind, from, to; the original sender's banner
+  wording); offer made (from, to, until); offer happened (both ids); PB
+  (who, the exercise's name, no numbers), with the state change from the
+  same Done. A lapse needs no event: the offerer's page ends the offer at
+  `until`, and the server refuses a late acceptance (INT-10.10).
+- **The Done response** says whether the set was a PB (GYM-17.10).
+- **Refusal keys** for the new copy: `too-late`, `answered`,
+  `reply-to-reply`, `nothing-to-answer`, `target-away`, `too-slow`, with the
+  existing ones.
+
+### F.17 Departures
+
+1. **System 9's banner** ("never takes focus, stays 4 s"): it still never
+   takes focus, but may hold one button and then stays 6 s, the criteria's
+   override of INT-3.4 and INT-3.5. Updated in `system.md`.
+2. **System 8's top-bar menu "with Invite, sound on/off and Leave"** was
+   never built; the sound setting goes on the map panel's border (F.11), and
+   section 11's "one sound toggle lives in the gym menu" is updated. Invite
+   and Leave stay in the Room panel. System 8's diagram is left as it is
+   (section 8 isn't one this round updates); the main agent may want to
+   fix it.
+3. **Section 11's "reactions last under 1 s"** becomes up to 1.5 s, the
+   flex up to 2 s (R10), and the sprite may move as a whole. Updated.
+4. **A banner may sit at the map's foot** (`.low`, laptop only) when the
+   person it's about stands in the top three rows. I.5 put every banner at
+   the top of the map, which covers back-row tags; on a PB it would hide
+   the person being celebrated. A placement rule, not a new component; it
+   moves existing banners too (open question 6).
+5. **The PB stamp's words** are tuned from the criteria's example (F.7; open
+   question 3).
+6. **New copy beyond the criteria's examples**: "Up top ✋" in the offer
+   bubble, the confirmation lines the criteria didn't spell out, "Just hit a
+   PB on back squat" in the menu, "Sound off" as the third value's words.
+   All added to the copy bank.
+7. **Gold (`--finished`) for PBs**: the Finished state's colour also marks
+   the PB banner's ring and tab, the log's PB icon, the menu's PB line and
+   the gold stamp. It is never a state chip there and always comes with the
+   medal and the word PB, so it isn't read as Finished; "done well" is what
+   both mean.
+8. **New colours inside sprite palettes only**: the reaction palette gains
+   the emoji set's yellow shade and pink, both already used in `emoji.ts`.
+9. **Strangers** (vision). Slap back turns one slap into an exchange:
+   banter between friends, escalation from a stranger. Nothing here would
+   change visually, but a stranger room would need INT-7's slap setting to
+   cover Slap back, and mute to hide a muted person's offers. "Left you
+   hanging" from a stranger may want softer words. The High-five's shape
+   (both must press) is right for strangers as drawn. The PB banner names
+   you and your lift to the whole room; a public room would need a "share
+   my PBs" setting.
+
+### F.18 Open questions for the user
+
+Each has a recommendation; none of them changes behaviour the criteria set.
+
+1. **Where the sound setting lives.** Drawn: a sign on the map panel's
+   bottom border. Alternatives: the Room panel (the bottom of a phone page,
+   hard to find in a hurry), or a new room menu in the shared top bar.
+   Recommended: as drawn.
+2. **One tap cycles, or a short list.** Drawn: each tap moves All sounds →
+   Rest timer only → Sound off → All sounds. INT-12.8 allows either. A list
+   costs a second tap every time but lets you jump straight to Off.
+   Recommended: the cycle (Off is never more than two taps away).
+3. **The PB stamp's words.** Drawn: "New PB: 105 kg × 5 🏆", gold, with the
+   medal, because "Set 3 logged: 105 kg × 5 · New PB 🏆" cuts the reps off
+   beside the emoji tab on a phone. The set number is still announced.
+   Recommended: as drawn.
+4. **The offer's bubble.** Drawn: "@Ji-woo · Up top ✋" over the offerer while
+   the offer is open, so the room sees who it's for (INT-10.2 leaves the
+   how open). Alternatives: the palm alone, or "High-five? ✋". Recommended:
+   "Up top ✋".
+5. **Where the flex happens.** Drawn: on the aisle tile in front of the
+   station, straight after Done, then the walk to the cooler. Flexing at the
+   cooler after the walk delays the moment by the walk. Recommended: as
+   drawn.
+6. **Banners at the map's foot** when the person they're about is in the
+   top three rows (laptop). It moves existing banners too (a slap from
+   someone on the back row). Recommended: yes, for every banner, so the face
+   in the box and the person on the map are never on top of each other.
+7. **Thanks is a pink heart** (icon and reaction): the hair and emoji pink,
+   not red. Alternative: a "🙏" hands sprite, hard to read at 8 × 8.
+   Recommended: the heart.
+8. **The sounds** (F.13) are a first draft, judged by ear (INT-12.14).
+   Recommended: build as written, tune at the rehearsal.
+
+**Settled, 4 Nov 2026.** The user asked for every open question to go with
+its recommendation: 1 the map panel's border; 2 one tap cycles; 3 "New PB:
+105 kg × 5 🏆"; 4 "@Ji-woo · Up top ✋"; 5 the aisle tile in front of the
+station; 6 every banner at the map's foot on a laptop when its person is in
+the top three rows; 7 the pink heart; 8 build F.13 as written, tune by ear.
+F.16's `reply-to-reply` folds into `nothing-to-answer`, since it has no
+words of its own; the room view carries the open offers, the answerable
+interactions and the fresh PBs as room-wide lists, and each screen picks
+the ones about its viewer (the contract in `spec/room-feel.test.ts`).
+
+## Acting it out, Nov 5
+
+From `docs/product/criteria/room-acting.md` (agreed 5 Nov 2026; A1 to A7,
+R1 to R8): INT-13 (walking over), INT-14 (acting from a machine), INT-15
+(the target's body reacts), INT-16 (the High-five acted out) and BOT-8
+(Dony). The criteria decide behaviour; this section decides the look and
+the motion, and lists what they leave open (A.16). Mockup states follow
+"room feel art" under the comment `acting it out (5 Nov …)`, named in
+brackets here. Everything in "Interactions, Oct 22" and "Room feel, Nov 4"
+still holds unless a subsection here says otherwise; in particular F.6's
+effects are reused unchanged and play over the new body frames. New CSS is
+the block between `/* ===== acting it out (5 Nov …` and `/* ===== acting it
+out end ===== */` in `<style id="page">`.
+
+### A.1 Plan
+
+**Shared** (the Gym group is this page alone; unchanged): the Night
+surface, `.panel` boxes named on their border, one primary button in the
+dock, state shown three ways, the Lobby avatar sprite everywhere, the RPG
+text box for banners, plain words, banter in banners. This round adds no
+control: it is motion on the map and the timing of what is already there.
+
+**Who and when.**
+- *The sender, between sets, one thumb.* Taps Slap; the menu closes. What
+  they see at once is their own avatar setting off across the gym (the tick
+  and the log line come at once too). Their sheet never waits: Start set is
+  one tap, and tapping it pulls the avatar off the errand.
+- *The sender mid-set.* Never leaves the machine: a hand comes up off the
+  bar for under half a second and the move flies across. Reads "I see you,
+  I'm busy".
+- *The target.* Sees someone coming. The banner, the sound and their body's
+  reaction land together when the move lands, so the words and the act are
+  one moment, not a banner followed by a walk.
+- *Everyone else.* The map now tells the story at a glance: who's going to
+  whom, who got slapped. At twelve it must stay busy, not chaotic.
+- *A newcomer, or a stranger room later* (vision). An avatar walking right
+  up to yours is physical closeness in the gym's terms; see A.15, 4.
+
+**The one job is unchanged: log the next set.** Nothing here is in the
+dock, the sheet or a menu; nothing waits for an avatar; nothing covers a
+tag.
+
+**Hierarchy on the map.** Tags first, always (they now draw over their own
+body, A.4). Then movement: a walker crossing the floor is the loudest thing
+on the map for about a second, which is the point. Then the hit (body
+reaction plus F.6's effect), then flights, bubbles and pops.
+
+**Reuse.** The walk (`walk()`, `route()`, 125 ms a tile, two strides)
+carries the errand unchanged. F.6's effects and `jolt-*` classes are reused
+as they are; the body frames are new drawings on the people's body, as the
+flex was. F.4's palm stays the on-machine side of a High-five. The lifter's
+gesture is one layer over any machine. New classes: `.errand`, `.at-spot`,
+`.av.face-west`, `.av.lift-2`, `.av.lift-4`, `.av.lean-2`, `.gesture`,
+`.flights`, `.flight`, `.smack`, and a `z-index` on `.map .avatar .tag`.
+Art: 12 body figures, a two-frame hand, five travelling effects (two frames
+each) and a smack (A.11).
+
+**Template check.** The generic way to make interactions less flat is a
+bigger toast, a confetti overlay across the screen, a shaking phone, or
+reaction emoji floating up a stream: any app could have it. What changed:
+- **The sender's own avatar carries the message across the room**, along
+  the aisles everyone walks to the cooler. No other app has a floor for
+  that walk to cross: it is the gym map earning its keep.
+- **The words wait for the body.** The banner lands with the slap, the way a
+  game's text box opens when the character reaches you, not before.
+- **Lifting is sacred.** Someone mid-set never leaves the bar; a hand comes
+  up and the move flies. Every frame keeps "who's really training" honest.
+- **Slapstick, not a hit.** A cartoon "&gt;&lt;", arms flung, POW at the
+  cheek, stars, back on their feet in 1.2 s.
+
+Would a Gen Z squad screenshot it? Priya walking the length of the gym to
+slap Ji-woo off her phone, Ji-woo's phone flying over her head at a poke,
+Dony hopping with both fists up because the room cheered him: yes. That's
+the clip, not the banner.
+
+### A.2 The errand (INT-13.1 to 13.8, 13.15, 13.16)
+
+Drawn on each screen from the interaction's event and the room as that
+screen has it. Nothing about it is stored or sent.
+
+1. **Sets off** within a second of the event reaching the screen. The
+   avatar button takes `.errand` and walks with today's `walk()`: two
+   strides, 125 ms a tile, along `route()`. It holds nothing (GYM-10.17),
+   so a Resting walker's bottle and a Slacking walker's phone go, and come
+   back with the pose. **The tag walks with them and keeps their state** (a
+   Slacking walker's tag still says Slacking, INT-13.7); their station, if
+   they hold one, shows unoccupied while they're away, as on any walk.
+2. **The meeting spot** (INT-13.5, R5), worked out on each screen:
+   - target on a station (Lifting on it, or Slacking in front of it): the
+     **aisle tile diagonally in front of the station**, `(x ± 1, y + 1)`, on
+     the walker's side (`x − 1` if the walker comes from a smaller `x`),
+     clamped to columns 1 to 8;
+   - target off a station (cooler, lockers): the floor tile diagonally in
+     front, `(x ± 1, y + 1)`, or `y − 1` on row 8;
+   - **why diagonal, not beside**: two tags on neighbouring tiles of one row
+     touch at 1× (a tag is about six VT323 characters, wider than a 32 px
+     tile), as the first draft's shots showed. Diagonal keeps both tags
+     whole and still reads as together at 1×;
+   - taken (someone stands there, or another walker is heading there): the
+     other diagonal, then the tile straight in front, then beside; if none
+     is free, the walker shares a tile and stands half a tile lower so both
+     tags read.
+3. **Arrives** and takes `.at-spot`: the body (`svg.av`, never the tag)
+   leans a quarter tile towards the target (`--lean: 0.25`, `--dir: ±1`) and
+   faces them (`.av.face-west` mirrors the svg when the target is to the
+   west; every body frame is drawn facing east). The move plays at once.
+4. **The hit** is the frame A.5 marks "the hit" (the swing landing, the
+   finger out, the fists up). At that frame, on the target's screen, the
+   banner, the sound and the target's body reaction start together (A.3).
+5. **Walks back** the moment the move ends, along `route()` to where their
+   state puts them *then* (INT-13.2), taking that pose on arrival.
+
+**Already beside** (INT-13.6): a sender on, or next to (orthogonally or
+diagonally), the target's meeting spot doesn't walk; the move plays where
+they are, turned to the target. So Slap back from a slap's meeting spot is
+instant.
+
+**One at a time** (INT-13.15, A2): a newer move from the same walker cuts
+the errand short (A.8) and heads from where they are to the new target.
+**Two walkers, one target** (INT-13.16): different meeting spots (rule 2);
+each hit plays its own reaction, the newer restarting it (INT-15.8); the
+banner shows the newest.
+
+**Timing** (INT-13.8, R1). Worked out with `route()` over every place a
+sender can be and every meeting spot, the longest one-way walk is 14 tiles
+(a slacker in front of dumbbell rack 4, top right, to beside someone at the
+lockers): 1.75 s. The hit is at most 250 ms into a move (the High-five's;
+150 ms for a slap), so at most about **2.0 s** from event to hit (cap
+2.5 s, hard cap 3 s). The longest move is 1.2 s, so the walker sets off back
+by about 2.95 s and is home by about **4.7 s** (cap 6 s). Typical: the
+cooler to a back-row bench is 8 tiles, 1.0 s; hit at about 1.15 s; home at
+about 3.4 s.
+
+States: [errand, en route (everyone's screen)], [errand, arriving
+(everyone's screen)], [errand, the hit (target's screen)], [errand, walking
+back].
+
+### A.3 When things land (INT-13.9, 13.10, A1, R4)
+
+| What | Sender's screen | Target's screen | Everyone else |
+| --- | --- | --- | --- |
+| The room log line | at acceptance | within 1 s of the event | within 1 s |
+| The tick, the confirmation line (F.9) | at acceptance | | |
+| The avatar setting off, or the gesture | within 1 s | within 1 s | within 1 s |
+| The banner (with its button), the sound | | **at the hit** | |
+| The body reaction and F.6's effect | at the hit | **at the hit** | at the hit |
+
+- **The 3 s cap** (INT-13.9): each screen starts a 3 s timer when the event
+  arrives; if the hit hasn't happened by then (a stalled walk, a tab back
+  from the background), the move goes by travelling effect from where the
+  walker is (A.8).
+- **The banner's 6 s and half-second arm** (F.2) count from the hit.
+- **The confirmation line** (F.9) still shows only with the target out of
+  view; in view, the walk and the hit are the confirmation.
+
+### A.4 The target's body reaction (INT-15.1 to 15.10)
+
+Off a machine (by the lockers, Idle or Finished; at the cooler, Resting; in
+front of their machine, Slacking) the target plays new body frames at the
+hit, with F.6's effect over them, then goes back to their pose. A.5 has
+every frame.
+
+| Move | Standing (Idle, Finished, Resting) | Sitting (Slacking) | Reads as |
+| --- | --- | --- | --- |
+| Cheer | `crouch`, then `cheer` lifted 4 px (the hop), then the pose | `sit-cheer` lifted 2 px | a happy hop, fists up |
+| Poke, Poke back | `startle` lifted 4 px, then landed | `sit-startle`: the phone flips over their head | a startled jump |
+| Slap, Slap back | `recoil`, leaning 2 px away (`.lean-2`) | `sit-recoil`, phone left on the lap | cartoon recoil, dizzy, back |
+| Thanks | `crouch`, then their own pose lifted 4 px | their pose lifted 2 px | a pleased bounce |
+| High-five | `reach` (A.9) | `sit-reach` | the High-five itself |
+
+- **The prop** (INT-15.4): reactions are drawn without the bottle, and with
+  the phone face down on the lap (the phone is the gag in `sit-startle`);
+  the pose's prop is back the moment the reaction ends.
+- **On a machine** (INT-15.2): no body frames; the machine keeps playing,
+  F.6's effect and `jolt-*` as today. **Walking** (INT-15.3): the same, and
+  they keep walking.
+- **The tag never moves and is never covered** (INT-15.5): lifts and leans
+  are on `svg.av` only, and `.map .avatar .tag` now has `position:
+  relative; z-index: 1`, so a tag draws over its own body and effect. The
+  hop is 4 sprite px standing and 2 seated (the first draft's 8 px hid
+  Dony's own tag in the busy room at 1×). Flung arms reach the tile's edge
+  at most, like F.6's effects.
+- **Hit area** unchanged: the button, at least 44 × 44 px.
+- **Away** (INT-15.7): faded with the body (`.away .av`).
+- **Restart** (INT-15.8): a newer hit restarts from frame 1.
+- **Dony** (BOT-8.1): the same frames with his head (`dony-<figure>`).
+
+### A.5 Frames and timing, per move
+
+All `steps(1)`; times in ms from the start of the move at the meeting spot
+(for a gesturer, the target's column starts when the effect lands). "Lift"
+moves the whole `svg.av` up, in sprite px. ★ is the still frame for reduced
+motion (A.10). The walker's frames are standing whatever their state.
+
+**Cheer** (walker 1000, target 1100)
+
+| Time | Walker | Target, standing | Target, sitting | Effect (F.6) |
+| --- | --- | --- | --- | --- |
+| 0 to 200 | `cheer` **(the hit, 0)** | pose | pose | `cheer-1` |
+| 200 to 450 | `cheer` | `crouch` | `sit` | `cheer-2` |
+| 450 to 800 ★ | `stand` | `cheer`, lift 4 | `sit-cheer`, lift 2 | `cheer-4` |
+| 800 to 1100 | `stand`; walks back at 1000 | pose | pose | `cheer-3` |
+
+**Poke, Poke back** (walker 900, target 1000)
+
+| Time | Walker | Target, standing | Target, sitting | Effect |
+| --- | --- | --- | --- | --- |
+| 0 to 250 | `point` **(the hit, 0)** | pose | pose | `poke-1` |
+| 250 to 600 ★ | `point` | `startle`, lift 4 | `sit-startle` | `poke-2` |
+| 600 to 900 | `stand`; walks back at 900 | `startle` | `sit-startle` | `poke-3` |
+| 900 to 1000 | | pose | pose | none |
+
+Poke back adds `back-1` held top left for 1000 (F.6).
+
+**Slap, Slap back** (walker 1200; target 1050, from the hit)
+
+| Time | Walker | Target, standing | Target, sitting | Effect |
+| --- | --- | --- | --- | --- |
+| 0 to 150 | `reach` (the wind-up) | pose | pose | none |
+| 150 to 450 ★ | `swing` **(the hit, 150)** | `recoil`, lean 2 away | `sit-recoil`, lean 2 away | `slap-1` to 300, `slap-2` |
+| 450 to 800 | `swing` | `recoil` | `sit-recoil` | `slap-3` |
+| 800 to 1200 | `stand`; walks back at 1200 | pose | pose | `slap-4` |
+
+Slap back adds `back-1` at x 22 for the first 450 from the hit (F.6).
+
+**Thanks** (walker 1000, target 1100)
+
+| Time | Walker | Target, standing | Target, sitting | Effect |
+| --- | --- | --- | --- | --- |
+| 0 to 300 | `bow` **(the hit, 0)** | pose | pose | `thanks-1` |
+| 300 to 500 | `bow` | `crouch` | pose | `thanks-2` |
+| 500 to 750 ★ | `stand` | pose, lift 4 | pose, lift 2 | `thanks-2` |
+| 750 to 1100 | `stand`; walks back at 1000 | pose | pose | `thanks-3` |
+
+**High-five** (both 1000; who is where in A.9)
+
+| Time | Walker | Partner, standing | Partner, sitting | Partner on a machine | Smack |
+| --- | --- | --- | --- | --- | --- |
+| 0 to 250 | `reach` | `reach` | `sit-reach` | machine + `highfive-1` | none |
+| 250 to 600 ★ | `reach`, lean 1 in **(the hit, 250)** | `reach`, lean 1 in | `sit-reach` | machine + `highfive-2` | `smack-1` on the shared corner |
+| 600 to 1000 | `stand`; walks back at 1000 | pose | pose | machine + `highfive-3` | none |
+
+**The gesture** (a Lifting sender; each side of a both-Lifting High-five)
+
+| Time | Over their machine | Effect |
+| --- | --- | --- |
+| 0 to 200 | `hand1`, facing the target | the flight sets off at 0 |
+| 200 to 400 | `hand2` (the wave) | in flight |
+| 400 on | the machine alone | lands within 1000 of setting off: the hit |
+
+The machine's loop never pauses under the hand.
+
+State: [acted moves, frame by frame (walker and target)].
+
+### A.6 The lifter's gesture (INT-14.1 to 14.3, 14.5, 14.6)
+
+```html
+<button class="avatar on-machine" …>
+  <span class="tag state-lifting">…</span>
+  <svg class="machine back">…</svg><svg class="av">…on the machine…</svg><svg class="machine front">…</svg>
+  <svg class="gesture face-west" viewBox="0 0 32 32" aria-hidden="true"><use href="#av-hand1"/></svg>
+</button>
+```
+
+- **One layer, every machine**: `hand1`/`hand2` are a raised hand and
+  forearm in the person's own skin and sleeve, after the machine's front so
+  they're on top, at the tile's east edge (mirrored by `.face-west`). Not
+  8 machines × moves of frames (A3). The person and machine keep their loop.
+- **Dony**: the same layer as `dony-hand1`/`dony-hand2`. For the build, it
+  is a pose with no body (`hairRow` 32, so no head), drawn with the
+  person's look.
+- **Waiting for a delivery** (INT-14.2), **cardio, a long-over rest**
+  (INT-14.3): still Lifting, so the same hand where they are.
+- **The panel is exactly as it was** (INT-14.5); **Done mid-flight**
+  (INT-14.6): the flight carries on; the avatar does what Done does.
+
+States: [lifting sender, gesture and travelling effect], [travelling
+effects and gestures (art)].
+
+### A.7 The travelling effect (INT-14.4, INT-13.14)
+
+```html
+<div class="flights" aria-hidden="true">
+  <svg class="flight face-west" viewBox="0 0 32 32" style="--fx: 4.5; --fy: 4.5"><use href="#fx-star-1"/></svg>
+</div>
+```
+
+- **One object per move**, in the reaction palette, drawn mid-tile facing
+  east, mirrored flying west:
+
+  | Move | Sprite | Look |
+  | --- | --- | --- |
+  | Cheer | `fx-star-1`, `-2` | a yellow star with motion ticks |
+  | Poke | `fx-finger-1`, `-2` | the white pointing finger |
+  | Slap | `fx-glove-1`, `-2` | the white glove, leaf cuff, speed lines: never the yellow Hi palm (INT-3.17) |
+  | Thanks | `fx-heart-1`, `-2` | a pink heart |
+  | High-five, both Lifting | `fx-palm-1`, `-2` | the yellow palm |
+  | Poke back, Slap back | the poke's, the slap's | with `fx-back-1` riding on top |
+
+- **Path**: a straight line from the sender's tile to the target's, in steps
+  of one tile, 125 ms a step (the walk's pace, so the map has one rhythm),
+  the two frames swapping each step. Over 8 steps is cut to 8 longer steps,
+  so it **always lands within 1 s**. When both ends are on the back row the
+  middle steps drop to the aisle row under it, so it never sits on a head
+  ([both lifting]).
+- **Layer**: `div.flights` in `.map` at `z-index: 16`: over avatars, under
+  bubbles (18), banners (24) and menus (25); the dock is outside the map. It
+  may pass over a tag for one step (125 ms); its last step is the target's
+  tile, never a tag.
+- **Landing is the hit**: the flight goes and the target's reaction (A.4 off
+  a machine; F.6's effect and jolt on one), banner and sound start.
+- **No taps**: `pointer-events: none` on the layer.
+
+### A.8 Cut short (INT-13.11 to 13.14, 16.5, BOT-8.4, 8.6)
+
+Whatever cuts an errand short (the walker's Start set, Done, Choose a lift,
+Finish or Leave; their next move; the 3 s cap; Dony sent to his poster or
+moved by his schedule), on every screen:
+
+1. the avatar drops `.errand` and walks from where it is to where its new
+   state puts it (Leave walks out, as today);
+2. if the hit hasn't happened, the move's travelling effect sets off **from
+   the tile the avatar is on** and lands as A.7. Every move plays exactly
+   once.
+
+**The target leaves** (INT-13.13): the walker turns back at once; no
+reaction, no flight. **The target moves** (INT-13.12, R3): the spot is
+recomputed and the walker re-routes from where it is; a target still
+walking is hit beside them, with the jolt. The 3 s cap still holds.
+
+States: [errand cut short (travelling effect from where they were)],
+[phone, sender sets off (sender's screen)].
+
+### A.9 The High-five acted out (INT-16, BOT-8.3)
+
+- **Open offer**: unchanged (F.4): palm and "@Ji-woo · Up top ✋" at the
+  offerer's own place; nobody walks (INT-16.1).
+- **It happens**, decided from the two states in the event (A.14):
+
+  | Offerer | Accepter | Drawn |
+  | --- | --- | --- |
+  | not Lifting | any | the offerer walks to the accepter's meeting spot |
+  | Lifting | not Lifting | the accepter walks to the offerer's meeting spot |
+  | Lifting | Lifting | nobody walks: both gesture (A.6); each flies `fx-palm` towards the other; they meet at the midpoint |
+
+- **The smack** (`fx-smack-1`, 250 to 600 ms): a yellow burst centred on the
+  corner the two raised palms share (the walker is diagonal to the
+  partner), or where two flights meet. Not the slap's POW, not a palm.
+- **On a machine** (INT-16.3): their side is F.4's `fx-highfive-*` over the
+  machine, facing the walker; the walker plays `reach` against it.
+- **Banners, sounds, the screen-reader line** at the smack (INT-16.4); F.2's
+  `.low` applies, so a back-row partner's banner sits at the map's foot on a
+  laptop.
+- **Dony** walks to accept by the same table, only when the offerer is
+  Lifting and he isn't (BOT-8.3, 8.7).
+
+States: [high-five acted out, offerer walks], [high-five acted out,
+accepter walks (offerer lifting)], [high-five acted out, both lifting
+(effect meets halfway)].
+
+### A.10 Reduced motion (INT-13.23, INT-15.10, R7)
+
+- Nobody walks, nothing flies, no lean, no lift, no jolt.
+- **When the event arrives** (there is no walk to wait for): the sender
+  shows the move's ★ frame where they are (a lifter: the machine with
+  `hand1`), and the target the reaction's ★ frame with the effect's ★ frame,
+  **both for 1 s**, then their poses.
+- Banner, sound and log unchanged; they come with the stills.
+- CSS: `.flights { display: none }` and the translate overrides in the
+  block; the script skips `walk()` (it already does under reduced motion)
+  and plays the stills.
+
+State: [reduced motion, one still frame each side].
+
+### A.11 The art (`src/sprites/`, added)
+
+Added, because the mockup draws all art from the sheet. `scripts/sprites.ts`
+and `GymMap.astro` need no change: their loops publish every figure and
+every `<kind>Fx<n>` export. `tsc --noEmit` passes.
+
+**`avatar.ts`**: `FIGURES` and `Figure` gain 14 drawings on the shared body,
+so `av-<figure>-<hair>` and `dony-<figure>` exist for each. Moving arms are
+props, so they draw over every hair style (the flex's rule). All face the
+viewer, drawn facing east.
+
+| Figure | Built from (reused) | New |
+| --- | --- | --- |
+| `reach` | `BODY` with its east arm off (the mirror of flex1's body) | the arm straight up, open palm (columns 24 to 31, rows 0 to 17) |
+| `swing` | the same body | the arm out level, flat hand up |
+| `point` | the same body | the arm out level, one finger |
+| `cheer` | `DONY_HOP`'s arms and torso (BOT-2.3) on the standing legs | none: a reuse |
+| `bow` | flex2's armless body | hands together at the chest, elbows out |
+| `crouch` | `BODY` two rows lower, knees bent | none: a reuse |
+| `startle` | flex2's armless body and raised upper arms | open hands; brows up, mouth an "o" |
+| `recoil` | flex2's armless body | "&gt;&lt;" eyes; one arm flung low, one high |
+| `sit-cheer` | the sitting body (forearms off), `DONY_HOP`'s arms | the phone face down on the lap |
+| `sit-startle` | the sitting body, `startle`'s arms and face | the phone over the head |
+| `sit-recoil` | the sitting body, `recoil`'s face and arms | the phone on the lap |
+| `sit-reach` | the sitting body, `reach`'s arm | the phone on the lap |
+| `hand1`, `hand2` | `reach`'s arm | props only, no body (`hairRow` 32): the gesture layer; `hand2` tips the palm with dim motion arcs |
+
+Of 14, two are pure reuses (`cheer`, `crouch`) and the rest are existing
+bodies with new arms; the only face changes are edits of the existing eyes
+and mouth.
+
+**`emoji.ts`** gains `starFx1/2`, `fingerFx1/2`, `gloveFx1/2`, `heartFx1/2`,
+`palmFx1/2` (published as `fx-star-1` …) and `smackFx1`. The reaction
+palette (F.12), nothing new.
+
+**Not drawn, and why**: no machine reaction frames (A3); none for the walk
+(effect and jolt); none for Finished (it's `stand`); no side or back views
+(Scope, Out).
+
+State: [acting it out art].
+
+### A.12 States (all in `mockup.html`)
+
+| State | Trigger | What it shows |
+| --- | --- | --- |
+| errand, en route (everyone's screen) | Priya, Resting, slaps Ji-woo, Slacking | Priya walking up the walkway, Resting tag; the route dotted; Ji-woo not yet hit; Priya's sheet untouched |
+| errand, arriving (everyone's screen) | She reaches the spot | Diagonal in front of the bench; the lean; `reach` |
+| errand, the hit (target's screen) | The swing lands | `swing` by `sit-recoil` and POW; ▶ Slap back at the map's foot; Start set untouched |
+| errand, walking back | The move ends | Priya heading home; the stars finishing |
+| acted moves, frame by frame (walker and target) | Every move | Walker frames by the target standing, at the cooler, sitting, per A.5 |
+| lifting sender, gesture and travelling effect | Mia, squatting, cheers Priya | The hand over the rack; the star mid-flight |
+| travelling effects and gestures (art) | Reference | Five effects × 2, the back variants, the smack; the hand over four machines incl. Dony |
+| high-five acted out, offerer walks | Priya offers, Ji-woo takes it | `reach` diagonal to `sit-reach`, the smack, the banner at the foot |
+| high-five acted out, accepter walks (offerer lifting) | Mia offers mid-set, Sam takes it | Sam at the rack; Mia's palm over her squat |
+| high-five acted out, both lifting (effect meets halfway) | Kai and Mia | Two hands up; palms meeting on the aisle; Kai's Done untouched |
+| busy room, several errands at once | Twelve and Dony | A slap landing, two walkers, a gesture and a flight, a startle, Dony hopping; every tag readable |
+| phone, slapped by a walker (target's screen) | The hit on a phone | The banner fixed at the top, Start set pinned below |
+| phone, sender sets off (sender's screen) | Priya just tapped Slap | Her avatar walking; her sheet ready |
+| errand cut short (travelling effect from where they were) | Start set mid-errand | Her Lifting tag heading for the platform; the glove flying from where she was |
+| reduced motion, one still frame each side | Reduced motion | Both stills in place; the stills per move |
+| acting it out art | Reference | Every new figure for four hair styles and Dony |
+
+All motion is drawn frozen; A.2 to A.10 describe it.
+
+### A.13 Requirements covered
+
+| Requirement (criteria/room-acting.md) | Element |
+| --- | --- |
+| INT-13.1 to 13.3 walk by state; back to the state's place | `.errand`, A.2; [errand, …] |
+| INT-13.4 which moves; presets and emoji aren't acted | A.5; I.6 and I.8 unchanged |
+| INT-13.5 meeting spot | A.2 rule 2 |
+| INT-13.6 already beside | A.2 |
+| INT-13.7 the walk, holding nothing, the tag and its state | A.2 rule 1 |
+| INT-13.8 hit ≤ 2.5 s, move ≤ 1.5 s, back ≤ 6 s | A.2 Timing (2.0 s, 1.2 s, 4.7 s at worst) |
+| INT-13.9, 13.10 what lands at the hit or at acceptance | A.3 |
+| INT-13.11 to 13.15 cut short | A.8; [errand cut short …] |
+| INT-13.16 two walkers | A.2 |
+| INT-13.17, 13.19, 13.20 server untouched; the sender's state | A.14 |
+| INT-13.18 a busy room readable; the dock never covered | A.4, A.7; [busy room …] |
+| INT-13.21 nothing replayed | A.14 |
+| INT-13.22 selectable while walking; name and focus | A.15, 5; system 12 |
+| INT-13.23, INT-15.10 reduced motion | A.10 |
+| INT-13.24, INT-15.9 slapstick, a mate coming over, never pain | A.1, A.4 |
+| INT-14.1 to 14.3, 14.5 to 14.7 the gesture | A.6 |
+| INT-14.4 the travelling effect | A.7 |
+| INT-15.1 to 15.8 body reactions | A.4, A.5; [acted moves …], [acting it out art] |
+| INT-16.1 to 16.6 the High-five | A.9; three [high-five acted out …] states |
+| BOT-8.1 to 8.7 Dony | A.4, A.8, A.9 |
+
+### A.14 What the page needs from the server
+
+- **The sender's state at acceptance** in every interaction event (Cheer,
+  Poke, Slap, Thanks, Poke back, Slap back, a High-five happening), as
+  `targetState` already is: `senderState: "idle" | "lifting" | "resting" |
+  "slacking" | "finished"` (INT-13.20, R8). For a High-five, both people's
+  states, since A.9 needs both.
+- **Dony's acceptance** carries his state from his schedule (BOT-8.5).
+- Nothing else: no position, route, spot or errand is sent or stored; a
+  screen that opens mid-errand draws everyone at their state's place
+  (INT-13.21).
+
+### A.15 Departures
+
+1. **Section 11's "never gets new body frames"** (animations.md D7,
+   room-feel INT-11.2) is reversed off a machine by the criteria (A3).
+   Updated in `system.md` sections 10 and 11.
+2. **A tag draws over its own body** (`position: relative; z-index: 1`).
+   Before, the body only bobbed 2 px under it; now a hop and flung arms come
+   near it. No layout change; no tag moves.
+3. **The meeting spot is diagonal, not beside** (A.2). The criteria say
+   "beside"; at 1× two tags on one row touch, which INT-13.5's "both tags
+   can still be read" rules out. Open question 1.
+4. **Strangers** (vision). Nothing here is drawn for friends only, but an
+   avatar walking up to yours is physical closeness, and an acted slap reads
+   more strongly than an icon. A stranger room would want errands only
+   between people who've High-fived (the High-five's walk already follows a
+   mutual press), or a "moves as effects only" setting (A.7's flight is
+   exactly that), mute stopping a muted person's errands, and INT-7's slap
+   setting covering the acted slap.
+5. **A walking avatar's focus ring** moves with the button, as any
+   positioned element's does; nothing new is drawn for it.
+6. **No new colours**: the frames use the avatar's slots and fixed tokens;
+   the effects use F.12's reaction palette.
+
+### A.16 Open questions for the user
+
+Each has a recommendation; none changes behaviour the criteria set.
+
+1. **Where the walker stands.** Drawn: diagonally in front of the target, so
+   both tags stay whole at 1×. Alternative: right beside them on the same
+   row, more "together" but the tags touch on a phone. Recommended:
+   diagonal.
+2. **A walker's tag.** Drawn: unchanged, their state (INT-13.7 requires it).
+   Optional: a small arrow after the name while on an errand.
+   Recommended: no arrow; the walk is short and the hit says what it was.
+3. **The hop's height.** Drawn: 4 sprite px standing, 2 seated. 8 px reads
+   better at 2× but hid tags at 1× in the busy room. Recommended: 4 px.
+4. **The slap's wind-up** (`reach` for 150 ms before `swing`). It makes a
+   slap read as a slap from across the room, at 150 ms before the hit.
+   Alternative: straight to `swing`. Recommended: keep it.
+5. **The phone flying over a poked slacker's head** (`sit-startle`).
+   Alternative: hands up, phone stays in the lap. Recommended: the flying
+   phone; it's the joke "put the phone down" is about.
+6. **The lifter's wave** (`hand2` for the second 200 ms). Alternative: one
+   held frame for 400 ms. Recommended: the wave; a still hand over a
+   two-frame machine loop looks like a glitch.
+7. **A flight between two back-row people** drops to the aisle row for its
+   middle steps. Alternative: always straight, over heads. Recommended: the
+   aisle.
+8. **The hand layer in the build** is a body-less pose (`hand1`, `hand2`).
+   It could be an `fx`-style sprite with the skin slot instead, as long as
+   it takes the person's skin and sleeve. Recommended: as drawn, since it
+   works for Dony for free.
+
+**Settled, 5 Nov 2026.** The user answered "as recommended": 1 the diagonal
+meeting spot; 2 no errand mark on the tag; 3 hops of 4 px standing, 2 px
+seated; 4 keep the slap's 150 ms wind-up; 5 keep the poked slacker's phone
+flying over their head; 6 the two-frame wave; 7 a flight between two back-row
+people drops to the aisle row; 8 the gesture as a body-less pose, as drawn.
+The server's part is the contract addendum in `spec/room-acting.test.ts`:
+`fromState` on interaction events, `fromState` and `toState` on a done High-five.

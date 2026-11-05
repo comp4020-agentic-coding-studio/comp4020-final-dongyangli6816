@@ -29,3 +29,14 @@ export const slapIcon = icon("....c.c.", "..c.c.c.", "c.cccccc", "..cccccc", "c.
 export const sayIcon = icon("cccccccc", "c......c", "c.cc.c.c", "c......c", "cccccccc", ".cc.....", ".c......", "........");
 export const emoteIcon = icon(".cccccc.", "c......c", "c.c..c.c", "c......c", "c.c..c.c", "c..cc..c", ".cccccc.", "........");
 export const clockIcon = icon("..cccc..", ".c.c..c.", "c..c...c", "c..ccc.c", "c......c", ".c....c.", "..cccc..", "........");
+// room feel (docs/design/room/spec.md, "Room feel, Nov 4"): the menu's
+// Thanks and High-five rows and their log lines; the PB line in the log (a
+// medal, not the trophy, which is Finished's); the sound setting's three
+// values (a speaker with waves, a bell for "rest timer only", a crossed
+// speaker for off)
+export const thanksIcon = icon("........", ".cc..cc.", "cccccccc", "cccccccc", ".cccccc.", "..cccc..", "...cc...", "........");
+export const highFiveIcon = icon(".c.c.c..", ".c.c.c.c", ".c.c.c.c", "cccccccc", "cccccccc", ".ccccccc", "..ccccc.", "..ccccc.");
+export const soundIcon = icon("...c....", "..cc..c.", "cccc...c", "cccc.c.c", "cccc.c.c", "cccc...c", "..cc..c.", "...c....");
+export const bellIcon = icon("...cc...", "..cccc..", ".cccccc.", ".cccccc.", ".cccccc.", "cccccccc", "........", "...cc...");
+export const pbIcon = icon("c.....c.", "cc...cc.", ".cc.cc..", "..ccc...", ".ccccc..", ".cc.cc..", ".ccccc..", "..ccc...");
+export const soundOffIcon = icon("...c....", "..cc....", "cccc.c.c", "cccc..c.", "cccc.c.c", "cccc....", "..cc....", "...c....");

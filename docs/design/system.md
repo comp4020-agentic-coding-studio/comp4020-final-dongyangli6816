@@ -110,6 +110,23 @@ Use these, or match their voice.
 | Target has left (INT-2) | `Tom's left the gym.` |
 | Rate-limited (INT-4) | `Easy, give them 10 seconds.` |
 | An interaction, preset or emoji didn't send | `That didn't send. Try again.` |
+| Thanked (INT-9) | `Ji-woo says thanks 🙏` |
+| Poked back (INT-9) | `Ji-woo poked you back 👉` |
+| Slapped back (INT-9; not "slapped you back", which is Slap's own line) | `Ji-woo returned the slap 👋` |
+| Reply too late (INT-9) | `Too late to answer that one.` |
+| Reply sent twice (INT-9) | `Already answered.` |
+| Offered a high-five (INT-10) | `Mia wants a high-five ✋` |
+| The offer's bubble, over the offerer (INT-10) | `@Ji-woo` then `Up top ✋` |
+| A high-five happened, to the offerer (INT-10) | `Ji-woo high-fived you 🙌` |
+| Your offer lapsed (INT-10; only you see it) | `Ji-woo left you hanging ✋` |
+| High-five to someone Away (INT-10) | `Ji-woo's away right now.` |
+| Accepting after 10 s (INT-10) | `Too slow. Mia's hand is down.` |
+| Your own PB, the logged stamp (GYM-17) | `New PB: 105 kg × 5 🏆` |
+| Someone's PB, the room banner (GYM-18; no numbers, ever) | `Mia hit a PB on back squat 🏆` |
+| Their PB, in their menu for 30 s (GYM-18) | `Just hit a PB on back squat` |
+| Sent, target out of view (INT-11) | `You cheered Mia 🔥` · `You poked Mia 👉` · `You slapped Ji-woo 👋` · `You thanked Mia 🙏` · `You poked Tom back 👉` · `You returned Ji-woo's slap 👋` · `You offered Ji-woo a high-five ✋` · `You high-fived Mia 🙌` |
+| Room log lines (INT-5, GYM-18) | `Ji-woo thanked Mia` · `Ji-woo poked Mia back` · `Ji-woo returned Mia's slap` · `Mia and Ji-woo high-fived` · `Mia hit a PB on bench press` |
+| The sound setting's three values (INT-12) | `All sounds` · `Rest timer only` · `Sound off` |
 | Empty room log (INT-5) | `Quiet in here. Tap someone on the map to cheer them on 👀` |
 | Room full (ROOM-4) | `This gym's full: 12 of 12 are in.` |
 | Wrong passcode (ROOM-2) | `That passcode didn't work. Check it with your squad.` |
@@ -395,11 +412,43 @@ names to use.
   lifter, nothing otherwise. Beside the avatar on a laptop; pinned just
   above the dock on a phone, never over it. Traps focus; closes on Escape,
   a tap outside (which still reaches what it hit), or an action.
+  **Room feel (4 Nov, room-feel.md)**: **High-five** is a fifth move,
+  between Slap and Message, unavailable while the target is Away ("Ji-woo's
+  away right now.") and during the 10 s. While you can answer that person
+  (a reply for 30 s, or their open High-five for 10 s) the menu's **first
+  row is the answer** (`li.answer`: Thanks, Poke back, Slap back, or
+  High-five to accept), highlighted, with a dashed rule under it; it goes
+  in place when the window ends. For 30 s after their PB, Cheer and
+  High-five are highlighted under one gold line ("Just hit a PB on back
+  squat"). Highlight order: an open offer, a reply, a fresh PB, then state.
 - **`.banner`**: the message you get when someone interacts with you (INT-3):
   an RPG text box, ink on paper with the sender's head. At the top of the
   map on a laptop, fixed to the top of the screen on a phone; never covers
-  the bottom panel, never takes focus, stays 4 s, a newer one replaces it,
-  `role="status"`.
+  the bottom panel, never takes focus, a newer one of any kind replaces it,
+  `role="status"` on its line. **It may carry one button** (`.banner-act`,
+  room-feel.md): the answer (Thanks, Poke back, Slap back), High-five to
+  accept an offer, or Cheer on the room banner, at the box's bottom right,
+  drawn as the menu's highlighted row with the ▶ cursor. Only the button
+  takes taps, and not in its first half second (the ▶ appears when it goes
+  live); it's reachable by Tab, never focused by itself. **6 s with a
+  button, 4 s without.** On a laptop, a banner about someone standing in
+  the map's top three rows sits at the map's foot instead, so it never
+  covers them.
+- **`.banner.room`**: the room banner (GYM-18), the only banner sent to
+  everyone at once: a PB. The same box with a gold (`--finished`) ring and
+  a gold "PB" tab with the medal icon on its border, the person's name and
+  the lift, **never numbers**, and one Cheer button. Not on the lifter's
+  own screens.
+- **The PB stamp** (`.stamp.pb`, GYM-17): the logged stamp in gold with the
+  medal, "New PB: 105 kg × 5 🏆", in the stamp's own place and time. The
+  lifter's only confirmation; nothing new near Done.
+- **The confirmation line** (`.note.sent`, INT-11.5): where refusals
+  appear, solid leaf with a tick where a refusal is dashed, 2 s, only when
+  the person you acted on is out of view.
+- **`.sound`**: the sound setting (INT-12), a small sign on the gym map
+  panel's bottom border at the right, opposite the passcode: icon and value
+  in words (All sounds, Rest timer only, Sound off); one tap moves it on.
+  Never in the dock, a menu or the tray; never prompts.
 - **`.say`** (preset bubble) and **`.pop`** (emoji pop): over the sender on
   the map, each in its own layer: bubbles over avatars for 5 s, addressed
   "@name"; pops under avatars for 3 s, so a pop never covers a name tag.
@@ -407,7 +456,9 @@ names to use.
   every panel state, and the 4 × 2 tray of eight pixel emoji it opens,
   always at least 48 px clear of the dock's button (INT-8).
 - **`.room-log`**: a panel under the squad list with the newest presets and
-  interactions (INT-5), lines about you edged in leaf; no emoji.
+  interactions (INT-5), and since 4 Nov replies, finished high-fives and
+  PBs (a gold medal, no numbers); lines about you edged in leaf; no emoji,
+  no lapsed offers, nothing of Dony's PB.
 - **`.code-input`**: the join screen's six large character boxes (MVP spec
   "Join with code"). Accepts paste, forces uppercase, rejects `0 O 1 I L`
   as you type.
@@ -451,6 +502,20 @@ to 32 px and says why.
   at the water cooler with a bottle; Slacking sits and scrolls a phone, with a
   small pixel phone glow; Finished stands with its tag; Away is faded to
   50% with the phone-off icon above the head.
+- **Acting interactions out** (room-acting.md, since 5 Nov; room spec
+  "Acting it out, Nov 5", A.11). Off a machine, people have body frames
+  for interactions: the walker's moves (`reach`, `swing`, `point`, `cheer`,
+  `bow`), the target's reactions standing (`crouch`, `startle`, `recoil`)
+  and sitting (`sit-cheer`, `sit-startle`, `sit-recoil`, `sit-reach`), all
+  drawn on the shared body with moving arms as props, so every hair, skin,
+  shirt and Dony's head get them, and all drawn facing east (the page
+  mirrors them). On a machine there are no reaction frames: a Lifting
+  sender's gesture is one hand layer (`hand1`, `hand2`) drawn over any
+  machine in their own colours, and a Lifting target keeps the machine's
+  loop with an effect over it. Each move has a travelling effect (star,
+  finger, glove, heart, palm) and the High-five a smack, in the reaction
+  palette. A new standing-type pose needs these reactions drawn, or falls
+  back to the effect and jolt.
 - **The gym worker** (GYM-6) is visibly different from members: a staff
   uniform in a fixed palette nobody can pick, and bigger shoulders. The worker
   should be funny, not slow: a delivery takes about 4 s on screen and never blocks a
@@ -469,18 +534,56 @@ Pixel games move in steps, so Spotter does too.
   resting; when lifting, 250 ms on the treadmill and 400 ms elsewhere.
 - **Walking** moves a tile at a time along the aisles at about 8 tiles a
   second.
-- **Banners** slide in over 160 ms in 4 steps and leave the same way.
+- **Banners** slide in over 160 ms in 4 steps and leave the same way; they
+  stay 4 s, or 6 s when they carry a button.
 - **Interaction reactions** (cheer sparkle, poke finger and "!", slap glove,
-  POW and dizzy stars) are effects drawn over any pose, last under 1 s and
-  play on every screen. Reduced motion shows one still frame for 800 ms.
+  POW and dizzy stars; since 4 Nov thanks hearts, the return arrow on Poke
+  back and Slap back, the High-five's palms) are effects that play on every
+  screen. Each lasts **at most 1.5 s** (about 1 s in practice: in, a held
+  peak, out); frames may have their own lengths, and the sprite may move as
+  a whole (a hop of 4 sprite pixels, 2 seated; a nudge; a shake), and the
+  name tag never moves and draws over its own body. The room spec ("Room
+  feel, Nov 4", F.6) has every effect frame and time.
+- **Interactions are acted out** (since 5 Nov, room-acting.md; room spec
+  "Acting it out, Nov 5", A.2 to A.10). A sender who isn't Lifting **walks
+  over** along the aisles at the walk's pace to a tile diagonally in front
+  of the target, does the move there in body frames, and walks straight
+  back. A Lifting sender never leaves the machine: they **gesture** (a hand
+  over the machine, 400 ms) and an **effect travels** to the target in
+  tile steps of 125 ms, landing **within 1 s**. Off a machine the target
+  **reacts with their body** (hop, startled jump, cartoon recoil, bounce)
+  with the effect over it; on a machine, or walking, it stays the effect
+  and a jolt. The target's banner, sound and reaction land together at
+  **the hit**, at most **2.5 s** after the move arrives (capped at **3 s**,
+  after which it is delivered by travelling effect); the walker is **back
+  within 6 s**. One errand per avatar, never queued; nothing about it is
+  stored. **Reduced motion**: nobody walks and nothing flies; one still
+  frame of the move at the sender's place and one of the reaction at the
+  target's, for about 1 s, at once.
+- **The PB flex** is a body pose (two frames), up to **2 s** (1.9 s drawn),
+  in front of the station, then the avatar goes where its state puts it.
+  It never delays the lifter's own sheet. Reduced motion: one still frame
+  for about 1 s.
+- **No flashing**: nothing on the map changes brightness more than three
+  times a second (the PB confetti swaps 2.5 times).
 - **Emoji pops** rise 8 px in two steps and go at 3 s; bubbles go at 5 s.
 - **Rest-over flash** (LOG-5): the bottom panel's border flashes `--leaf` at
   most twice a second, three times, never the whole screen. WCAG forbids more
   than three flashes a second.
 - **Sound**: short chiptune blips made with the Web Audio API (square wave),
-  no audio files. The rest-over sound is the only one on by default;
-  interaction sounds are quieter. One sound toggle lives in the gym menu.
-  Sound never carries information on its own; the flash and text do.
+  no audio files (room-feel.md, INT-12; this replaces the earlier "rest-over
+  sound only"). **All sounds are on by default**: things that are about you
+  (an interaction, reply, High-five offer or preset to you), a short tick
+  when your own move or emoji lands, the High-five sound for the two people
+  in it, the PB fanfare for everyone in the room, and the rest-over sound.
+  Never for other people's moves or emoji, Dony's emoji, a refusal or a
+  lapse. Every interaction sound is quieter than the rest-over sound, and
+  at most **one interaction sound a second** plays; the fanfare and the
+  rest-over sound always play. **The sound setting** has three values,
+  **All sounds**, **Rest timer only** and **Sound off**, kept in that browser
+  only (nothing on the server), and lives on the room page as a sign on the
+  gym map's bottom border (there is no gym menu). It never prompts. Sound
+  never carries information on its own; the flash and text do.
 - **Reduced motion** (`prefers-reduced-motion: reduce`): avatars jump to their
   destination instead of walking, loops freeze on their first frame, the
   delivery worker is skipped (the equipment appears), and the rest-over flash
@@ -504,11 +607,27 @@ The target is WCAG 2.2 AA, from the MVP spec.
   Errors have the red fill and a text message.
 - **Live regions**: banners and state changes for *you* are `role="status"`.
   Other people's changes update the people list quietly; they are not
-  announced one by one.
+  announced one by one. **The one exception is a PB's room banner**
+  (GYM-18): every screen reader in the room hears it once ("Mia hit a
+  personal best on back squat"), because it is rare and the point is that
+  the whole room notices. A button on a banner is reachable by Tab while it
+  shows and never takes focus by itself; its name says who it answers
+  ("Slap back Ji-woo"). The sound setting's new value is announced once.
+- **Sound needs a gesture**: the page may play sound only after the person
+  has tapped, clicked **or pressed a key** on it, so a keyboard-only person
+  hears the rest-over sound too. Until then sounds are skipped silently,
+  with no prompt.
 - **No required gestures**: taps only. No swipe, drag or long-press is needed
   for anything (MVP spec "UX rules").
 - **Text alternatives**: the people list mirrors the map (GYM-15), and every
   sprite button has an accessible name like "Mia, resting, flat bench".
+- **A walking avatar** (an errand, or any walk) stays selectable by tap,
+  click and keyboard and keeps its place in the tab order; keyboard focus
+  stays on it while it moves (the ring moves with it), and a menu already
+  open on it stays where it opened. Its accessible name stays the one its
+  state gives, never "walking to Ji-woo", and nothing about a walk, a
+  gesture or a flight is announced: the banner and the room log say what
+  happened.
 - **Zoom**: pages still work at 200% browser zoom without horizontal
   scrolling on Paper pages.
 
