@@ -7,549 +7,552 @@
     <title>History · Spotter (mockup)</title>
     <link rel="stylesheet" href="../../../node_modules/@fontsource/press-start-2p/400.css" />
     <link rel="stylesheet" href="../../../node_modules/@fontsource/vt323/400.css" />
+    <!-- Layout.astro's <style is:global>, copied unchanged -->
     <style id="global">
-  /* Deep green, after the Game Boy's four-shade screen. One "pixel" of
-     decoration is --px, so borders and shadows stay on the same grid. */
-  :root {
-    --ink: #0b2416;
-    --deep: #0f3d22;
-    --green: #1f6b3a;
-    --leaf: #c8e66b;
-    --paper: #e8f0d8;
-    --card: #f7fbef;
-    --muted: #3d5a45;
-    --error: #a3241b;
-    --focus: #f2c94c;
-    --green-hover: #1a5c32;
-    --leaf-hover: #d6ef86;
-    --tile: #dbe7c6;
-    --row: #eef5e1;
-    /* person states (GYM-9): always a fill under ink text, with an icon and a word */
-    --idle: #e8f0d8;
-    --lifting: #c8e66b;
-    --resting: #7cc6e8;
-    --slacking: #ff6b5e;
-    --finished: #f2c94c;
-    /* Night: the gym after hours */
-    --night: #081a10;
-    --floor: #0f2a1a;
-    --panel: #143822;
-    --edge: #3f8f5a;
-    --dim: #8fa896;
-    --px: 4px;
-    --display: "Press Start 2P", ui-monospace, monospace;
-    --body: "VT323", ui-monospace, monospace;
-    color-scheme: light;
-  }
-  * {
-    box-sizing: border-box;
-  }
-  html {
-    -webkit-text-size-adjust: 100%;
-  }
-  body {
-    margin: 0;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    color: var(--ink);
-    font: 22px/1.35 var(--body);
-    /* pixel fonts have one weight; a faked bold smears them */
-    font-synthesis: none;
-    /* a faint 16 px checker, like gym floor tiles */
-    background-color: var(--paper);
-    background-image: conic-gradient(var(--tile) 25%, transparent 0 50%, var(--tile) 0 75%, transparent 0);
-    background-size: 32px 32px;
-  }
+      /* Deep green, after the Game Boy's four-shade screen. One "pixel" of
+         decoration is --px, so borders and shadows stay on the same grid. */
+      :root {
+        --ink: #0b2416;
+        --deep: #0f3d22;
+        --green: #1f6b3a;
+        --leaf: #c8e66b;
+        --paper: #e8f0d8;
+        --card: #f7fbef;
+        --muted: #3d5a45;
+        --error: #a3241b;
+        --focus: #f2c94c;
+        --green-hover: #1a5c32;
+        --leaf-hover: #d6ef86;
+        --tile: #dbe7c6;
+        --row: #eef5e1;
+        /* person states (GYM-9): always a fill under ink text, with an icon and a word */
+        --idle: #e8f0d8;
+        --lifting: #c8e66b;
+        --resting: #7cc6e8;
+        --slacking: #ff6b5e;
+        --finished: #f2c94c;
+        /* Night: the gym after hours */
+        --night: #081a10;
+        --floor: #0f2a1a;
+        --panel: #143822;
+        --edge: #3f8f5a;
+        --dim: #8fa896;
+        --px: 4px;
+        --display: "Press Start 2P", ui-monospace, monospace;
+        --body: "VT323", ui-monospace, monospace;
+        color-scheme: light;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        color: var(--ink);
+        font: 22px/1.35 var(--body);
+        /* pixel fonts have one weight; a faked bold smears them */
+        font-synthesis: none;
+        /* a faint 16 px checker, like gym floor tiles */
+        background-color: var(--paper);
+        background-image: conic-gradient(var(--tile) 25%, transparent 0 50%, var(--tile) 0 75%, transparent 0);
+        background-size: 32px 32px;
+      }
 
-  /* ---------- top bar ---------- */
-  .topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 0.5rem 1rem;
-    padding: 0.75rem 1rem;
-    background: var(--deep);
-    border-bottom: var(--px) solid var(--ink);
-  }
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    color: var(--paper);
-    text-decoration: none;
-    font: 16px/1 var(--display);
-    text-transform: uppercase;
-  }
-  .logo {
-    image-rendering: pixelated;
-  }
-  .topbar nav {
-    display: flex;
-    align-items: center;
-    gap: 1.25rem;
-  }
-  .topbar nav a,
-  .topbar .linklike {
-    color: var(--paper);
-    font: 24px/1 var(--body);
-    text-decoration: none;
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-  }
-  .topbar nav a:hover,
-  .topbar .linklike:hover {
-    color: var(--leaf);
-  }
-  .topbar nav a[aria-current="page"] {
-    color: var(--leaf);
-    text-decoration: underline;
-    text-decoration-thickness: var(--px);
-    text-underline-offset: 6px;
-  }
-  .topbar form {
-    margin: 0;
-  }
+      /* ---------- top bar ---------- */
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.5rem 1rem;
+        padding: 0.75rem 1rem;
+        background: var(--deep);
+        border-bottom: var(--px) solid var(--ink);
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        color: var(--paper);
+        text-decoration: none;
+        font: 16px/1 var(--display);
+        text-transform: uppercase;
+      }
+      .logo {
+        image-rendering: pixelated;
+      }
+      .topbar nav {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+      }
+      .topbar nav a,
+      .topbar .linklike {
+        color: var(--paper);
+        font: 24px/1 var(--body);
+        text-decoration: none;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+      }
+      .topbar nav a:hover,
+      .topbar .linklike:hover {
+        color: var(--leaf);
+      }
+      .topbar nav a[aria-current="page"] {
+        color: var(--leaf);
+        text-decoration: underline;
+        text-decoration-thickness: var(--px);
+        text-underline-offset: 6px;
+      }
+      .topbar form {
+        margin: 0;
+      }
 
-  /* ---------- page ---------- */
-  main {
-    flex: 1;
-    width: 100%;
-    max-width: 44rem;
-    margin: 0 auto;
-    padding: 1.5rem 1rem 2rem;
-  }
-  footer {
-    padding: 1rem;
-    text-align: center;
-    border-top: var(--px) solid var(--ink);
-    background: var(--deep);
-  }
-  footer a {
-    color: var(--leaf);
-  }
-  footer a[aria-current="page"] {
-    text-decoration: none;
-  }
-  footer a[aria-current="page"]::before {
-    content: "";
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    margin-right: 0.5rem;
-    background: var(--leaf);
-    vertical-align: middle;
-  }
-  h1,
-  h2,
-  h3 {
-    font-family: var(--display);
-    font-weight: 400;
-    line-height: 1.4;
-    margin: 0 0 1rem;
-  }
-  /* Press Start 2P is drawn on an 8 px grid: crisp only at 8, 16, 24, 32 */
-  h1 {
-    font-size: 24px;
-  }
-  h2 {
-    font-size: 16px;
-    color: var(--green);
-  }
-  h3 {
-    font-size: 16px;
-  }
-  p {
-    margin: 0 0 1rem;
-  }
-  a {
-    color: var(--green);
-    text-decoration-thickness: 2px;
-    text-underline-offset: 3px;
-  }
+      /* ---------- page ---------- */
+      main {
+        flex: 1;
+        width: 100%;
+        max-width: 44rem;
+        margin: 0 auto;
+        padding: 1.5rem 1rem 2rem;
+      }
+      footer {
+        padding: 1rem;
+        text-align: center;
+        border-top: var(--px) solid var(--ink);
+        background: var(--deep);
+      }
+      footer a {
+        color: var(--leaf);
+      }
+      footer a[aria-current="page"] {
+        text-decoration: none;
+      }
+      footer a[aria-current="page"]::before {
+        content: "";
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        margin-right: 0.5rem;
+        background: var(--leaf);
+        vertical-align: middle;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--display);
+        font-weight: 400;
+        line-height: 1.4;
+        margin: 0 0 1rem;
+      }
+      /* Press Start 2P is drawn on an 8 px grid: crisp only at 8, 16, 24, 32 */
+      h1 {
+        font-size: 24px;
+      }
+      h2 {
+        font-size: 16px;
+        color: var(--green);
+      }
+      h3 {
+        font-size: 16px;
+      }
+      p {
+        margin: 0 0 1rem;
+      }
+      a {
+        color: var(--green);
+        text-decoration-thickness: 2px;
+        text-underline-offset: 3px;
+      }
 
-  /* ---------- pixel panels ---------- */
-  .card {
-    position: relative;
-    margin: 0 0 1.5rem;
-    padding: 1.25rem;
-    background: var(--card);
-    border: var(--px) solid var(--ink);
-    box-shadow: var(--px) var(--px) 0 var(--green), calc(var(--px) * 2) calc(var(--px) * 2) 0 var(--ink);
-  }
-  .card > :last-child {
-    margin-bottom: 0;
-  }
+      /* ---------- pixel panels ---------- */
+      .card {
+        position: relative;
+        margin: 0 0 1.5rem;
+        padding: 1.25rem;
+        background: var(--card);
+        border: var(--px) solid var(--ink);
+        box-shadow: var(--px) var(--px) 0 var(--green), calc(var(--px) * 2) calc(var(--px) * 2) 0 var(--ink);
+      }
+      .card > :last-child {
+        margin-bottom: 0;
+      }
 
-  /* ---------- forms ---------- */
-  label {
-    display: block;
-    margin: 1rem 0 0.35rem;
-    color: var(--deep);
-  }
-  input,
-  select {
-    width: 100%;
-    min-height: 48px;
-    padding: 0.5rem 0.75rem;
-    font: 26px/1.1 var(--body);
-    color: var(--ink);
-    background: #fff;
-    border: var(--px) solid var(--ink);
-    border-radius: 0;
-    box-shadow: inset var(--px) var(--px) 0 var(--tile);
-  }
-  select {
-    appearance: none;
-    background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%),
-      linear-gradient(135deg, var(--ink) 50%, transparent 50%);
-    background-position: calc(100% - 22px) 50%, calc(100% - 14px) 50%;
-    background-size: 8px 8px;
-    background-repeat: no-repeat;
-    padding-right: 2.5rem;
-  }
-  button,
-  .button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    min-height: 48px;
-    padding: 0.75rem 1.25rem;
-    font: 16px/1.4 var(--display);
-    text-transform: uppercase;
-    text-decoration: none;
-    color: var(--paper);
-    background: var(--green);
-    border: 0;
-    cursor: pointer;
-    /* a notched pixel outline plus a drop shadow; pressing moves it down */
-    box-shadow:
-      0 calc(var(--px) * -1) 0 var(--ink),
-      0 var(--px) 0 var(--ink),
-      calc(var(--px) * -1) 0 0 var(--ink),
-      var(--px) 0 0 var(--ink),
-      0 calc(var(--px) * 2) 0 var(--ink),
-      inset 0 calc(var(--px) * -1) 0 var(--deep);
-    margin: var(--px) var(--px) calc(var(--px) * 2);
-    transition: transform 60ms steps(1);
-  }
-  button:hover,
-  .button:hover {
-    background: var(--green-hover);
-  }
-  button:active,
-  .button:active {
-    transform: translateY(var(--px));
-    box-shadow:
-      0 calc(var(--px) * -1) 0 var(--ink),
-      0 var(--px) 0 var(--ink),
-      calc(var(--px) * -1) 0 0 var(--ink),
-      var(--px) 0 0 var(--ink);
-  }
-  .button.secondary {
-    color: var(--ink);
-    background: var(--leaf);
-  }
-  .button.secondary:hover {
-    background: var(--leaf-hover);
-  }
-  /* pending: held down, label kept, never a spinner */
-  button:disabled,
-  button:disabled:hover {
-    cursor: progress;
-    color: var(--paper);
-    background: var(--muted);
-    transform: translateY(var(--px));
-    box-shadow:
-      0 calc(var(--px) * -1) 0 var(--ink),
-      0 var(--px) 0 var(--ink),
-      calc(var(--px) * -1) 0 0 var(--ink),
-      var(--px) 0 0 var(--ink);
-  }
-  .wide {
-    width: calc(100% - var(--px) * 2);
-  }
-  .topbar .linklike {
-    background: none;
-    box-shadow: none;
-    margin: 0;
-    padding: 0;
-    text-transform: none;
-  }
-  /* ink ring on Paper; the yellow one fails contrast there (1.4:1) and is
-     kept for the dark bars and Night */
-  :focus-visible {
-    outline: var(--px) solid var(--ink);
-    outline-offset: var(--px);
-  }
-  .topbar :focus-visible,
-  footer :focus-visible,
-  body.night :focus-visible {
-    outline-color: var(--focus);
-  }
-  input[aria-invalid="true"] {
-    box-shadow: inset var(--px) var(--px) 0 var(--error);
-  }
-  /* the ring reaches 8 px past a field, so the error sits 12 px below it */
-  .error {
-    margin: 0.75rem 0 0;
-    padding: 0.4rem 0.6rem;
-    color: #fff;
-    background: var(--error);
-    border-left: calc(var(--px) * 2) solid var(--ink);
-  }
-  .error a {
-    color: #fff;
-  }
-  .hint {
-    color: var(--muted);
-  }
-  .actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem 1rem;
-    align-items: center;
-    margin-top: 1.25rem;
-  }
+      /* ---------- forms ---------- */
+      label {
+        display: block;
+        margin: 1rem 0 0.35rem;
+        color: var(--deep);
+      }
+      input,
+      select {
+        width: 100%;
+        min-height: 48px;
+        padding: 0.5rem 0.75rem;
+        font: 26px/1.1 var(--body);
+        color: var(--ink);
+        background: #fff;
+        border: var(--px) solid var(--ink);
+        border-radius: 0;
+        box-shadow: inset var(--px) var(--px) 0 var(--tile);
+      }
+      select {
+        appearance: none;
+        background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%),
+          linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+        background-position: calc(100% - 22px) 50%, calc(100% - 14px) 50%;
+        background-size: 8px 8px;
+        background-repeat: no-repeat;
+        padding-right: 2.5rem;
+      }
+      button,
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        min-height: 48px;
+        padding: 0.75rem 1.25rem;
+        font: 16px/1.4 var(--display);
+        text-transform: uppercase;
+        text-decoration: none;
+        color: var(--paper);
+        background: var(--green);
+        border: 0;
+        cursor: pointer;
+        /* a notched pixel outline plus a drop shadow; pressing moves it down */
+        box-shadow:
+          0 calc(var(--px) * -1) 0 var(--ink),
+          0 var(--px) 0 var(--ink),
+          calc(var(--px) * -1) 0 0 var(--ink),
+          var(--px) 0 0 var(--ink),
+          0 calc(var(--px) * 2) 0 var(--ink),
+          inset 0 calc(var(--px) * -1) 0 var(--deep);
+        margin: var(--px) var(--px) calc(var(--px) * 2);
+        transition: transform 60ms steps(1);
+      }
+      button:hover,
+      .button:hover {
+        background: var(--green-hover);
+      }
+      button:active,
+      .button:active {
+        transform: translateY(var(--px));
+        box-shadow:
+          0 calc(var(--px) * -1) 0 var(--ink),
+          0 var(--px) 0 var(--ink),
+          calc(var(--px) * -1) 0 0 var(--ink),
+          var(--px) 0 0 var(--ink);
+      }
+      .button.secondary {
+        color: var(--ink);
+        background: var(--leaf);
+      }
+      .button.secondary:hover {
+        background: var(--leaf-hover);
+      }
+      /* pending: held down, label kept, never a spinner */
+      button:disabled,
+      button:disabled:hover {
+        cursor: progress;
+        color: var(--paper);
+        background: var(--muted);
+        transform: translateY(var(--px));
+        box-shadow:
+          0 calc(var(--px) * -1) 0 var(--ink),
+          0 var(--px) 0 var(--ink),
+          calc(var(--px) * -1) 0 0 var(--ink),
+          var(--px) 0 0 var(--ink);
+      }
+      .wide {
+        width: calc(100% - var(--px) * 2);
+      }
+      .topbar .linklike {
+        background: none;
+        box-shadow: none;
+        margin: 0;
+        padding: 0;
+        text-transform: none;
+      }
+      /* ink ring on Paper; the yellow one fails contrast there (1.4:1) and is
+         kept for the dark bars and Night */
+      :focus-visible {
+        outline: var(--px) solid var(--ink);
+        outline-offset: var(--px);
+      }
+      .topbar :focus-visible,
+      footer :focus-visible,
+      body.night :focus-visible {
+        outline-color: var(--focus);
+      }
+      input[aria-invalid="true"] {
+        box-shadow: inset var(--px) var(--px) 0 var(--error);
+      }
+      /* the ring reaches 8 px past a field, so the error sits 12 px below it */
+      .error {
+        margin: 0.75rem 0 0;
+        padding: 0.4rem 0.6rem;
+        color: #fff;
+        background: var(--error);
+        border-left: calc(var(--px) * 2) solid var(--ink);
+      }
+      .error a {
+        color: #fff;
+      }
+      .hint {
+        color: var(--muted);
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1rem;
+        align-items: center;
+        margin-top: 1.25rem;
+      }
 
-  /* ---------- Night: same components, surface colours swapped ---------- */
-  body.night {
-    color: var(--paper);
-    color-scheme: dark;
-    background-color: var(--night);
-    background-image: conic-gradient(var(--floor) 25%, transparent 0 50%, var(--floor) 0 75%, transparent 0);
-  }
-  /* the gym needs room for two columns at 900 px and up */
-  body.night main {
-    max-width: 64rem;
-  }
-  .night h2 {
-    color: var(--leaf);
-  }
-  .night label {
-    color: var(--paper);
-  }
-  .night .bubble {
-    color: var(--ink);
-  }
-  .night .hint {
-    color: var(--dim);
-  }
-  .night main a {
-    color: var(--leaf);
-  }
-  /* --green disappears on the dark floor, so primary is leaf with ink */
-  .night button,
-  .night .button {
-    color: var(--ink);
-    background: var(--leaf);
-  }
-  .night button:hover,
-  .night .button:hover {
-    background: var(--leaf-hover);
-  }
-  /* secondary on Night: night fill, paper label, the notch in --edge */
-  .night .button.secondary {
-    color: var(--paper);
-    background: var(--night);
-    box-shadow:
-      0 calc(var(--px) * -1) 0 var(--edge),
-      0 var(--px) 0 var(--edge),
-      calc(var(--px) * -1) 0 0 var(--edge),
-      var(--px) 0 0 var(--edge),
-      0 calc(var(--px) * 2) 0 #000;
-  }
-  .night .button.secondary:hover {
-    background: var(--floor);
-  }
-  .night .button.secondary:active {
-    box-shadow:
-      0 calc(var(--px) * -1) 0 var(--edge),
-      0 var(--px) 0 var(--edge),
-      calc(var(--px) * -1) 0 0 var(--edge),
-      var(--px) 0 0 var(--edge);
-  }
-  .night button:disabled {
-    color: var(--ink);
-    background: var(--dim);
-  }
-  .night input,
-  .night select {
-    color: var(--paper);
-    background-color: var(--night);
-    border-color: var(--edge);
-    box-shadow: inset var(--px) var(--px) 0 #000;
-  }
-  .night select {
-    background-image:
-      linear-gradient(45deg, transparent 50%, var(--paper) 50%),
-      linear-gradient(135deg, var(--paper) 50%, transparent 50%);
-  }
-  .night th,
-  .night td {
-    border-color: var(--edge);
-  }
-  .night tbody tr:nth-child(even) td {
-    background: var(--floor);
-  }
+      /* ---------- Night: same components, surface colours swapped ---------- */
+      body.night {
+        color: var(--paper);
+        color-scheme: dark;
+        background-color: var(--night);
+        background-image: conic-gradient(var(--floor) 25%, transparent 0 50%, var(--floor) 0 75%, transparent 0);
+      }
+      /* the gym needs room for two columns at 900 px and up, and for the map at
+         2x (640 px) beside the sheet (room spec, Departure 19) */
+      body.night main {
+        max-width: 72rem;
+      }
+      .night h2 {
+        color: var(--leaf);
+      }
+      .night label {
+        color: var(--paper);
+      }
+      .night .bubble {
+        color: var(--ink);
+      }
+      .night .hint {
+        color: var(--dim);
+      }
+      .night main a {
+        color: var(--leaf);
+      }
+      /* --green disappears on the dark floor, so primary is leaf with ink */
+      .night button,
+      .night .button {
+        color: var(--ink);
+        background: var(--leaf);
+      }
+      .night button:hover,
+      .night .button:hover {
+        background: var(--leaf-hover);
+      }
+      /* secondary on Night: night fill, paper label, the notch in --edge */
+      .night .button.secondary {
+        color: var(--paper);
+        background: var(--night);
+        box-shadow:
+          0 calc(var(--px) * -1) 0 var(--edge),
+          0 var(--px) 0 var(--edge),
+          calc(var(--px) * -1) 0 0 var(--edge),
+          var(--px) 0 0 var(--edge),
+          0 calc(var(--px) * 2) 0 #000;
+      }
+      .night .button.secondary:hover {
+        background: var(--floor);
+      }
+      .night .button.secondary:active {
+        box-shadow:
+          0 calc(var(--px) * -1) 0 var(--edge),
+          0 var(--px) 0 var(--edge),
+          calc(var(--px) * -1) 0 0 var(--edge),
+          var(--px) 0 0 var(--edge);
+      }
+      .night button:disabled {
+        color: var(--ink);
+        background: var(--dim);
+      }
+      .night input,
+      .night select {
+        color: var(--paper);
+        background-color: var(--night);
+        border-color: var(--edge);
+        box-shadow: inset var(--px) var(--px) 0 #000;
+      }
+      .night select {
+        background-image:
+          linear-gradient(45deg, transparent 50%, var(--paper) 50%),
+          linear-gradient(135deg, var(--paper) 50%, transparent 50%);
+      }
+      .night th,
+      .night td {
+        border-color: var(--edge);
+      }
+      .night tbody tr:nth-child(even) td {
+        background: var(--floor);
+      }
 
-  /* ---------- bits ---------- */
-  .passcode-box {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-  }
-  .passcode {
-    display: inline-block;
-    padding: 0.5rem 0.75rem;
-    font: 24px/1 var(--display);
-    letter-spacing: 0.12em;
-    color: var(--leaf);
-    background: var(--ink);
-    border: var(--px) solid var(--green);
-  }
-  .bubble {
-    position: relative;
-    margin: 0 0 1.25rem;
-    padding: 0.75rem 1rem;
-    background: var(--leaf);
-    border: var(--px) solid var(--ink);
-  }
-  .bubble::after {
-    content: "";
-    position: absolute;
-    left: 1.5rem;
-    bottom: calc(var(--px) * -3);
-    width: calc(var(--px) * 3);
-    height: calc(var(--px) * 3);
-    background: var(--leaf);
-    border-right: var(--px) solid var(--ink);
-    border-bottom: var(--px) solid var(--ink);
-    transform: skewY(45deg);
-  }
-  .roster {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  .roster li {
-    padding: 0.25rem 0.6rem;
-    background: var(--paper);
-    border: var(--px) solid var(--ink);
-  }
-  .roster li::before {
-    content: "";
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    margin-right: 0.5rem;
-    background: var(--green);
-    vertical-align: middle;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 24px;
-  }
-  th {
-    font: 8px/2 var(--display);
-    text-transform: uppercase;
-    color: var(--paper);
-    background: var(--deep);
-  }
-  th,
-  td {
-    text-align: left;
-    padding: 0.5rem 0.6rem;
-    border: 2px solid var(--ink);
-  }
-  td.num,
-  th.num {
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-  }
-  tbody tr:nth-child(even) td {
-    background: var(--row);
-  }
-  .stat {
-    font-family: var(--display);
-    font-size: 8px;
-    color: var(--muted);
-  }
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0.25rem 0.5rem;
-    font: 8px/1 var(--display);
-    text-transform: uppercase;
-    white-space: nowrap;
-    color: var(--ink);
-    border: 2px solid var(--ink);
-  }
-  .chip svg {
-    flex: none;
-  }
-  .state-idle {
-    background: var(--idle);
-  }
-  .state-lifting {
-    background: var(--lifting);
-  }
-  .state-resting {
-    background: var(--resting);
-  }
-  .state-slacking {
-    background: var(--slacking);
-  }
-  .state-finished {
-    background: var(--finished);
-  }
-  .badge {
-    display: inline-block;
-    margin-left: 0.5rem;
-    padding: 0.15rem 0.4rem;
-    font: 8px/1.4 var(--display);
-    vertical-align: middle;
-    color: var(--ink);
-    background: var(--leaf);
-    border: 2px solid var(--ink);
-  }
+      /* ---------- bits ---------- */
+      .passcode-box {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+      .passcode {
+        display: inline-block;
+        padding: 0.5rem 0.75rem;
+        font: 24px/1 var(--display);
+        letter-spacing: 0.12em;
+        color: var(--leaf);
+        background: var(--ink);
+        border: var(--px) solid var(--green);
+      }
+      .bubble {
+        position: relative;
+        margin: 0 0 1.25rem;
+        padding: 0.75rem 1rem;
+        background: var(--leaf);
+        border: var(--px) solid var(--ink);
+      }
+      .bubble::after {
+        content: "";
+        position: absolute;
+        left: 1.5rem;
+        bottom: calc(var(--px) * -3);
+        width: calc(var(--px) * 3);
+        height: calc(var(--px) * 3);
+        background: var(--leaf);
+        border-right: var(--px) solid var(--ink);
+        border-bottom: var(--px) solid var(--ink);
+        transform: skewY(45deg);
+      }
+      .roster {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .roster li {
+        padding: 0.25rem 0.6rem;
+        background: var(--paper);
+        border: var(--px) solid var(--ink);
+      }
+      .roster li::before {
+        content: "";
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        margin-right: 0.5rem;
+        background: var(--green);
+        vertical-align: middle;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 24px;
+      }
+      th {
+        font: 8px/2 var(--display);
+        text-transform: uppercase;
+        color: var(--paper);
+        background: var(--deep);
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 0.5rem 0.6rem;
+        border: 2px solid var(--ink);
+      }
+      td.num,
+      th.num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      tbody tr:nth-child(even) td {
+        background: var(--row);
+      }
+      .stat {
+        font-family: var(--display);
+        font-size: 8px;
+        color: var(--muted);
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        font: 8px/1 var(--display);
+        text-transform: uppercase;
+        white-space: nowrap;
+        color: var(--ink);
+        border: 2px solid var(--ink);
+      }
+      .chip svg {
+        flex: none;
+      }
+      .state-idle {
+        background: var(--idle);
+      }
+      .state-lifting {
+        background: var(--lifting);
+      }
+      .state-resting {
+        background: var(--resting);
+      }
+      .state-slacking {
+        background: var(--slacking);
+      }
+      .state-finished {
+        background: var(--finished);
+      }
+      .badge {
+        display: inline-block;
+        margin-left: 0.5rem;
+        padding: 0.15rem 0.4rem;
+        font: 8px/1.4 var(--display);
+        vertical-align: middle;
+        color: var(--ink);
+        background: var(--leaf);
+        border: 2px solid var(--ink);
+      }
 
-  @media (max-width: 420px) {
-    body {
-      font-size: 21px;
-    }
-    h1 {
-      font-size: 16px;
-    }
-    .card {
-      padding: 1rem;
-    }
-    .passcode {
-      font-size: 20px;
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    button,
-    .button {
-      transition: none;
-    }
-  }
+      @media (max-width: 420px) {
+        body {
+          font-size: 21px;
+        }
+        h1 {
+          font-size: 16px;
+        }
+        .card {
+          padding: 1rem;
+        }
+        .passcode {
+          font-size: 20px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        button,
+        .button {
+          transition: none;
+        }
+      }
     </style>
     <style id="page">
       /* ===== shared: logbook =====
-         One workout is drawn the same way on /history and /workouts/:id.
-         Written identically in both mockups; move to one place
-         (a WorkoutLog.astro component, see spec.md). */
+         Written identically in the four Logbook mockups (history, summary,
+         exercise, plans). Today it lives in WorkoutTally.astro and
+         WorkoutSets.astro as scoped styles; see history/spec.md,
+         "Logbook refactor, Nov 4", for where each part goes. */
 
       /* shared: logbook. When it was: "6:42 – 7:46 pm" */
       .when {
@@ -557,9 +560,8 @@
         color: var(--muted);
       }
 
-      /* shared: logbook. The tally: Time, Sets, then Volume and Distance
-         only when they're above zero. 2 px ink lines come from the gaps, so
-         any count of boxes, in any arrangement, is ruled the same way. */
+      /* shared: logbook. The tally: boxed figures ruled by 2 px ink lines
+         from the gaps, so any count of boxes is ruled the same way. */
       .tally {
         display: grid;
         grid-auto-flow: column;
@@ -593,13 +595,30 @@
         }
       }
 
-      /* shared: logbook. The set table: one tbody per exercise, its name
-         and best set in a row header, then one written set per row. */
+      /* shared: logbook. The set table: one tbody per group (an exercise on
+         history and the summary, a session on the exercise page), its name
+         in a row header, then one written set per row. */
       .log th.lift {
         font: 24px/1.15 var(--body);
         text-transform: none;
         color: var(--ink);
         vertical-align: top;
+      }
+      /* NEW: the group's name is a link (an exercise's page, or a session's
+         summary), 44 px tall, without making the row taller */
+      .log th.lift a {
+        display: inline-block;
+        min-height: 44px;
+        margin: -0.5rem 0 -0.25rem;
+        padding: 0.5rem 0 0.25rem;
+      }
+      .log th.lift a:hover {
+        color: var(--deep);
+      }
+      /* the arrow follows the last word if a long name wraps */
+      .log th.lift a svg {
+        margin-left: 0.5rem;
+        vertical-align: -1px;
       }
       .log .best {
         display: block;
@@ -624,6 +643,38 @@
         font-size: 21px;
         color: var(--muted);
       }
+      /* NEW: a warm-up's figures step back, so working sets read first */
+      .log tr.warm .set {
+        color: var(--muted);
+      }
+      /* NEW: the marks under a set: its type, then any record. They may
+         wrap; the set's figures above them never do. */
+      .log .marks {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        align-items: center;
+        gap: var(--px) 0.5rem;
+        margin: var(--px) 0 0;
+        font-size: 21px;
+        line-height: 1.1;
+        white-space: normal;
+        text-align: right;
+      }
+      /* NEW: the exercise's note for that workout, under its sets */
+      .log tr.note td {
+        padding-top: 0.25rem;
+        font-size: 21px;
+        line-height: 1.2;
+        color: var(--muted);
+        border-top-style: dashed;
+        overflow-wrap: anywhere;
+      }
+      .log tr.note svg {
+        margin-right: 0.5rem;
+        vertical-align: -1px;
+        color: var(--ink);
+      }
       .log tbody tr > * {
         background: var(--card);
       }
@@ -632,6 +683,33 @@
       }
       .log tbody + tbody tr:first-child > * {
         border-top-width: var(--px);
+      }
+
+      /* shared: logbook (and the room's sheet). Set-type and record marks,
+         built on the layout's .badge. Proposed for Layout.astro once the
+         Gym design uses the same names. */
+      .badge.warmup,
+      .badge.failure,
+      .badge.record {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--px);
+        margin: 0;
+        white-space: nowrap;
+      }
+      /* a warm-up is a lighter set: a dashed outline, no fill */
+      .badge.warmup {
+        background: transparent;
+        border-style: dashed;
+      }
+      /* a set taken to failure: a solid outline, no fill */
+      .badge.failure {
+        background: transparent;
+      }
+      /* a record: the leaf-on-ink of a lit day, with the star */
+      .badge.record {
+        color: var(--leaf);
+        background: var(--ink);
       }
 
       /* shared: logbook. Text for screen readers only */
@@ -643,6 +721,7 @@
         clip-path: inset(50%);
         white-space: nowrap;
       }
+
 
       /* ===== history page ===== */
       .lede {
@@ -786,6 +865,164 @@
         display: block;
         margin: 0.5rem auto 1rem;
       }
+
+      /* ===== Logbook refactor, Nov 4: the week so far (LB-6) =====
+         Above the weeks: this week's tally (the shared .tally) and the
+         streak, drawn as plates loaded on a bar, one per week. */
+      .so-far {
+        margin: 0 0 1.5rem;
+      }
+      .so-far h2 {
+        margin: 0 0 0.75rem;
+      }
+      .so-far-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem 1.5rem;
+      }
+      .so-far .tally {
+        margin: 0;
+      }
+      .streak {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 0;
+        font-size: 24px;
+      }
+      /* the bar: a muted rod; each week trained is a plate on it, this
+         week's in leaf. Nothing is drawn for a week not yet trained. */
+      .plates {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        height: 32px;
+        padding: 0 var(--px) 0 calc(var(--px) * 3);
+      }
+      .plates::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 50%;
+        height: var(--px);
+        margin-top: -2px;
+        background: var(--muted);
+      }
+      .plates i {
+        position: relative;
+        width: 8px;
+        height: 28px;
+        background: var(--green);
+        border: 2px solid var(--ink);
+      }
+      .plates i.now {
+        background: var(--leaf);
+      }
+      /* more than eight weeks: eight plates and a count, so it never wraps */
+      .plates .more {
+        position: relative;
+        padding: 0 0.25rem;
+        font-size: 21px;
+        background: var(--paper);
+      }
+
+      /* shared: logbook. LB-7, Nov 5: the exercise's art, your avatar
+         lifting on its machine as the gym draws it. Three 32 × 32 layers
+         (machine back, you, machine front) stacked in one box, two frames
+         swapped by CSS at the gym's pace; Frame 1, still, under reduced
+         motion. In the build this is ExerciseArt.astro. */
+      .ex-art {
+        --frame: 400ms;
+        position: relative;
+        display: inline-block;
+        flex: none;
+        width: var(--ex-size);
+        height: var(--ex-size);
+        vertical-align: middle;
+        image-rendering: pixelated;
+      }
+      .ex-art[data-pose="treadmill"] {
+        --frame: 250ms;
+      }
+      .ex-art > svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+      .ex-art > .av {
+        z-index: 1;
+      }
+      .ex-art > .machine.front {
+        z-index: 2;
+      }
+      .ex-art .frame-2 {
+        visibility: hidden;
+      }
+      .ex-art .frame-1 {
+        animation: ex-frame-1 calc(var(--frame) * 2) steps(1) infinite;
+      }
+      .ex-art .frame-2 {
+        animation: ex-frame-2 calc(var(--frame) * 2) steps(1) infinite;
+      }
+      @keyframes ex-frame-1 {
+        50% {
+          visibility: hidden;
+        }
+      }
+      @keyframes ex-frame-2 {
+        50% {
+          visibility: visible;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .ex-art .frame-1,
+        .ex-art .frame-2 {
+          animation: none;
+        }
+      }
+
+      /* shared: logbook. LB-7 in a set table: the art at 1× (32 px), inside
+         the name's one link (D36), so the tap target is the pair. Option A,
+         picked Nov 5: from 421 px the art has a column of its own in the
+         row header's left padding, a 12 px gap, and the name and Best line
+         stack beside it on one left edge. On a phone (the row header has
+         101 to 168 px for text) the art stands above the name with an 8 px
+         gap, all on one edge. The set column is untouched either way. */
+      .log th.lift:has(.ex-link) {
+        position: relative;
+        padding-left: calc(0.6rem + 32px + 0.75rem);
+      }
+      .log th.lift a.ex-link .ex-art {
+        position: absolute;
+        top: 0.5rem;
+        left: 0.6rem;
+      }
+      /* the arrow rule's margin (.log th.lift a svg) isn't for the art */
+      .log th.lift a.ex-link .ex-art > svg {
+        margin: 0;
+      }
+      .log th.lift a.ex-link .nm {
+        line-height: 32px;
+      }
+      @media (max-width: 420px) {
+        .log th.lift:has(.ex-link) {
+          padding-left: 0.6rem;
+        }
+        .log th.lift a.ex-link .ex-art {
+          position: relative;
+          top: auto;
+          left: auto;
+          display: block;
+          margin: 0 0 0.5rem;
+        }
+        .log th.lift a.ex-link .nm {
+          line-height: 1.15;
+        }
+      }
     </style>
     <style id="mockup">
       /* mockup scaffolding only: state labels. Not part of the page. */
@@ -812,16 +1049,15 @@
     </style>
   </head>
   <body>
-    <!-- Pixel icons on an 8 × 8 grid in currentColor, shown at 2×. The build
-         draws them with Sprite.astro from src/sprites/icons.ts. -->
+    <!-- New art, drawn here until it is in src/sprites/icons.ts (grid in
+         docs/design/history/spec.md, "Logbook refactor, Nov 4" > Shared marks).
+         Then draw it from /sprites.svg#i-record instead. -->
     <svg width="0" height="0" style="position: absolute" aria-hidden="true">
-      <!-- New art (ADR 0005): bigDumbbell redrawn at 32 × 16. Grid in spec.md,
-           "Appendix: 32 × 32 art"; once in src/sprites/props.ts, draw it from
-           /sprites.svg#bigDumbbell instead. -->
+      <symbol id="i-record" viewBox="0 0 8 8"><path fill="currentColor" d="M3 0h2v2h-2zM2 2h4v1h-4zM0 3h8v1h-8zM1 4h6v1h-6zM2 5h4v1h-4zM1 6h2v1h-2zM5 6h2v1h-2zM1 7h1v1h-1zM6 7h1v1h-1z" /></symbol>
     </svg>
     <header class="topbar">
       <a href="/" class="brand" aria-label="Spotter home">
-        <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><use href="/sprites.svg#logo"/></svg>
+        <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><use href="/sprites.svg#logo" /></svg>
         <span>Spotter</span>
       </a>
       <nav>
@@ -834,114 +1070,84 @@
     <main>
       <!-- state: default -->
       <section class="state">
-        <p class="state-label">State: default · mixed kinds, all finished</p>
-        <p class="state-note">Thu 8 Oct. Today has every kind of set (4 tally boxes); Monday was cardio only (Distance instead of Volume).</p>
+        <p class="state-label">State: default · trained this week, 6-week streak</p>
+        <p class="state-note">Wed 4 Nov, after tonight's push day. Records, warm-ups, failure sets, RPE and notes in the tables; every exercise name links to its page. Nov 5 (LB-7): each exercise's name has Mia's avatar lifting on its machine beside it, 32 px, animating, in its own column with the name and Best line on one edge (option A); at 390 px it stands above the name and "Incline bench press" wraps under it.</p>
 
         <h1>History</h1>
-        <p class="lede">9 workouts · 28,470 kg · 14.6 km in the book</p>
+        <p class="lede">41 workouts · 128,960 kg · 46.2 km in the book</p>
+        <section class="so-far" aria-labelledby="sf-1">
+          <h2 id="sf-1">Week so far</h2>
+          <div class="so-far-row">
+            <dl class="tally">
+              <div><dt>Workouts</dt><dd>2</dd></div>
+              <div><dt>Volume</dt><dd>4,898<span class="unit"> kg</span></dd></div>
+              <div><dt>Distance</dt><dd>5.6<span class="unit"> km</span></dd></div>
+            </dl>
+            <p class="streak"><span class="plates" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i class="now"></i></span>6-week streak</p>
+          </div>
+        </section>
 
         <section class="week" aria-labelledby="wk-this">
           <div class="week-head">
             <h2 id="wk-this">This week</h2>
             <div class="week-row">
-              <span class="days" role="img" aria-label="Trained Monday, Tuesday and Thursday">
-                <span class="on">M</span><span class="on">T</span><span>W</span><span class="on">T</span><span>F</span><span>S</span><span>S</span>
-              </span>
-              <span class="count">3 workouts</span>
+              <span class="days" role="img" aria-label="Trained Monday and Wednesday"><span class="on">M</span><span>T</span><span class="on">W</span><span>T</span><span>F</span><span>S</span><span>S</span></span>
+              <span class="count">2 workouts</span>
             </div>
           </div>
 
           <article class="card entry">
             <header class="entry-head">
-              <h3><a href="/workouts/31">Today<span class="vh">, summary</span><svg class="go" width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a></h3>
-              <p class="when"><time datetime="2026-10-08T18:42">6:42</time> – <time datetime="2026-10-08T19:46">7:46 pm</time></p>
+              <h3><a href="/workouts/52">Today<span class="vh">, summary</span><svg class="go" width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a></h3>
+              <p class="when"><time>6:12</time> – <time>7:20 pm</time></p>
             </header>
             <dl class="tally">
-              <div><dt>Time</dt><dd>64<span class="unit"> min</span></dd></div>
-              <div><dt>Sets</dt><dd>13</dd></div>
-              <div><dt>Volume</dt><dd>3,520<span class="unit"> kg</span></dd></div>
-              <div><dt>Distance</dt><dd>1.2<span class="unit"> km</span></dd></div>
-            </dl>
-            <table class="log">
-              <thead><tr><th scope="col">Exercise</th><th scope="col" class="num">Set</th></tr></thead>
-              <tbody>
-                <tr><th scope="rowgroup" rowspan="4" class="lift">Bench press<span class="best">Best <span>82.5 kg × 8</span></span></th><td class="set">60 kg × 10</td></tr>
-                <tr><td class="set">80 kg × 8</td></tr>
-                <tr><td class="set">82.5 kg × 8</td></tr>
-                <tr><td class="set">82.5 kg × 6</td></tr>
-              </tbody>
-              <tbody>
-                <tr><th scope="rowgroup" rowspan="3" class="lift">Overhead press<span class="best">Best <span>45 kg × 8</span></span></th><td class="set">45 kg × 8</td></tr>
-                <tr><td class="set">45 kg × 7</td></tr>
-                <tr><td class="set">42.5 kg × 8</td></tr>
-              </tbody>
-              <tbody>
-                <tr><th scope="rowgroup" rowspan="3" class="lift">Pull-up<span class="best">Best <span>BW × 10</span></span></th><td class="set">BW × 10</td></tr>
-                <tr><td class="set">BW + 10 kg × 6</td></tr>
-                <tr><td class="set">BW + 10 kg × 5</td></tr>
-              </tbody>
-              <tbody>
-                <tr><th scope="rowgroup" rowspan="2" class="lift">Plank<span class="best">Best <span>1:30</span></span></th><td class="set">1:30</td></tr>
-                <tr><td class="set">1:15</td></tr>
-              </tbody>
-              <tbody>
-                <tr><th scope="rowgroup" class="lift">Incline walk</th><td class="set">1.2 km · 15:00<span class="pace">12:30 /km</span></td></tr>
-              </tbody>
-            </table>
-          </article>
-
-          <article class="card entry">
-            <header class="entry-head">
-              <h3><a href="/workouts/30">Tue 6 Oct<span class="vh">, summary</span><svg class="go" width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a></h3>
-              <p class="when"><time datetime="2026-10-06T07:05">7:05</time> – <time datetime="2026-10-06T08:10">8:10 am</time></p>
-            </header>
-            <dl class="tally">
-              <div><dt>Time</dt><dd>65<span class="unit"> min</span></dd></div>
+              <div><dt>Time</dt><dd>68<span class="unit"> min</span></dd></div>
               <div><dt>Sets</dt><dd>12</dd></div>
-              <div><dt>Volume</dt><dd>3,680<span class="unit"> kg</span></dd></div>
+              <div><dt>Volume</dt><dd>4,898<span class="unit"> kg</span></dd></div>
             </dl>
             <table class="log">
               <thead><tr><th scope="col">Exercise</th><th scope="col" class="num">Set</th></tr></thead>
               <tbody>
-                <tr><th scope="rowgroup" rowspan="4" class="lift">Deadlift<span class="best">Best <span>140 kg × 3</span></span></th><td class="set">100 kg × 5</td></tr>
-                <tr><td class="set">130 kg × 5</td></tr>
-                <tr><td class="set">140 kg × 3</td></tr>
-                <tr><td class="set">140 kg × 3</td></tr>
+                <tr class="warm"><th scope="rowgroup" rowspan="6" class="lift"><a class="ex-link" href="/exercises/3"><span class="ex-art" data-pose="flat-bench" aria-hidden="true" style="--ex-size: 32px; --av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><svg class="machine back" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-flat-bench-back-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-flat-bench-back-2" /></g></svg><svg class="av" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#av-flat-bench-1-ponytail" /></g><g class="frame-2"><use href="/sprites.svg#av-flat-bench-2-ponytail" /></g></svg><svg class="machine front" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-flat-bench-front-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-flat-bench-front-2" /></g></svg></span><span class="nm">Bench press</span></a><span class="best">Best <span>85 kg × 5</span></span></th><td class="set">50 kg × 10<span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></td></tr>
+                <tr class="warm"><td class="set">60 kg × 5<span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></td></tr>
+                <tr><td class="set">80 kg × 8<span class="rpe" aria-hidden="true"> @ 8</span><span class="vh">, RPE 8</span></td></tr>
+                <tr><td class="set">82.5 kg × 8<span class="rpe" aria-hidden="true"> @ 9</span><span class="vh">, RPE 9</span></td></tr>
+                <tr><td class="set">85 kg × 5<span class="rpe" aria-hidden="true"> @ 9.5</span><span class="vh">, RPE 9.5</span><span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span><span class="rec-for">heaviest</span></span></td></tr>
+                <tr><td class="set">82.5 kg × 6<span class="marks"><span class="badge failure"><span class="vh">Set type: </span>Failure</span></span></td></tr>
+                <tr class="note"><td colspan="2"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="vh">Note: </span>Elbows tucked. 85 moved fast</td></tr>
               </tbody>
               <tbody>
-                <tr><th scope="rowgroup" rowspan="3" class="lift">Pull-up<span class="best">Best <span>BW × 8</span></span></th><td class="set">BW × 8</td></tr>
-                <tr><td class="set">BW × 8</td></tr>
-                <tr><td class="set">BW × 7</td></tr>
+                <tr><th scope="rowgroup" rowspan="3" class="lift"><a class="ex-link" href="/exercises/4"><span class="ex-art" data-pose="flat-bench" aria-hidden="true" style="--ex-size: 32px; --av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><svg class="machine back" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-flat-bench-back-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-flat-bench-back-2" /></g></svg><svg class="av" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#av-flat-bench-1-ponytail" /></g><g class="frame-2"><use href="/sprites.svg#av-flat-bench-2-ponytail" /></g></svg><svg class="machine front" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-flat-bench-front-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-flat-bench-front-2" /></g></svg></span><span class="nm">Incline bench press</span></a><span class="best">Best <span>62.5 kg × 8</span></span></th><td class="set">60 kg × 10</td></tr>
+                <tr><td class="set">62.5 kg × 8<span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span><span class="rec-for">heaviest</span></span></td></tr>
+                <tr><td class="set">62.5 kg × 7</td></tr>
+                <tr class="note"><td colspan="2"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="vh">Note: </span>Seat on 4</td></tr>
               </tbody>
               <tbody>
-                <tr><th scope="rowgroup" rowspan="3" class="lift">Seated cable row<span class="best">Best <span>60 kg × 10</span></span></th><td class="set">55 kg × 10</td></tr>
-                <tr><td class="set">60 kg × 10</td></tr>
-                <tr><td class="set">60 kg × 9</td></tr>
-              </tbody>
-              <tbody>
-                <tr><th scope="rowgroup" rowspan="2" class="lift">Hanging leg raise<span class="best">Best <span>BW × 12</span></span></th><td class="set">BW × 12</td></tr>
-                <tr><td class="set">BW × 10</td></tr>
+                <tr><th scope="rowgroup" rowspan="3" class="lift"><a class="ex-link" href="/exercises/8"><span class="ex-art" data-pose="dumbbell-rack" aria-hidden="true" style="--ex-size: 32px; --av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><svg class="machine back" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-dumbbell-rack-back-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-dumbbell-rack-back-2" /></g></svg><svg class="av" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#av-dumbbell-rack-1-ponytail" /></g><g class="frame-2"><use href="/sprites.svg#av-dumbbell-rack-2-ponytail" /></g></svg><svg class="machine front" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-dumbbell-rack-front-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-dumbbell-rack-front-2" /></g></svg></span><span class="nm">Lateral raise</span></a><span class="best">Best <span>10 kg × 12</span></span></th><td class="set">10 kg × 12<span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span><span class="rec-for">most reps</span></span></td></tr>
+                <tr><td class="set">10 kg × 12</td></tr>
+                <tr><td class="set">10 kg × 10</td></tr>
               </tbody>
             </table>
           </article>
 
           <article class="card entry">
             <header class="entry-head">
-              <h3><a href="/workouts/29">Mon 5 Oct<span class="vh">, summary</span><svg class="go" width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a></h3>
-              <p class="when"><time datetime="2026-10-05T06:10">6:10</time> – <time datetime="2026-10-05T06:48">6:48 am</time></p>
+              <h3><a href="/workouts/51">Mon 2 Nov<span class="vh">, summary</span><svg class="go" width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a></h3>
+              <p class="when"><time>6:05</time> – <time>6:41 am</time></p>
             </header>
             <dl class="tally">
-              <div><dt>Time</dt><dd>38<span class="unit"> min</span></dd></div>
+              <div><dt>Time</dt><dd>36<span class="unit"> min</span></dd></div>
               <div><dt>Sets</dt><dd>2</dd></div>
-              <div><dt>Distance</dt><dd>5.8<span class="unit"> km</span></dd></div>
+              <div><dt>Distance</dt><dd>5.6<span class="unit"> km</span></dd></div>
             </dl>
             <table class="log">
               <thead><tr><th scope="col">Exercise</th><th scope="col" class="num">Set</th></tr></thead>
               <tbody>
-                <tr><th scope="rowgroup" class="lift">Run</th><td class="set">5 km · 25:00<span class="pace">5:00 /km</span></td></tr>
+                <tr class="warm"><th scope="rowgroup" class="lift"><a class="ex-link" href="/exercises/2"><span class="ex-art" data-pose="treadmill" aria-hidden="true" style="--ex-size: 32px; --av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><svg class="machine back" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-treadmill-back-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-treadmill-back-2" /></g></svg><svg class="av" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#av-treadmill-1-ponytail" /></g><g class="frame-2"><use href="/sprites.svg#av-treadmill-2-ponytail" /></g></svg><svg class="machine front" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-treadmill-front-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-treadmill-front-2" /></g></svg></span><span class="nm">Incline walk</span></a></th><td class="set">0.6 km · 6:00<span class="pace">10:00 /km</span><span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></td></tr>
               </tbody>
               <tbody>
-                <tr><th scope="rowgroup" class="lift">Incline walk</th><td class="set">0.8 km · 10:00<span class="pace">12:30 /km</span></td></tr>
+                <tr><th scope="rowgroup" class="lift"><a class="ex-link" href="/exercises/1"><span class="ex-art" data-pose="treadmill" aria-hidden="true" style="--ex-size: 32px; --av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><svg class="machine back" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-treadmill-back-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-treadmill-back-2" /></g></svg><svg class="av" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#av-treadmill-1-ponytail" /></g><g class="frame-2"><use href="/sprites.svg#av-treadmill-2-ponytail" /></g></svg><svg class="machine front" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-treadmill-front-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-treadmill-front-2" /></g></svg></span><span class="nm">Run</span></a></th><td class="set">5 km · 26:40<span class="pace">5:20 /km</span></td></tr>
               </tbody>
             </table>
           </article>
@@ -951,38 +1157,68 @@
           <div class="week-head">
             <h2 id="wk-last">Last week</h2>
             <div class="week-row">
-              <span class="days" role="img" aria-label="Trained Saturday">
-                <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span class="on">S</span><span>S</span>
-              </span>
-              <span class="count">1 workout</span>
+              <span class="days" role="img" aria-label="Trained Tuesday and Thursday"><span>M</span><span class="on">T</span><span>W</span><span class="on">T</span><span>F</span><span>S</span><span>S</span></span>
+              <span class="count">2 workouts</span>
             </div>
           </div>
 
           <article class="card entry">
             <header class="entry-head">
-              <h3><a href="/workouts/28">Sat 3 Oct<span class="vh">, summary</span><svg class="go" width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a></h3>
-              <p class="when"><time datetime="2026-10-03T09:02">9:02</time> – <time datetime="2026-10-03T10:00">10:00 am</time></p>
+              <h3><a href="/workouts/50">Thu 29 Oct<span class="vh">, summary</span><svg class="go" width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a></h3>
+              <p class="when"><time>7:02</time> – <time>8:05 pm</time></p>
             </header>
             <dl class="tally">
-              <div><dt>Time</dt><dd>58<span class="unit"> min</span></dd></div>
+              <div><dt>Time</dt><dd>63<span class="unit"> min</span></dd></div>
               <div><dt>Sets</dt><dd>8</dd></div>
-              <div><dt>Volume</dt><dd>3,480<span class="unit"> kg</span></dd></div>
+              <div><dt>Volume</dt><dd>2,665<span class="unit"> kg</span></dd></div>
             </dl>
             <table class="log">
               <thead><tr><th scope="col">Exercise</th><th scope="col" class="num">Set</th></tr></thead>
               <tbody>
-                <tr><th scope="rowgroup" rowspan="4" class="lift">Back squat<span class="best">Best <span>110 kg × 5</span></span></th><td class="set">100 kg × 5</td></tr>
-                <tr><td class="set">110 kg × 5</td></tr>
-                <tr><td class="set">110 kg × 5</td></tr>
-                <tr><td class="set">110 kg × 4</td></tr>
+                <tr class="warm"><th scope="rowgroup" rowspan="3" class="lift"><a class="ex-link" href="/exercises/9"><span class="ex-art" data-pose="lifting-platform" aria-hidden="true" style="--ex-size: 32px; --av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><svg class="machine back" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-lifting-platform-back-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-lifting-platform-back-2" /></g></svg><svg class="av" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#av-lifting-platform-1-ponytail" /></g><g class="frame-2"><use href="/sprites.svg#av-lifting-platform-2-ponytail" /></g></svg><svg class="machine front" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-lifting-platform-front-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-lifting-platform-front-2" /></g></svg></span><span class="nm">Deadlift</span></a><span class="best">Best <span>145 kg × 3</span></span></th><td class="set">100 kg × 5<span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></td></tr>
+                <tr><td class="set">140 kg × 3</td></tr>
+                <tr><td class="set">145 kg × 3<span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span><span class="rec-for">heaviest, best e1RM</span></span></td></tr>
               </tbody>
               <tbody>
-                <tr><th scope="rowgroup" rowspan="2" class="lift">Romanian deadlift<span class="best">Best <span>90 kg × 8</span></span></th><td class="set">90 kg × 8</td></tr>
-                <tr><td class="set">90 kg × 8</td></tr>
+                <tr><th scope="rowgroup" rowspan="3" class="lift"><a class="ex-link" href="/exercises/11"><span class="ex-art" data-pose="pull-up-bar" aria-hidden="true" style="--ex-size: 32px; --av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><svg class="machine back" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-pull-up-bar-back-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-pull-up-bar-back-2" /></g></svg><svg class="av" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#av-pull-up-bar-1-ponytail" /></g><g class="frame-2"><use href="/sprites.svg#av-pull-up-bar-2-ponytail" /></g></svg><svg class="machine front" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-pull-up-bar-front-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-pull-up-bar-front-2" /></g></svg></span><span class="nm">Pull-up</span></a><span class="best">Best <span>BW × 10</span></span></th><td class="set">BW × 10<span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span><span class="rec-for">most reps</span></span></td></tr>
+                <tr><td class="set">BW + 10 kg × 6<span class="rpe" aria-hidden="true"> @ 9</span><span class="vh">, RPE 9</span></td></tr>
+                <tr><td class="set">BW + 10 kg × 5<span class="marks"><span class="badge failure"><span class="vh">Set type: </span>Failure</span></span></td></tr>
+                <tr class="note"><td colspan="2"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="vh">Note: </span>Left shoulder grumpy. Go easy next time</td></tr>
               </tbody>
               <tbody>
-                <tr><th scope="rowgroup" rowspan="2" class="lift">Push-ups<span class="best">Best <span>BW × 20</span></span></th><td class="set">BW × 20</td></tr>
-                <tr><td class="set">BW × 15</td></tr>
+                <tr><th scope="rowgroup" rowspan="2" class="lift"><a class="ex-link" href="/exercises/14"><span class="ex-art" data-pose="cable-machine" aria-hidden="true" style="--ex-size: 32px; --av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><svg class="machine back" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-cable-machine-back-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-cable-machine-back-2" /></g></svg><svg class="av" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#av-cable-machine-1-ponytail" /></g><g class="frame-2"><use href="/sprites.svg#av-cable-machine-2-ponytail" /></g></svg><svg class="machine front" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-cable-machine-front-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-cable-machine-front-2" /></g></svg></span><span class="nm">Seated cable row</span></a><span class="best">Best <span>60 kg × 10</span></span></th><td class="set">60 kg × 10</td></tr>
+                <tr><td class="set">60 kg × 10</td></tr>
+              </tbody>
+            </table>
+          </article>
+
+          <article class="card entry">
+            <header class="entry-head">
+              <h3><a href="/workouts/49">Tue 27 Oct<span class="vh">, summary</span><svg class="go" width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a></h3>
+              <p class="when"><time>6:20</time> – <time>7:24 pm</time></p>
+            </header>
+            <dl class="tally">
+              <div><dt>Time</dt><dd>64<span class="unit"> min</span></dd></div>
+              <div><dt>Sets</dt><dd>10</dd></div>
+              <div><dt>Volume</dt><dd>4,388<span class="unit"> kg</span></dd></div>
+            </dl>
+            <table class="log">
+              <thead><tr><th scope="col">Exercise</th><th scope="col" class="num">Set</th></tr></thead>
+              <tbody>
+                <tr class="warm"><th scope="rowgroup" rowspan="4" class="lift"><a class="ex-link" href="/exercises/3"><span class="ex-art" data-pose="flat-bench" aria-hidden="true" style="--ex-size: 32px; --av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><svg class="machine back" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-flat-bench-back-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-flat-bench-back-2" /></g></svg><svg class="av" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#av-flat-bench-1-ponytail" /></g><g class="frame-2"><use href="/sprites.svg#av-flat-bench-2-ponytail" /></g></svg><svg class="machine front" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-flat-bench-front-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-flat-bench-front-2" /></g></svg></span><span class="nm">Bench press</span></a><span class="best">Best <span>82.5 kg × 8</span></span></th><td class="set">60 kg × 10<span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></td></tr>
+                <tr><td class="set">82.5 kg × 8<span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span><span class="rec-for">best e1RM</span></span></td></tr>
+                <tr><td class="set">82.5 kg × 7</td></tr>
+                <tr><td class="set">80 kg × 8</td></tr>
+              </tbody>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="3" class="lift"><a class="ex-link" href="/exercises/4"><span class="ex-art" data-pose="flat-bench" aria-hidden="true" style="--ex-size: 32px; --av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><svg class="machine back" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-flat-bench-back-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-flat-bench-back-2" /></g></svg><svg class="av" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#av-flat-bench-1-ponytail" /></g><g class="frame-2"><use href="/sprites.svg#av-flat-bench-2-ponytail" /></g></svg><svg class="machine front" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-flat-bench-front-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-flat-bench-front-2" /></g></svg></span><span class="nm">Incline bench press</span></a><span class="best">Best <span>60 kg × 10</span></span></th><td class="set">60 kg × 10</td></tr>
+                <tr><td class="set">60 kg × 9</td></tr>
+                <tr><td class="set">60 kg × 8</td></tr>
+              </tbody>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="3" class="lift"><a class="ex-link" href="/exercises/8"><span class="ex-art" data-pose="dumbbell-rack" aria-hidden="true" style="--ex-size: 32px; --av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><svg class="machine back" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-dumbbell-rack-back-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-dumbbell-rack-back-2" /></g></svg><svg class="av" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#av-dumbbell-rack-1-ponytail" /></g><g class="frame-2"><use href="/sprites.svg#av-dumbbell-rack-2-ponytail" /></g></svg><svg class="machine front" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-dumbbell-rack-front-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-dumbbell-rack-front-2" /></g></svg></span><span class="nm">Lateral raise</span></a><span class="best">Best <span>10 kg × 10</span></span></th><td class="set">10 kg × 10</td></tr>
+                <tr><td class="set">10 kg × 10</td></tr>
+                <tr><td class="set">10 kg × 9</td></tr>
               </tbody>
             </table>
           </article>
@@ -990,25 +1226,97 @@
 
         <details class="week">
           <summary class="week-head">
-            <h2>21 – 27 Sep</h2>
+            <h2>19 – 25 Oct</h2>
             <span class="week-row">
-              <span class="days" role="img" aria-label="Trained Monday, Wednesday and Saturday">
-                <span class="on">M</span><span>T</span><span class="on">W</span><span>T</span><span>F</span><span class="on">S</span><span>S</span>
-              </span>
-              <span class="count">3 workouts</span>
+              <span class="days" role="img" aria-label="Trained Tuesday and Friday"><span>M</span><span class="on">T</span><span>W</span><span>T</span><span class="on">F</span><span>S</span><span>S</span></span>
+              <span class="count">2 workouts</span>
               <span class="toggle"></span>
             </span>
           </summary>
           <p class="hint">(Cards for this week render here when opened.)</p>
         </details>
+      </section>
+
+      <!-- state: not yet this week -->
+      <section class="state">
+        <p class="state-label">State: not yet this week · streak from last week</p>
+        <p class="state-note">Mon 9 Nov, 7 am. Nothing logged yet this week: Workouts says 0 plainly, Volume and Distance are hidden (both 0), and the streak counts to last week (D22). No empty plate, no countdown, no nudge (LB-6.6).</p>
+
+        <h1>History</h1>
+        <p class="lede">43 workouts · 136,410 kg · 51.8 km in the book</p>
+        <section class="so-far" aria-labelledby="sf-2">
+          <h2 id="sf-2">Week so far</h2>
+          <div class="so-far-row">
+            <dl class="tally">
+              <div><dt>Workouts</dt><dd>0</dd></div>
+            </dl>
+            <p class="streak"><span class="plates" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>7-week streak</p>
+          </div>
+        </section>
+
+        <section class="week" aria-labelledby="wk-last-2">
+          <div class="week-head">
+            <h2 id="wk-last-2">Last week</h2>
+            <div class="week-row">
+              <span class="days" role="img" aria-label="Trained Monday, Wednesday and Saturday"><span class="on">M</span><span>T</span><span class="on">W</span><span>T</span><span>F</span><span class="on">S</span><span>S</span></span>
+              <span class="count">3 workouts</span>
+            </div>
+          </div>
+          <p class="hint">(Last week's cards, as in the default state.)</p>
+        </section>
+      </section>
+
+      <!-- state: back after a break -->
+      <section class="state">
+        <p class="state-label">State: back after a break · 1-week streak</p>
+        <p class="state-note">Tom, a month off, one run this week. The figures read as a pat on the back (LB-6.10): one plate, in leaf.</p>
+
+        <h1>History</h1>
+        <p class="lede">9 workouts · 21,350 kg · 12.4 km in the book</p>
+        <section class="so-far" aria-labelledby="sf-3">
+          <h2 id="sf-3">Week so far</h2>
+          <div class="so-far-row">
+            <dl class="tally">
+              <div><dt>Workouts</dt><dd>1</dd></div>
+              <div><dt>Distance</dt><dd>3.2<span class="unit"> km</span></dd></div>
+            </dl>
+            <p class="streak"><span class="plates" aria-hidden="true"><i class="now"></i></span>1-week streak</p>
+          </div>
+        </section>
+
+        <section class="week" aria-labelledby="wk-this-3">
+          <div class="week-head">
+            <h2 id="wk-this-3">This week</h2>
+            <div class="week-row">
+              <span class="days" role="img" aria-label="Trained Tuesday"><span>M</span><span class="on">T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></span>
+              <span class="count">1 workout</span>
+            </div>
+          </div>
+          <p class="hint">(This week's card.)</p>
+        </section>
+      </section>
+
+      <!-- state: no streak -->
+      <section class="state">
+        <p class="state-label">State: no streak · nothing this week or last</p>
+        <p class="state-note">Streak 0: no streak is shown and nothing is said about one (D22, LB-6.6). Only the plain 0.</p>
+
+        <h1>History</h1>
+        <p class="lede">9 workouts · 21,350 kg · 12.4 km in the book</p>
+        <section class="so-far" aria-labelledby="sf-4">
+          <h2 id="sf-4">Week so far</h2>
+          <div class="so-far-row">
+            <dl class="tally">
+              <div><dt>Workouts</dt><dd>0</dd></div>
+            </dl>
+          </div>
+        </section>
 
         <details class="week">
           <summary class="week-head">
-            <h2>14 – 20 Sep</h2>
+            <h2>12 – 18 Oct</h2>
             <span class="week-row">
-              <span class="days" role="img" aria-label="Trained Tuesday and Friday">
-                <span>M</span><span class="on">T</span><span>W</span><span>T</span><span class="on">F</span><span>S</span><span>S</span>
-              </span>
+              <span class="days" role="img" aria-label="Trained Tuesday and Friday"><span>M</span><span class="on">T</span><span>W</span><span>T</span><span class="on">F</span><span>S</span><span>S</span></span>
               <span class="count">2 workouts</span>
               <span class="toggle"></span>
             </span>
@@ -1020,96 +1328,58 @@
       <!-- state: live -->
       <section class="state">
         <p class="state-label">State: live · a workout still open</p>
-        <p class="state-note">Opened from the nav between sets to check Tuesday's pull-ups. The live card has no summary link; the Resume strip stays pinned while scrolling.</p>
+        <p class="state-note">Opened from the nav between sets. The live entry's marks are worked out from what's stored, as on every page; it has no summary link, and Resume stays pinned.</p>
 
         <h1>History</h1>
-        <p class="lede">9 workouts · 26,250 kg · 13.4 km in the book</p>
+        <p class="lede">41 workouts · 127,082 kg · 46.2 km in the book</p>
+        <section class="so-far" aria-labelledby="sf-5">
+          <h2 id="sf-5">Week so far</h2>
+          <div class="so-far-row">
+            <dl class="tally">
+              <div><dt>Workouts</dt><dd>2</dd></div>
+              <div><dt>Volume</dt><dd>3,020<span class="unit"> kg</span></dd></div>
+              <div><dt>Distance</dt><dd>5.6<span class="unit"> km</span></dd></div>
+            </dl>
+            <p class="streak"><span class="plates" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i class="now"></i></span>6-week streak</p>
+          </div>
+        </section>
 
         <section class="week" aria-labelledby="wk-this-live">
           <div class="week-head">
             <h2 id="wk-this-live">This week</h2>
             <div class="week-row">
-              <span class="days" role="img" aria-label="Trained Monday, Tuesday and Thursday">
-                <span class="on">M</span><span class="on">T</span><span>W</span><span class="on">T</span><span>F</span><span>S</span><span>S</span>
-              </span>
-              <span class="count">3 workouts</span>
+              <span class="days" role="img" aria-label="Trained Monday and Wednesday"><span class="on">M</span><span>T</span><span class="on">W</span><span>T</span><span>F</span><span>S</span><span>S</span></span>
+              <span class="count">2 workouts</span>
             </div>
           </div>
 
           <article class="card entry">
             <header class="entry-head">
               <h3>Today <span class="badge">Live</span></h3>
-              <p class="when">Started <time datetime="2026-10-08T18:42">6:42 pm</time></p>
+              <p class="when">Started <time>6:12 pm</time></p>
             </header>
             <dl class="tally">
-              <div><dt>So far</dt><dd>21<span class="unit"> min</span></dd></div>
-              <div><dt>Sets</dt><dd>3</dd></div>
-              <div><dt>Volume</dt><dd>1,300<span class="unit"> kg</span></dd></div>
+              <div><dt>So far</dt><dd>31<span class="unit"> min</span></dd></div>
+              <div><dt>Sets</dt><dd>6</dd></div>
+              <div><dt>Volume</dt><dd>3,020<span class="unit"> kg</span></dd></div>
             </dl>
             <table class="log">
               <thead><tr><th scope="col">Exercise</th><th scope="col" class="num">Set</th></tr></thead>
               <tbody>
-                <tr><th scope="rowgroup" rowspan="2" class="lift">Bench press<span class="best">Best <span>82.5 kg × 8</span></span></th><td class="set">80 kg × 8</td></tr>
-                <tr><td class="set">82.5 kg × 8</td></tr>
-              </tbody>
-              <tbody>
-                <tr><th scope="rowgroup" class="lift">Plank</th><td class="set">1:30</td></tr>
-              </tbody>
-            </table>
-          </article>
-
-          <article class="card entry">
-            <header class="entry-head">
-              <h3><a href="/workouts/30">Tue 6 Oct<span class="vh">, summary</span><svg class="go" width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a></h3>
-              <p class="when"><time datetime="2026-10-06T07:05">7:05</time> – <time datetime="2026-10-06T08:10">8:10 am</time></p>
-            </header>
-            <dl class="tally">
-              <div><dt>Time</dt><dd>65<span class="unit"> min</span></dd></div>
-              <div><dt>Sets</dt><dd>12</dd></div>
-              <div><dt>Volume</dt><dd>3,680<span class="unit"> kg</span></dd></div>
-            </dl>
-            <table class="log">
-              <thead><tr><th scope="col">Exercise</th><th scope="col" class="num">Set</th></tr></thead>
-              <tbody>
-                <tr><th scope="rowgroup" rowspan="4" class="lift">Deadlift<span class="best">Best <span>140 kg × 3</span></span></th><td class="set">100 kg × 5</td></tr>
-                <tr><td class="set">130 kg × 5</td></tr>
-                <tr><td class="set">140 kg × 3</td></tr>
-                <tr><td class="set">140 kg × 3</td></tr>
-              </tbody>
-              <tbody>
-                <tr><th scope="rowgroup" rowspan="3" class="lift">Pull-up<span class="best">Best <span>BW × 8</span></span></th><td class="set">BW × 8</td></tr>
-                <tr><td class="set">BW × 8</td></tr>
-                <tr><td class="set">BW × 7</td></tr>
-              </tbody>
-              <tbody>
-                <tr><th scope="rowgroup" rowspan="3" class="lift">Seated cable row<span class="best">Best <span>60 kg × 10</span></span></th><td class="set">55 kg × 10</td></tr>
-                <tr><td class="set">60 kg × 10</td></tr>
-                <tr><td class="set">60 kg × 9</td></tr>
-              </tbody>
-              <tbody>
-                <tr><th scope="rowgroup" rowspan="2" class="lift">Hanging leg raise<span class="best">Best <span>BW × 12</span></span></th><td class="set">BW × 12</td></tr>
-                <tr><td class="set">BW × 10</td></tr>
+                <tr class="warm"><th scope="rowgroup" rowspan="6" class="lift"><a href="/exercises/3">Bench press</a><span class="best">Best <span>85 kg × 5</span></span></th><td class="set">50 kg × 10<span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></td></tr>
+                <tr class="warm"><td class="set">60 kg × 5<span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></td></tr>
+                <tr><td class="set">80 kg × 8<span class="rpe" aria-hidden="true"> @ 8</span><span class="vh">, RPE 8</span></td></tr>
+                <tr><td class="set">82.5 kg × 8<span class="rpe" aria-hidden="true"> @ 9</span><span class="vh">, RPE 9</span></td></tr>
+                <tr><td class="set">85 kg × 5<span class="rpe" aria-hidden="true"> @ 9.5</span><span class="vh">, RPE 9.5</span><span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span><span class="rec-for">heaviest</span></span></td></tr>
+                <tr><td class="set">82.5 kg × 6<span class="marks"><span class="badge failure"><span class="vh">Set type: </span>Failure</span></span></td></tr>
+                <tr class="note"><td colspan="2"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="vh">Note: </span>Elbows tucked. 85 moved fast</td></tr>
               </tbody>
             </table>
           </article>
         </section>
 
-        <details class="week">
-          <summary class="week-head">
-            <h2>Last week</h2>
-            <span class="week-row">
-              <span class="days" role="img" aria-label="Trained Saturday">
-                <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span class="on">S</span><span>S</span>
-              </span>
-              <span class="count">1 workout</span>
-              <span class="toggle"></span>
-            </span>
-          </summary>
-          <p class="hint">(Cards render here when opened.)</p>
-        </details>
-
         <div class="resume">
-          <p>Still on the floor <small>3 sets in, 21 min</small></p>
+          <p>Still on the floor <small>6 sets in, 31 min</small></p>
           <a href="/rooms/12" class="button">Resume</a>
         </div>
       </section>
@@ -1117,10 +1387,11 @@
       <!-- state: empty -->
       <section class="state">
         <p class="state-label">State: empty · first visit</p>
+        <p class="state-note">Unchanged, and no week-so-far block (LB-6.8).</p>
 
         <h1>History</h1>
         <div class="card empty">
-          <svg viewBox="0 0 32 16" width="64" height="32" aria-hidden="true" shape-rendering="crispEdges"><use href="/sprites.svg#bigDumbbell"/></svg>
+          <svg viewBox="0 0 32 16" width="64" height="32" aria-hidden="true" shape-rendering="crispEdges"><use href="/sprites.svg#bigDumbbell" /></svg>
           <p>No workouts yet. Your future self is waiting 🏋️</p>
           <a href="/" class="button">Start one</a>
         </div>
@@ -1129,8 +1400,9 @@
       <!-- state: signed out, success, pending, error -->
       <section class="state">
         <p class="state-label">States with no screen of their own</p>
-        <p class="state-note">Signed out: 303 to /signin?next=/history, as today. Success: finishing now lands on the workout's summary, so history has no bubble and ignores ?finished=1. Pending and error: the page has no form; every action is a plain link.</p>
+        <p class="state-note">Signed out: 303 to /signin?next=/history, as today. Success: none on this page. Pending and error: still no form; every action is a plain link. Old sets (before this change) show no marks, no RPE and no note (LB-0.3): they look exactly like today's tables.</p>
       </section>
+
     </main>
     <footer>
       <a href="/readme/">What Spotter is for</a>

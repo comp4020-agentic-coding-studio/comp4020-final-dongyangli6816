@@ -1,0 +1,1528 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f3d22" />
+    <title>Bench press · Spotter (mockup)</title>
+    <link rel="stylesheet" href="../../../node_modules/@fontsource/press-start-2p/400.css" />
+    <link rel="stylesheet" href="../../../node_modules/@fontsource/vt323/400.css" />
+    <!-- Layout.astro's <style is:global>, copied unchanged -->
+    <style id="global">
+      /* Deep green, after the Game Boy's four-shade screen. One "pixel" of
+         decoration is --px, so borders and shadows stay on the same grid. */
+      :root {
+        --ink: #0b2416;
+        --deep: #0f3d22;
+        --green: #1f6b3a;
+        --leaf: #c8e66b;
+        --paper: #e8f0d8;
+        --card: #f7fbef;
+        --muted: #3d5a45;
+        --error: #a3241b;
+        --focus: #f2c94c;
+        --green-hover: #1a5c32;
+        --leaf-hover: #d6ef86;
+        --tile: #dbe7c6;
+        --row: #eef5e1;
+        /* person states (GYM-9): always a fill under ink text, with an icon and a word */
+        --idle: #e8f0d8;
+        --lifting: #c8e66b;
+        --resting: #7cc6e8;
+        --slacking: #ff6b5e;
+        --finished: #f2c94c;
+        /* Night: the gym after hours */
+        --night: #081a10;
+        --floor: #0f2a1a;
+        --panel: #143822;
+        --edge: #3f8f5a;
+        --dim: #8fa896;
+        --px: 4px;
+        --display: "Press Start 2P", ui-monospace, monospace;
+        --body: "VT323", ui-monospace, monospace;
+        color-scheme: light;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        color: var(--ink);
+        font: 22px/1.35 var(--body);
+        /* pixel fonts have one weight; a faked bold smears them */
+        font-synthesis: none;
+        /* a faint 16 px checker, like gym floor tiles */
+        background-color: var(--paper);
+        background-image: conic-gradient(var(--tile) 25%, transparent 0 50%, var(--tile) 0 75%, transparent 0);
+        background-size: 32px 32px;
+      }
+
+      /* ---------- top bar ---------- */
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.5rem 1rem;
+        padding: 0.75rem 1rem;
+        background: var(--deep);
+        border-bottom: var(--px) solid var(--ink);
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        color: var(--paper);
+        text-decoration: none;
+        font: 16px/1 var(--display);
+        text-transform: uppercase;
+      }
+      .logo {
+        image-rendering: pixelated;
+      }
+      .topbar nav {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+      }
+      .topbar nav a,
+      .topbar .linklike {
+        color: var(--paper);
+        font: 24px/1 var(--body);
+        text-decoration: none;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+      }
+      .topbar nav a:hover,
+      .topbar .linklike:hover {
+        color: var(--leaf);
+      }
+      .topbar nav a[aria-current="page"] {
+        color: var(--leaf);
+        text-decoration: underline;
+        text-decoration-thickness: var(--px);
+        text-underline-offset: 6px;
+      }
+      .topbar form {
+        margin: 0;
+      }
+
+      /* ---------- page ---------- */
+      main {
+        flex: 1;
+        width: 100%;
+        max-width: 44rem;
+        margin: 0 auto;
+        padding: 1.5rem 1rem 2rem;
+      }
+      footer {
+        padding: 1rem;
+        text-align: center;
+        border-top: var(--px) solid var(--ink);
+        background: var(--deep);
+      }
+      footer a {
+        color: var(--leaf);
+      }
+      footer a[aria-current="page"] {
+        text-decoration: none;
+      }
+      footer a[aria-current="page"]::before {
+        content: "";
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        margin-right: 0.5rem;
+        background: var(--leaf);
+        vertical-align: middle;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--display);
+        font-weight: 400;
+        line-height: 1.4;
+        margin: 0 0 1rem;
+      }
+      /* Press Start 2P is drawn on an 8 px grid: crisp only at 8, 16, 24, 32 */
+      h1 {
+        font-size: 24px;
+      }
+      h2 {
+        font-size: 16px;
+        color: var(--green);
+      }
+      h3 {
+        font-size: 16px;
+      }
+      p {
+        margin: 0 0 1rem;
+      }
+      a {
+        color: var(--green);
+        text-decoration-thickness: 2px;
+        text-underline-offset: 3px;
+      }
+
+      /* ---------- pixel panels ---------- */
+      .card {
+        position: relative;
+        margin: 0 0 1.5rem;
+        padding: 1.25rem;
+        background: var(--card);
+        border: var(--px) solid var(--ink);
+        box-shadow: var(--px) var(--px) 0 var(--green), calc(var(--px) * 2) calc(var(--px) * 2) 0 var(--ink);
+      }
+      .card > :last-child {
+        margin-bottom: 0;
+      }
+
+      /* ---------- forms ---------- */
+      label {
+        display: block;
+        margin: 1rem 0 0.35rem;
+        color: var(--deep);
+      }
+      input,
+      select {
+        width: 100%;
+        min-height: 48px;
+        padding: 0.5rem 0.75rem;
+        font: 26px/1.1 var(--body);
+        color: var(--ink);
+        background: #fff;
+        border: var(--px) solid var(--ink);
+        border-radius: 0;
+        box-shadow: inset var(--px) var(--px) 0 var(--tile);
+      }
+      select {
+        appearance: none;
+        background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%),
+          linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+        background-position: calc(100% - 22px) 50%, calc(100% - 14px) 50%;
+        background-size: 8px 8px;
+        background-repeat: no-repeat;
+        padding-right: 2.5rem;
+      }
+      button,
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        min-height: 48px;
+        padding: 0.75rem 1.25rem;
+        font: 16px/1.4 var(--display);
+        text-transform: uppercase;
+        text-decoration: none;
+        color: var(--paper);
+        background: var(--green);
+        border: 0;
+        cursor: pointer;
+        /* a notched pixel outline plus a drop shadow; pressing moves it down */
+        box-shadow:
+          0 calc(var(--px) * -1) 0 var(--ink),
+          0 var(--px) 0 var(--ink),
+          calc(var(--px) * -1) 0 0 var(--ink),
+          var(--px) 0 0 var(--ink),
+          0 calc(var(--px) * 2) 0 var(--ink),
+          inset 0 calc(var(--px) * -1) 0 var(--deep);
+        margin: var(--px) var(--px) calc(var(--px) * 2);
+        transition: transform 60ms steps(1);
+      }
+      button:hover,
+      .button:hover {
+        background: var(--green-hover);
+      }
+      button:active,
+      .button:active {
+        transform: translateY(var(--px));
+        box-shadow:
+          0 calc(var(--px) * -1) 0 var(--ink),
+          0 var(--px) 0 var(--ink),
+          calc(var(--px) * -1) 0 0 var(--ink),
+          var(--px) 0 0 var(--ink);
+      }
+      .button.secondary {
+        color: var(--ink);
+        background: var(--leaf);
+      }
+      .button.secondary:hover {
+        background: var(--leaf-hover);
+      }
+      /* pending: held down, label kept, never a spinner */
+      button:disabled,
+      button:disabled:hover {
+        cursor: progress;
+        color: var(--paper);
+        background: var(--muted);
+        transform: translateY(var(--px));
+        box-shadow:
+          0 calc(var(--px) * -1) 0 var(--ink),
+          0 var(--px) 0 var(--ink),
+          calc(var(--px) * -1) 0 0 var(--ink),
+          var(--px) 0 0 var(--ink);
+      }
+      .wide {
+        width: calc(100% - var(--px) * 2);
+      }
+      .topbar .linklike {
+        background: none;
+        box-shadow: none;
+        margin: 0;
+        padding: 0;
+        text-transform: none;
+      }
+      /* ink ring on Paper; the yellow one fails contrast there (1.4:1) and is
+         kept for the dark bars and Night */
+      :focus-visible {
+        outline: var(--px) solid var(--ink);
+        outline-offset: var(--px);
+      }
+      .topbar :focus-visible,
+      footer :focus-visible,
+      body.night :focus-visible {
+        outline-color: var(--focus);
+      }
+      input[aria-invalid="true"] {
+        box-shadow: inset var(--px) var(--px) 0 var(--error);
+      }
+      /* the ring reaches 8 px past a field, so the error sits 12 px below it */
+      .error {
+        margin: 0.75rem 0 0;
+        padding: 0.4rem 0.6rem;
+        color: #fff;
+        background: var(--error);
+        border-left: calc(var(--px) * 2) solid var(--ink);
+      }
+      .error a {
+        color: #fff;
+      }
+      .hint {
+        color: var(--muted);
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1rem;
+        align-items: center;
+        margin-top: 1.25rem;
+      }
+
+      /* ---------- Night: same components, surface colours swapped ---------- */
+      body.night {
+        color: var(--paper);
+        color-scheme: dark;
+        background-color: var(--night);
+        background-image: conic-gradient(var(--floor) 25%, transparent 0 50%, var(--floor) 0 75%, transparent 0);
+      }
+      /* the gym needs room for two columns at 900 px and up, and for the map at
+         2x (640 px) beside the sheet (room spec, Departure 19) */
+      body.night main {
+        max-width: 72rem;
+      }
+      .night h2 {
+        color: var(--leaf);
+      }
+      .night label {
+        color: var(--paper);
+      }
+      .night .bubble {
+        color: var(--ink);
+      }
+      .night .hint {
+        color: var(--dim);
+      }
+      .night main a {
+        color: var(--leaf);
+      }
+      /* --green disappears on the dark floor, so primary is leaf with ink */
+      .night button,
+      .night .button {
+        color: var(--ink);
+        background: var(--leaf);
+      }
+      .night button:hover,
+      .night .button:hover {
+        background: var(--leaf-hover);
+      }
+      /* secondary on Night: night fill, paper label, the notch in --edge */
+      .night .button.secondary {
+        color: var(--paper);
+        background: var(--night);
+        box-shadow:
+          0 calc(var(--px) * -1) 0 var(--edge),
+          0 var(--px) 0 var(--edge),
+          calc(var(--px) * -1) 0 0 var(--edge),
+          var(--px) 0 0 var(--edge),
+          0 calc(var(--px) * 2) 0 #000;
+      }
+      .night .button.secondary:hover {
+        background: var(--floor);
+      }
+      .night .button.secondary:active {
+        box-shadow:
+          0 calc(var(--px) * -1) 0 var(--edge),
+          0 var(--px) 0 var(--edge),
+          calc(var(--px) * -1) 0 0 var(--edge),
+          var(--px) 0 0 var(--edge);
+      }
+      .night button:disabled {
+        color: var(--ink);
+        background: var(--dim);
+      }
+      .night input,
+      .night select {
+        color: var(--paper);
+        background-color: var(--night);
+        border-color: var(--edge);
+        box-shadow: inset var(--px) var(--px) 0 #000;
+      }
+      .night select {
+        background-image:
+          linear-gradient(45deg, transparent 50%, var(--paper) 50%),
+          linear-gradient(135deg, var(--paper) 50%, transparent 50%);
+      }
+      .night th,
+      .night td {
+        border-color: var(--edge);
+      }
+      .night tbody tr:nth-child(even) td {
+        background: var(--floor);
+      }
+
+      /* ---------- bits ---------- */
+      .passcode-box {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+      .passcode {
+        display: inline-block;
+        padding: 0.5rem 0.75rem;
+        font: 24px/1 var(--display);
+        letter-spacing: 0.12em;
+        color: var(--leaf);
+        background: var(--ink);
+        border: var(--px) solid var(--green);
+      }
+      .bubble {
+        position: relative;
+        margin: 0 0 1.25rem;
+        padding: 0.75rem 1rem;
+        background: var(--leaf);
+        border: var(--px) solid var(--ink);
+      }
+      .bubble::after {
+        content: "";
+        position: absolute;
+        left: 1.5rem;
+        bottom: calc(var(--px) * -3);
+        width: calc(var(--px) * 3);
+        height: calc(var(--px) * 3);
+        background: var(--leaf);
+        border-right: var(--px) solid var(--ink);
+        border-bottom: var(--px) solid var(--ink);
+        transform: skewY(45deg);
+      }
+      .roster {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .roster li {
+        padding: 0.25rem 0.6rem;
+        background: var(--paper);
+        border: var(--px) solid var(--ink);
+      }
+      .roster li::before {
+        content: "";
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        margin-right: 0.5rem;
+        background: var(--green);
+        vertical-align: middle;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 24px;
+      }
+      th {
+        font: 8px/2 var(--display);
+        text-transform: uppercase;
+        color: var(--paper);
+        background: var(--deep);
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 0.5rem 0.6rem;
+        border: 2px solid var(--ink);
+      }
+      td.num,
+      th.num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      tbody tr:nth-child(even) td {
+        background: var(--row);
+      }
+      .stat {
+        font-family: var(--display);
+        font-size: 8px;
+        color: var(--muted);
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        font: 8px/1 var(--display);
+        text-transform: uppercase;
+        white-space: nowrap;
+        color: var(--ink);
+        border: 2px solid var(--ink);
+      }
+      .chip svg {
+        flex: none;
+      }
+      .state-idle {
+        background: var(--idle);
+      }
+      .state-lifting {
+        background: var(--lifting);
+      }
+      .state-resting {
+        background: var(--resting);
+      }
+      .state-slacking {
+        background: var(--slacking);
+      }
+      .state-finished {
+        background: var(--finished);
+      }
+      .badge {
+        display: inline-block;
+        margin-left: 0.5rem;
+        padding: 0.15rem 0.4rem;
+        font: 8px/1.4 var(--display);
+        vertical-align: middle;
+        color: var(--ink);
+        background: var(--leaf);
+        border: 2px solid var(--ink);
+      }
+
+      @media (max-width: 420px) {
+        body {
+          font-size: 21px;
+        }
+        h1 {
+          font-size: 16px;
+        }
+        .card {
+          padding: 1rem;
+        }
+        .passcode {
+          font-size: 20px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        button,
+        .button {
+          transition: none;
+        }
+      }
+    </style>
+    <style id="page">
+      /* ===== shared: logbook =====
+         Written identically in the four Logbook mockups (history, summary,
+         exercise, plans). Today it lives in WorkoutTally.astro and
+         WorkoutSets.astro as scoped styles; see history/spec.md,
+         "Logbook refactor, Nov 4", for where each part goes. */
+
+      /* shared: logbook. When it was: "6:42 – 7:46 pm" */
+      .when {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      /* shared: logbook. The tally: boxed figures ruled by 2 px ink lines
+         from the gaps, so any count of boxes is ruled the same way. */
+      .tally {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: auto;
+        gap: 2px;
+        margin: 0 0 1rem;
+        background: var(--ink);
+        border: 2px solid var(--ink);
+      }
+      .tally div {
+        padding: 0.25rem 0.5rem;
+        background: var(--paper);
+      }
+      .tally dt {
+        font: 8px/1.4 var(--display);
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .tally dd {
+        margin: 0;
+        font-size: 28px;
+        line-height: 1.1;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      @media (max-width: 420px) {
+        /* four boxes don't fit a 360 px card in one row: 2 × 2 */
+        .tally:has(> :nth-child(4)) {
+          grid-auto-flow: row;
+          grid-template-columns: auto auto;
+        }
+      }
+
+      /* shared: logbook. The set table: one tbody per group (an exercise on
+         history and the summary, a session on the exercise page), its name
+         in a row header, then one written set per row. */
+      .log th.lift {
+        font: 24px/1.15 var(--body);
+        text-transform: none;
+        color: var(--ink);
+        vertical-align: top;
+      }
+      /* NEW: the group's name is a link (an exercise's page, or a session's
+         summary), 44 px tall, without making the row taller */
+      .log th.lift a {
+        display: inline-block;
+        min-height: 44px;
+        margin: -0.5rem 0 -0.25rem;
+        padding: 0.5rem 0 0.25rem;
+      }
+      .log th.lift a:hover {
+        color: var(--deep);
+      }
+      /* the arrow follows the last word if a long name wraps */
+      .log th.lift a svg {
+        margin-left: 0.5rem;
+        vertical-align: -1px;
+      }
+      .log .best {
+        display: block;
+        margin-top: 0.25rem;
+        font-size: 21px;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      /* the figure never splits; on a phone the line breaks after "Best" */
+      .log .best span {
+        white-space: nowrap;
+      }
+      .log .set {
+        width: 1%;
+        text-align: right;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+      /* cardio: pace on its own line, so "5 km · 25:00" fits a phone */
+      .log .pace {
+        display: block;
+        font-size: 21px;
+        color: var(--muted);
+      }
+      /* NEW: a warm-up's figures step back, so working sets read first */
+      .log tr.warm .set {
+        color: var(--muted);
+      }
+      /* NEW: the marks under a set: its type, then any record. They may
+         wrap; the set's figures above them never do. */
+      .log .marks {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        align-items: center;
+        gap: var(--px) 0.5rem;
+        margin: var(--px) 0 0;
+        font-size: 21px;
+        line-height: 1.1;
+        white-space: normal;
+        text-align: right;
+      }
+      /* NEW: the exercise's note for that workout, under its sets */
+      .log tr.note td {
+        padding-top: 0.25rem;
+        font-size: 21px;
+        line-height: 1.2;
+        color: var(--muted);
+        border-top-style: dashed;
+        overflow-wrap: anywhere;
+      }
+      .log tr.note svg {
+        margin-right: 0.5rem;
+        vertical-align: -1px;
+        color: var(--ink);
+      }
+      .log tbody tr > * {
+        background: var(--card);
+      }
+      .log tbody:nth-of-type(even) tr > * {
+        background: var(--paper);
+      }
+      .log tbody + tbody tr:first-child > * {
+        border-top-width: var(--px);
+      }
+
+      /* shared: logbook (and the room's sheet). Set-type and record marks,
+         built on the layout's .badge. Proposed for Layout.astro once the
+         Gym design uses the same names. */
+      .badge.warmup,
+      .badge.failure,
+      .badge.record {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--px);
+        margin: 0;
+        white-space: nowrap;
+      }
+      /* a warm-up is a lighter set: a dashed outline, no fill */
+      .badge.warmup {
+        background: transparent;
+        border-style: dashed;
+      }
+      /* a set taken to failure: a solid outline, no fill */
+      .badge.failure {
+        background: transparent;
+      }
+      /* a record: the leaf-on-ink of a lit day, with the star */
+      .badge.record {
+        color: var(--leaf);
+        background: var(--ink);
+      }
+
+      /* shared: logbook. Text for screen readers only */
+      .vh {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+
+
+      /* ===== exercise page (/exercises/:id) ===== */
+
+      /* the station it's done at, on a floor tile, then the name */
+      .ex-head {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin: 0 0 1.5rem;
+      }
+      .ex-head .art {
+        flex: none;
+        width: 64px;
+        height: 64px;
+        image-rendering: pixelated;
+        background: var(--tile);
+        border: var(--px) solid var(--ink);
+      }
+      .ex-head h1 {
+        margin: 0 0 0.25rem;
+      }
+      .ex-head p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      /* LB-5.2: the current records, as the shared tally with the day under
+         each figure */
+      .tally.records {
+        grid-auto-columns: 1fr;
+      }
+      .tally.records dd.on {
+        font-size: 21px;
+        line-height: 1.15;
+        color: var(--muted);
+        white-space: normal;
+      }
+      @media (max-width: 420px) {
+        .tally.records {
+          grid-auto-flow: row;
+          grid-template-columns: 1fr 1fr;
+        }
+        .tally.records > :last-child:nth-child(odd) {
+          grid-column: 1 / -1;
+        }
+      }
+      .none {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      /* LB-5.3: the chart, a little Game Boy screen. Leaf on ink; the SVG
+         stretches to the card at a fixed height, its strokes don't scale,
+         so the line is one --px and every point a square at any width. */
+      .chart {
+        margin: 0 0 0.5rem;
+      }
+      .plot {
+        position: relative;
+        padding: 28px 12px;
+        background: var(--ink);
+        border: var(--px) solid var(--ink);
+        box-shadow: inset 0 0 0 2px var(--deep);
+      }
+      .plot svg {
+        display: block;
+        width: 100%;
+        height: 96px;
+        overflow: visible;
+      }
+      .plot path {
+        fill: none;
+        vector-effect: non-scaling-stroke;
+        stroke-linecap: square;
+        shape-rendering: crispEdges;
+      }
+      .plot .grid {
+        stroke: var(--deep);
+        stroke-width: 2;
+      }
+      .plot .line {
+        stroke: var(--leaf);
+        stroke-width: 4;
+      }
+      .plot .dot {
+        stroke: var(--leaf);
+        stroke-width: 8;
+      }
+      /* a record: a paper square lit round a leaf one */
+      .plot .rec {
+        stroke: var(--paper);
+        stroke-width: 16;
+      }
+      .plot .rec-in {
+        stroke: var(--leaf);
+        stroke-width: 8;
+      }
+      .plot .y {
+        position: absolute;
+        left: 12px;
+        font-size: 21px;
+        line-height: 1;
+        color: var(--leaf);
+        font-variant-numeric: tabular-nums;
+      }
+      .plot .y.hi {
+        top: 4px;
+      }
+      .plot .y.lo {
+        bottom: 4px;
+      }
+      .chart .x {
+        display: flex;
+        justify-content: space-between;
+        margin: 0.25rem 0 0;
+        color: var(--muted);
+      }
+      .chart .x.one {
+        justify-content: center;
+      }
+      .chart figcaption {
+        color: var(--muted);
+      }
+      .key {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        margin: 0 0.5rem 0 0.25rem;
+        vertical-align: -1px;
+        background: var(--leaf);
+        border: var(--px) solid var(--paper);
+        outline: 2px solid var(--ink);
+      }
+
+      /* the chart as a table, and older sessions: folded, opened by Enter
+         or a tap on the whole row, as history's older weeks are */
+      .fold > summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        min-height: 44px;
+        cursor: pointer;
+        list-style: none;
+      }
+      .fold > summary::-webkit-details-marker {
+        display: none;
+      }
+      .fold .toggle {
+        color: var(--green);
+        text-decoration: underline;
+        text-decoration-thickness: 2px;
+        text-underline-offset: 3px;
+      }
+      .fold .toggle::before {
+        content: "Show";
+      }
+      .fold[open] .toggle::before {
+        content: "Hide";
+      }
+      .fold[open] > summary {
+        margin-bottom: 0.5rem;
+      }
+      .fold .badge.record {
+        margin-left: 0.5rem;
+        vertical-align: 2px;
+      }
+      .older {
+        margin-top: 0.5rem;
+      }
+
+      .empty {
+        text-align: center;
+      }
+      .empty svg {
+        display: block;
+        margin: 0.5rem auto 1rem;
+      }
+
+      /* shared: logbook. LB-7, Nov 5: the exercise's art, your avatar
+         lifting on its machine as the gym draws it. Three 32 × 32 layers
+         (machine back, you, machine front) stacked in one box, two frames
+         swapped by CSS at the gym's pace; Frame 1, still, under reduced
+         motion. In the build this is ExerciseArt.astro. */
+      .ex-art {
+        --frame: 400ms;
+        position: relative;
+        display: inline-block;
+        flex: none;
+        width: var(--ex-size);
+        height: var(--ex-size);
+        vertical-align: middle;
+        image-rendering: pixelated;
+      }
+      .ex-art[data-pose="treadmill"] {
+        --frame: 250ms;
+      }
+      .ex-art > svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+      .ex-art > .av {
+        z-index: 1;
+      }
+      .ex-art > .machine.front {
+        z-index: 2;
+      }
+      .ex-art .frame-2 {
+        visibility: hidden;
+      }
+      .ex-art .frame-1 {
+        animation: ex-frame-1 calc(var(--frame) * 2) steps(1) infinite;
+      }
+      .ex-art .frame-2 {
+        animation: ex-frame-2 calc(var(--frame) * 2) steps(1) infinite;
+      }
+      @keyframes ex-frame-1 {
+        50% {
+          visibility: hidden;
+        }
+      }
+      @keyframes ex-frame-2 {
+        50% {
+          visibility: visible;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .ex-art .frame-1,
+        .ex-art .frame-2 {
+          animation: none;
+        }
+      }
+
+      /* LB-7 on the exercise page: the head's art at 2× (64 px), on the
+         same floor-tile frame. The border sits outside the 64 px, so the
+         drawing stays a whole 2× (the Nov 4 svg lost 8 px to its border). */
+      .ex-head .ex-art {
+        box-sizing: content-box;
+        background: var(--tile);
+        border: var(--px) solid var(--ink);
+      }
+    </style>
+    <style id="mockup">
+      /* mockup scaffolding only: state labels. Not part of the page. */
+      .state {
+        margin: 0 0 3rem;
+      }
+      .state + .state {
+        padding-top: 2rem;
+        border-top: calc(var(--px) * 2) dashed var(--muted);
+      }
+      .state-label {
+        display: inline-block;
+        margin: 0 0 1rem;
+        padding: 0.25rem 0.5rem;
+        font: 8px/1.4 var(--display);
+        text-transform: uppercase;
+        color: var(--paper);
+        background: var(--ink);
+      }
+      .state-note {
+        margin: 0 0 1rem;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- New art, drawn here until it is in src/sprites/icons.ts (grid in
+         docs/design/history/spec.md, "Logbook refactor, Nov 4" > Shared marks).
+         Then draw it from /sprites.svg#i-record instead. -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <symbol id="i-record" viewBox="0 0 8 8"><path fill="currentColor" d="M3 0h2v2h-2zM2 2h4v1h-4zM0 3h8v1h-8zM1 4h6v1h-6zM2 5h4v1h-4zM1 6h2v1h-2zM5 6h2v1h-2zM1 7h1v1h-1zM6 7h1v1h-1z" /></symbol>
+    </svg>
+    <header class="topbar">
+      <a href="/" class="brand" aria-label="Spotter home">
+        <svg class="logo" viewBox="0 0 16 8" width="40" height="20" aria-hidden="true" shape-rendering="crispEdges"><use href="/sprites.svg#logo" /></svg>
+        <span>Spotter</span>
+      </a>
+      <nav>
+        <a href="/history">History</a>
+        <form method="post" action="/signout">
+          <button type="submit" class="linklike">Sign out</button>
+        </form>
+      </nav>
+    </header>
+    <main>
+      <!-- state: default -->
+      <section class="state">
+        <p class="state-label">State: default · weight lift, 12 sessions</p>
+        <p class="state-note">Reached from "Bench press" in a set table on history, the summary or home. Wed 4 Nov, after push day. The six newest sessions show; older ones fold, as history's weeks do (LB-5.8). Nov 5 (LB-7): the head shows Mia benching, 64 px; the session rows show no art (D42).</p>
+
+        <header class="ex-head">
+          <span class="ex-art art" data-pose="flat-bench" aria-hidden="true" style="--ex-size: 64px; --av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><svg class="machine back" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-flat-bench-back-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-flat-bench-back-2" /></g></svg><svg class="av" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#av-flat-bench-1-ponytail" /></g><g class="frame-2"><use href="/sprites.svg#av-flat-bench-2-ponytail" /></g></svg><svg class="machine front" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-flat-bench-front-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-flat-bench-front-2" /></g></svg></span>
+          <div>
+            <h1>Bench press</h1>
+            <p>12 sessions since Tue 8 Sep</p>
+          </div>
+        </header>
+
+        <section class="card" aria-labelledby="rec-1">
+          <h2 id="rec-1">Records</h2>
+          <dl class="tally records">
+            <div><dt>Heaviest</dt><dd>85<span class="unit"> kg</span></dd><dd class="on">Today</dd></div>
+            <div><dt>Best e1RM</dt><dd>104.5<span class="unit"> kg</span></dd><dd class="on">Tue 27 Oct</dd></div>
+            <div><dt>Most reps</dt><dd>10</dd><dd class="on">Tue 15 Sep</dd></div>
+          </dl>
+        </section>
+
+        <section class="card" aria-labelledby="pr-1">
+          <h2 id="pr-1">Best e1RM</h2>
+          <figure class="chart">
+            <div class="plot">
+              <span class="y hi">108 kg</span>
+              <span class="y lo">88 kg</span>
+              <svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true">
+                <path class="grid" d="M0 0H1000M0 50H1000M0 100H1000" />
+                <path class="line" d="M0 81H90.9V81H181.8V65H272.7V65H363.6V49H454.5V49H545.5V33.5H636.4V33.5H727.3V33.5H818.2V31H909.1V17.5H1000V17.5" />
+                <path class="dot" d="M90.9 81h0M272.7 65h0M454.5 49h0M636.4 33.5h0M727.3 33.5h0M1000 17.5h0" />
+                <path class="rec" d="M0 81h0M181.8 65h0M363.6 49h0M545.5 33.5h0M818.2 31h0M909.1 17.5h0" />
+                <path class="rec-in" d="M0 81h0M181.8 65h0M363.6 49h0M545.5 33.5h0M818.2 31h0M909.1 17.5h0" />
+              </svg>
+            </div>
+            <p class="x"><span>Tue 8 Sep</span><span>Today</span></p>
+            <figcaption>Estimated one-rep max, best set, per session. <span class="key" aria-hidden="true"></span>Lit square: a new record.</figcaption>
+          </figure>
+          <details class="fold points">
+            <summary>Chart as a table <span class="toggle"></span></summary>
+            <table>
+              <thead><tr><th scope="col">Session</th><th scope="col" class="num">Best e1RM</th></tr></thead>
+              <tbody>
+                <tr><td>Today</td><td class="num">104.5 kg</td></tr>
+                <tr><td>Tue 27 Oct</td><td class="num">104.5 kg <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>Record</span></td></tr>
+                <tr><td>Fri 23 Oct</td><td class="num">101.8 kg <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>Record</span></td></tr>
+                <tr><td>Tue 20 Oct</td><td class="num">101.3 kg</td></tr>
+                <tr><td>Tue 13 Oct</td><td class="num">101.3 kg</td></tr>
+                <tr><td>Tue 6 Oct</td><td class="num">101.3 kg <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>Record</span></td></tr>
+                <tr><td>Tue 29 Sep</td><td class="num">98.2 kg</td></tr>
+                <tr><td>Tue 22 Sep</td><td class="num">98.2 kg <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>Record</span></td></tr>
+                <tr><td>Fri 18 Sep</td><td class="num">95 kg</td></tr>
+                <tr><td>Tue 15 Sep</td><td class="num">95 kg <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>Record</span></td></tr>
+                <tr><td>Fri 11 Sep</td><td class="num">91.8 kg</td></tr>
+                <tr><td>Tue 8 Sep</td><td class="num">91.8 kg <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>Record</span></td></tr>
+              </tbody>
+            </table>
+          </details>
+        </section>
+
+        <section class="card" aria-labelledby="ss-1">
+          <h2 id="ss-1">Every set</h2>
+          <table class="log">
+            <thead><tr><th scope="col">Session</th><th scope="col" class="num">Set</th></tr></thead>
+            <tbody>
+              <tr class="warm"><th scope="rowgroup" rowspan="6" class="lift"><a href="/workouts/52">Today<span class="vh">, summary</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a><span class="best">Best <span>85 kg × 5</span></span></th><td class="set">50 kg × 10<span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></td></tr>
+              <tr class="warm"><td class="set">60 kg × 5<span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></td></tr>
+              <tr><td class="set">80 kg × 8<span class="rpe" aria-hidden="true"> @ 8</span><span class="vh">, RPE 8</span></td></tr>
+              <tr><td class="set">82.5 kg × 8<span class="rpe" aria-hidden="true"> @ 9</span><span class="vh">, RPE 9</span></td></tr>
+              <tr><td class="set">85 kg × 5<span class="rpe" aria-hidden="true"> @ 9.5</span><span class="vh">, RPE 9.5</span><span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span><span class="rec-for">heaviest</span></span></td></tr>
+              <tr><td class="set">82.5 kg × 6<span class="marks"><span class="badge failure"><span class="vh">Set type: </span>Failure</span></span></td></tr>
+              <tr class="note"><td colspan="2"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="vh">Note: </span>Elbows tucked. 85 moved fast</td></tr>
+            </tbody>
+            <tbody>
+              <tr class="warm"><th scope="rowgroup" rowspan="4" class="lift"><a href="/workouts/49">Tue 27 Oct<span class="vh">, summary</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a><span class="best">Best <span>82.5 kg × 8</span></span></th><td class="set">60 kg × 10<span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></td></tr>
+              <tr><td class="set">82.5 kg × 8<span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span><span class="rec-for">best e1RM</span></span></td></tr>
+              <tr><td class="set">82.5 kg × 7</td></tr>
+              <tr><td class="set">80 kg × 8</td></tr>
+            </tbody>
+            <tbody>
+              <tr><th scope="rowgroup" rowspan="3" class="lift"><a href="/workouts/47">Fri 23 Oct<span class="vh">, summary</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a><span class="best">Best <span>82.5 kg × 7</span></span></th><td class="set">82.5 kg × 7<span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span><span class="rec-for">best e1RM</span></span></td></tr>
+              <tr><td class="set">82.5 kg × 7</td></tr>
+              <tr><td class="set">80 kg × 8</td></tr>
+            </tbody>
+            <tbody>
+              <tr class="warm"><th scope="rowgroup" rowspan="4" class="lift"><a href="/workouts/45">Tue 20 Oct<span class="vh">, summary</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a><span class="best">Best <span>82.5 kg × 6</span></span></th><td class="set">60 kg × 10<span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></td></tr>
+              <tr><td class="set">82.5 kg × 6<span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span><span class="rec-for">heaviest</span></span></td></tr>
+              <tr><td class="set">82.5 kg × 6</td></tr>
+              <tr><td class="set">80 kg × 8</td></tr>
+              <tr class="note"><td colspan="2"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="vh">Note: </span>Asked the bloke on the next bench to spot 82.5</td></tr>
+            </tbody>
+            <tbody>
+              <tr><th scope="rowgroup" rowspan="3" class="lift"><a href="/workouts/42">Tue 13 Oct<span class="vh">, summary</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a><span class="best">Best <span>80 kg × 8</span></span></th><td class="set">80 kg × 8</td></tr>
+              <tr><td class="set">80 kg × 8</td></tr>
+              <tr><td class="set">80 kg × 7<span class="marks"><span class="badge failure"><span class="vh">Set type: </span>Failure</span></span></td></tr>
+            </tbody>
+            <tbody>
+              <tr class="warm"><th scope="rowgroup" rowspan="4" class="lift"><a href="/workouts/39">Tue 6 Oct<span class="vh">, summary</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a><span class="best">Best <span>80 kg × 8</span></span></th><td class="set">60 kg × 10<span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></td></tr>
+              <tr><td class="set">80 kg × 8<span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span><span class="rec-for">best e1RM</span></span></td></tr>
+              <tr><td class="set">80 kg × 7</td></tr>
+              <tr><td class="set">80 kg × 7</td></tr>
+            </tbody>
+          </table>
+          <details class="fold older">
+            <summary>6 older sessions <span class="toggle"></span></summary>
+            <table class="log">
+              <thead><tr><th scope="col">Session</th><th scope="col" class="num">Set</th></tr></thead>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="3" class="lift"><a href="/workouts/36">Tue 29 Sep<span class="vh">, summary</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a><span class="best">Best <span>80 kg × 6</span></span></th><td class="set">80 kg × 6<span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span><span class="rec-for">heaviest</span></span></td></tr>
+                <tr><td class="set">80 kg × 6</td></tr>
+                <tr><td class="set">77.5 kg × 8</td></tr>
+              </tbody>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="3" class="lift"><a href="/workouts/33">Tue 22 Sep<span class="vh">, summary</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a><span class="best">Best <span>77.5 kg × 8</span></span></th><td class="set">77.5 kg × 8<span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span><span class="rec-for">best e1RM</span></span></td></tr>
+                <tr><td class="set">77.5 kg × 7</td></tr>
+                <tr><td class="set">77.5 kg × 7</td></tr>
+              </tbody>
+              <tbody>
+                <tr class="warm"><th scope="rowgroup" rowspan="4" class="lift"><a href="/workouts/31">Fri 18 Sep<span class="vh">, summary</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a><span class="best">Best <span>77.5 kg × 6</span></span></th><td class="set">60 kg × 10<span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></td></tr>
+                <tr><td class="set">77.5 kg × 6<span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span><span class="rec-for">heaviest</span></span></td></tr>
+                <tr><td class="set">77.5 kg × 6</td></tr>
+                <tr><td class="set">75 kg × 8</td></tr>
+              </tbody>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="3" class="lift"><a href="/workouts/29">Tue 15 Sep<span class="vh">, summary</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a><span class="best">Best <span>75 kg × 8</span></span></th><td class="set">75 kg × 8<span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span><span class="rec-for">best e1RM</span></span></td></tr>
+                <tr><td class="set">75 kg × 7</td></tr>
+                <tr><td class="set">70 kg × 10<span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span><span class="rec-for">most reps</span></span></td></tr>
+              </tbody>
+              <tbody>
+                <tr class="warm"><th scope="rowgroup" rowspan="4" class="lift"><a href="/workouts/27">Fri 11 Sep<span class="vh">, summary</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a><span class="best">Best <span>75 kg × 6</span></span></th><td class="set">60 kg × 10<span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></td></tr>
+                <tr><td class="set">72.5 kg × 8</td></tr>
+                <tr><td class="set">75 kg × 6<span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span><span class="rec-for">heaviest</span></span></td></tr>
+                <tr><td class="set">75 kg × 6</td></tr>
+              </tbody>
+              <tbody>
+                <tr class="warm"><th scope="rowgroup" rowspan="4" class="lift"><a href="/workouts/25">Tue 8 Sep<span class="vh">, summary</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a><span class="best">Best <span>72.5 kg × 8</span></span></th><td class="set">60 kg × 10<span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></td></tr>
+                <tr><td class="set">70 kg × 8</td></tr>
+                <tr><td class="set">72.5 kg × 8<span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span><span class="rec-for">heaviest, best e1RM</span></span></td></tr>
+                <tr><td class="set">72.5 kg × 6</td></tr>
+              </tbody>
+            </table>
+          </details>
+        </section>
+      </section>
+
+      <!-- state: chart table open -->
+      <section class="state">
+        <p class="state-label">State: the chart as a table, opened</p>
+        <p class="state-note">The same points as text, newest first, in the server's HTML (LB-5.5). Enter on "Chart as a table" opens it; a screen reader hears it as a collapsed button first.</p>
+
+        <section class="card" aria-labelledby="pr-2">
+          <h2 id="pr-2">Best e1RM</h2>
+          <figure class="chart">
+            <div class="plot">
+              <span class="y hi">108 kg</span>
+              <span class="y lo">88 kg</span>
+              <svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true">
+                <path class="grid" d="M0 0H1000M0 50H1000M0 100H1000" />
+                <path class="line" d="M0 81H90.9V81H181.8V65H272.7V65H363.6V49H454.5V49H545.5V33.5H636.4V33.5H727.3V33.5H818.2V31H909.1V17.5H1000V17.5" />
+                <path class="dot" d="M90.9 81h0M272.7 65h0M454.5 49h0M636.4 33.5h0M727.3 33.5h0M1000 17.5h0" />
+                <path class="rec" d="M0 81h0M181.8 65h0M363.6 49h0M545.5 33.5h0M818.2 31h0M909.1 17.5h0" />
+                <path class="rec-in" d="M0 81h0M181.8 65h0M363.6 49h0M545.5 33.5h0M818.2 31h0M909.1 17.5h0" />
+              </svg>
+            </div>
+            <p class="x"><span>Tue 8 Sep</span><span>Today</span></p>
+            <figcaption>Estimated one-rep max, best set, per session. <span class="key" aria-hidden="true"></span>Lit square: a new record.</figcaption>
+          </figure>
+          <details class="fold points" open>
+            <summary>Chart as a table <span class="toggle"></span></summary>
+            <table>
+              <thead><tr><th scope="col">Session</th><th scope="col" class="num">Best e1RM</th></tr></thead>
+              <tbody>
+                <tr><td>Today</td><td class="num">104.5 kg</td></tr>
+                <tr><td>Tue 27 Oct</td><td class="num">104.5 kg <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>Record</span></td></tr>
+                <tr><td>Fri 23 Oct</td><td class="num">101.8 kg <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>Record</span></td></tr>
+                <tr><td>Tue 20 Oct</td><td class="num">101.3 kg</td></tr>
+                <tr><td>Tue 13 Oct</td><td class="num">101.3 kg</td></tr>
+                <tr><td>Tue 6 Oct</td><td class="num">101.3 kg <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>Record</span></td></tr>
+                <tr><td>Tue 29 Sep</td><td class="num">98.2 kg</td></tr>
+                <tr><td>Tue 22 Sep</td><td class="num">98.2 kg <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>Record</span></td></tr>
+                <tr><td>Fri 18 Sep</td><td class="num">95 kg</td></tr>
+                <tr><td>Tue 15 Sep</td><td class="num">95 kg <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>Record</span></td></tr>
+                <tr><td>Fri 11 Sep</td><td class="num">91.8 kg</td></tr>
+                <tr><td>Tue 8 Sep</td><td class="num">91.8 kg <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>Record</span></td></tr>
+              </tbody>
+            </table>
+          </details>
+        </section>
+      </section>
+
+      <!-- state: bodyweight, live -->
+      <section class="state">
+        <p class="state-label">State: bodyweight · three sessions, one live</p>
+        <p class="state-note">Another evening: Mia's pull day is still open, and she tapped Pull-up on history between sets. Today's open workout is marked Live with no link (LB-5.2) and plots like any session.</p>
+
+        <header class="ex-head">
+          <svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-pull-up-bar" /></svg>
+          <div>
+            <h1>Pull-up</h1>
+            <p>3 sessions since Tue 20 Oct</p>
+          </div>
+        </header>
+
+        <section class="card" aria-labelledby="rec-3">
+          <h2 id="rec-3">Records</h2>
+          <dl class="tally records">
+            <div><dt>Most reps</dt><dd>11</dd><dd class="on">Today</dd></div>
+            <div><dt>Heaviest added</dt><dd>10<span class="unit"> kg</span></dd><dd class="on">Thu 29 Oct</dd></div>
+          </dl>
+        </section>
+
+        <section class="card" aria-labelledby="pr-3">
+          <h2 id="pr-3">Most reps</h2>
+          <figure class="chart">
+            <div class="plot">
+              <span class="y hi">12 reps</span>
+              <span class="y lo">6 reps</span>
+              <svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true">
+                <path class="grid" d="M0 0H1000M0 50H1000M0 100H1000" />
+                <path class="line" d="M0 66.7H500V33.3H1000V16.7" />
+                <path class="dot" d="M0 66.7h0" />
+                <path class="rec" d="M500 33.3h0M1000 16.7h0" />
+                <path class="rec-in" d="M500 33.3h0M1000 16.7h0" />
+              </svg>
+            </div>
+            <p class="x"><span>Tue 20 Oct</span><span>Today</span></p>
+            <figcaption>Most reps in one set, per session. <span class="key" aria-hidden="true"></span>Lit square: a new record.</figcaption>
+          </figure>
+          <details class="fold points">
+            <summary>Chart as a table <span class="toggle"></span></summary>
+            <table>
+              <thead><tr><th scope="col">Session</th><th scope="col" class="num">Most reps</th></tr></thead>
+              <tbody>
+                <tr><td>Today</td><td class="num">11 reps <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>Record</span></td></tr>
+                <tr><td></td><td class="num">10 reps <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>Record</span></td></tr>
+                <tr><td>Tue 20 Oct</td><td class="num">8 reps</td></tr>
+              </tbody>
+            </table>
+          </details>
+        </section>
+
+        <section class="card" aria-labelledby="ss-3">
+          <h2 id="ss-3">Every set</h2>
+          <table class="log">
+            <thead><tr><th scope="col">Session</th><th scope="col" class="num">Set</th></tr></thead>
+            <tbody>
+              <tr><th scope="rowgroup" rowspan="2" class="lift">Today <span class="badge">Live</span><span class="best">Best <span>BW × 11</span></span></th><td class="set">BW × 11<span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span><span class="rec-for">most reps</span></span></td></tr>
+              <tr><td class="set">BW × 9<span class="rpe" aria-hidden="true"> @ 8</span><span class="vh">, RPE 8</span></td></tr>
+            </tbody>
+            <tbody>
+              <tr><th scope="rowgroup" rowspan="3" class="lift"><a href="/workouts/50">Thu 29 Oct<span class="vh">, summary</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a><span class="best">Best <span>BW × 10</span></span></th><td class="set">BW × 10<span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span><span class="rec-for">most reps</span></span></td></tr>
+              <tr><td class="set">BW + 10 kg × 6<span class="rpe" aria-hidden="true"> @ 9</span><span class="vh">, RPE 9</span></td></tr>
+              <tr><td class="set">BW + 10 kg × 5<span class="marks"><span class="badge failure"><span class="vh">Set type: </span>Failure</span></span></td></tr>
+              <tr class="note"><td colspan="2"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="vh">Note: </span>Left shoulder grumpy. Go easy next time</td></tr>
+            </tbody>
+            <tbody>
+              <tr><th scope="rowgroup" rowspan="3" class="lift"><a href="/workouts/45">Tue 20 Oct<span class="vh">, summary</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a><span class="best">Best <span>BW × 8</span></span></th><td class="set">BW × 8</td></tr>
+              <tr><td class="set">BW × 8</td></tr>
+              <tr><td class="set">BW × 7</td></tr>
+            </tbody>
+          </table>
+        </section>
+      </section>
+
+      <!-- state: cardio, two points -->
+      <section class="state">
+        <p class="state-label">State: cardio · two points</p>
+        <p class="state-note">Two sessions draw one step. The axis says km.</p>
+
+        <header class="ex-head">
+          <svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg>
+          <div>
+            <h1>Run</h1>
+            <p>2 sessions since Mon 26 Oct</p>
+          </div>
+        </header>
+
+        <section class="card" aria-labelledby="rec-4">
+          <h2 id="rec-4">Records</h2>
+          <dl class="tally records">
+            <div><dt>Longest distance</dt><dd>5<span class="unit"> km</span></dd><dd class="on">Mon 2 Nov</dd></div>
+            <div><dt>Longest time</dt><dd>26:40</dd><dd class="on">Mon 2 Nov</dd></div>
+          </dl>
+        </section>
+
+        <section class="card" aria-labelledby="pr-4">
+          <h2 id="pr-4">Longest distance</h2>
+          <figure class="chart">
+            <div class="plot">
+              <span class="y hi">6 km</span>
+              <span class="y lo">3 km</span>
+              <svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true">
+                <path class="grid" d="M0 0H1000M0 50H1000M0 100H1000" />
+                <path class="line" d="M0 66.7H1000V33.3" />
+                <path class="dot" d="M0 66.7h0" />
+                <path class="rec" d="M1000 33.3h0" />
+                <path class="rec-in" d="M1000 33.3h0" />
+              </svg>
+            </div>
+            <p class="x"><span>Mon 26 Oct</span><span>Mon 2 Nov</span></p>
+            <figcaption>Longest distance in one go, per session. <span class="key" aria-hidden="true"></span>Lit square: a new record.</figcaption>
+          </figure>
+          <details class="fold points">
+            <summary>Chart as a table <span class="toggle"></span></summary>
+            <table>
+              <thead><tr><th scope="col">Session</th><th scope="col" class="num">Distance</th></tr></thead>
+              <tbody>
+                <tr><td>Mon 2 Nov</td><td class="num">5 km <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>Record</span></td></tr>
+                <tr><td>Mon 26 Oct</td><td class="num">4 km</td></tr>
+              </tbody>
+            </table>
+          </details>
+        </section>
+
+        <section class="card" aria-labelledby="ss-4">
+          <h2 id="ss-4">Every set</h2>
+          <table class="log">
+            <thead><tr><th scope="col">Session</th><th scope="col" class="num">Set</th></tr></thead>
+            <tbody>
+              <tr><th scope="rowgroup" class="lift"><a href="/workouts/51">Mon 2 Nov<span class="vh">, summary</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a></th><td class="set">5 km · 26:40<span class="pace">5:20 /km</span><span class="marks"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg><span class="vh">New </span>Record<span class="vh">:</span></span><span class="rec-for">longest distance, longest time</span></span></td></tr>
+            </tbody>
+            <tbody>
+              <tr><th scope="rowgroup" class="lift"><a href="/workouts/48">Mon 26 Oct<span class="vh">, summary</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a></th><td class="set">4 km · 22:00<span class="pace">5:30 /km</span></td></tr>
+              <tr class="note"><td colspan="2"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="vh">Note: </span>Treadmill 3 is wobbly</td></tr>
+            </tbody>
+          </table>
+        </section>
+      </section>
+
+      <!-- state: hold, one point -->
+      <section class="state">
+        <p class="state-label">State: hold · one point</p>
+        <p class="state-note">One session: the point sits in the middle and the caption says the line starts next time (LB-5.4). Its hold shows as the current record (see open question).</p>
+
+        <header class="ex-head">
+          <svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-exercise-mat" /></svg>
+          <div>
+            <h1>Plank</h1>
+            <p>1 session, Tue 13 Oct</p>
+          </div>
+        </header>
+
+        <section class="card" aria-labelledby="rec-5">
+          <h2 id="rec-5">Records</h2>
+          <dl class="tally records">
+            <div><dt>Longest hold</dt><dd>1:15</dd><dd class="on">Tue 13 Oct</dd></div>
+          </dl>
+        </section>
+
+        <section class="card" aria-labelledby="pr-5">
+          <h2 id="pr-5">Longest hold</h2>
+          <figure class="chart">
+            <div class="plot">
+              <span class="y hi">2:00 </span>
+              <span class="y lo">0:30 </span>
+              <svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true">
+                <path class="grid" d="M0 0H1000M0 50H1000M0 100H1000" />
+                <path class="dot" d="M500 50h0" />
+              </svg>
+            </div>
+            <p class="x one"><span>Tue 13 Oct</span></p>
+            <figcaption>One session so far. The line starts with your next one.</figcaption>
+          </figure>
+          <details class="fold points">
+            <summary>Chart as a table <span class="toggle"></span></summary>
+            <table>
+              <thead><tr><th scope="col">Session</th><th scope="col" class="num">Longest hold</th></tr></thead>
+              <tbody>
+                <tr><td>Tue 13 Oct</td><td class="num">1:15 </td></tr>
+              </tbody>
+            </table>
+          </details>
+        </section>
+
+        <section class="card" aria-labelledby="ss-5">
+          <h2 id="ss-5">Every set</h2>
+          <table class="log">
+            <thead><tr><th scope="col">Session</th><th scope="col" class="num">Set</th></tr></thead>
+            <tbody>
+              <tr><th scope="rowgroup" rowspan="2" class="lift"><a href="/workouts/42">Tue 13 Oct<span class="vh">, summary</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a><span class="best">Best <span>1:15</span></span></th><td class="set">1:15</td></tr>
+              <tr><td class="set">1:00<span class="marks"><span class="badge failure"><span class="vh">Set type: </span>Failure</span></span></td></tr>
+              <tr class="note"><td colspan="2"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-pencil" /></svg><span class="vh">Note: </span>Hips kept sagging on the second</td></tr>
+            </tbody>
+          </table>
+        </section>
+      </section>
+
+      <!-- state: many points -->
+      <section class="state">
+        <p class="state-label">State: many points · 30 Saturdays of back squat</p>
+        <p class="state-note">Past 20 sessions the plain squares go and the line carries it: only records and the newest keep a square, so a phone never shows a smear. The table keeps every point.</p>
+
+        <section class="card" aria-labelledby="pr-6">
+          <h2 id="pr-6">Best e1RM</h2>
+          <figure class="chart">
+            <div class="plot">
+              <span class="y hi">150 kg</span>
+              <span class="y lo">115 kg</span>
+              <svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true">
+                <path class="grid" d="M0 0H1000M0 50H1000M0 100H1000" />
+                <path class="line" d="M0 85.7H34.5V82H69V85.7H103.4V74.3H137.9V78H172.4V82H206.9V66.6H241.4V70.6H275.9V66.6H310.3V74.3H344.8V55.1H379.3V59.1H413.8V62.9H448.3V55.1H482.8V59.1H517.2V66.6H551.7V47.7H586.2V51.4H620.7V55.1H655.2V47.7H689.7V40H724.1V43.7H758.6V47.7H793.1V51.4H827.6V40H862.1V28.6H896.6V32.3H931V36.3H965.5V28.6H1000V14.3" />
+                <path class="rec" d="M34.5 82h0M103.4 74.3h0M206.9 66.6h0M344.8 55.1h0M551.7 47.7h0M689.7 40h0M862.1 28.6h0M1000 14.3h0" />
+                <path class="rec-in" d="M34.5 82h0M103.4 74.3h0M206.9 66.6h0M344.8 55.1h0M551.7 47.7h0M689.7 40h0M862.1 28.6h0M1000 14.3h0" />
+              </svg>
+            </div>
+            <p class="x"><span>Sat 11 Apr</span><span>Sat 31 Oct</span></p>
+            <figcaption>Estimated one-rep max, best set, per session. <span class="key" aria-hidden="true"></span>Lit square: a new record.</figcaption>
+          </figure>
+          <details class="fold points">
+            <summary>Chart as a table <span class="toggle"></span></summary>
+            <table>
+              <thead><tr><th scope="col">Session</th><th scope="col" class="num">Best e1RM</th></tr></thead>
+              <tbody>
+                <tr><td>Sat 31 Oct</td><td class="num">145 kg <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>Record</span></td></tr>
+                <tr><td>Sat 24 Oct</td><td class="num">140 kg</td></tr>
+                <tr><td>Sat 17 Oct</td><td class="num">137.3 kg</td></tr>
+                <tr><td>Sat 10 Oct</td><td class="num">138.7 kg</td></tr>
+                <tr><td>Sat 3 Oct</td><td class="num">140 kg <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>Record</span></td></tr>
+                <tr><td>Sat 26 Sep</td><td class="num">136 kg</td></tr>
+                <tr><td>Sat 19 Sep</td><td class="num">132 kg</td></tr>
+                <tr><td>Sat 12 Sep</td><td class="num">133.3 kg</td></tr>
+                <tr><td>Sat 5 Sep</td><td class="num">134.7 kg</td></tr>
+                <tr><td>Sat 29 Aug</td><td class="num">136 kg <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>Record</span></td></tr>
+                <tr><td>Sat 22 Aug</td><td class="num">133.3 kg</td></tr>
+                <tr><td>Sat 15 Aug</td><td class="num">130.7 kg</td></tr>
+                <tr><td>Sat 8 Aug</td><td class="num">132 kg</td></tr>
+                <tr><td>Sat 1 Aug</td><td class="num">133.3 kg <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>Record</span></td></tr>
+                <tr><td>Sat 25 July</td><td class="num">126.7 kg</td></tr>
+                <tr><td>Sat 18 July</td><td class="num">129.3 kg</td></tr>
+                <tr><td>Sat 11 July</td><td class="num">130.7 kg</td></tr>
+                <tr><td>Sat 4 July</td><td class="num">128 kg</td></tr>
+                <tr><td>Sat 27 June</td><td class="num">129.3 kg</td></tr>
+                <tr><td>Sat 20 June</td><td class="num">130.7 kg <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>Record</span></td></tr>
+                <tr><td>Sat 13 June</td><td class="num">124 kg</td></tr>
+                <tr><td>Sat 6 June</td><td class="num">126.7 kg</td></tr>
+                <tr><td>Sat 30 May</td><td class="num">125.3 kg</td></tr>
+                <tr><td>Sat 23 May</td><td class="num">126.7 kg <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>Record</span></td></tr>
+                <tr><td>Sat 16 May</td><td class="num">121.3 kg</td></tr>
+                <tr><td>Sat 9 May</td><td class="num">122.7 kg</td></tr>
+                <tr><td>Sat 2 May</td><td class="num">124 kg <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>Record</span></td></tr>
+                <tr><td>Sat 25 Apr</td><td class="num">120 kg</td></tr>
+                <tr><td>Sat 18 Apr</td><td class="num">121.3 kg <span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>Record</span></td></tr>
+                <tr><td>Sat 11 Apr</td><td class="num">120 kg</td></tr>
+              </tbody>
+            </table>
+          </details>
+        </section>
+      </section>
+
+      <!-- state: nothing to plot -->
+      <section class="state">
+        <p class="state-label">State: nothing to plot · only a warm-up</p>
+        <p class="state-note">Incline walk was only ever a warm-up: no chart (LB-5.4) and no records (warm-ups never set one, LB-4.4). Both cards say why in a line.</p>
+
+        <header class="ex-head">
+          <svg class="art" viewBox="0 0 32 32" aria-hidden="true"><use href="/sprites.svg#eq-treadmill" /></svg>
+          <div>
+            <h1>Incline walk</h1>
+            <p>1 session, Mon 2 Nov</p>
+          </div>
+        </header>
+
+        <section class="card" aria-labelledby="rec-7">
+          <h2 id="rec-7">Records</h2>
+          <p class="none">Nothing to beat yet. Records start from your second working set.</p>
+        </section>
+
+        <section class="card" aria-labelledby="pr-7">
+          <h2 id="pr-7">Longest distance</h2>
+          <p class="none">Warm-ups aren't charted. Your first working set starts the line.</p>
+        </section>
+
+        <section class="card" aria-labelledby="ss-7">
+          <h2 id="ss-7">Every set</h2>
+          <table class="log">
+            <thead><tr><th scope="col">Session</th><th scope="col" class="num">Set</th></tr></thead>
+            <tbody>
+              <tr class="warm"><th scope="rowgroup" class="lift"><a href="/workouts/51">Mon 2 Nov<span class="vh">, summary</span><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-arrow" /></svg></a></th><td class="set">0.6 km · 6:00<span class="pace">10:00 /km</span><span class="marks"><span class="badge warmup"><span class="vh">Set type: </span>Warm-up</span></span></td></tr>
+            </tbody>
+          </table>
+        </section>
+      </section>
+
+      <!-- state: never logged -->
+      <section class="state">
+        <p class="state-label">State: never logged</p>
+        <p class="state-note">/exercises/13 before Mia's first lat pulldown: the head, then one card (LB-5.4). No records card, no chart. Nov 5 (LB-7, D42): the head's art shows Mia on the cable machine she hasn't tried yet.</p>
+
+        <header class="ex-head">
+          <span class="ex-art art" data-pose="cable-machine" aria-hidden="true" style="--ex-size: 64px; --av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><svg class="machine back" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-cable-machine-back-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-cable-machine-back-2" /></g></svg><svg class="av" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#av-cable-machine-1-ponytail" /></g><g class="frame-2"><use href="/sprites.svg#av-cable-machine-2-ponytail" /></g></svg><svg class="machine front" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-cable-machine-front-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-cable-machine-front-2" /></g></svg></span>
+          <div>
+            <h1>Lat pulldown</h1>
+            <p>Cable machine</p>
+          </div>
+        </header>
+
+        <div class="card empty">
+          <svg viewBox="0 0 32 16" width="64" height="32" aria-hidden="true" shape-rendering="crispEdges"><use href="/sprites.svg#bigDumbbell" /></svg>
+          <p>No sets of Lat pulldown yet. Pick it in a room and it lands here.</p>
+          <a href="/history" class="button secondary">All history</a>
+        </div>
+      </section>
+
+      <!-- state: signed out, not found, pending, error -->
+      <section class="state">
+        <p class="state-label">States with no screen of their own</p>
+        <p class="state-note">Signed out: 303 to /signin?next=/exercises/3 (LB-5.1). An id that isn't one of the 16, or isn't a number: 404, the framework's page. Pending and error: no form on the page; every action is a link or a fold.</p>
+      </section>
+
+    </main>
+    <footer>
+      <a href="/readme/">What Spotter is for</a>
+    </footer>
+  </body>
+</html>
