@@ -21,6 +21,7 @@ import { isMachine, type Pose } from "../sprites/poses.ts";
 import { phoneOffIcon } from "../sprites/icons.ts";
 import * as emojiArt from "../sprites/emoji.ts";
 import { paths, TILE, type Sprite } from "../sprites/sprite.ts";
+import { WORKER_FRAMES, WORKER_PALETTE } from "../sprites/worker.ts";
 
 interface Props {
   view: RoomView;
@@ -63,6 +64,13 @@ const FX_SYMBOLS = Object.entries(emojiArt).flatMap(([name, s]) => {
   const m = name.match(/^(\w+)Fx(\d)$/);
   return m ? [{ id: `fx-${m[1]}-${m[2]}`, size: TILE, art: sym(s as Sprite) }] : [];
 });
+// GYM-6: the gym worker's frames as wk-<name>, in his fixed colours (nobody
+// can pick them, so plain fills rather than a look's variables)
+const WORKER_SYMBOLS = Object.entries(WORKER_FRAMES).map(([name, grid]) => ({
+  id: `wk-${name}`,
+  size: grid.length,
+  art: sym({ grid, palette: WORKER_PALETTE }),
+}));
 ---
 
 <section class="panel map-panel" aria-labelledby="room-title" aria-describedby="floor">
@@ -122,6 +130,7 @@ const FX_SYMBOLS = Object.entries(emojiArt).flatMap(([name, s]) => {
           style={`--x: ${STATIONS[s.slot - 1][0]}; --y: ${STATIONS[s.slot - 1][1]}`}
           data-slot={s.slot}
           data-equipment={s.equipment ?? undefined}
+          data-placed-at={s.equipment ? (s.placedAt ?? undefined) : undefined}
           aria-hidden="true"
         >
           {s.equipment ? <MachineArt e={s.equipment} part="idle" /> : <Sprite sprite={art(bay(s.slot))} />}
@@ -199,7 +208,7 @@ const FX_SYMBOLS = Object.entries(emojiArt).flatMap(([name, s]) => {
   <svg width="0" height="0" class="poster-art" aria-hidden="true">
     <defs>
       {
-        [...EMOJI_SYMBOLS, ...FX_SYMBOLS].map((x) => (
+        [...EMOJI_SYMBOLS, ...FX_SYMBOLS, ...WORKER_SYMBOLS].map((x) => (
           <symbol id={x.id} viewBox={`0 0 ${x.size} ${x.size}`}>
             {x.art.map((p) => (
               <path fill={p.fill} d={p.d} />
@@ -432,6 +441,67 @@ const FX_SYMBOLS = Object.entries(emojiArt).flatMap(([name, s]) => {
       0 0 0 2px var(--ink),
       0 0 0 4px var(--leaf);
   }
+  /* ---------- the gym worker (GYM-6; room spec D.2 to D.8) ----------
+     One layer over the floor and stations, under every person, drawn by the
+     script for a run and removed after it. Decoration only: no taps, no
+     focus, nothing for a screen reader (GYM-6.2, 6.26 to 6.29). No transform
+     or z-index on .worker, so every body draws over every carried load. */
+  .map-panel .crew {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .map-panel .worker {
+    position: absolute;
+    left: calc(var(--x) * var(--t));
+    top: calc(var(--y) * var(--t));
+    width: var(--t);
+    height: var(--t);
+  }
+  .map-panel .worker svg {
+    position: absolute;
+    left: 0;
+    width: var(--t);
+    height: var(--t);
+  }
+  .map-panel .worker .body {
+    top: 0;
+    z-index: 2;
+  }
+  /* the load overhead: its bottom on his fists (sprite row 5), its floor
+     shadow cut off (one row; none for the treadmill, two for the pull-up
+     bar). Carry 2's fists are a row lower: the dip. */
+  .map-panel .worker .load {
+    bottom: calc(var(--t) * 27 / 32);
+    z-index: 1;
+    clip-path: inset(0 0 calc(var(--t) / 32) 0);
+  }
+  .map-panel .worker .load[data-equipment="treadmill"] {
+    clip-path: none;
+  }
+  .map-panel .worker .load[data-equipment="pull-up-bar"] {
+    clip-path: inset(0 0 calc(var(--t) / 16) 0);
+  }
+  .map-panel .worker.dip .load {
+    bottom: calc(var(--t) * 26 / 32);
+  }
+  /* the swap's stagger out: a sprite pixel left, then right */
+  .map-panel .worker.sway-l > svg {
+    transform: translateX(calc(var(--t) / -32));
+  }
+  .map-panel .worker.sway-r > svg {
+    transform: translateX(calc(var(--t) / 32));
+  }
+  /* the turn-round's "huh?" (D.7): 12 sprite px, beside the load */
+  .map-panel .worker .huh {
+    top: calc(var(--t) * -24 / 32);
+    left: calc(var(--t) * 26 / 32);
+    z-index: 3;
+    width: calc(var(--t) * 12 / 32);
+    height: calc(var(--t) * 12 / 32);
+  }
+
   /* reduced motion: the still frame (Frame 1), no bob, the phone lit (GYM-10.23) */
   @media (prefers-reduced-motion: reduce) {
     .map-panel .avatar .pose-stand .av-top,
@@ -440,6 +510,10 @@ const FX_SYMBOLS = Object.entries(emojiArt).flatMap(([name, s]) => {
     .map-panel .avatar .frame-2,
     .map-panel .avatar .pose-sit .glow {
       animation: none;
+    }
+    /* and no worker: the equipment simply appears (GYM-6.25) */
+    .map-panel .crew {
+      display: none;
     }
   }
 

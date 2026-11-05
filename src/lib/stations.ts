@@ -5,7 +5,7 @@ import { stations } from "./schema.ts";
 
 export const SLOTS = 12; // ROOM-4: one per person a room can hold
 
-export type Claim = { slot: number; arrived: "already" | "delivery" | "swap" };
+export type Claim = { slot: number; arrived: "already" | "delivery" | "swap"; carriedOut?: Equipment };
 
 // GYM-2: a room opens with the treadmill, flat bench, squat rack and dumbbell
 // rack on slots 1 to 4 and eight empty stations. Inserting does nothing for
@@ -66,7 +66,7 @@ export function claimStation(userId: number, roomId: number, equipment: Equipmen
         ready || empty
           ? undefined
           : tx
-              .select({ slot: stations.slot })
+              .select({ slot: stations.slot, equipment: stations.equipment })
               .from(stations)
               .where(free)
               .orderBy(sql`coalesce(${stations.lastUsedAt}, ${stations.placedAt}, 0)`, asc(stations.slot))
@@ -81,7 +81,8 @@ export function claimStation(userId: number, roomId: number, equipment: Equipmen
         .where(and(eq(stations.roomId, roomId), eq(stations.slot, target.slot), isNull(stations.userId)))
         .run();
       if (claimed.changes !== 1) throw new Error(`station ${target.slot} in room ${roomId} was taken mid-claim`);
-      return { slot: target.slot, arrived };
+      // GYM-6.40: a swap's log line names what the worker carried out
+      return oldest ? { slot: target.slot, arrived, carriedOut: oldest.equipment as Equipment } : { slot: target.slot, arrived };
     },
     { behavior: "immediate" },
   );
@@ -102,9 +103,9 @@ export function releaseStation(roomId: number, userId?: number, now = Date.now()
 export function roomStations(roomId: number) {
   seedStations(roomId);
   return db
-    .select({ slot: stations.slot, equipment: stations.equipment, userId: stations.userId })
+    .select({ slot: stations.slot, equipment: stations.equipment, placedAt: stations.placedAt, userId: stations.userId })
     .from(stations)
     .where(eq(stations.roomId, roomId))
     .orderBy(stations.slot)
-    .all() as { slot: number; equipment: Equipment | null; userId: number | null }[];
+    .all() as { slot: number; equipment: Equipment | null; placedAt: number | null; userId: number | null }[];
 }
