@@ -1,10 +1,14 @@
 ---
 import { and, eq, isNull } from "drizzle-orm";
 import SetFields, { type FieldValues } from "../../components/SetFields.astro";
+import PlanLoad from "../../components/PlanLoad.astro";
+import PlanPanel from "../../components/PlanPanel.astro";
+import SetCell from "../../components/SetCell.astro";
+import SetMarksFields from "../../components/SetMarksFields.astro";
 import Sprite from "../../components/Sprite.astro";
 import { db } from "../../lib/db.ts";
 import { EQUIPMENT, EXERCISES, exerciseById, type Exercise } from "../../lib/exercises.ts";
-import { clock, distanceKm, kg, km, pace, setLabel, timeOfDay, volume } from "../../lib/logbook.ts";
+import { clock, dayLabel, distanceKm, isWorking, kg, km, RECORD_NAMES, recordsBySet, setLabel, timeOfDay, volume } from "../../lib/logbook.ts";
 import { AWAY_MS, roomView, setFinished, setLifting, SLACK_GRACE_S, type State } from "../../lib/presence.ts";
 import { tapPoster } from "../../lib/dony.ts";
 import { avatarLabel, everyone } from "../../lib/floor.ts";
@@ -21,12 +25,23 @@ import {
   deleteSet,
   editSet,
   finishWorkout,
+  lastSession,
   lastSet,
+  loadedPlan,
+  loadPlan,
   logSet,
+  notesIn,
+  openWorkoutId,
   openWorkoutStart,
+  plansOf,
+  readMarks,
+  readNote,
   readSet,
+  saveNote,
+  setsForRecords,
   setsInOpenWorkout,
   setToEdit,
+  type SetMarks,
   type SetValues,
 } from "../../lib/workouts.ts";
 import Layout from "../../layouts/Layout.astro";
@@ -39,6 +54,7 @@ import {
   dumbbellIcon,
   idleIcon,
   pencilIcon,
+  recordIcon,
   phoneIcon,
   phoneOffIcon,
   playIcon,
@@ -89,6 +105,11 @@ const summary = (workoutId: number | undefined, otherwise: string) =>
 let error = "";
 let errorField = "";
 let submitted: FormData | undefined;
+// LB-2.20, LB-2.21: the note, when its save was refused, and the set Done
+// logged regardless (the page then shows as it does after Done)
+let noteError = "";
+let typedNote: string | undefined;
+let loggedDespiteNote: number | undefined;
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
   const action = String(form.get("action") ?? "log");
@@ -104,6 +125,21 @@ if (Astro.request.method === "POST") {
     did("station.claim", { exercise: ex.name, slot: claim?.slot, arrived: claim?.arrived });
   };
   const values = (v: SetValues) => ({ kg: v.weightKg, reps: v.reps, s: v.durationS, m: v.distanceM });
+  const marked = (m: SetMarks) => ({ type: m.setType, rpe: m.rpe ?? undefined });
+  // LB-2.20: a note sent with Start set or Done is kept, as its own save is.
+  // The sheet sends what it showed as note_was, so an untouched field never
+  // rewrites the note. False when it's too long (and nothing is saved).
+  const keepNote = (ex: Exercise): boolean => {
+    const text = String(form.get("note") ?? "");
+    if (form.has("note_was") && text === String(form.get("note_was"))) return true;
+    const read = readNote(text);
+    if ("error" in read) {
+      did("note.refused", { exercise: ex.name, reason: "length" });
+      return false;
+    }
+    if (saveNote(user.id, roomId, ex.id, read.note)) did("note.save", { exercise: ex.name, length: [...read.note].length });
+    return true;
+  };
 
   if (action === "finish") {
     const workoutId = finishWorkout(user.id, roomId);
@@ -202,13 +238,43 @@ if (Astro.request.method === "POST") {
     did("set.delete", { set: setId });
     return changed(Astro.redirect(`${here}?exercise=${own.exerciseId}`, 303));
   }
+  // LB-2.19 to LB-2.27: an exercise's note for this workout, on its own save.
+  // Private: nothing goes to the room, and the log has its length only.
+  if (action === "note") {
+    const ex = exerciseById(Number(form.get("exercise_id")));
+    const read = readNote(String(form.get("note") ?? ""));
+    if (ex && "note" in read && saveNote(user.id, roomId, ex.id, read.note)) {
+      did("note.save", { exercise: ex.name, length: [...read.note].length });
+      return Astro.redirect(`${here}?exercise=${ex.id}`, 303);
+    }
+    did("note.refused", { reason: !ex ? "exercise" : "error" in read ? "length" : "no-set" });
+    error = "error" in read ? read.error : "Log a set of it first.";
+    errorField = "note";
+    noteError = error;
+    typedNote = String(form.get("note") ?? "");
+  }
+  // LB-3.12 to LB-3.24 (D11): load or clear a plan. It chooses nothing,
+  // claims nothing and tells nobody (LB-3.13, LB-3.25); the plan's own
+  // one-tap is the existing choose. Back to the sheet as it was.
+  else if (action === "plan-load" || action === "plan-clear") {
+    const planId = action === "plan-load" ? Number(form.get("plan_id")) : null;
+    if (!loadPlan(user.id, roomId, planId)) {
+      did("plan.denied", { action, plan: String(form.get("plan_id") ?? "").slice(0, 20) });
+      return new Response("Not found", { status: 404 });
+    }
+    did(action === "plan-load" ? "plan.load" : "plan.clear", { plan: planId ?? undefined });
+    const ex = exerciseById(Number(form.get("exercise_id")));
+    return Astro.redirect(ex ? `${here}?exercise=${ex.id}` : here, 303);
+  }
   // GYM-10: Start set ends the rest and puts you on the lift. The page comes
   // back as Lifting with whatever was typed still in the fields, ready for Done.
-  if (action === "start") {
+  // It stores nothing of the set, except a note typed during the rest (LB-2.20).
+  else if (action === "start") {
     const ex = exerciseById(Number(form.get("exercise_id")));
     adjustRest(user.id, roomId, "skip");
     did("rest.adjust", { delta: "skip" });
     if (ex) lift(ex);
+    if (ex && form.has("note")) keepNote(ex);
     broadcast(roomId);
     submitted = form;
   } else if (action === "edit") {
@@ -219,28 +285,38 @@ if (Astro.request.method === "POST") {
       return new Response("Not found", { status: 404 });
     }
     const read = readSet(ex.kind, form);
-    if ("values" in read) {
-      editSet(user.id, roomId, setId, read.values);
-      did("set.edit", { set: setId, exercise: ex.name, ...values(read.values) });
+    const marks = readMarks(form);
+    if ("values" in read && "marks" in marks) {
+      editSet(user.id, roomId, setId, read.values, marks.marks);
+      did("set.edit", { set: setId, exercise: ex.name, ...values(read.values), ...marked(marks.marks) });
       return changed(Astro.redirect(`${here}?exercise=${ex.id}`, 303));
     }
-    ({ error, field: errorField } = read);
+    ({ error, field: errorField } = "error" in read ? read : (marks as { error: string; field: string }));
   } else {
     const ex = exerciseById(Number(form.get("exercise_id")));
     if (!ex) error = "Pick an exercise.";
     else {
       const read = readSet(ex.kind, form);
-      if ("values" in read) {
-        logSet(user.id, roomId, ex, read.values);
+      const marks = readMarks(form);
+      if ("values" in read && "marks" in marks) {
+        const setIdNew = logSet(user.id, roomId, ex, read.values, marks.marks);
         // the set says where it was done; a second station.claim would be noise
         const claim = setLifting(user.id, roomId, ex.id);
-        did("set.log", { exercise: ex.name, ...values(read.values), slot: claim?.slot });
-        return changed(Astro.redirect(`${here}?exercise=${ex.id}&rested=1`, 303));
+        did("set.log", { exercise: ex.name, ...values(read.values), ...marked(marks.marks), slot: claim?.slot, set: setIdNew });
+        // LB-2.21: a note never stops a set; a refused one is said after it,
+        // on the page as it is after Done, with the text kept
+        if (form.has("note") && !keepNote(ex)) {
+          broadcast(roomId);
+          noteError = "Notes are up to 140 characters.";
+          typedNote = String(form.get("note"));
+          loggedDespiteNote = ex.id;
+          Astro.response.status = 400;
+        } else return changed(Astro.redirect(`${here}?exercise=${ex.id}&rested=1`, 303));
       }
-      ({ error, field: errorField } = read);
+      ({ error, field: errorField } = "error" in read ? read : (marks as { error: string; field: string }));
     }
   }
-  if (action !== "start") {
+  if (action !== "start" && loggedDespiteNote === undefined) {
     submitted = form;
     Astro.response.status = 400;
   }
@@ -265,7 +341,9 @@ const inviteUrl = `${Astro.url.host}/join/${room.passcode}`;
 const editId = Number(Astro.url.searchParams.get("edit") ?? submitted?.get("set_id"));
 const editing = Number.isInteger(editId) && editId > 0 ? setToEdit(user.id, roomId, editId) : undefined;
 const exercise: Exercise | undefined = exerciseById(
-  editing ? editing.exerciseId : Number(Astro.url.searchParams.get("exercise") ?? submitted?.get("exercise_id")),
+  editing
+    ? editing.exerciseId
+    : (loggedDespiteNote ?? Number(Astro.url.searchParams.get("exercise") ?? submitted?.get("exercise_id"))),
 );
 const prefill = exercise && !editing ? lastSet(user.id, exercise.id) : undefined;
 
@@ -275,12 +353,12 @@ const latest = mySets.at(-1);
 // Done just landed: the GET after a log's redirect, on the lift logged.
 // Not after Start set, which posts to the same URL.
 const justLogged =
-  Astro.request.method === "GET" &&
-  Astro.url.searchParams.has("rested") &&
+  ((Astro.request.method === "GET" && Astro.url.searchParams.has("rested")) || loggedDespiteNote !== undefined) &&
   !editing &&
   !!latest &&
   latest.exerciseId === exercise?.id;
-const loggedNo = justLogged ? mySets.filter((s) => s.exerciseId === latest!.exerciseId).length : 0;
+// LB-2.11 (D8): only working sets are numbered; sets from before types all are
+const loggedNo = justLogged ? mySets.filter((s) => s.exerciseId === latest!.exerciseId && isWorking(s)).length : 0;
 const restEnd = latest ? latest.completedAt + latest.restTargetS * 1000 : 0;
 const resting = !!latest && latest.restTargetS > 0 && latest.restEndedAt === null && now < restEnd + 30 * 60_000;
 const over = resting && now >= restEnd;
@@ -366,13 +444,49 @@ const groups = Object.entries(EQUIPMENT).map(([key, label]) => ({
 // lifts already done this session, in first-done order, as one-tap chips
 const recent = [...new Set(mySets.map((s) => s.exerciseId))].flatMap((id) => exerciseById(id) ?? []);
 const setNo = editing
-  ? mySets.filter((s) => s.exerciseId === editing.exerciseId).findIndex((s) => s.id === editing.id) + 1
+  ? mySets.filter((s) => s.exerciseId === editing.exerciseId && isWorking(s)).findIndex((s) => s.id === editing.id) + 1
   : exercise
-    ? mySets.filter((s) => s.exerciseId === exercise.id).length + 1
+    ? mySets.filter((s) => s.exerciseId === exercise.id && isWorking(s)).length + 1
     : 0;
 const editingLabel = editing && exercise ? setLabel({ ...editing, name: exercise.name, kind: exercise.kind }) : "";
-const showLast = !!exercise && !editing && !(resting && latest?.exerciseId === exercise.id);
+// LB-1.6 (D3): Last time shows while lifting and through a rest, the same
+// lift's included; never while editing or with no lift chosen
+const showLast = !!exercise && !editing;
 const timed = exercise?.kind === "duration" || exercise?.kind === "cardio";
+
+// LB-1.1 to LB-1.7: the previous session of this lift, in full, with its
+// types, RPE, records and note, and the working set to match marked
+const openId = openWorkoutId(user.id, roomId);
+const last = exercise && showLast ? lastSession(user.id, exercise.id, openId) : undefined;
+const workingDone = exercise ? mySets.filter((s) => s.exerciseId === exercise.id && isWorking(s)).length : 0;
+const lastWorking = last ? last.sets.filter(isWorking) : [];
+const matchId = lastWorking[workingDone]?.id;
+
+// LB-4.10: the records every set on this page set (This workout, the stamp,
+// Last time), from all of the person's sets of those lifts
+const records = recordsBySet(
+  setsForRecords(user.id, [...mySets.map((s) => s.exerciseId), ...(exercise ? [exercise.id] : [])]),
+);
+
+// LB-2.19: the note, offered once the lift has a set in this workout
+const notes = openId ? notesIn(openId) : new Map<number, string>();
+const noteOffered = !!exercise && !editing && mySets.some((s) => s.exerciseId === exercise.id);
+const noteNow = exercise ? (notes.get(exercise.id) ?? "") : "";
+const noteValue = typedNote ?? noteNow;
+
+// LB-3.12 to LB-3.20: plans to load, and the one loaded
+const myPlans = editing ? [] : plansOf(user.id);
+const plan = loadedPlan(user.id, roomId);
+// room/spec.md L.3 item 9: the server opens the plan when Idle, when the lift
+// you're on is full, or when it's all done; folded mid-lift, or off-plan (L.8
+// item 7, decided 4 Nov), so it never pushes the numbers down
+const planItem = plan && exercise ? plan.items.find((i) => i.exerciseId === exercise.id) : undefined;
+const planOpen = !!plan && (!exercise || plan.complete || (!!planItem && planItem.done >= planItem.sets));
+
+// LB-2.5, LB-2.15: Start set echoes the type and RPE; a new set starts Normal
+// with no RPE (LB-2.4, LB-2.13); an edit starts from the set
+const formType = String(submitted?.get("set_type") ?? editing?.setType ?? "normal") || "normal";
+const formRpe = submitted ? String(submitted.get("rpe") ?? "") : editing?.rpe != null ? String(editing.rpe) : "";
 
 const vol = volume(mySets);
 const dist = distanceKm(mySets);
@@ -385,7 +499,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   <div class="gym" data-room={roomId} data-limits={JSON.stringify(limits)} data-says={JSON.stringify(liveSays)}>
     <GymMap view={view} me={user.id} passcode={room.passcode} />
 
-    <section class="panel sheet" aria-labelledby="sheet-title" data-base-state={baseState}>
+    <section class="panel sheet" aria-labelledby="sheet-title" data-base-state={baseState} data-workout={openId}>
       <span class={`chip state-${state} tab`}>
         <Sprite sprite={TAB[state].icon} scale={2} />
         {TAB[state].word}
@@ -450,6 +564,16 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
                 </span>
               </p>
             </div>
+            {/* room/spec.md L.3 item 7: a record stays marked for the whole rest */}
+            {records.has(latest.id) && (
+              <p class="marks rest-rec">
+                <span class="badge record">
+                  <Sprite sprite={recordIcon} scale={2} />
+                  <span class="vh">New </span>Record<span class="vh">:</span>
+                </span>{" "}
+                <span class="rec-for">{records.get(latest.id)!.map((k) => RECORD_NAMES[k]).join(", ")}</span>
+              </p>
+            )}
             <p class="rest-static">
               Rest {clock(latest.restTargetS)} · next set at {timeOfDay(restEnd).toLowerCase()}
             </p>
@@ -483,11 +607,12 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
               <input type="hidden" name="action" value="edit" />
               <input type="hidden" name="set_id" value={editing.id} />
               <SetFields kind={exercise.kind} values={values} invalid={errorField} />
-              {error && (
+              {error && !["rpe", "set_type"].includes(errorField) && (
                 <p class="error" id="set-error" role="alert">
                   {error}
                 </p>
               )}
+              <SetMarksFields type={formType} rpe={formRpe} invalid={errorField} error={error} />
             </form>
             <details class="confirm">
               <summary class="button secondary quiet">
@@ -509,7 +634,11 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
             <details class="switch">
               <summary>
                 <span class="lift">{exercise.name}</span>
-                <span class="set-no">Set {setNo}</span>
+                {/* room/spec.md L.3 item 2: "Set 3 of 4" for a lift in the loaded plan */}
+                <span class="set-no">
+                  Set {setNo}
+                  {planItem && ` of ${planItem.sets}`}
+                </span>
                 <span class="change">Change</span>
               </summary>
               <form method="post" class="picker">
@@ -561,18 +690,49 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
                 </span>
               </p>
             )}
+            {plan && <PlanPanel plan={plan} current={exercise.id} open={planOpen} others={myPlans} />}
             <form method="post" class="set-form" id="set-log" data-kind={exercise.kind} data-exercise={exercise.id}>
               <input type="hidden" name="exercise_id" value={exercise.id} />
               {showLast &&
-                (prefill ? (
-                  <p class="last">
-                    Last time <b>{setLabel({ ...prefill, name: exercise.name, kind: exercise.kind })}</b>
-                  </p>
+                (last ? (
+                  <div class="last-time" data-last="">
+                    <p class="last-head">
+                      Last time <b>{dayLabel(last.startedAt, now)}</b>
+                    </p>
+                    <ol class="last-sets">
+                      {last.sets.map((s) => {
+                        const n = lastWorking.indexOf(s) + 1;
+                        const isMatch = s.id === matchId;
+                        return (
+                          <li class:list={{ warm: !isWorking(s), match: isMatch }}>
+                            <span class="n" aria-hidden="true">
+                              {isMatch ? "▶" : isWorking(s) ? n : "W"}
+                            </span>
+                            <SetCell
+                              class="what"
+                              set={s}
+                              records={records.get(s.id)}
+                              match={isMatch}
+                              splitPace={false}
+                              lead={isWorking(s) ? `Set ${n}${isMatch ? ", the one to match" : ""}: ` : undefined}
+                            />
+                          </li>
+                        );
+                      })}
+                    </ol>
+                    {last.note && (
+                      <p class="last-note">
+                        <Sprite sprite={pencilIcon} scale={2} />
+                        <span class="vh">Note: </span>
+                        <span data-note="">{last.note}</span>
+                      </p>
+                    )}
+                  </div>
                 ) : (
                   <p class="last">First time on this one. Ease into it.</p>
                 ))}
               <SetFields kind={exercise.kind} values={values} invalid={errorField} />
-              {error && (
+              {error && !["note", "rpe", "set_type"].includes(errorField) && (
                 <p class="error" id="set-error" role="alert">
                   {error}
                 </p>
@@ -597,9 +757,53 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
                   </p>
                 </div>
               )}
+              <SetMarksFields type={formType} rpe={formRpe} invalid={errorField} error={error} />
+              {noteOffered && (
+                <details class="ex-note" open={!!noteError || typedNote !== undefined}>
+                  <summary>
+                    <Sprite sprite={pencilIcon} scale={2} />
+                    {noteNow ? (
+                      <span class="if-closed">
+                        <span class="vh">Note: </span>
+                        <span data-note="">{noteNow}</span>
+                      </span>
+                    ) : (
+                      <span class="if-closed add">Add a note</span>
+                    )}
+                    <span class="if-open">Note on this lift</span>
+                  </summary>
+                  <input type="hidden" name="note_was" value={noteNow} />
+                  <label for="note" class="vh">
+                    Note on this lift
+                  </label>
+                  <textarea
+                    id="note"
+                    name="note"
+                    maxlength="140"
+                    rows="2"
+                    aria-invalid={noteError ? "true" : undefined}
+                    aria-describedby={noteError ? "note-error" : undefined}>{noteValue}</textarea
+                  >
+                  <div class="note-save">
+                    <button type="submit" name="action" value="note" class="button secondary tool" formnovalidate>
+                      Save note
+                    </button>
+                    {noteError ? (
+                      <p class="error" id="note-error" role="alert">
+                        {noteError}
+                      </p>
+                    ) : (
+                      <p class="hint">It also saves with your next set.</p>
+                    )}
+                  </div>
+                </details>
+              )}
             </form>
+            {!plan && myPlans.length > 0 && <PlanLoad plans={myPlans} exerciseId={exercise.id} />}
           </>
         ) : (
+          <>
+          {plan && <PlanPanel plan={plan} open={planOpen} others={myPlans} />}
           <form method="post" class="pick" id="pick">
             <input type="hidden" name="action" value="choose" />
             <h2 class="lift lift-row" id="sheet-title">Pick a lift</h2>
@@ -622,7 +826,9 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
               {groups.map((g) => (
                 <optgroup label={g.label}>
                   {g.exercises.map((e) => (
-                    <option value={e.id}>{e.name}</option>
+                    <option value={e.id} selected={plan?.next === e.id}>
+                      {e.name}
+                    </option>
                   ))}
                 </optgroup>
               ))}
@@ -636,6 +842,8 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
               </p>
             )}
           </form>
+          {!plan && myPlans.length > 0 && <PlanLoad plans={myPlans} open />}
+          </>
         )
       }
       {/* the dock: the sheet's one primary button, pointing back at its form.
@@ -663,10 +871,25 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
         </ul>
         {
           justLogged && (
-            <p class="stamp">
+            <p class="stamp" role="status">
               <Sprite sprite={tickIcon} scale={2} />
               <span>
-                Set {loggedNo} logged: <b>{setLabel(latest!)}</b>
+                {isWorking(latest!) ? `Set ${loggedNo} logged` : "Warm-up logged"}:{" "}
+                {/* the set as setLabel writes it, with the contract's hooks */}
+                <b
+                  data-set=""
+                  data-type={latest!.setType === "warmup" || latest!.setType === "failure" ? latest!.setType : undefined}
+                  data-records={records.get(latest!.id)?.join(" ")}
+                >{setLabel(latest!)}</b>
+                {records.has(latest!.id) && (
+                  <span class="marks">
+                    <span class="badge record">
+                      <Sprite sprite={recordIcon} scale={2} />
+                      <span class="vh">New </span>Record<span class="vh">:</span>
+                    </span>{" "}
+                    <span class="rec-for">{records.get(latest!.id)!.map((k) => RECORD_NAMES[k]).join(", ")}</span>
+                  </span>
+                )}
               </span>
             </p>
           )
@@ -915,8 +1138,14 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
               {mySets.map((s, i) => {
                 const label = setLabel(s);
                 const current = editing?.id === s.id;
+                // room/spec.md L.3 "This workout": the lift's note after the last
+                // row of its run
+                const runEnds = mySets[i + 1]?.exerciseId !== s.exerciseId;
+                const laterRun = mySets.slice(i + 1).some((x) => x.exerciseId === s.exerciseId);
+                const note = runEnds && !laterRun ? notes.get(s.exerciseId) : undefined;
                 return (
-                  <tr aria-current={current ? "true" : undefined}>
+                  <>
+                  <tr aria-current={current ? "true" : undefined} class:list={{ warm: !isWorking(s) }}>
                     {i > 0 && mySets[i - 1].exerciseId === s.exerciseId ? (
                       <td class="ditto">
                         <span aria-hidden="true">"</span>
@@ -925,25 +1154,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
                     ) : (
                       <td>{s.name}</td>
                     )}
-                    <td class="num set">
-                      {s.distanceM !== null && s.durationS !== null ? (
-                        <>
-                          {km(s.distanceM / 1000)} <span class="u">km</span> · {clock(s.durationS)}
-                          <span class="sub">{pace(s.durationS, s.distanceM)} /km</span>
-                        </>
-                      ) : (
-                        unitSplit(label).map((part) =>
-                          part === " kg" || part === " km" ? (
-                            <>
-                              {" "}
-                              <span class="u">{part.trim()}</span>
-                            </>
-                          ) : (
-                            part
-                          ),
-                        )
-                      )}
-                    </td>
+                    <SetCell as="td" class="num set" set={s} records={records.get(s.id)} />
                     <td class="fix">
                       {current ? (
                         <a href={`?exercise=${s.exerciseId}`} aria-label="Editing this set. Cancel">
@@ -959,6 +1170,16 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
                       )}
                     </td>
                   </tr>
+                  {note && (
+                    <tr class="note">
+                      <td colspan="3">
+                        <Sprite sprite={pencilIcon} scale={2} />
+                        <span class="vh">Note on {s.name}: </span>
+                        <span data-note="">{note}</span>
+                      </td>
+                    </tr>
+                  )}
+                  </>
                 );
               })}
             </tbody>
@@ -1236,23 +1457,36 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
 
     // ---------- pending: Done and Save keep their label while the post is out ----------
     const editForm = document.querySelector<HTMLFormElement>("#set-edit");
+    // The button pressed (the dock's, or Save note inside the form) and the
+    // dock's own are disabled, label kept; the type, RPE and note lock with
+    // the fields (room/spec.md L.4 "Pending", L.5).
     for (const form of [setForm, editForm]) {
-      form?.addEventListener("submit", () => {
+      form?.addEventListener("submit", (event) => {
         if (form === setForm) {
           stopWatch();
           store.set(0);
         }
-        submitButton(form)!.disabled = true;
+        for (const b of busyButtons(form, (event as SubmitEvent).submitter)) b.disabled = true;
         for (const input of form.querySelectorAll("input")) input.readOnly = true;
+        // a disabled control isn't sent, so these lock only once the room's
+        // swap (a listener further up) has read the form
+        setTimeout(() => {
+          for (const el of form.querySelectorAll<HTMLFieldSetElement | HTMLTextAreaElement | HTMLSelectElement>("fieldset, textarea, select")) {
+            el.disabled = true;
+          }
+        });
         sheet.setAttribute("aria-busy", "true");
       });
     }
     unbusy = () => {
       for (const form of [setForm, editForm]) {
         if (!form) continue;
-        submitButton(form)!.disabled = false;
+        for (const b of busyButtons(form, null)) b.disabled = false;
         for (const input of form.querySelectorAll("input")) {
           input.readOnly = form === setForm && !!startedAt && input.closest(".mmss") !== null;
+        }
+        for (const el of form.querySelectorAll<HTMLFieldSetElement | HTMLTextAreaElement | HTMLSelectElement>("fieldset, textarea, select")) {
+          el.disabled = false;
         }
       }
       sheet.removeAttribute("aria-busy");
@@ -1265,9 +1499,17 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     };
   }
 
+  // the dock's button for a form (it sits outside it, pointing back with
+  // form=), then any submit button inside it (Save note)
   const submitButton = (form: HTMLFormElement) =>
-    form.querySelector<HTMLButtonElement>("button[type=submit]") ??
-    document.querySelector<HTMLButtonElement>(`button[form="${form.id}"]`);
+    document.querySelector<HTMLButtonElement>(`button[form="${form.id}"]`) ??
+    form.querySelector<HTMLButtonElement>("button[type=submit]");
+  const busyButtons = (form: HTMLFormElement, pressed: HTMLElement | null) =>
+    [
+      ...document.querySelectorAll<HTMLButtonElement>(`button[form="${form.id}"]`),
+      ...form.querySelectorAll<HTMLButtonElement>("button[type=submit]"),
+      ...(pressed instanceof HTMLButtonElement ? [pressed] : []),
+    ];
   let unbusy = () => {};
   let dockWatch: IntersectionObserver | undefined;
   // Back restores the page from cache, button and all
@@ -1805,18 +2047,28 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   // load them as a new page and scroll to the top. Finish, Leave and End room
   // go to another page, so the router takes them. Without JS all of these
   // are plain forms and links.
-  const STAY = new Set(["log", "edit", "delete", "rest", "choose", "start"]);
+  // stay in the room: the logbook's note and plan actions too (they swap in place)
+  const STAY = new Set(["log", "edit", "delete", "rest", "choose", "start", "note", "plan-load", "plan-clear"]);
 
   // after() runs once the new room is in, and names the control to focus
   // (the request is not called `init`, which would hide init() below)
-  async function swap(url: URL, request: RequestInit, fallback: () => void, after: () => HTMLElement | null) {
+  async function swap(
+    url: URL,
+    request: RequestInit,
+    fallback: () => void,
+    after: () => HTMLElement | null,
+    // LB-0.7: the logbook's forms say so and keep what was typed, instead of
+    // leaving the page
+    failed?: () => void,
+  ) {
     const focused = !!document.activeElement?.closest(".gym");
     let res: Response;
     try {
       res = await fetch(url, request);
     } catch {
-      return fallback(); // offline or dropped: let the browser try
+      return failed ? failed() : fallback(); // offline or dropped: let the browser try
     }
+    if (failed && res.status >= 500) return failed();
     // the room closed under us, or anything unexpected: go where it says
     if (new URL(res.url).pathname !== location.pathname || (res.status !== 200 && res.status !== 400)) {
       return navigate(res.url);
@@ -1901,19 +2153,40 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
         }
       }
       const delta = (e.submitter as HTMLButtonElement | null)?.value;
-      swap(url, { method: "POST", body: new URLSearchParams([...data] as [string, string][]) }, () => form.submit(), () => {
-        for (const [id, value] of typed) {
-          const input = document.querySelector<HTMLInputElement>(`.set-form #${id}`);
-          if (input && !input.readOnly) input.value = value;
-        }
-        if (action === "log") afterDone();
-        return action === "rest"
-          ? document.querySelector<HTMLElement>(`.rest-adjust button[value="${delta}"]`)
-          : document.querySelector<HTMLElement>(".sheet .wide");
-      });
+      const logbook = action === "note" || action === "plan-load" || action === "plan-clear";
+      swap(
+        url,
+        { method: "POST", body: new URLSearchParams([...data] as [string, string][]) },
+        () => form.submit(),
+        () => {
+          for (const [id, value] of typed) {
+            const input = document.querySelector<HTMLInputElement>(`.set-form #${id}`);
+            if (input && !input.readOnly) input.value = value;
+          }
+          if (action === "log") afterDone();
+          return action === "rest"
+            ? document.querySelector<HTMLElement>(`.rest-adjust button[value="${delta}"]`)
+            : document.querySelector<HTMLElement>(".sheet .wide");
+        },
+        logbook ? () => saveFailed(e.submitter as HTMLButtonElement | null) : undefined,
+      );
     },
     true,
   );
+
+  // LB-0.7: a note or plan that didn't reach the server says so beside its
+  // button, and everything is unlocked with what was typed still there
+  function saveFailed(button: HTMLButtonElement | null) {
+    unbusy();
+    if (button) button.disabled = false;
+    const near = button?.closest(".note-save, .plan-tools, .plan-load, .plan-pick") ?? button?.parentElement;
+    if (!near) return;
+    near.querySelector("[data-failed]")?.remove();
+    const p = Object.assign(document.createElement("p"), { className: "error", textContent: "That didn't save. Try again." });
+    p.dataset.failed = "";
+    p.setAttribute("role", "alert");
+    near.append(p);
+  }
 
   // ======================================================================
   // Interactions, presets and emoji (criteria/int.md; room spec I.2 to I.9)
@@ -2642,6 +2915,31 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       grid-row: 1 / span 4;
       position: sticky;
       top: 2rem;
+    }
+    /* LB-0.1 at laptop width (decided 5 Nov while the user was away): the
+       sheet is at most the screen's height and scrolls inside, with the dock
+       held at its foot, so a taller sheet (Last time, a plan, the type and
+       RPE) never moves Start set or pushes it off screen */
+    .gym > .sheet:has(> .dock) {
+      /* fits under the top bar before the page scrolls (it starts about 6rem
+         down) with 1rem to spare, and so fits once it sticks at 2rem too */
+      max-height: calc(100dvh - 7.5rem);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+    }
+    /* the state tab rides the sheet's top border; inside a scroll box it
+       would be clipped, so it sits just inside the border instead */
+    .gym > .sheet:has(> .dock) > .tab {
+      top: var(--px);
+      transform: none;
+    }
+    .gym > .sheet > .dock {
+      position: sticky;
+      /* the sheet's padding is 1.25rem: the dock's bottom margin cancels it,
+         so sticking at -1.25rem holds it flush with the visible foot */
+      bottom: -1.25rem;
+      z-index: 2;
     }
   }
 
@@ -3936,6 +4234,190 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   .last b {
     font-weight: 400;
     color: var(--paper);
+  }
+  /* ===== Logbook refactor, Nov 4 (docs/design/room/spec.md, L.1 to L.6) =====
+     Everything new sits above or below the numbers; nothing touches .dock or
+     its button (LB-0.1). Sets inside are drawn by SetCell, so :global. */
+
+  /* Last time, in full (LB-1): a page of the logbook in the sheet. One line
+     per set, working sets numbered, warm-ups W and dimmed; the set to match
+     lit in leaf with the menu's cursor */
+  .last-time {
+    margin: 0 0 1rem;
+    padding: 0.25rem 0.5rem 0.5rem;
+    background: var(--night);
+    border: 2px solid var(--edge);
+  }
+  .last-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin: 0 0 var(--px);
+    color: var(--dim);
+  }
+  .last-head b {
+    font-weight: 400;
+    color: var(--paper);
+  }
+  .last-sets {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 24px;
+    line-height: 1.15;
+    font-variant-numeric: tabular-nums;
+  }
+  .last-sets li {
+    display: grid;
+    grid-template-columns: 1.5rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0 0.5rem;
+    margin: 0 -0.5rem;
+    padding: 2px 0.5rem;
+  }
+  .last-sets .n {
+    color: var(--dim);
+    text-align: right;
+  }
+  .last-sets :global(.what) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--px) 0.5rem;
+  }
+  .last-sets :global(.marks) {
+    margin: 0;
+    justify-content: flex-start;
+    font-size: 20px;
+  }
+  .last-sets .warm :global([data-set]) {
+    color: var(--dim);
+  }
+  .last-sets .match,
+  .last-sets .match .n,
+  .last-sets .match :global(.rec-for) {
+    color: var(--ink);
+    background: var(--leaf);
+  }
+  .last-sets .match :global(.badge.failure),
+  .last-sets .match :global(.badge.warmup) {
+    color: var(--ink);
+    border-color: var(--ink);
+  }
+  .last-note {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin: var(--px) 0 0;
+    padding-top: var(--px);
+    color: var(--dim);
+    border-top: 2px dashed var(--edge);
+    overflow-wrap: anywhere;
+  }
+  .last-note :global(svg) {
+    flex: none;
+    color: var(--leaf);
+  }
+
+  /* the lift's note (LB-2.19): one folded line once the lift has a set; the
+     note's text when there is one, "Add a note" when not */
+  .ex-note {
+    margin: 0.75rem 0 0;
+  }
+  .ex-note > summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    list-style: none;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+  }
+  .ex-note > summary::-webkit-details-marker {
+    display: none;
+  }
+  .ex-note > summary :global(svg) {
+    flex: none;
+    color: var(--leaf);
+  }
+  .ex-note .add {
+    color: var(--leaf);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+  }
+  .ex-note .if-open,
+  .ex-note[open] .if-closed {
+    display: none;
+  }
+  .ex-note[open] .if-open {
+    display: inline;
+    color: var(--dim);
+  }
+  .ex-note textarea {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    font: 22px/1.2 var(--body);
+    color: var(--paper);
+    background: var(--night);
+    border: var(--px) solid var(--edge);
+    border-radius: 0;
+    box-shadow: inset var(--px) var(--px) 0 #000;
+    resize: vertical;
+  }
+  .ex-note textarea[aria-invalid="true"] {
+    box-shadow: inset var(--px) var(--px) 0 var(--error);
+  }
+  .note-save {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    margin: 0.5rem 0 0;
+  }
+  .note-save .hint,
+  .note-save .error {
+    margin: 0;
+  }
+
+  /* a record on the rest block, for the whole rest */
+  .rest-rec {
+    justify-content: flex-start;
+    margin: var(--px) 0 0;
+  }
+  /* the stamp with marks: a second line, growing upward from where the
+     one-line stamp sits, so it never covers the dock's button */
+  .stamp:has(.marks) {
+    flex-wrap: wrap;
+    transform: translateY(calc(-100% + 14px));
+  }
+  .stamp .marks {
+    flex-basis: 100%;
+    justify-content: flex-start;
+    margin: 0 0 2px 20px;
+    font-size: 20px;
+  }
+
+  /* This workout: the logbook's marks, warm-up rows and the note row */
+  .log td.set :global(.marks) {
+    font-size: 20px;
+  }
+  .log tr.warm :global([data-set]) {
+    color: var(--dim);
+  }
+  .log tr.note td {
+    padding-top: 0.25rem;
+    font-size: 20px;
+    line-height: 1.2;
+    color: var(--dim);
+    border-top-style: dashed;
+    overflow-wrap: anywhere;
+  }
+  .log tr.note :global(svg) {
+    margin-right: 0.5rem;
+    vertical-align: -1px;
+    color: var(--leaf);
   }
 
   .stopwatch {

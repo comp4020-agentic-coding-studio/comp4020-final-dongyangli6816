@@ -1,0 +1,88 @@
+---
+// A plan's exercises in order, drawn the same on the summary's preview and on
+// /plans (docs/design/summary/spec.md, Nov 4, "Shared: the Logbook group"):
+// the station each is done at, its name (a link to its page), and its planned
+// sets as empty boxes, the ones the room's sheet fills in.
+import { exerciseById } from "../lib/exercises.ts";
+import MachineArt from "./MachineArt.astro";
+
+interface Props {
+  items: readonly { exerciseId: number; name: string; sets: number }[];
+}
+const { items } = Astro.props;
+---
+
+<ol class="plan-list">
+  {
+    items.map((i) => {
+      const e = exerciseById(i.exerciseId)?.equipment;
+      return (
+        <li>
+          <span class="art">{e && <MachineArt e={e} part="idle" />}</span>
+          <a href={`/exercises/${i.exerciseId}`}>{i.name}</a>
+          <span class="n">
+            <span class="vh"> · </span>
+            {i.sets} set{i.sets === 1 ? "" : "s"}
+            <span class="planned" aria-hidden="true">
+              {Array.from({ length: i.sets }, () => (
+                <i />
+              ))}
+            </span>
+          </span>
+        </li>
+      );
+    })
+  }
+</ol>
+
+<style>
+  .plan-list {
+    margin: 0 0 1rem;
+    padding: 0;
+    list-style: none;
+    counter-reset: plan;
+    border-top: 2px solid var(--ink);
+  }
+  .plan-list li {
+    display: grid;
+    grid-template-columns: 1rem 32px 1fr auto;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.25rem 0;
+    border-bottom: 2px solid var(--ink);
+    counter-increment: plan;
+  }
+  .plan-list li::before {
+    content: counter(plan);
+    color: var(--muted);
+    text-align: right;
+  }
+  .plan-list .art,
+  .plan-list .art :global(svg) {
+    display: block;
+    width: 32px;
+    height: 32px;
+  }
+  .plan-list a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .plan-list .n {
+    white-space: nowrap;
+    text-align: right;
+  }
+  /* under the count, right-aligned; ten (the cap) still fit at 360 px */
+  .planned {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--px);
+    margin: 0 0 var(--px);
+  }
+  .planned i {
+    width: calc(var(--px) * 2);
+    height: calc(var(--px) * 3);
+    background: var(--card);
+    box-shadow: inset 0 0 0 2px var(--ink);
+  }
+</style>

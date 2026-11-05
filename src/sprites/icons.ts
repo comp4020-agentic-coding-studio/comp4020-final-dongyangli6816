@@ -12,7 +12,9 @@ export const arrowIcon = icon("........", "...c....", "...cc...", "cccccc..", "c
 export const idleIcon = icon("...cc...", "...cc...", ".cccccc.", "...cc...", "...cc...", "..c..c..", "..c..c..", "........");
 export const playIcon = icon("..c.....", "..cc....", "..ccc...", "..cccc..", "..cccc..", "..ccc...", "..cc....", "..c.....");
 export const stopIcon = icon("........", ".cccccc.", ".cccccc.", ".cccccc.", ".cccccc.", ".cccccc.", ".cccccc.", "........");
-export const pencilIcon = icon("......c.", ".....ccc", "....ccc.", "...ccc..", "..ccc...", ".ccc....", ".cc.....", "c.......");
+// a record (docs/design/history/spec.md, "Shared marks"): a pixel star
+export const recordIcon = icon("...cc...", "...cc...", "..cccc..", "cccccccc", ".cccccc.", "..cccc..", ".cc..cc.", ".c....c.");
+export const pencilIcon =icon("......c.", ".....ccc", "....ccc.", "...ccc..", "..ccc...", ".ccc....", ".cc.....", "c.......");
 // the squad list and the map's connection badge (docs/design/room/spec.md)
 export const phoneOffIcon = icon("cccc.c.c", "c..c..c.", "c..c.c.c", "c..c....", "c..c....", "cccc....", "c.cc....", "cccc....");
 export const signalIcon = icon("......c.", "........", "...cc.c.", "...cc...", "cc.cc.c.", "cc.cc...", "cc.cc.c.", "........");

@@ -1,0 +1,102 @@
+---
+// One logged set, written the same everywhere (docs/design/history/spec.md,
+// "Logbook refactor, Nov 4": "Writing a set" and "Shared marks"): the
+// figures as a lifter writes them, the RPE after them, a cardio set's pace on
+// its own line, then the set type and any record as words.
+//
+// The [data-set] element's text is exactly setLabel ("5 km · 25:00 @ 8 ·
+// 5:00 /km"), and it carries data-type and data-records: the contract's hooks
+// (spec/logbook.test.ts), kept whatever the design does. So the screen-reader
+// RPE and the marks sit beside it, not in it, and the pace's " · " is in the
+// text but hidden where the pace drops to its own line.
+import { RECORD_NAMES, rpeSuffix, setLabel, type LoggedSet, type RecordKey } from "../lib/logbook.ts";
+import { recordIcon } from "../sprites/icons.ts";
+import Sprite from "./Sprite.astro";
+
+interface Props {
+  set: LoggedSet;
+  records?: readonly RecordKey[];
+  // the element to draw, so a set can be a cell, a list item or a span
+  as?: "td" | "li" | "span";
+  class?: string;
+  match?: boolean;
+  // drop a run's pace onto its own line (tables); inline elsewhere
+  splitPace?: boolean;
+  // spoken before the set, beside it ("Set 2, the one to match: ")
+  lead?: string;
+}
+const { set, records = [], as: Tag = "span", class: className, match = false, splitPace = true, lead } = Astro.props;
+
+const bare = setLabel({ ...set, rpe: null });
+const isRun = set.distanceM !== null && set.durationS !== null;
+const cut = isRun ? bare.lastIndexOf(" · ") : -1;
+const figures = cut >= 0 ? bare.slice(0, cut) : bare;
+const pace = cut >= 0 ? bare.slice(cut + 3) : "";
+const type = set.setType === "warmup" || set.setType === "failure" ? set.setType : null;
+const typeWord = type === "warmup" ? "Warm-up" : "Failure";
+---
+
+<Tag class={className}
+  >{lead && <span class="vh">{lead}</span>}<span
+    class="figures"
+    data-set=""
+    data-type={type ?? undefined}
+    data-records={records.length ? records.join(" ") : undefined}
+    data-match={match ? "" : undefined}
+    >{figures}{
+      pace && (
+        <span class:list={["pace", { inline: !splitPace }]}
+          ><span class="sep" aria-hidden="true"> · </span>{pace}</span
+        >
+      )
+    }{set.rpe != null && <span class="rpe" aria-hidden="true">{rpeSuffix(set.rpe)}</span>}</span
+  >{set.rpe != null && <span class="vh">, RPE {set.rpe}</span>}{
+    (type || records.length > 0) && (
+      <span class="marks">
+        {type && (
+          <span class:list={["badge", type]}>
+            <span class="vh">Set type: </span>
+            {typeWord}
+          </span>
+        )}
+        {records.length > 0 && (
+          <>
+            <span class="badge record">
+              <Sprite sprite={recordIcon} scale={2} />
+              <span class="vh">New </span>Record<span class="vh">:</span>
+            </span>{" "}
+            <span class="rec-for">{records.map((k) => RECORD_NAMES[k]).join(", ")}</span>
+          </>
+        )}
+      </span>
+    )
+  }</Tag
+>
+
+<style>
+  /* The text runs figures, pace, RPE (setLabel's order); on its own line the
+     pace is drawn under the figures and their RPE, as the design has it. */
+  .figures:has(.pace:not(.inline)) {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    column-gap: 0;
+  }
+  .figures:has(.pace:not(.inline)) .pace {
+    order: 1;
+    flex-basis: 100%;
+  }
+  /* " @ 8" keeps its space as a flex item */
+  .rpe {
+    white-space: pre;
+  }
+  /* on its own line the pace needs no separator; inline it keeps it */
+  .pace:not(.inline) .sep {
+    display: none;
+  }
+  .pace.inline {
+    display: inline;
+    font-size: inherit;
+    color: inherit;
+  }
+</style>
