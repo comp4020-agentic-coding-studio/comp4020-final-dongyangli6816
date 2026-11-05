@@ -393,7 +393,7 @@ hidden by her body or the machine's front parts. *judged*
 > "your squad can see you".
 
 **GYM-11.1** Given Mia is Resting, when the server's time passes her slack
-point (30 s past her rest's end), then within a second, on every screen, her
+point (30 s past her rest's end), then within about 1.5 seconds, on every screen, her
 tag turns Slacking and her avatar walks from the cooler to her station and
 sits in front of her machine scrolling her phone: one sitting drawing
 whatever the machine, the machine unoccupied behind her with its bar in
@@ -545,3 +545,4 @@ match.
 | D6 (Q6) | People who stay Lifting indefinitely (after cardio; a rest 30 min over) | Accepted for this feature: the map shows what the server reports. Whether those state rules change is raised separately, in the gym area. | The animation must never invent a state, or the map and the squad list would disagree. The rule change affects who can be slapped and the summary, so it is its own decision. | GYM-10.22 |
 | D7 (Q7) | Interaction reactions over animations | Reactions (INT-3) are effects drawn over whatever pose the avatar is in, never new body frames. | Body frames would need a version per animation and state, for people and Dony; an effect works everywhere for one drawing. INT owns the rest. | none here (Scope, INT-3) |
 | D8 (Q8) | The `long` hair style's label | "Wolf cut", label only; the stored id stays `long`. | It is drawn as a wolf cut, and the name is what a Gen Z player would recognise. Nothing stored changes. | AV-1.1 |
+| D9 | How soon after the slack point does the turn to Slacking show? **5 Nov 2026**, the user's decision after CI flaked (1025 and 1087 ms measured, blocking main's deploy). | Within about 1.5 seconds, on every screen. The page stays as it is. | The turn is shown on the page's 1 s tick, so it can land up to 1 s late plus browser lag; 1.5 s keeps it prompt without a per-person timer. | GYM-11.1 |
