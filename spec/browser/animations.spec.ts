@@ -65,14 +65,46 @@ const logSet = (who: BrowserContext, path: string, exercise: string) =>
   post(who, path, { exercise_id: exercise, weight_kg: "40", reps: "8" });
 // a set, then its rest cut to 15 s, the shortest the server counts as a rest
 // (a 0 s rest is no rest at all), so Slacking starts 45 s after it (GYM-11).
-// Returns its slack point, from the moment before the set was posted, so it
-// is never later than the server's and a check against it is never lenient.
+// Returns its slack point as the server stored it (slackPointOf). It used to
+// be guessed from the moment before the set was posted, which put it early
+// by however long the post took to reach the server: on a busy CI runner
+// that alone pushed a turn the page made on time past the 1 s (1025 ms).
 const SHORT_REST_MS = 15_000;
 async function logSetWithShortRest(who: BrowserContext, path: string, exercise: string, defaultRestS: number) {
-  const loggedAt = Date.now();
   await logSet(who, path, exercise);
   for (let i = 0; i < (defaultRestS - SHORT_REST_MS / 1000) / 15; i++) await post(who, path, { action: "rest", delta: "-15" });
-  return loggedAt + SHORT_REST_MS + 30_000;
+  return slackPointOf(who, path);
+}
+
+// This person's slack point as the server holds it (the room event's
+// members[].slackAt), turned into this machine's time. The server's clock is
+// read against ours across one request: its `now` was taken somewhere between
+// sending the request and the first event arriving, so the earliest the slack
+// point can be, here, is slackAt + (sent - now). That bound is used, so a
+// check against it is never lenient; it is early only by the time a GET takes
+// to reach the server, not a post's write.
+async function slackPointOf(who: BrowserContext, path: string): Promise<number> {
+  const cookie = (await who.cookies()).map((c) => `${c.name}=${c.value}`).join("; ");
+  const hangUp = new AbortController();
+  const sent = Date.now();
+  const res = await fetch(new URL(`${path}/events`, test.info().project.use.baseURL!), { headers: { cookie }, signal: hangUp.signal });
+  const decoder = new TextDecoder();
+  let buffer = "";
+  try {
+    for await (const chunk of res.body!) {
+      buffer += decoder.decode(chunk as Uint8Array, { stream: true });
+      const block = buffer.split("\n\n").find((b) => /^event: room$/m.test(b) && /^data: /m.test(b));
+      if (!block) continue;
+      const e = JSON.parse(block.match(/^data: (.*)$/m)![1]) as { now: number; members: { id: number; slackAt: number | null }[] };
+      const me = Number((await who.request.get(path).then((r) => r.text())).match(/data-me="(\d+)"/)?.[1]);
+      const slackAt = e.members.find((m) => m.id === me)?.slackAt;
+      expect(slackAt, "the server holds a slack point for her").toEqual(expect.any(Number));
+      return slackAt! + (sent - e.now);
+    }
+  } finally {
+    hangUp.abort();
+  }
+  throw new Error(`no room event from ${path}/events`);
 }
 
 const avatar = (page: Page, name: string) =>
@@ -820,9 +852,11 @@ test("a rest that runs over walks her to her machine to sit with a glowing phone
   const log = await samples(tomPage);
   const track = trackOf(log, id);
 
-  await test.step("GYM-11.1: within a second she walks from the cooler and sits in front of her machine, bar in place", async () => {
+  await test.step("GYM-11.1: within about 1.5 s she walks from the cooler and sits in front of her machine, bar in place", async () => {
     const turned = track.find((s) => s.state === "slacking")!.t - slackPoint;
-    expect.soft(turned, "ms after her slack point").toBeLessThanOrEqual(1000);
+    // the page shows the turn on its 1 s tick, so up to 1 s after the slack
+    // point plus a loaded browser's lag (CI saw 1087 ms); 5 Nov, user's call
+    expect.soft(turned, "ms after her slack point").toBeLessThanOrEqual(1500);
     expect.soft(await avatar(tomPage, "Mia").locator(".tag").getAttribute("class")).toMatch(/state-slacking/);
     const { walking, arrived } = walkOf(track, COOLER.join(","), TILE[2].join(","));
     expectAWalk(walking, "cooler to station 2");
