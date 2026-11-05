@@ -76,7 +76,7 @@ Two situations are designed for:
 | Report, block, mute, kick, admin page, text filtering pipeline, moderation API | Only needed with strangers; a passcode room is a closed group |
 | Email verification, password reset, Google or Apple sign-in, 18+ age gate | No email service in the setup; no strangers |
 | PWA install, web push notifications, offline logging and sync, wake lock | Large effort, and iPhone push needs home-screen install; in-page sound and visual alerts instead |
-| 80 seeded exercises, custom exercises, warm-up sets, personal records, units switching | 16 exercises on 8 pieces of equipment, kg only. Four tracking kinds came back in on 8 Oct (ADR 0002) |
+| 80 seeded exercises, custom exercises, warm-up sets, a personal-records page and records history, units switching | 16 exercises on 8 pieces of equipment, kg only. Four tracking kinds came back in on 8 Oct (ADR 0002). A personal best is only celebrated in the room (GYM-17, GYM-18) |
 | Tiled map editor, sprite sheets drawn per avatar layer, ~20 animations, free walking and A* pathfinding | Sprites are drawn in code with two-frame animations; avatars walk along fixed aisles |
 | Layered avatar creator with thousands of combinations | A handful of choices, done by palette swaps |
 | Success metrics, retention targets, running-cost planning, scaling path | Product-launch concerns, not course concerns |
@@ -127,7 +127,7 @@ delivery plan below.
 | LOG-2 | P0 | 16 seeded exercises, two per piece of equipment (see The gym). |
 | LOG-3 | P0 | A set records what its exercise's kind measures: weight in kg and reps; reps and any added weight (bodyweight); a hold time (duration); or a distance and time (cardio). Weight and bodyweight sets pre-fill from the person's last set of that exercise; duration and cardio sets start empty, with the last set shown for reference (changed 8 Oct: the stopwatch counts on from the fields). |
 | LOG-4 | P0 | Tapping **Done** logs the set and starts a rest timer from the exercise's default (60 to 180 s; none after cardio), adjustable by ±15 s or skipped. The next set of that exercise starts from the rest last chosen for it. |
-| LOG-5 | P0 | When rest ends, the page plays a sound and flashes, if it is open. |
+| LOG-5 | P0 | When rest ends, the page plays a sound (unless the person has turned it off, INT-12) and flashes, if it is open. |
 | LOG-6 | P0 | Finishing a workout shows a summary: duration, sets, total volume (weight × reps), cardio distance and time spent slacking. |
 | LOG-7 | P0 | History lists the person's past workouts, newest first, with their sets. |
 | LOG-8 | P1 | Edit or delete a set after logging it. |
@@ -180,20 +180,36 @@ equipment.
 | GYM-14 | P0 | A person whose connection drops shows as **Away** (avatar faded) after 60 s, and keeps their state and station. When they return, they pick up where they left off. |
 | GYM-15 | P0 | Below the gym, a text list of everyone in the room, their state and their equipment mirrors the map, for keyboard and screen-reader users and for small screens. |
 | GYM-16 | P1 | **Work in:** instead of having another one delivered, someone can ask to share a piece of equipment that's in use, taking turns with its user between sets, the way people do in a real gym. |
-| GYM-17 | P1 | A new personal best (heaviest weight on an exercise) plays a flex animation everyone sees. |
+| GYM-17 | P1 | A set that beats every earlier set of that exercise by what its kind measures (heaviest weight, then reps; most reps, then added weight; longest hold; longest distance, then faster time) is a personal best, from a person's second workout with that exercise on. It plays a flex everyone sees (changed 4 Nov: every kind, not heaviest weight only). |
+| GYM-18 | P1 | When someone hits a personal best, everyone else in the room gets a banner naming them and the exercise, without numbers, with a one-tap Cheer. The personal best goes in the room log. For 30 s their menu suggests Cheer and High-five. |
 
 ### Interactions and messages
 
 | ID | Pri | Requirement |
 | --- | --- | --- |
-| INT-1 | P0 | Selecting another person's avatar (by tap, click or keyboard) opens a menu: **Cheer**, **Poke**, **Slap**, **Message**, usable in any state, mid-set included. Your own avatar and your own squad row open nothing. |
+| INT-1 | P0 | Selecting another person's avatar (by tap, click or keyboard) opens a menu: **Cheer**, **Poke**, **Slap**, **High-five**, **Message**, usable in any state, mid-set included, with a reply as its first row while one is open to you (INT-9). Your own avatar and your own squad row open nothing. |
 | INT-2 | P0 | **Cheer**, **Poke** and every preset are allowed on anyone in any state. **Slap** is allowed unless the target is Lifting or Finished. What the sender is doing never matters (changed 22 Oct: interaction is an any-time social layer, not a response to slacking). |
-| INT-3 | P0 | An interaction plays an animation on the target's avatar on every screen in the room, and shows the target a banner ("Mia slapped you back to work"). Poke's banner reads "Mia poked you. Rest's over? 👉" if the target is Resting or Slacking, otherwise "Mia poked you 👉". A newer banner replaces the current one. |
-| INT-4 | P0 | One interaction per sender per target every 10 s; one preset per sender every 2 s; one emoji per sender every 1 s. The limits are separate. |
-| INT-5 | P0 | About 10 preset messages in two groups, hype ("One more rep!") and nudge ("Put the phone down"), addressed to one person, shown as a speech bubble above the sender for 5 s, and kept, with interactions, in a room log of the newest 50 entries. Both groups go to anyone. |
+| INT-3 | P0 | An interaction plays an animation on the target's avatar on every screen in the room, and shows the target a banner ("Mia slapped you back to work"). Poke's banner reads "Mia poked you. Rest's over? 👉" if the target is Resting or Slacking, otherwise "Mia poked you 👉". A banner may carry one button (a reply, a High-five, or Cheer on a personal best) and then stays 6 s; others stay 4 s. A newer banner replaces the current one. Since 5 Nov an interaction is acted out on the map (INT-13, INT-14): the target's reaction, banner and sound land when the move does, at most 3 s after it arrives; the room log has it within a second. |
+| INT-4 | P0 | One interaction per sender per target every 10 s; one preset per sender every 2 s; one emoji per sender every 1 s. The limits are separate. Replies and High-five acceptances are never refused by the 10 s limit, but count toward it. |
+| INT-5 | P0 | About 10 preset messages in two groups, hype ("One more rep!") and nudge ("Put the phone down"), addressed to one person, shown as a speech bubble above the sender for 5 s, and kept, with interactions, replies, completed High-fives and personal bests (without numbers), in a room log of the newest 50 entries. Both groups go to anyone. |
 | INT-6 | P1 | Free-text messages up to 140 characters, sent to the room, rate-limited to one every 2 s. Text is always escaped, never rendered as HTML. |
 | INT-7 | P1 | A per-person setting to turn slaps off. |
 | INT-8 | P0 | From a button beside the dock, in every state including mid-set, send one of eight fixed pixel emoji (Hi, Flex, Fire, Clap, Haha, Dead, Eyes, Love) in at most two taps. It pops above your own avatar on every screen in the room for 3 s. Never covers or moves Start set or Done. Not stored, not in the room log. |
+| INT-9 | P1 | After a Cheer, Poke or Slap, the target can answer it once, within 30 s, in one tap from the banner or from the sender's menu: **Thanks** to a Cheer, **Poke back** to a Poke, **Slap back** to a Slap. The answer plays on the sender and gives them a banner. An answer can't be answered. |
+| INT-10 | P1 | From the menu, offer someone a High-five. It shows on every screen for 10 s, and only happens if they accept in that time, from a banner or your menu. Then both avatars play it on every screen. An offer nobody takes lapses quietly, told only to the offerer. Not while the target is Away. |
+| INT-11 | P1 | Every reaction is big and clear enough to tell its kind at a glance on a phone at arm's length, and the sender always knows their move landed, even with the target out of view. Reactions never cover the dock, delay Start set or Done, or cover a name tag. |
+| INT-12 | P1 | The room page plays short sounds for things that are about you (an interaction, reply, High-five or preset to you; your own moves landing), a fanfare everyone hears for a personal best, and the rest-over sound. Never for other people's interactions or emoji. A setting on the room page chooses All sounds, Rest timer only, or Off; it is remembered in that browser. |
+
+| INT-13 | P1 | A sender who is Idle, Resting, Slacking or Finished when their Cheer, Poke, Slap or reply is accepted walks along the aisles to beside the target, does the move there, and walks back, on every screen. The target's reaction, banner and sound land when the move does, at most 3 s after it arrives. Nothing about the walk changes anyone's state, station or workout, or delays Start set or Done. |
+| INT-14 | P1 | A sender who is Lifting stays on their machine and makes a short gesture, and an effect for the move travels across the map to the target. They never leave the machine. |
+| INT-15 | P1 | At the hit, the target plays a short body reaction for the move (a hop at a cheer, a startled jump at a poke, a cartoon recoil at a slap), then goes back to their pose. On a machine they keep lifting, with the effect and a jolt. |
+| INT-16 | P1 | When a High-five happens, whichever of the two can walk goes to the other, the offerer first; both raise a hand and slap it, then the walker goes back. If both are Lifting, both raise a hand on their machines and the effect meets between them. |
+
+Criteria for INT-13 to INT-16 and BOT-8 are in `docs/product/criteria/room-acting.md`
+(agreed 5 Nov).
+
+Criteria for INT-9 to INT-12, GYM-17, GYM-18 and BOT-7 are in
+`docs/product/criteria/room-feel.md` (agreed 4 Nov).
 
 ### Dony
 
@@ -204,7 +220,9 @@ equipment.
 | BOT-3 | P1 | Dony trains by a schedule worked out from the room and his summon time: blocks of 4 to 6 lifts over 45 to 60 minutes, 3 to 5 sets each, realistic set lengths and rests, 3 to 6 minutes Idle between blocks, mostly on equipment already on the floor (at most two deliveries a block). He goes Idle, Lifting, Resting and Slacking (about one rest in eight, at most twice a block) through the same station rules (GYM-4), never Finished, and every screen sees each change within about a second (GYM-13). His emoji (BOT-6) are part of the same schedule. |
 | BOT-4 | P1 | Anyone in the room can tap the empty poster to send Dony back: he stops whatever he's doing, frees his station, walks back and hops into the poster. He can be sent back at any moment; after a send back the poster rests for 30 seconds before he can be summoned again. A tap only acts if the poster is still as its tapper saw it (full for a summon, empty for a send back) and, for a summon, isn't resting; otherwise it does nothing, silently. |
 | BOT-5 | P1 | Dony appears on the map and in the squad list like a person, with no bot marker. He never counts as a member, toward the 12, as host or as room activity. A station he holds is always free for a person to take. The room closes when the last real person leaves, as now, and he goes with it. He appears in no logbook, summary, history or friends list, and nothing he does, his emoji included, counts as room activity. |
-| BOT-6 | P1 | While he's out, Dony sends the same emoji as people (INT-8): 👋 when he lands, then about one every 2 minutes (never two within 60 s) fitting his state, and an answer about a second after a Cheer, Poke or Slap aimed at him (at most one answer every 10 s, never to presets). Planned from the room, his summon time and the stored interactions, like the rest of his schedule. |
+| BOT-6 | P1 | While he's out, Dony sends the same emoji as people (INT-8): 👋 when he lands, then about one every 2 minutes (never two within 60 s) fitting his state, and an answer about a second after a Cheer, Poke or Slap aimed at him (at most one answer every 10 s, shared with his High-five acceptances, never to presets). Planned from the room, his summon time and the stored interactions, like the rest of his schedule. |
+| BOT-7 | P1 | Dony never offers a High-five or replies to anyone. If offered a High-five he accepts about a second later, unless he answered anything in the last 10 s, in which case he leaves you hanging. Once per visit, 4 to 8 minutes after landing, he hits a personal best, planned like the rest of his schedule, never in the room log or any logbook. Everything is worked out from the room, his summon time and what is stored. |
+| BOT-8 | P1 | Dony reacts to acted moves with his body like a person. He never walks to anyone on his own; to complete a High-five he walks over only if the offerer is Lifting and he isn't. None of it changes his schedule. |
 
 ### Operations (Crit 10)
 
@@ -250,7 +268,7 @@ const frame = [
 
 | Subject | Frames |
 | --- | --- |
-| Avatar body | Walk facing the viewer × 2; 8 exercise animations × 2; resting with a bottle × 2; slacking with a phone × 2. Slapped, poked and cheered reactions are effects drawn over any pose, not body frames |
+| Avatar body | Walk facing the viewer × 2; 8 exercise animations × 2; resting with a bottle × 2; slacking with a phone × 2. Body reactions to each move for the standing, resting and sitting poses; the walker's move frames (slap, poke, cheer, thanks, high-five); a gesture for a lifter; a travelling effect per move. On a machine, reactions stay effects (changed 5 Nov, INT-15) |
 | Hair | 4 styles, facing the viewer only |
 | Gym worker | Walk carrying in 4 directions × 2; put down × 1 |
 | Equipment | 8 pieces, each in place and being carried |
@@ -280,8 +298,11 @@ row, so a cold start restores the gym exactly.
 | `exercises` | `id`, `name`, `equipment` | Seeded, 16 rows |
 | `workouts` | `id`, `user_id`, `room_id` (nullable), `started_at`, `ended_at` | |
 | `sets` | `id`, `workout_id`, `exercise_id`, `weight_kg`, `reps`, `completed_at`, `rest_target_s`, `slack_s` | `slack_s` written when the next set starts |
-| `interactions` | `id`, `room_id`, `from_user_id`, `to_user_id`, `kind`, `created_at` | Also enforces INT-4 |
+| `interactions` | `id`, `room_id`, `from_user_id`, `to_user_id`, `kind`, `created_at` | Also enforces INT-4. Gains the reply and High-five kinds, a link from a reply to what it answers (INT-9), and High-five offers with their outcome (INT-10). The interaction event (and Dony's High-five acceptance) carries the sender's state at acceptance, so every screen agrees who walks (INT-13, INT-14); nothing new is stored |
 | `messages` | `id`, `room_id`, `sender_id`, `preset_key`, `body`, `created_at` | `body` only for free text (INT-6) |
+
+Whether a set is a personal best (GYM-17) is recorded when it is logged or
+derived from the person's earlier sets; either way it survives a restart.
 
 A delivery is not a table. A client that sees a station whose `placed_at` is
 less than a few seconds old plays the worker's animation; any later client
@@ -379,6 +400,11 @@ argument, the rules in `CLAUDE.md` and the checks can line up.
 - A second interaction from the same sender to the same target within 10 s is
   refused.
 - A second emoji from the same sender within 1 s is refused.
+- A second reply to the same interaction is refused, and so is a reply after
+  30 s.
+- A High-five accepted after 10 s is refused.
+- A set equal to a person's best is not a personal best, and a first workout
+  with an exercise has no personal best.
 - Dony's emoji arrive at the same server time on two streams, before and
   after a restart.
 - A state change made through one session arrives on another session's event
@@ -398,6 +424,10 @@ between sets. README should say how those were judged.
 | Friends rarely train at the same time, so rooms are usually one person | Out of scope to solve in four weeks; README can name it honestly. History still makes solo use worthwhile |
 | False slacking when someone forgets to tap Start set | Done still logs the set while Slacking; slacking time is shown, not punished |
 | Slapping reads as mean | Never on someone Lifting or Finished, rate-limited, cartoonish, and (P1) can be turned off |
+| Slap back reads as escalation | It follows Slap's rule (never on someone Lifting or Finished), once per slap, within 30 s, and an answer can't be answered |
+| An acted slap reads more strongly than an icon | Still never on someone Lifting or Finished; a cartoon recoil, never a mark; the walker goes straight back |
+| Errands make a busy map hard to read | Tags never move or get covered; a walk lands within 2.5 s and the walker is back within 6 s; presets stay bubbles; reduced motion shows stills |
+| Sound annoys at the gym or in class | Three-way setting (All sounds, Rest timer only, Off) remembered per browser; at most one interaction sound a second |
 | Emoji floods at the showcase | One emoji per second per sender (Dony included), each shown above its own sender and replacing that sender's last one; nothing stored |
 | The machine stops while idle and in-memory timers vanish | GYM-12: state derived from stored timestamps; SSE clients reconnect and re-read the room |
 | SQLite and concurrent writes | One process, WAL mode, short transactions; the load is a dozen people |
