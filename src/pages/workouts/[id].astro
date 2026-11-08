@@ -11,6 +11,11 @@ import { lookOf } from "../../lib/avatars.ts";
 import { log, who } from "../../lib/log.ts";
 import { readPlanName, saveAsPlan, setsForRecords, workoutSummary } from "../../lib/workouts.ts";
 import { recordIcon, trophyIcon } from "../../sprites/icons.ts";
+import { checkUnlocks, isLongHaul, unlockedIn, wearOne } from "../../lib/unlocks.ts";
+import { ACC_REASON, accEmoji, accessoryById, NOTHING } from "../../sprites/accessories.ts";
+import { tickIcon } from "../../sprites/icons.ts";
+import { wearOf } from "../../lib/avatars.ts";
+import { broadcastRoomsOf } from "../../lib/realtime.ts";
 
 // LOG-6: one finished workout, drawn as its history entry at full size.
 const user = Astro.locals.user;
@@ -26,9 +31,31 @@ let planError = "";
 let planErrorField = "";
 let typedName = "";
 let justSaved = "";
+// AV-6.6, AV-6.2: Wear it from the summary's list, with no script needed
+let wearError = "";
+let wearFailedFor = "";
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
-  if (form.get("action") !== "save-plan" || !Number.isInteger(id)) return notFound();
+  if (form.get("action") === "wear" && Number.isInteger(id)) {
+    if (!workoutSummary(user.id, id)) {
+      log("acc.denied", { ...who(user), workout: Astro.params.id });
+      return notFound();
+    }
+    const acc = String(form.get("acc") ?? "");
+    const r = wearOne(user.id, acc);
+    if (r.ok) {
+      log("acc.wear", { ...who(user), acc, workout: id });
+      broadcastRoomsOf(user.id);
+      // summary spec, Not decided 8: back to the card, keeping done=1
+      return Astro.redirect(`${here}?${form.get("done") === "1" ? "done=1&" : ""}worn=${encodeURIComponent(acc)}#unlocked`, 303);
+    }
+    log("acc.refused", { ...who(user), acc: acc.slice(0, 20), reason: r.reason });
+    wearError = "That didn't save. Try again.";
+    wearFailedFor = acc;
+    Astro.response.status = 400;
+  }
+  else if (form.get("action") !== "save-plan" || !Number.isInteger(id)) return notFound();
+  else {
   typedName = String(form.get("name") ?? "");
   const own = workoutSummary(user.id, id);
   if (!own) {
@@ -59,6 +86,7 @@ if (Astro.request.method === "POST") {
     log("plan.refused", { ...who(user), workout: id, reason: r.reason });
   }
   Astro.response.status = 400;
+  }
 }
 
 const w = Number.isInteger(id) ? workoutSummary(user.id, id) : undefined;
@@ -69,6 +97,21 @@ if (!w) {
 }
 if (w.endedAt === null) return Astro.redirect(w.roomId ? `/rooms/${w.roomId}` : "/history", 303);
 if (w.savedPlan && Astro.url.searchParams.get("saved") === String(w.savedPlan.id)) justSaved = w.savedPlan.name;
+
+// AV-5.15: opening a summary works unlocks out (they belong to no workout
+// then); AV-6.6: this workout's, in the order earned, and what's worn now
+checkUnlocks(user.id, null);
+const unlocked = unlockedIn(w.id);
+const wearing = wearOf(user.id);
+const wornNow = (id: string) => Object.values(wearing).includes(id as never);
+// the bubble after a Wear it (summary spec 3): only for one this page lists
+const wornParam = Astro.url.searchParams.get("worn") ?? "";
+const justWorn = unlocked.some((u) => u.acc === wornParam) && wornNow(wornParam) ? accessoryById(wornParam) : undefined;
+// a refusal for something with no row here (a hand-made post) is still said,
+// at the top of the card, or on its own when there's no card
+const strayWearError = wearError && !unlocked.some((u) => u.acc === wearFailedFor);
+const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+const bare = (slot: "head" | "face" | "neck", acc: string) => ({ ...NOTHING, [slot]: acc });
 
 // LB-4.10, LB-4.12 (D24): the marks, and how many sets carry one
 const records = recordsBySet(setsForRecords(user.id, w.sets.map((s) => s.exerciseId)));
@@ -147,6 +190,66 @@ const cheer =
     <a href="/" class="button">Back home</a>
     <a href="/history" class="button secondary">All history</a>
   </div>
+
+  {/* AV-6.6: what this workout unlocked (summary spec, "Accessories, Nov 9") */}
+  {strayWearError && unlocked.length === 0 && <p class="error" role="alert">That didn't save. Try again.</p>}
+  {
+    unlocked.length > 0 && (
+      <section class="card new-kit" id="unlocked" data-swap aria-labelledby="unlocked-h">
+        <h2 id="unlocked-h">Unlocked</h2>
+        {justWorn && (
+          <p class="bubble" role="status">
+            Wearing the {justWorn.name.toLowerCase()} now {accEmoji(justWorn.id)}
+          </p>
+        )}
+        <p class="hint">Nice one. New kit to wear 🔥</p>
+        {strayWearError && <p class="error" role="alert">That didn't save. Try again.</p>}
+        <ol class="kit-list">
+          {unlocked.map((u) => {
+            const a = accessoryById(u.acc)!;
+            const name = a.name.toLowerCase();
+            const failed = wearFailedFor === a.id;
+            return (
+              <li class:list={{ trophy: isLongHaul(a.id) }} data-unlocked={a.id}>
+                <span class="acc-frame">
+                  <Avatar look={lookOf(user.id)} bust vars wear={bare(a.slot, a.id)} class="bust" />
+                </span>
+                <p class="kit-name">
+                  New: {name}
+                  <span class="kit-why">{cap(ACC_REASON[a.id] ?? "")}</span>
+                </p>
+                {wornNow(a.id) ? (
+                  <p class="kit-act wearing">
+                    <Sprite sprite={tickIcon} scale={2} />
+                    Wearing it
+                  </p>
+                ) : a.id === "nightcap" ? (
+                  <p class="kit-act in-editor">
+                    Put it on in <a href="/avatar">Edit avatar</a>
+                  </p>
+                ) : (
+                  <form class="kit-act" method="post" action={here} data-pending>
+                    <input type="hidden" name="action" value="wear" />
+                    <input type="hidden" name="acc" value={a.id} />
+                    {done && <input type="hidden" name="done" value="1" />}
+                    <button type="submit" class="button secondary" aria-describedby={failed ? `wear-error-${a.id}` : undefined}>
+                      Wear it<span class="vh">: {name}</span>
+                    </button>
+                  </form>
+                )}
+                {failed && (
+                  <p class="error" role="alert" id={`wear-error-${a.id}`}>
+                    That didn't save. Try again.
+                  </p>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+        <a class="to-editor" href="/avatar">Edit avatar</a>
+      </section>
+    )
+  }
 
   <section class="card" aria-labelledby="every-set">
     <h2 id="every-set">Every set</h2>
@@ -322,5 +425,117 @@ const cheer =
     display: inline-flex;
     align-items: center;
     min-height: 44px;
+  }
+
+  /* AV-6.6: what this workout unlocked, its own card under the way out (summary
+     spec, "Accessories, Nov 9"). One row per accessory, in the order earned:
+     your own bust wearing it on a square of floor (the editor's .acc-frame,
+     at 2x), "New: …", what earned it, and Wear it (or "Wearing it"). */
+  .new-kit .hint {
+    margin: -0.5rem 0 1rem;
+  }
+  .kit-list {
+    margin: 0 0 0.5rem;
+    padding: 0;
+    list-style: none;
+    border-top: 2px solid var(--ink);
+  }
+  .kit-list li {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: "art name act" "art err err";
+    align-items: center;
+    gap: 0 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 2px solid var(--ink);
+  }
+  /* the editor's floor square, at 2x: the bust is 56 x 46 */
+  .kit-list .acc-frame {
+    grid-area: art;
+    align-self: start;
+    display: block;
+    background-color: var(--paper);
+    background-image: conic-gradient(var(--tile) 25%, transparent 0 50%, var(--tile) 0 75%, transparent 0);
+    background-size: 16px 16px;
+    border: 2px solid var(--ink);
+  }
+  .kit-list :global(.bust) {
+    display: block;
+    width: 56px;
+    height: 46px;
+  }
+  /* a long-haul one keeps the editor's gold rule under its frame */
+  .kit-list li.trophy .acc-frame {
+    border-bottom: var(--px) solid var(--finished);
+    box-shadow: 0 2px 0 var(--ink);
+  }
+  .kit-name {
+    grid-area: name;
+    margin: 0;
+    font-size: 24px;
+    line-height: 1.1;
+  }
+  .kit-why {
+    display: block;
+    font-size: 20px;
+    color: var(--muted);
+  }
+  .kit-act {
+    grid-area: act;
+    margin: 0;
+    justify-self: end;
+  }
+  .kit-act .button {
+    margin-right: var(--px);
+  }
+  /* already worn: a plain line with the tick, never a button */
+  .kit-act.wearing {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    font-size: 21px;
+    white-space: nowrap;
+  }
+  /* the Nightcap: no Wear it (AV-6.15); worn only from the editor */
+  .kit-act.in-editor {
+    max-width: 12rem;
+    font-size: 20px;
+    line-height: 1.1;
+    text-align: right;
+    color: var(--muted);
+  }
+  .kit-list .error {
+    grid-area: err;
+    width: fit-content;
+    max-width: 100%;
+    margin: 0.5rem 0 0;
+  }
+  .new-kit .bubble {
+    width: fit-content;
+    max-width: 100%;
+  }
+  .to-editor {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  /* phones: the action goes under the name, beside the bust */
+  @media (max-width: 420px) {
+    .kit-list li {
+      grid-template-columns: auto 1fr;
+      grid-template-areas: "art name" "art act" ". err";
+      row-gap: 0.25rem;
+    }
+    .kit-act {
+      justify-self: start;
+    }
+    .kit-act.in-editor {
+      max-width: none;
+      text-align: left;
+    }
+    .kit-act.wearing {
+      min-height: 0;
+    }
   }
 </style>

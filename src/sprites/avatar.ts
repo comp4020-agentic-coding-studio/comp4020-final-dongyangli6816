@@ -10,8 +10,11 @@
 //
 // Anchors, as (column, row): head outline rows 1-14, columns 7-24; the face
 // (eyes rows 8-10, mouth row 12) is columns 11-20, rows 8-12, and no overlay
-// or prop covers it; shoulder line row 16; hands rows 21-22, gripping at
+// or prop covers it, except a face accessory over the brow, eyes and the row
+// under them, never the mouth (accessories.ts; criteria D17); shoulder line row 16; hands rows 21-22, gripping at
 // (5, 22) and (26, 22); belt line row 23; sneakers rows 28-31.
+
+import { NOTHING, wearFromKey, wearKey, type Wear } from "./accessories.ts";
 
 // Rows 0 to 23 bob in the idle loop: head to belt line; cargos and sneakers
 // stay planted.
@@ -1524,6 +1527,9 @@ export type Look = {
   hair: HairStyle;
   hairColour: (typeof HAIR_COLOURS)[number]["id"];
   shirt: (typeof SHIRTS)[number]["id"];
+  // AV-4: what they wear, where it travels with the look (the room's view);
+  // stored apart from the four choices (users.wear)
+  wear?: Wear;
 };
 
 // The four choices as the editor's form names them, with their palettes.
@@ -1549,7 +1555,8 @@ export const randomLook = (): Look => ({
 export function asLook(v: Partial<Record<keyof Look, unknown>> | null | undefined): Look | null {
   if (!v) return null;
   for (const c of CHOICES) if (!c.options.some((o) => o.id === v[c.key])) return null;
-  return v as Look;
+  // only the four choices: anything else in a stored or posted look is dropped
+  return { skin: v.skin, hair: v.hair, hairColour: v.hairColour, shirt: v.shirt } as Look;
 }
 
 export function parseLook(json: string | null): Look | null {
@@ -1566,13 +1573,19 @@ type Swatch = { id: string; hex: string; shade?: string };
 const swatch = (list: readonly Swatch[], id: string) => list.find((o) => o.id === id)!;
 const withShade = (prop: string, o: Swatch) => `${prop}: ${o.hex}` + (o.shade ? `; ${prop}-2: ${o.shade}` : "");
 
-// One string per look, to tell whether a drawn avatar is still right.
-export const lookKey = (look: Look): string => `${look.skin}|${look.hair}|${look.hairColour}|${look.shirt}`;
+// One string per look, to tell whether a drawn avatar is still right; what
+// they wear is part of it, so a change redraws (AV-7.7).
+// Nothing worn adds nothing, so a plain look's key is as it always was.
+export const lookKey = (look: Look): string => {
+  const worn = wearKey(look.wear ?? NOTHING);
+  return `${look.skin}|${look.hair}|${look.hairColour}|${look.shirt}` + (worn === ",," ? "" : `|${worn}`);
+};
 
 // And back, from a key the page carries (data-look), or no look.
 export function lookFromKey(key: string | undefined): Look | null {
-  const [skin, hair, hairColour, shirt] = (key ?? "").split("|");
-  return asLook({ skin, hair, hairColour, shirt });
+  const [skin, hair, hairColour, shirt, worn] = (key ?? "").split("|");
+  const look = asLook({ skin, hair, hairColour, shirt });
+  return look && { ...look, wear: wearFromKey(worn) };
 }
 
 // The look's three colours, as the custom properties .av reads.

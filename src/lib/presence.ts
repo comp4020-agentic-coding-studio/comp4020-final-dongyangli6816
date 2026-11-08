@@ -2,7 +2,7 @@ import { and, count, desc, eq, isNotNull, isNull } from "drizzle-orm";
 import { db } from "./db.ts";
 import { EQUIPMENT, exerciseById, type Equipment } from "./exercises.ts";
 import { parseLook, type Look } from "../sprites/avatar.ts";
-import { lookOf } from "./avatars.ts";
+import { lookOf, parseWear } from "./avatars.ts";
 import { presence, roomMembers, rooms, sets, users, workouts } from "./schema.ts";
 import { claimStation, releaseStation, roomStations, type Claim } from "./stations.ts";
 import { donyPb, donyView, type DonyMember } from "./dony.ts";
@@ -104,6 +104,7 @@ export function roomView(roomId: number, now = Date.now()): RoomView {
       id: users.id,
       name: users.displayName,
       avatar: users.avatar,
+      wear: users.wear,
       lastSeenAt: roomMembers.lastSeenAt,
       state: presence.state,
       exerciseId: presence.exerciseId,
@@ -167,7 +168,8 @@ export function roomView(roomId: number, now = Date.now()): RoomView {
         id: m.id,
         name: m.name,
         // an account from before avatars gets one rolled and kept (avatars.ts)
-        look: parseLook(m.avatar) ?? lookOf(m.id),
+        // AV-7.7: what they wear travels with the look
+        look: { ...(parseLook(m.avatar) ?? lookOf(m.id)), wear: parseWear(m.wear) },
         host: m.id === room.hostUserId,
         state,
         away: now - m.lastSeenAt > AWAY_MS,

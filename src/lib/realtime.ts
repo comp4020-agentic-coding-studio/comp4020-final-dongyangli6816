@@ -49,9 +49,22 @@ export function broadcast(roomId: number): void {
 // INT-3, INT-5, INT-8: one small event to everyone watching the room, beside
 // the room itself: an interaction, a preset or an emoji. Nothing is re-read,
 // so a room of twelve sending emoji never redraws anyone's room.
-export function announce(roomId: number, event: "interaction" | "say" | "emote" | "highfive" | "pb", data: object): void {
+export function announce(roomId: number, event: "interaction" | "say" | "emote" | "highfive" | "pb" | "trophy", data: object): void {
   const chunk = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
   for (const c of streams.get(roomId) ?? []) c.send(chunk);
+}
+
+// AV-6.1, AV-6.13: an event for one person only, on every room stream they
+// have open (an unlock is theirs alone; nobody else's stream hears of it)
+export function tell(userId: number, event: "unlock", data: object): void {
+  const chunk = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+  for (const clients of streams.values()) for (const c of clients) if (c.userId === userId) c.send(chunk);
+}
+
+// AV-7.7: re-send every watched room the person is a member of, after what
+// they wear changes (from the editor, which is in no room)
+export function broadcastRoomsOf(userId: number): void {
+  for (const roomId of [...streams.keys()]) if (isMember(roomId, userId)) broadcast(roomId);
 }
 
 // BOT-6: Dony's emoji, sent at the times his schedule gives them. Only the
