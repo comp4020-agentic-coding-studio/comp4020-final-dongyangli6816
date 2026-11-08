@@ -994,6 +994,122 @@
           line-height: 1.15;
         }
       }
+
+      /* ===== Accessories, Nov 9 (AV-6.6, AV-6.15, AV-7.5) ===== */
+
+      /* What this workout unlocked: its own card straight under the way
+         out, so the trophy card, the tally and Back home don't move. One
+         row per accessory, in the order earned: your own bust wearing it
+         on a square of floor (the editor's .acc-frame, at 2x), "New: …",
+         what earned it, and Wear it (or "Wearing it"). */
+      .new-kit .hint {
+        margin: -0.5rem 0 1rem;
+      }
+      .kit-list {
+        margin: 0 0 0.5rem;
+        padding: 0;
+        list-style: none;
+        border-top: 2px solid var(--ink);
+      }
+      .kit-list li {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        grid-template-areas: "art name act" "art err err";
+        align-items: center;
+        gap: 0 1rem;
+        padding: 0.5rem 0;
+        border-bottom: 2px solid var(--ink);
+      }
+      /* the editor's floor square, at 2x: the bust is 56 x 46 */
+      .kit-list .acc-frame {
+        grid-area: art;
+        align-self: start;
+        display: block;
+        background-color: var(--paper);
+        background-image: conic-gradient(var(--tile) 25%, transparent 0 50%, var(--tile) 0 75%, transparent 0);
+        background-size: 16px 16px;
+        border: 2px solid var(--ink);
+      }
+      .kit-list .bust {
+        display: block;
+        width: 56px;
+        height: 46px;
+        image-rendering: pixelated;
+      }
+      /* a long-haul one keeps the editor's gold rule under its frame */
+      .kit-list li.trophy .acc-frame {
+        border-bottom: var(--px) solid var(--finished);
+        box-shadow: 0 2px 0 var(--ink);
+      }
+      .kit-name {
+        grid-area: name;
+        margin: 0;
+        font-size: 24px;
+        line-height: 1.1;
+      }
+      .kit-why {
+        display: block;
+        font-size: 20px;
+        color: var(--muted);
+      }
+      .kit-act {
+        grid-area: act;
+        margin: 0;
+        justify-self: end;
+      }
+      .kit-act .button {
+        margin-right: var(--px);
+      }
+      /* already worn: a plain line with the tick, never a button */
+      .kit-act.wearing {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-height: 48px;
+        font-size: 21px;
+        white-space: nowrap;
+      }
+      /* the Nightcap: no Wear it (AV-6.15); worn only from the editor */
+      .kit-act.in-editor {
+        max-width: 12rem;
+        font-size: 20px;
+        line-height: 1.1;
+        text-align: right;
+        color: var(--muted);
+      }
+      .kit-list .error {
+        grid-area: err;
+        width: fit-content;
+        max-width: 100%;
+        margin: 0.5rem 0 0;
+      }
+      .new-kit .bubble {
+        width: fit-content;
+        max-width: 100%;
+      }
+      .to-editor {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+      }
+      /* phones: the action goes under the name, beside the bust */
+      @media (max-width: 420px) {
+        .kit-list li {
+          grid-template-columns: auto 1fr;
+          grid-template-areas: "art name" "art act" ". err";
+          row-gap: 0.25rem;
+        }
+        .kit-act {
+          justify-self: start;
+        }
+        .kit-act.in-editor {
+          max-width: none;
+          text-align: left;
+        }
+        .kit-act.wearing {
+          min-height: 0;
+        }
+      }
     </style>
     <style id="mockup">
       /* mockup scaffolding only: state labels. Not part of the page. */
@@ -1025,6 +1141,16 @@
          Then draw it from /sprites.svg#i-record instead. -->
     <svg width="0" height="0" style="position: absolute" aria-hidden="true">
       <symbol id="i-record" viewBox="0 0 8 8"><path fill="currentColor" d="M3 0h2v2h-2zM2 2h4v1h-4zM0 3h8v1h-8zM1 4h6v1h-6zM2 5h4v1h-4zM1 6h2v1h-2zM5 6h2v1h-2zM1 7h1v1h-1zM6 7h1v1h-1z" /></symbol>
+      <!-- Accessories, Nov 9: the tee masks (avatar spec A.8), worked out by
+           teeMask() in src/sprites/accessories.ts. A neck item is drawn only
+           inside these; the build computes them per drawing. -->
+      <clipPath id="tee-stand"><path d="M6 16h9v1h-9zM17 16h9v1h-9zM4 17h24v1h-24zM4 18h24v1h-24zM4 19h24v1h-24zM4 20h3v1h-3zM8 20h16v1h-16zM25 20h3v1h-3zM8 21h16v1h-16zM8 22h16v1h-16z" /></clipPath>
+      <clipPath id="tee-flat-bench-1"><path d="M10 21h12v1h-12z" /></clipPath>
+      <clipPath id="tee-flat-bench-2"><path d="M10 20h12v1h-12z" /></clipPath>
+      <clipPath id="tee-dumbbell-rack-1"><path d="M11 16h4v1h-4zM17 16h4v1h-4zM4 17h3v1h-3zM11 17h10v1h-10zM25 17h3v1h-3zM8 18h16v1h-16zM8 19h16v1h-16zM8 20h16v1h-16zM8 21h16v1h-16zM8 22h16v1h-16z" /></clipPath>
+      <clipPath id="tee-dumbbell-rack-2"><path d="M6 16h9v1h-9zM17 16h9v1h-9zM4 17h24v1h-24zM4 18h24v1h-24zM4 19h24v1h-24zM4 20h3v1h-3zM8 20h16v1h-16zM25 20h3v1h-3zM8 21h16v1h-16zM11 22h10v1h-10z" /></clipPath>
+      <clipPath id="tee-cable-machine-1"><path d="M8 22h16v1h-16zM8 23h15v1h-15zM8 24h16v1h-16z" /></clipPath>
+      <clipPath id="tee-cable-machine-2"><path d="M8 20h7v1h-7zM17 20h7v1h-7zM4 21h24v1h-24zM4 22h3v1h-3zM8 22h16v1h-16zM25 22h3v1h-3zM8 23h15v1h-15zM8 24h16v1h-16z" /></clipPath>
     </svg>
     <header class="topbar">
       <a href="/" class="brand" aria-label="Spotter home">
@@ -1357,6 +1483,460 @@
             <p class="error" role="alert">Only warm-ups in this one. Nothing to plan yet.</p>
           </form>
           <a class="to-plans" href="/plans">Your plans</a>
+        </section>
+      </section>
+
+      <!-- state: acc: no unlocks -->
+      <section class="state">
+        <p class="state-label">Accessories, Nov 9 · no unlocks · unchanged</p>
+        <p class="state-note">Tue 13 Oct, as "no records" above. Nothing was unlocked in this workout (or only accessories back-filled when the feature shipped, AV-5.17, which are never listed), so there is no Unlocked card at all and nothing says so. Every set follows the buttons exactly as before.</p>
+
+        <section class="card trophy" aria-labelledby="t-acc-none">
+          <div class="who">
+            <div class="me-box">
+              <svg class="me" viewBox="0 0 32 32" width="64" height="64" aria-hidden="true" style="--av-skin: #6e4429; --av-skin-2: #55311d; --av-hair: #d6ad55; --av-hair-2: #ad7f37; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-ponytail" /></svg>
+              <span class="chip state-finished"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-trophy" /></svg>Finished</span>
+            </div>
+            <div>
+              <h1 id="t-acc-none">Tue 13 Oct</h1>
+              <p class="when"><time>6:30</time> – <time>7:22 pm</time></p>
+            </div>
+          </div>
+          <p class="room">Trained in <span class="passcode">HR4TWP</span></p>
+          <dl class="tally big">
+            <div><dt>Time</dt><dd>52<span class="unit"> min</span></dd></div>
+            <div><dt>Sets</dt><dd>8</dd></div>
+            <div><dt>Volume</dt><dd>2,635<span class="unit"> kg</span></dd></div>
+          </dl>
+        </section>
+
+        <div class="actions after">
+          <a href="/" class="button">Back home</a>
+          <a href="/history" class="button secondary">All history</a>
+        </div>
+        <p class="state-note">(Every set and Save as plan follow, as above.)</p>
+      </section>
+
+      <!-- state: acc: one unlock -->
+      <section class="state">
+        <p class="state-label">Accessories, Nov 9 · one unlock · ?done=1</p>
+        <p class="state-note">Mon 9 Nov, Mia's tenth day trained: one long-haul unlock. Her trophy avatar wears what she wears now (Squad cap, bronze medal). The Unlocked card sits straight under the buttons, so the tally and Back home don't move. The silver medal carries the editor's gold rule, as every long-haul one does. Wear it would swap it for the bronze medal (same slot).</p>
+
+        <section class="card trophy" aria-labelledby="t-acc-one">
+          <p class="bubble" role="status">In the book: about two utes of iron 🛻</p>
+          <div class="who">
+            <div class="me-box">
+              <svg class="me" viewBox="0 0 32 32" width="64" height="64" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><use href="/sprites.svg#av-stand-ponytail" /><use href="/sprites.svg#acc-cap" width="32" height="32" style="--acc-a:#2f8a4c;--acc-b:#1d5e32;--acc-c:#4fae6a;--acc-d:#f4f1e6" /><g clip-path="url(#tee-stand)"><use href="/sprites.svg#acc-medal" width="32" height="32" style="--acc-d:#f4f1e6;--acc-a:#a4552a;--acc-b:#6b3415;--acc-c:#dd9a68" /></g></svg>
+              <span class="chip state-finished"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-trophy" /></svg>Finished</span>
+            </div>
+            <div>
+              <h1 id="t-acc-one">Today</h1>
+              <p class="when"><time>6:48</time> – <time>7:42 pm</time></p>
+            </div>
+          </div>
+          <p class="room">Room <span class="passcode">P4WJTN</span> closed</p>
+          <dl class="tally big">
+            <div><dt>Time</dt><dd>54<span class="unit"> min</span></dd></div>
+            <div><dt>Sets</dt><dd>10</dd></div>
+            <div><dt>Volume</dt><dd>3,940<span class="unit"> kg</span></dd></div>
+          </dl>
+        </section>
+
+        <div class="actions after">
+          <a href="/" class="button">Back home</a>
+          <a href="/history" class="button secondary">All history</a>
+        </div>
+
+        <section class="card new-kit" id="unlocked-one" aria-labelledby="kit-one">
+          <h2 id="kit-one">Unlocked</h2>
+          <p class="hint">Nice one. New kit to wear 🔥</p>
+          <ol class="kit-list">
+            <li class="trophy">
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><use href="/sprites.svg#av-stand-ponytail" width="32" height="32" /><g clip-path="url(#tee-stand)"><use href="/sprites.svg#acc-medal" width="32" height="32" style="--acc-d:#f4f1e6;--acc-a:#c9c8c1;--acc-b:#86857e;--acc-c:#ffffff" /></g></svg></span>
+              <p class="kit-name">New: silver medal<span class="kit-why">10 days</span></p>
+              <form class="kit-act" method="post" action="/workouts/61"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="silver-medal" /><input type="hidden" name="done" value="1" /><button type="submit" class="button secondary">Wear it<span class="vh">: silver medal</span></button></form>
+            </li>
+          </ol>
+          <a class="to-editor" href="/avatar">Edit avatar</a>
+        </section>
+        <p class="state-note">(Every set and Save as plan follow, as above.)</p>
+      </section>
+
+      <!-- state: acc: several, one worn, nightcap -->
+      <section class="state">
+        <p class="state-label">Accessories, Nov 9 · several · one worn · the nightcap · ?done=1</p>
+        <p class="state-note">Mon 9 Nov, Priya's first session (a fresh showcase account, alone with Dony): seven unlocks, in the order earned. She put the heart shades on from the room's banner, so that row reads Wearing it. The Nightcap has no Wear it (AV-6.15): it points to Edit avatar, the only place it is worn. Nothing tells her off for it.</p>
+
+        <section class="card trophy" aria-labelledby="t-acc-many">
+          <p class="bubble" role="status">In the book: about one ute of iron 🛻</p>
+          <div class="who">
+            <div class="me-box">
+              <svg class="me" viewBox="0 0 32 32" width="64" height="64" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" /><use href="/sprites.svg#acc-heart-shades" width="32" height="32" style="--acc-a:#f0469a;--acc-c:#ffe3f0" /></svg>
+              <span class="chip state-finished"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-trophy" /></svg>Finished</span>
+            </div>
+            <div>
+              <h1 id="t-acc-many">Today</h1>
+              <p class="when"><time>5:31</time> – <time>6:03 pm</time></p>
+            </div>
+          </div>
+          <p class="room">Trained in <span class="passcode">R3VNKD</span></p>
+          <dl class="tally big">
+            <div><dt>Time</dt><dd>32<span class="unit"> min</span></dd></div>
+            <div><dt>Sets</dt><dd>7</dd></div>
+            <div><dt>Volume</dt><dd>2,002<span class="unit"> kg</span></dd></div>
+          </dl>
+          <p class="records-line"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>1 new record</span>Past you just got beaten 🏆</p>
+        </section>
+
+        <div class="actions after">
+          <a href="/" class="button">Back home</a>
+          <a href="/history" class="button secondary">All history</a>
+        </div>
+
+        <section class="card new-kit" id="unlocked-many" aria-labelledby="kit-many">
+          <h2 id="kit-many">Unlocked</h2>
+          <p class="hint">Nice one. New kit to wear 🔥</p>
+          <ol class="kit-list">
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-headband" width="32" height="32" style="--acc-a:#f5f4ee;--acc-b:#c4c5c9;--acc-c:#f5f4ee" /></svg></span>
+              <p class="kit-name">New: sweatband<span class="kit-why">First set</span></p>
+              <form class="kit-act" method="post" action="/workouts/64"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="sweatband" /><input type="hidden" name="done" value="1" /><button type="submit" class="button secondary">Wear it<span class="vh">: sweatband</span></button></form>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-shades" width="32" height="32" style="--acc-a:#232a3a;--acc-b:#141821;--acc-c:#e9f0f3" /></svg></span>
+              <p class="kit-name">New: shades<span class="kit-why">First PB</span></p>
+              <form class="kit-act" method="post" action="/workouts/64"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="shades" /><input type="hidden" name="done" value="1" /><button type="submit" class="button secondary">Wear it<span class="vh">: shades</span></button></form>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-headband" width="32" height="32" style="--acc-a:#e0399a;--acc-b:#a8226f;--acc-c:#fff7fb" /></svg></span>
+              <p class="kit-name">New: hype band<span class="kit-why">5 Cheers</span></p>
+              <form class="kit-act" method="post" action="/workouts/64"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="hype-band" /><input type="hidden" name="done" value="1" /><button type="submit" class="button secondary">Wear it<span class="vh">: hype band</span></button></form>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-heart-shades" width="32" height="32" style="--acc-a:#f0469a;--acc-c:#ffe3f0" /></svg></span>
+              <p class="kit-name">New: heart shades<span class="kit-why">First high-five</span></p>
+              <p class="kit-act wearing"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-tick" /></svg>Wearing it</p>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-bandana" width="32" height="32" style="--acc-a:#2a56c6;--acc-b:#1b3a8f;--acc-c:#f4f4ee" /></svg></span>
+              <p class="kit-name">New: bandana<span class="kit-why">3 machines</span></p>
+              <form class="kit-act" method="post" action="/workouts/64"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="bandana" /><input type="hidden" name="done" value="1" /><button type="submit" class="button secondary">Wear it<span class="vh">: bandana</span></button></form>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-nightcap" width="32" height="32" style="--acc-a:#3d4699;--acc-c:#f1e9cf;--acc-d:#f1e9cf" /></svg></span>
+              <p class="kit-name">New: nightcap<span class="kit-why">A minute slacking</span></p>
+              <p class="kit-act in-editor">Put it on in <a href="/avatar">Edit avatar</a></p>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><g clip-path="url(#tee-stand)"><use href="/sprites.svg#acc-medal" width="32" height="32" style="--acc-d:#f4f1e6;--acc-a:#a4552a;--acc-b:#6b3415;--acc-c:#dd9a68" /></g></svg></span>
+              <p class="kit-name">New: bronze medal<span class="kit-why">First workout</span></p>
+              <form class="kit-act" method="post" action="/workouts/64"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="bronze-medal" /><input type="hidden" name="done" value="1" /><button type="submit" class="button secondary">Wear it<span class="vh">: bronze medal</span></button></form>
+            </li>
+          </ol>
+          <a class="to-editor" href="/avatar">Edit avatar</a>
+        </section>
+        <p class="state-note">(Every set and Save as plan follow, as above.)</p>
+      </section>
+
+      <!-- state: acc: wear it pending -->
+      <section class="state">
+        <p class="state-label">Accessories, Nov 9 · Wear it pending · slow gym wifi</p>
+        <p class="state-note">Priya tapped Wear it on the shades. With the script, that button is held down with its label kept until the answer comes; the other rows stay as they are. Without the script the browser simply posts.</p>
+
+        <section class="card new-kit" id="unlocked-pend" aria-labelledby="kit-pend">
+          <h2 id="kit-pend">Unlocked</h2>
+          <p class="hint">Nice one. New kit to wear 🔥</p>
+          <ol class="kit-list">
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-headband" width="32" height="32" style="--acc-a:#f5f4ee;--acc-b:#c4c5c9;--acc-c:#f5f4ee" /></svg></span>
+              <p class="kit-name">New: sweatband<span class="kit-why">First set</span></p>
+              <form class="kit-act" method="post" action="/workouts/64"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="sweatband" /><input type="hidden" name="done" value="1" /><button type="submit" class="button secondary">Wear it<span class="vh">: sweatband</span></button></form>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-shades" width="32" height="32" style="--acc-a:#232a3a;--acc-b:#141821;--acc-c:#e9f0f3" /></svg></span>
+              <p class="kit-name">New: shades<span class="kit-why">First PB</span></p>
+              <form class="kit-act" method="post" action="/workouts/64"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="shades" /><input type="hidden" name="done" value="1" /><button type="submit" class="button secondary" disabled>Wear it<span class="vh">: shades</span></button></form>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-headband" width="32" height="32" style="--acc-a:#e0399a;--acc-b:#a8226f;--acc-c:#fff7fb" /></svg></span>
+              <p class="kit-name">New: hype band<span class="kit-why">5 Cheers</span></p>
+              <form class="kit-act" method="post" action="/workouts/64"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="hype-band" /><input type="hidden" name="done" value="1" /><button type="submit" class="button secondary">Wear it<span class="vh">: hype band</span></button></form>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-heart-shades" width="32" height="32" style="--acc-a:#f0469a;--acc-c:#ffe3f0" /></svg></span>
+              <p class="kit-name">New: heart shades<span class="kit-why">First high-five</span></p>
+              <p class="kit-act wearing"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-tick" /></svg>Wearing it</p>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-bandana" width="32" height="32" style="--acc-a:#2a56c6;--acc-b:#1b3a8f;--acc-c:#f4f4ee" /></svg></span>
+              <p class="kit-name">New: bandana<span class="kit-why">3 machines</span></p>
+              <form class="kit-act" method="post" action="/workouts/64"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="bandana" /><input type="hidden" name="done" value="1" /><button type="submit" class="button secondary">Wear it<span class="vh">: bandana</span></button></form>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-nightcap" width="32" height="32" style="--acc-a:#3d4699;--acc-c:#f1e9cf;--acc-d:#f1e9cf" /></svg></span>
+              <p class="kit-name">New: nightcap<span class="kit-why">A minute slacking</span></p>
+              <p class="kit-act in-editor">Put it on in <a href="/avatar">Edit avatar</a></p>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><g clip-path="url(#tee-stand)"><use href="/sprites.svg#acc-medal" width="32" height="32" style="--acc-d:#f4f1e6;--acc-a:#a4552a;--acc-b:#6b3415;--acc-c:#dd9a68" /></g></svg></span>
+              <p class="kit-name">New: bronze medal<span class="kit-why">First workout</span></p>
+              <form class="kit-act" method="post" action="/workouts/64"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="bronze-medal" /><input type="hidden" name="done" value="1" /><button type="submit" class="button secondary">Wear it<span class="vh">: bronze medal</span></button></form>
+            </li>
+          </ol>
+          <a class="to-editor" href="/avatar">Edit avatar</a>
+        </section>
+      </section>
+
+      <!-- state: acc: wear it failed -->
+      <section class="state">
+        <p class="state-label">Accessories, Nov 9 · Wear it failed</p>
+        <p class="state-note">The post failed (offline, or a server error). The line sits under that row's button; nothing changed, so the heart shades are still worn and the trophy avatar is as it was (AV-6.2).</p>
+
+        <section class="card new-kit" id="unlocked-fail" aria-labelledby="kit-fail">
+          <h2 id="kit-fail">Unlocked</h2>
+          <p class="hint">Nice one. New kit to wear 🔥</p>
+          <ol class="kit-list">
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-headband" width="32" height="32" style="--acc-a:#f5f4ee;--acc-b:#c4c5c9;--acc-c:#f5f4ee" /></svg></span>
+              <p class="kit-name">New: sweatband<span class="kit-why">First set</span></p>
+              <form class="kit-act" method="post" action="/workouts/64"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="sweatband" /><input type="hidden" name="done" value="1" /><button type="submit" class="button secondary">Wear it<span class="vh">: sweatband</span></button></form>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-shades" width="32" height="32" style="--acc-a:#232a3a;--acc-b:#141821;--acc-c:#e9f0f3" /></svg></span>
+              <p class="kit-name">New: shades<span class="kit-why">First PB</span></p>
+              <form class="kit-act" method="post" action="/workouts/64"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="shades" /><input type="hidden" name="done" value="1" /><button type="submit" class="button secondary" aria-describedby="fail-shades-err">Wear it<span class="vh">: shades</span></button></form>
+              <p class="error" id="fail-shades-err" role="alert">That didn't save. Try again.</p>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-headband" width="32" height="32" style="--acc-a:#e0399a;--acc-b:#a8226f;--acc-c:#fff7fb" /></svg></span>
+              <p class="kit-name">New: hype band<span class="kit-why">5 Cheers</span></p>
+              <form class="kit-act" method="post" action="/workouts/64"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="hype-band" /><input type="hidden" name="done" value="1" /><button type="submit" class="button secondary">Wear it<span class="vh">: hype band</span></button></form>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-heart-shades" width="32" height="32" style="--acc-a:#f0469a;--acc-c:#ffe3f0" /></svg></span>
+              <p class="kit-name">New: heart shades<span class="kit-why">First high-five</span></p>
+              <p class="kit-act wearing"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-tick" /></svg>Wearing it</p>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-bandana" width="32" height="32" style="--acc-a:#2a56c6;--acc-b:#1b3a8f;--acc-c:#f4f4ee" /></svg></span>
+              <p class="kit-name">New: bandana<span class="kit-why">3 machines</span></p>
+              <form class="kit-act" method="post" action="/workouts/64"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="bandana" /><input type="hidden" name="done" value="1" /><button type="submit" class="button secondary">Wear it<span class="vh">: bandana</span></button></form>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-nightcap" width="32" height="32" style="--acc-a:#3d4699;--acc-c:#f1e9cf;--acc-d:#f1e9cf" /></svg></span>
+              <p class="kit-name">New: nightcap<span class="kit-why">A minute slacking</span></p>
+              <p class="kit-act in-editor">Put it on in <a href="/avatar">Edit avatar</a></p>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><g clip-path="url(#tee-stand)"><use href="/sprites.svg#acc-medal" width="32" height="32" style="--acc-d:#f4f1e6;--acc-a:#a4552a;--acc-b:#6b3415;--acc-c:#dd9a68" /></g></svg></span>
+              <p class="kit-name">New: bronze medal<span class="kit-why">First workout</span></p>
+              <form class="kit-act" method="post" action="/workouts/64"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="bronze-medal" /><input type="hidden" name="done" value="1" /><button type="submit" class="button secondary">Wear it<span class="vh">: bronze medal</span></button></form>
+            </li>
+          </ol>
+          <a class="to-editor" href="/avatar">Edit avatar</a>
+        </section>
+      </section>
+
+      <!-- state: acc: worn -->
+      <section class="state">
+        <p class="state-label">Accessories, Nov 9 · worn · ?done=1&amp;worn=shades#unlocked</p>
+        <p class="state-note">After Wear it on the shades: the page comes back scrolled to the Unlocked card, with the bubble. The shades replaced the heart shades in the face slot, so that row offers Wear it again. Above it (shown here), the trophy avatar now wears the shades.</p>
+
+        <section class="card trophy" aria-labelledby="t-acc-worn">
+          <p class="bubble" role="status">In the book: about one ute of iron 🛻</p>
+          <div class="who">
+            <div class="me-box">
+              <svg class="me" viewBox="0 0 32 32" width="64" height="64" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" /><use href="/sprites.svg#acc-shades" width="32" height="32" style="--acc-a:#232a3a;--acc-b:#141821;--acc-c:#e9f0f3" /></svg>
+              <span class="chip state-finished"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-trophy" /></svg>Finished</span>
+            </div>
+            <div>
+              <h1 id="t-acc-worn">Today</h1>
+              <p class="when"><time>5:31</time> – <time>6:03 pm</time></p>
+            </div>
+          </div>
+          <p class="room">Trained in <span class="passcode">R3VNKD</span></p>
+          <dl class="tally big">
+            <div><dt>Time</dt><dd>32<span class="unit"> min</span></dd></div>
+            <div><dt>Sets</dt><dd>7</dd></div>
+            <div><dt>Volume</dt><dd>2,002<span class="unit"> kg</span></dd></div>
+          </dl>
+          <p class="records-line"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>1 new record</span>Past you just got beaten 🏆</p>
+        </section>
+
+        <div class="actions after">
+          <a href="/" class="button">Back home</a>
+          <a href="/history" class="button secondary">All history</a>
+        </div>
+
+        <section class="card new-kit" id="unlocked-worn" aria-labelledby="kit-worn">
+          <h2 id="kit-worn">Unlocked</h2>
+          <p class="bubble" role="status">Wearing the shades now 😎</p>
+          <p class="hint">Nice one. New kit to wear 🔥</p>
+          <ol class="kit-list">
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-headband" width="32" height="32" style="--acc-a:#f5f4ee;--acc-b:#c4c5c9;--acc-c:#f5f4ee" /></svg></span>
+              <p class="kit-name">New: sweatband<span class="kit-why">First set</span></p>
+              <form class="kit-act" method="post" action="/workouts/64"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="sweatband" /><input type="hidden" name="done" value="1" /><button type="submit" class="button secondary">Wear it<span class="vh">: sweatband</span></button></form>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-shades" width="32" height="32" style="--acc-a:#232a3a;--acc-b:#141821;--acc-c:#e9f0f3" /></svg></span>
+              <p class="kit-name">New: shades<span class="kit-why">First PB</span></p>
+              <p class="kit-act wearing"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-tick" /></svg>Wearing it</p>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-headband" width="32" height="32" style="--acc-a:#e0399a;--acc-b:#a8226f;--acc-c:#fff7fb" /></svg></span>
+              <p class="kit-name">New: hype band<span class="kit-why">5 Cheers</span></p>
+              <form class="kit-act" method="post" action="/workouts/64"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="hype-band" /><input type="hidden" name="done" value="1" /><button type="submit" class="button secondary">Wear it<span class="vh">: hype band</span></button></form>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-heart-shades" width="32" height="32" style="--acc-a:#f0469a;--acc-c:#ffe3f0" /></svg></span>
+              <p class="kit-name">New: heart shades<span class="kit-why">First high-five</span></p>
+              <form class="kit-act" method="post" action="/workouts/64"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="heart-shades" /><input type="hidden" name="done" value="1" /><button type="submit" class="button secondary">Wear it<span class="vh">: heart shades</span></button></form>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-bandana" width="32" height="32" style="--acc-a:#2a56c6;--acc-b:#1b3a8f;--acc-c:#f4f4ee" /></svg></span>
+              <p class="kit-name">New: bandana<span class="kit-why">3 machines</span></p>
+              <form class="kit-act" method="post" action="/workouts/64"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="bandana" /><input type="hidden" name="done" value="1" /><button type="submit" class="button secondary">Wear it<span class="vh">: bandana</span></button></form>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-nightcap" width="32" height="32" style="--acc-a:#3d4699;--acc-c:#f1e9cf;--acc-d:#f1e9cf" /></svg></span>
+              <p class="kit-name">New: nightcap<span class="kit-why">A minute slacking</span></p>
+              <p class="kit-act in-editor">Put it on in <a href="/avatar">Edit avatar</a></p>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><g clip-path="url(#tee-stand)"><use href="/sprites.svg#acc-medal" width="32" height="32" style="--acc-d:#f4f1e6;--acc-a:#a4552a;--acc-b:#6b3415;--acc-c:#dd9a68" /></g></svg></span>
+              <p class="kit-name">New: bronze medal<span class="kit-why">First workout</span></p>
+              <form class="kit-act" method="post" action="/workouts/64"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="bronze-medal" /><input type="hidden" name="done" value="1" /><button type="submit" class="button secondary">Wear it<span class="vh">: bronze medal</span></button></form>
+            </li>
+          </ol>
+          <a class="to-editor" href="/avatar">Edit avatar</a>
+        </section>
+        <p class="state-note">(Every set and Save as plan follow, as above.)</p>
+      </section>
+
+      <!-- state: acc: revisited later -->
+      <section class="state">
+        <p class="state-label">Accessories, Nov 9 · revisited later · from history</p>
+        <p class="state-note">Priya opens Mon 9 Nov from history a week on. No bubble, "Trained in". The same seven, in the same order: a record of that workout. Only Wearing it changes, to what she wears now (she has since picked the bandana and shades in the editor), and her trophy avatar wears that too.</p>
+
+        <section class="card trophy" aria-labelledby="t-acc-later">
+          <div class="who">
+            <div class="me-box">
+              <svg class="me" viewBox="0 0 32 32" width="64" height="64" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" /><use href="/sprites.svg#acc-bandana" width="32" height="32" style="--acc-a:#2a56c6;--acc-b:#1b3a8f;--acc-c:#f4f4ee" /><use href="/sprites.svg#acc-shades" width="32" height="32" style="--acc-a:#232a3a;--acc-b:#141821;--acc-c:#e9f0f3" /></svg>
+              <span class="chip state-finished"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-trophy" /></svg>Finished</span>
+            </div>
+            <div>
+              <h1 id="t-acc-later">Mon 9 Nov</h1>
+              <p class="when"><time>5:31</time> – <time>6:03 pm</time></p>
+            </div>
+          </div>
+          <p class="room">Trained in <span class="passcode">R3VNKD</span></p>
+          <dl class="tally big">
+            <div><dt>Time</dt><dd>32<span class="unit"> min</span></dd></div>
+            <div><dt>Sets</dt><dd>7</dd></div>
+            <div><dt>Volume</dt><dd>2,002<span class="unit"> kg</span></dd></div>
+          </dl>
+          <p class="records-line"><span class="badge record"><svg width="16" height="16" aria-hidden="true"><use href="#i-record" /></svg>1 new record</span>Past you just got beaten 🏆</p>
+        </section>
+
+        <div class="actions after">
+          <a href="/" class="button">Back home</a>
+          <a href="/history" class="button secondary">All history</a>
+        </div>
+
+        <section class="card new-kit" id="unlocked-later" aria-labelledby="kit-later">
+          <h2 id="kit-later">Unlocked</h2>
+          <p class="hint">Nice one. New kit to wear 🔥</p>
+          <ol class="kit-list">
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-headband" width="32" height="32" style="--acc-a:#f5f4ee;--acc-b:#c4c5c9;--acc-c:#f5f4ee" /></svg></span>
+              <p class="kit-name">New: sweatband<span class="kit-why">First set</span></p>
+              <form class="kit-act" method="post" action="/workouts/64"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="sweatband" /><button type="submit" class="button secondary">Wear it<span class="vh">: sweatband</span></button></form>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-shades" width="32" height="32" style="--acc-a:#232a3a;--acc-b:#141821;--acc-c:#e9f0f3" /></svg></span>
+              <p class="kit-name">New: shades<span class="kit-why">First PB</span></p>
+              <p class="kit-act wearing"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-tick" /></svg>Wearing it</p>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-headband" width="32" height="32" style="--acc-a:#e0399a;--acc-b:#a8226f;--acc-c:#fff7fb" /></svg></span>
+              <p class="kit-name">New: hype band<span class="kit-why">5 Cheers</span></p>
+              <form class="kit-act" method="post" action="/workouts/64"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="hype-band" /><button type="submit" class="button secondary">Wear it<span class="vh">: hype band</span></button></form>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-heart-shades" width="32" height="32" style="--acc-a:#f0469a;--acc-c:#ffe3f0" /></svg></span>
+              <p class="kit-name">New: heart shades<span class="kit-why">First high-five</span></p>
+              <form class="kit-act" method="post" action="/workouts/64"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="heart-shades" /><button type="submit" class="button secondary">Wear it<span class="vh">: heart shades</span></button></form>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-bandana" width="32" height="32" style="--acc-a:#2a56c6;--acc-b:#1b3a8f;--acc-c:#f4f4ee" /></svg></span>
+              <p class="kit-name">New: bandana<span class="kit-why">3 machines</span></p>
+              <p class="kit-act wearing"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-tick" /></svg>Wearing it</p>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><use href="/sprites.svg#acc-nightcap" width="32" height="32" style="--acc-a:#3d4699;--acc-c:#f1e9cf;--acc-d:#f1e9cf" /></svg></span>
+              <p class="kit-name">New: nightcap<span class="kit-why">A minute slacking</span></p>
+              <p class="kit-act in-editor">Put it on in <a href="/avatar">Edit avatar</a></p>
+            </li>
+            <li>
+              <span class="acc-frame"><svg class="bust" viewBox="2 0 28 23" aria-hidden="true" style="--av-skin: #8a5532; --av-skin-2: #6e4026; --av-hair: #4d6bd6; --av-hair-2: #3446a3; --av-shirt: #6a4c93; --av-shirt-2: #4c3470"><use href="/sprites.svg#av-stand-crop" width="32" height="32" /><g clip-path="url(#tee-stand)"><use href="/sprites.svg#acc-medal" width="32" height="32" style="--acc-d:#f4f1e6;--acc-a:#a4552a;--acc-b:#6b3415;--acc-c:#dd9a68" /></g></svg></span>
+              <p class="kit-name">New: bronze medal<span class="kit-why">First workout</span></p>
+              <form class="kit-act" method="post" action="/workouts/64"><input type="hidden" name="intent" value="wear" /><input type="hidden" name="accessory" value="bronze-medal" /><button type="submit" class="button secondary">Wear it<span class="vh">: bronze medal</span></button></form>
+            </li>
+          </ol>
+          <a class="to-editor" href="/avatar">Edit avatar</a>
+        </section>
+        <p class="state-note">(Every set and Save as plan follow, as above.)</p>
+      </section>
+
+      <!-- state: acc: art wearing -->
+      <section class="state">
+        <p class="state-label">Accessories, Nov 9 · LB-7 art wearing a head, face and neck item</p>
+        <p class="state-note">Sat 7 Nov, revisited. Mia now wears the Squad cap, star shades and the bronze medal, so every drawing of her on this page wears them (AV-7.5): the trophy avatar and the 32 px art beside each exercise, frame by frame. The medal shows only on her tee: one row of it on the bench, most of it at the cable machine (avatar spec A.8). Nothing was unlocked in this workout, so there is no Unlocked card.</p>
+
+        <section class="card trophy" aria-labelledby="t-acc-art">
+          <div class="who">
+            <div class="me-box">
+              <svg class="me" viewBox="0 0 32 32" width="64" height="64" aria-hidden="true" style="--av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><use href="/sprites.svg#av-stand-ponytail" /><use href="/sprites.svg#acc-cap" width="32" height="32" style="--acc-a:#2f8a4c;--acc-b:#1d5e32;--acc-c:#4fae6a;--acc-d:#f4f1e6" /><use href="/sprites.svg#acc-star-shades" width="32" height="32" style="--acc-a:#8a55f0;--acc-c:#f3ecff" /><g clip-path="url(#tee-stand)"><use href="/sprites.svg#acc-medal" width="32" height="32" style="--acc-d:#f4f1e6;--acc-a:#a4552a;--acc-b:#6b3415;--acc-c:#dd9a68" /></g></svg>
+              <span class="chip state-finished"><svg width="16" height="16" aria-hidden="true"><use href="/sprites.svg#i-trophy" /></svg>Finished</span>
+            </div>
+            <div>
+              <h1 id="t-acc-art">Sat 7 Nov</h1>
+              <p class="when"><time>9:10</time> – <time>10:02 am</time></p>
+            </div>
+          </div>
+          <p class="room">Trained in <span class="passcode">K7M2QX</span></p>
+          <dl class="tally big">
+            <div><dt>Time</dt><dd>52<span class="unit"> min</span></dd></div>
+            <div><dt>Sets</dt><dd>8</dd></div>
+            <div><dt>Volume</dt><dd>3,350<span class="unit"> kg</span></dd></div>
+          </dl>
+        </section>
+
+        <div class="actions after">
+          <a href="/" class="button">Back home</a>
+          <a href="/history" class="button secondary">All history</a>
+        </div>
+
+        <section class="card" aria-labelledby="log-acc-art">
+          <h2 id="log-acc-art">Every set</h2>
+          <table class="log">
+            <thead><tr><th scope="col">Exercise</th><th scope="col" class="num">Set</th></tr></thead>
+            <tbody>
+              <tr><th scope="rowgroup" rowspan="3" class="lift"><a class="ex-link" href="/exercises/3"><span class="ex-art" data-pose="flat-bench" aria-hidden="true" style="--ex-size: 32px; --av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><svg class="machine back" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-flat-bench-back-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-flat-bench-back-2" /></g></svg><svg class="av" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#av-flat-bench-1-ponytail" /><use href="/sprites.svg#acc-cap" y="4" width="32" height="32" style="--acc-a:#2f8a4c;--acc-b:#1d5e32;--acc-c:#4fae6a;--acc-d:#f4f1e6" /><use href="/sprites.svg#acc-star-shades" y="4" width="32" height="32" style="--acc-a:#8a55f0;--acc-c:#f3ecff" /><g clip-path="url(#tee-flat-bench-1)"><use href="/sprites.svg#acc-medal" y="4" width="32" height="32" style="--acc-d:#f4f1e6;--acc-a:#a4552a;--acc-b:#6b3415;--acc-c:#dd9a68" /></g></g><g class="frame-2"><use href="/sprites.svg#av-flat-bench-2-ponytail" /><use href="/sprites.svg#acc-cap" y="4" width="32" height="32" style="--acc-a:#2f8a4c;--acc-b:#1d5e32;--acc-c:#4fae6a;--acc-d:#f4f1e6" /><use href="/sprites.svg#acc-star-shades" y="4" width="32" height="32" style="--acc-a:#8a55f0;--acc-c:#f3ecff" /><g clip-path="url(#tee-flat-bench-2)"><use href="/sprites.svg#acc-medal" y="4" width="32" height="32" style="--acc-d:#f4f1e6;--acc-a:#a4552a;--acc-b:#6b3415;--acc-c:#dd9a68" /></g></g></svg><svg class="machine front" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-flat-bench-front-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-flat-bench-front-2" /></g></svg></span><span class="nm">Bench press</span></a><span class="best">Best <span>82.5 kg × 6</span></span></th><td class="set">80 kg × 8</td></tr>
+              <tr><td class="set">82.5 kg × 6</td></tr>
+              <tr><td class="set">80 kg × 7</td></tr>
+            </tbody>
+            <tbody>
+              <tr><th scope="rowgroup" rowspan="3" class="lift"><a class="ex-link" href="/exercises/13"><span class="ex-art" data-pose="cable-machine" aria-hidden="true" style="--ex-size: 32px; --av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><svg class="machine back" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-cable-machine-back-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-cable-machine-back-2" /></g></svg><svg class="av" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#av-cable-machine-1-ponytail" /><use href="/sprites.svg#acc-cap" y="4" width="32" height="32" style="--acc-a:#2f8a4c;--acc-b:#1d5e32;--acc-c:#4fae6a;--acc-d:#f4f1e6" /><use href="/sprites.svg#acc-star-shades" y="4" width="32" height="32" style="--acc-a:#8a55f0;--acc-c:#f3ecff" /><g clip-path="url(#tee-cable-machine-1)"><use href="/sprites.svg#acc-medal" y="4" width="32" height="32" style="--acc-d:#f4f1e6;--acc-a:#a4552a;--acc-b:#6b3415;--acc-c:#dd9a68" /></g></g><g class="frame-2"><use href="/sprites.svg#av-cable-machine-2-ponytail" /><use href="/sprites.svg#acc-cap" y="4" width="32" height="32" style="--acc-a:#2f8a4c;--acc-b:#1d5e32;--acc-c:#4fae6a;--acc-d:#f4f1e6" /><use href="/sprites.svg#acc-star-shades" y="4" width="32" height="32" style="--acc-a:#8a55f0;--acc-c:#f3ecff" /><g clip-path="url(#tee-cable-machine-2)"><use href="/sprites.svg#acc-medal" y="4" width="32" height="32" style="--acc-d:#f4f1e6;--acc-a:#a4552a;--acc-b:#6b3415;--acc-c:#dd9a68" /></g></g></svg><svg class="machine front" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-cable-machine-front-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-cable-machine-front-2" /></g></svg></span><span class="nm">Lat pulldown</span></a><span class="best">Best <span>55 kg × 10</span></span></th><td class="set">50 kg × 12</td></tr>
+              <tr><td class="set">55 kg × 10</td></tr>
+              <tr><td class="set">55 kg × 9</td></tr>
+            </tbody>
+            <tbody>
+              <tr><th scope="rowgroup" rowspan="2" class="lift"><a class="ex-link" href="/exercises/7"><span class="ex-art" data-pose="dumbbell-rack" aria-hidden="true" style="--ex-size: 32px; --av-skin: #e9bd94; --av-skin-2: #cf9a73; --av-hair: #e46fae; --av-hair-2: #b4488a; --av-shirt: #eeeee6; --av-shirt-2: #bdbcc4"><svg class="machine back" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-dumbbell-rack-back-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-dumbbell-rack-back-2" /></g></svg><svg class="av" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#av-dumbbell-rack-1-ponytail" /><use href="/sprites.svg#acc-cap" width="32" height="32" style="--acc-a:#2f8a4c;--acc-b:#1d5e32;--acc-c:#4fae6a;--acc-d:#f4f1e6" /><use href="/sprites.svg#acc-star-shades" width="32" height="32" style="--acc-a:#8a55f0;--acc-c:#f3ecff" /><g clip-path="url(#tee-dumbbell-rack-1)"><use href="/sprites.svg#acc-medal" width="32" height="32" style="--acc-d:#f4f1e6;--acc-a:#a4552a;--acc-b:#6b3415;--acc-c:#dd9a68" /></g></g><g class="frame-2"><use href="/sprites.svg#av-dumbbell-rack-2-ponytail" /><use href="/sprites.svg#acc-cap" width="32" height="32" style="--acc-a:#2f8a4c;--acc-b:#1d5e32;--acc-c:#4fae6a;--acc-d:#f4f1e6" /><use href="/sprites.svg#acc-star-shades" width="32" height="32" style="--acc-a:#8a55f0;--acc-c:#f3ecff" /><g clip-path="url(#tee-dumbbell-rack-2)"><use href="/sprites.svg#acc-medal" width="32" height="32" style="--acc-d:#f4f1e6;--acc-a:#a4552a;--acc-b:#6b3415;--acc-c:#dd9a68" /></g></g></svg><svg class="machine front" viewBox="0 0 32 32"><g class="frame-1"><use href="/sprites.svg#eq-dumbbell-rack-front-1" /></g><g class="frame-2"><use href="/sprites.svg#eq-dumbbell-rack-front-2" /></g></svg></span><span class="nm">Dumbbell curl</span></a><span class="best">Best <span>12.5 kg × 10</span></span></th><td class="set">12.5 kg × 10</td></tr>
+              <tr><td class="set">12.5 kg × 8</td></tr>
+            </tbody>
+          </table>
         </section>
       </section>
 

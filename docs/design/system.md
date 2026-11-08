@@ -126,6 +126,7 @@ Use these, or match their voice.
 | Their PB, in their menu for 30 s (GYM-18) | `Just hit a PB on back squat` |
 | Sent, target out of view (INT-11) | `You cheered Mia 🔥` · `You poked Mia 👉` · `You slapped Ji-woo 👋` · `You thanked Mia 🙏` · `You poked Tom back 👉` · `You returned Ji-woo's slap 👋` · `You offered Ji-woo a high-five ✋` · `You high-fived Mia 🙌` |
 | Room log lines (INT-5, GYM-18) | `Ji-woo thanked Mia` · `Ji-woo poked Mia back` · `Ji-woo returned Mia's slap` · `Mia and Ji-woo high-fived` · `Mia hit a PB on bench press` |
+| *(PROPOSED 9 Nov)* Unlocks in the room (AV-6; room spec, "Accessories, Nov 9") | The earner: `New: shades 😎` · `New: silver medal and shades 🎉`, button `Wear it`; worn out of view `Wearing the shades now 😎` · everyone else, long-haul only: `Mia unlocked the crown 👑` · `Mia hit a PB on back squat and unlocked the crown 👑` · room log `Mia unlocked the crown` / `You unlocked the crown` |
 | The sound setting's three values (INT-12) | `All sounds` · `Rest timer only` · `Sound off` |
 | Empty room log (INT-5) | `Quiet in here. Tap someone on the map to cheer them on 👀` |
 | Room full (ROOM-4) | `This gym's full: 12 of 12 are in.` |
@@ -133,6 +134,7 @@ Use these, or match their voice.
 | Empty history | `No workouts yet. Your future self is waiting 🏋️` |
 | Alone in a room | `Just you so far. Send the passcode to the squad 📲` |
 | Delivery on the way (GYM-7) | `Equipment's on its way. Start whenever 🚚` |
+| *(PROPOSED 8 Nov)* The editor's Accessories section (AV-4) | `Three slots, one thing in each. Earn the rest by training 🏋️` · a locked one: `Locked` + its goal (`Try 3 machines`, `Slack for a full minute`) + `2 of 3` · an earned one: `Earned 3 Nov: first PB` (every goal and reason: avatar spec, A.4) |
 
 **Preset messages (INT-5)**, about 10 in two groups:
 
@@ -464,6 +466,13 @@ names to use.
   as you type.
 - **`.swatch`**: an avatar-editor colour choice. A 44 px square of the colour
   with an ink border; the chosen one gets a `--leaf` inner ring and a tick.
+- **`.acc`** *(PROPOSED 8 Nov, avatar editor only for now)*: an accessory
+  choice, a `.pick` tile like the hair tiles: your own bust wearing it on a
+  square of floor checker, its name, and for an earned one when and why.
+  Locked, it is text, not a control: a dashed tile, your ghost wearing the
+  accessory's grey silhouette, a lock icon, the word **Locked**, the goal,
+  and a count (`7 of 10`) only for counts that never go down. A long-haul
+  trophy has a `--finished` rule under its frame. Never a progress bar.
 - **`.summary`**: the workout summary (LOG-6). A single `.panel` sized to fit
   one phone screen (about 390 × 700 px), so a screenshot captures all of it
   for the group chat: your avatar, duration, sets, volume, slacking time in
@@ -523,6 +532,23 @@ to 32 px and says why.
 - **Tiles**: floor, wall, entrance, aisle, empty-station marker (a dashed
   square in `--edge`), water cooler (the one place `--resting` appears in the
   scenery).
+- **Accessories** *(PROPOSED 8 Nov, accessories.md; not yet agreed; the
+  full rules, grids and palettes are in `docs/design/avatar/spec.md`,
+  "Accessories, Nov 8")*. Up to three still drawings worn over the avatar,
+  one per slot (head, face, neck), each a 32-wide grid whose row 0 is the
+  pose's `hairRow`, so one drawing follows every pose. Drawn after the hair
+  and props, before the machine's front layer. **Fixed colours of their
+  own**, outlined in `--ink`, at most four plus ink, kept as a **sprite
+  palette** in `src/sprites/accessories.ts` (like the look's swatches and
+  `GYM_PALETTE`), not as tokens. **No main colour may be a state colour**
+  (the nearest, the gold `#c98614`, is ΔE 27 from `--finished`); state is
+  still told by the tag. Head items never touch the face (columns 11–20,
+  rows 8–12). **Face items are the one overlay allowed on the face**: the
+  brow line, eyes and the row under them (rows 6–11), never the mouth.
+  **Neck items show only on the tee**: shirt pixels above the belt line,
+  so they hide on the legs and in poses with no tee (the squat's low
+  frame). Starters are quiet, everyday colours; earned ones are metal or
+  bright. Never animated, never on Dony.
 
 ## 11. Motion and sound
 
@@ -610,7 +636,9 @@ The target is WCAG 2.2 AA, from the MVP spec.
   announced one by one. **The one exception is a PB's room banner**
   (GYM-18): every screen reader in the room hears it once ("Mia hit a
   personal best on back squat"), because it is rare and the point is that
-  the whole room notices. A button on a banner is reachable by Tab while it
+  the whole room notices. *(PROPOSED 9 Nov, accessories.md AV-6.7)* A
+  long-haul unlock's room banner ("Mia unlocked the crown") joins it, on
+  the same terms. A button on a banner is reachable by Tab while it
   shows and never takes focus by itself; its name says who it answers
   ("Slap back Ji-woo"). The sound setting's new value is announced once.
 - **Sound needs a gesture**: the page may play sound only after the person

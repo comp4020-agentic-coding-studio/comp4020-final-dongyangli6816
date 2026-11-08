@@ -3,6 +3,7 @@
 // the server (interactions.ts) and the room page's script. Pure: no database
 // here, since it also runs in the browser.
 import type { State } from "./presence.ts";
+import { accessoryById } from "../sprites/accessories.ts";
 
 export const KINDS = ["cheer", "poke", "slap"] as const;
 export type Kind = (typeof KINDS)[number];
@@ -66,7 +67,9 @@ export const slapRefusal = (state: State): Refusal | null =>
 export type LogEntry =
   | { kind: Move; from: Person; to: Person; at: number }
   | { kind: "say"; from: Person; to: Person; text: string; at: number }
-  | { kind: "pb"; from: Person; exercise: string; at: number };
+  | { kind: "pb"; from: Person; exercise: string; at: number }
+  // AV-6.9: a long-haul unlock
+  | { kind: "trophy"; from: Person; acc: string; at: number };
 
 // The log's words for one entry, to the person reading it (INT-5.22, D28;
 // room spec F.10)
@@ -75,6 +78,7 @@ export function logLine(e: LogEntry, me: number): { who: string; rest: string; t
   const who = name(e.from, true);
   if (e.kind === "say") return { who, rest: "", to: `@${name(e.to, false)}`, text: e.text };
   if (e.kind === "pb") return { who, rest: ` hit a PB on ${e.exercise.toLowerCase()}` };
+  if (e.kind === "trophy") return { who, rest: ` unlocked the ${accessoryById(e.acc)?.name.toLowerCase() ?? "trophy"}` };
   // "You and Ji-woo high-fived", whichever of the two offered (F.10)
   if (e.kind === "highfive" && e.to.id === me) return { who: "You", rest: ` and ${e.from.name} high-fived` };
   const to = name(e.to, false);
@@ -103,6 +107,8 @@ export const LOG_ICON: Record<LogEntry["kind"], string> = {
   "slap-back": "slap",
   highfive: "high-five",
   pb: "pb",
+  // room spec X.5: the cap, its own line kind
+  trophy: "wear",
 };
 
 // A log line's time on the right: "now", "1 min", "2 h" (room spec I.9)

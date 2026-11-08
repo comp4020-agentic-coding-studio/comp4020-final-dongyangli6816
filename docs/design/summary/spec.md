@@ -508,3 +508,245 @@ differs here.
 - Shown in the **Just finished** state only, as asked.
 
 Departures and layout changes: none beyond history's.
+
+## Accessories, Nov 9
+
+The criteria are `docs/product/criteria/accessories.md` (agreed 8 Nov, D1
+to D12): **AV-6.6**, **AV-6.15**, **AV-6.2**'s failure line, **AV-6.17**
+and **AV-7.5**. The art and how it is drawn are in
+`docs/design/avatar/spec.md`, "Accessories, Nov 8", A.6 to A.9; nothing here
+redraws or recolours it. This section adds one card, **Unlocked**, and
+dresses every drawing of the person on the page in what they wear now.
+Everything above stands.
+
+Mockup states: the eight `acc: …` states in `docs/design/summary/mockup.html`.
+Screenshots: `node scripts/shot.mjs docs/design/summary/mockup.html .shots/summary/acc --states`.
+
+### 1. Plan
+
+**Shared (Logbook group).** Unchanged: the Nov 4 shared block holds word
+for word. Only the summary lists unlocks. History and the exercise page
+only draw the avatar, so they pick up AV-7.5 through the shared
+`ExerciseArt` renderer with no redesign (their mockups are untouched). The
+new card follows the group's rules: a `.card` with an `h2`, secondary
+buttons only (Back home stays the one primary), "That didn't save. Try
+again." under the button, pending as a held-down button with its label
+kept, success as a `.bubble[role=status]` in place.
+
+**Who and when.**
+
+1. **Just finished, first session.** A fresh account at the showcase
+   (often a marker, alone with Dony) has just tapped Finish. They may have
+   earned six or seven things in fifteen minutes, and the room's banners
+   came and went mid-set (each one replaces the last, `int.md` D9). The
+   summary is where they all wait, together, with time to look.
+2. **Just finished, weeks in.** One unlock, perhaps a long-haul one (the
+   silver medal on day ten). One row, one tap.
+3. **Revisited.** From history, days later. The list is part of that
+   workout's record, like its records line: what this session got you.
+
+With strangers: the card is on your own summary, which only you can open
+(404 for anyone else), so it says nothing to anyone (AV-4.13).
+
+**The one job.** Unchanged: show what you did, then leave. Wearing a new
+thing is a second, small job, one secondary button per row.
+
+**Hierarchy.**
+
+1. The bubble. 2. You and when (now in your kit). 3. The tally at 48 px.
+4. The records line. 5. Back home, All history.
+6. **New: Unlocked**, straight under the buttons.
+7. Every set (art in your kit). 8. Save as plan.
+
+**Where the list goes, and why.** Its own card **between the buttons and
+Every set**. Inside the trophy card it would push the tally and Back home
+down by 70 px a row: seven rows on a first session is about 500 px, which
+would put Back home off the first phone screen and break the "one
+screenshot" rule (system 9). Below the buttons it is still the first thing
+you meet when you scroll, above the set table, and it reads as part of the
+workout's record (it sits between the figures and the sets, not after
+Save as plan). With nothing unlocked there is no card at all, so a normal
+summary is exactly as before.
+
+**Reuse.** `.card`, `h2`, `.hint`, `.bubble`, `.button.secondary`,
+`button:disabled`, `.error`, `.vh`; the editor's `.acc-frame` floor square
+and `svg.bust` (avatar spec A.3), here at 2× (56 × 46 px); the editor's
+gold rule for long-haul ones (`.acc.trophy`); the `i-tick` icon. New in
+the page block: `.new-kit`, `.kit-list`, `.kit-name`, `.kit-why`,
+`.kit-act` (+ `.wearing`, `.in-editor`), `.to-editor`.
+
+**Template check.** The first idea was an "Achievements unlocked" list of
+badge icons with a Claim button: every game's post-match screen. What
+makes it Spotter's:
+
+- **Each row is you wearing it**: your own bust (your skin, hair and
+  shirt) in the thing, on a square of gym floor, the same tile the editor
+  uses. It reads as trying it on, not as a trophy cabinet.
+- **"New: shades", then what earned it, in the editor's words** ("First
+  PB", "3 machines"). No points, no rarity, no percentages.
+- **The verb is Wear it**, not Claim or Equip: it's already yours (D3,
+  never put on for you); the tap is choosing to be seen in it.
+- **The Nightcap is just another row**, named and owned, with no button
+  and no comment, so the joke stays on the rest, never the person
+  (AV-6.17).
+- Would I screenshot it? The trophy card in your new star shades, yes; the
+  row of busts in seven new things after a first session is the "look what
+  I got" message for the group chat.
+
+### 2. Requirements covered
+
+| Requirement (source) | Element that meets it |
+| --- | --- |
+| AV-6.6 "its summary lists each, in the order earned" | `ol.kit-list`, one `li` per unlock, in unlock time order (ties: see "Not decided by the criteria") |
+| AV-6.6 "New: bronze medal" | `p.kit-name` `New: {name, lower case}`, then `span.kit-why` with the editor's reason (A.4: "First workout") |
+| AV-6.6 "each with Wear it … or 'Wearing it' if she already is" | `form.kit-act` > `button.button.secondary` "Wear it"; or `p.kit-act.wearing` with the tick and "Wearing it", when the accessory is in its slot now |
+| AV-6.6 "It works with no script" | Wear it is a plain `form method=post` to the summary itself; the server answers 303 back to it |
+| AV-6.6 "Coming back to that summary later shows the same list" | The list is read from the stored unlocks attached to this workout; only "Wearing it" follows what's worn now (state **revisited later**) |
+| AV-6.6 "Accessories recorded by AV-5.17 … never listed" | Back-filled unlocks carry no workout, so they never appear (state **no unlocks**) |
+| AV-6.15 the Nightcap listed, but no Wear it; worn only from the editor | Its row has `p.kit-act.in-editor` "Put it on in Edit avatar" with a link to `/avatar`, no form. The server also refuses a hand-made Wear it for it |
+| AV-6.2 "That didn't save. Try again." and nothing changes | `p.error[role=alert]` under that row's button; the worn kit and the trophy avatar unchanged (state **wear it failed**) |
+| AV-6.2 the screen reader hears "Wearing the shades" once | The success bubble `Wearing the shades now 😎` is `role=status` (state **worn**) |
+| AV-6.17 a mate saying "nice one", never a telling-off | Hint `Nice one. New kit to wear 🔥`; nothing about what wasn't earned, no locked ones, no counts |
+| AV-7.5 LB-7's art draws what she wears now | Every `ex-art` and the trophy `svg.me` carry the worn accessories as layers (state **art wearing**) |
+| AV-7.2 neck items only on the tee | Neck layers are clipped to the drawing's tee (`teeMask`); one row of medal on the bench, most of it at the cable machine |
+| AV-7.8 accessories named nowhere but the editor, banners and summary | Art stays `aria-hidden`; only the card's rows name them |
+| System 8: one primary per page | Wear it is `.secondary`; Back home stays the only primary |
+
+### 3. Structure
+
+Changes only.
+
+1. **`section.card.trophy`**: `svg.me` gains the worn accessories, in the
+   order head, face, neck, each a `use href="/sprites.svg#acc-{drawing}"`
+   at `y = hairRow` (0 standing) with the accessory's palette as
+   `--acc-a … --acc-d` (`accVars`). The neck one is clipped to the
+   standing tee. The build draws this with whatever renderer
+   `Avatar.astro` gets for AV-7 (avatar spec A.3, "Rendering everywhere
+   else").
+2. `div.actions.after`: unchanged.
+3. **New `section.card.new-kit#unlocked[aria-labelledby]`**, only when at
+   least one unlock is attached to this workout:
+   - `h2` **Unlocked**;
+   - after a Wear it (`?worn={id}`): `p.bubble[role=status]` `Wearing the
+     {name} now {emoji}`;
+   - `p.hint` `Nice one. New kit to wear 🔥`;
+   - `ol.kit-list`, one `li` per unlock (`li.trophy` for the long-haul
+     four):
+     - `span.acc-frame` > `svg.bust[viewBox="2 0 28 23"][aria-hidden]`:
+       the person's standing figure (hair included, unlike the editor's
+       bald bust, since this is them) wearing **only that accessory**;
+     - `p.kit-name` `New: {name}` > `span.kit-why` {reason};
+     - the action, one of:
+       - `form.kit-act[method=post][action=/workouts/{id}]` with hidden
+         `intent=wear`, `accessory={id}`, and `done=1` if the page has it;
+         `button.button.secondary` `Wear it<span class="vh">: {name}</span>`
+         (so a screen reader hears "Wear it: shades");
+       - `p.kit-act.wearing`: `svg` `i-tick` (16 px) + `Wearing it`;
+       - the Nightcap, when not worn: `p.kit-act.in-editor` `Put it on in
+         <a href="/avatar">Edit avatar</a>`; when worn, `Wearing it` like
+         any other.
+     - on failure, `p.error[role=alert]` `That didn't save. Try again.`
+       under that row's action, the button `aria-describedby` it.
+   - `a.to-editor[href=/avatar]` `Edit avatar`, last.
+4. "Every set": every `ex-art` frame gains the worn accessory layers inside
+   its `g.frame-1` / `g.frame-2`, at that frame's `hairRow` (flat bench 4,
+   cable machine 4, dumbbell rack 0, …; `machines.ts`), neck items clipped
+   to that frame's tee. Between the person and the machine's front, as
+   everywhere (avatar spec A.6).
+5. Save as plan: unchanged; its preview rows keep their still station
+   sprites (D41).
+
+**Layout.** At 421 px and up a row is `bust | name and reason | action`,
+the action right-aligned. On phones (≤ 420 px) the action goes under the
+name, beside the bust, and the error under the action, so nothing is
+squeezed at 360 px. A row is about 70 px at 1280 and 130 px on a phone
+with a button.
+
+**The mockup only**: the card's `id` carries a suffix (`unlocked-many`)
+because the mockup repeats it per state; the build uses `id="unlocked"`.
+The `clipPath id="tee-…"` elements are the mockup's stand-in for
+`teeMask()` (avatar spec A.8); the build computes the mask per drawing.
+
+**Wear it, as a request** (the contract is the main agent's; this is what
+the page needs):
+
+- `POST /workouts/{id}`, `intent=wear`, `accessory={id}`, optional `done=1`.
+- Accepted: the accessory goes in its slot, replacing what was there
+  (AV-6.2), live to the room (AV-7.7); 303 to
+  `/workouts/{id}?{done=1&}worn={id}#unlocked`.
+- Refused (not yours: 404, as the page; not unlocked by you, unknown, the
+  Nightcap, not listed on this workout) or failed: the summary re-rendered
+  with `p.error` under that row (no-script), or the same line placed by
+  the script; nothing changes.
+- **Script** (optional): on submit, `disabled` on that one button, label
+  kept; on success, follow the redirect; on failure, show the error under
+  the row and re-enable the button. Without the script the browser posts
+  and the page reloads; nothing else depends on it.
+
+### 4. States
+
+| State | Trigger | What shows |
+| --- | --- | --- |
+| **acc: no unlocks** (unchanged) | Nothing attached to this workout (or only AV-5.17 back-fills) | No Unlocked card; the page exactly as before |
+| **acc: one unlock** | `?done=1`, Mia's tenth day: the silver medal | One row with the gold rule; Wear it would swap out her bronze medal. The trophy avatar wears her Squad cap and bronze medal |
+| **acc: several, one worn, nightcap** | `?done=1`, Priya's first session, seven unlocks | Seven rows in the order earned; heart shades `Wearing it` (put on from the room's banner); the Nightcap with "Put it on in Edit avatar" and no button |
+| **acc: wear it pending** | Wear it tapped on slow wifi (script) | That one button disabled, label kept; the rest unchanged |
+| **acc: wear it failed** | The post failed or was refused | "That didn't save. Try again." under that row; heart shades still worn |
+| **acc: worn** | The 303 after Wear it, `?done=1&worn=shades#unlocked` | Scrolled to the card; bubble `Wearing the shades now 😎`; shades `Wearing it`, heart shades back to Wear it; the trophy avatar in the shades |
+| **acc: revisited later** | From history a week on | No bubble, `Trained in`; the same seven in the same order; `Wearing it` on what she wears today (bandana, shades), and the trophy avatar in it |
+| **acc: art wearing** | Any summary, Mia wearing cap, star shades and bronze medal | Trophy avatar and every 32 px art in all three; the medal clipped to the tee in each frame |
+| Signed out, not yours, unfinished | — | As Oct. Wear it on someone else's workout is a 404, the same as the page |
+
+### 5. Departures
+
+- **The trophy card's screenshot doesn't include the unlock list**, on
+  purpose (see "Where the list goes"). Your new kit is still in the
+  screenshot, worn by your avatar once you tap Wear it.
+- **A second form on the summary** (Wear it, beside Save as plan). Both
+  are secondary; Back home stays the one primary.
+- **The editor's `.acc-frame` and `.bust` rules are repeated** in this
+  page's block (the summary doesn't load the editor's CSS). Cross-group
+  shared code: build them once, as an `AccessoryBust.astro` used by the
+  editor (Lobby) and the summary (Logbook). The summary's bust keeps the
+  person's hair; the editor's is bald by design (its tiles are about the
+  accessory over any hair).
+
+Otherwise none. No new art, no new tokens, no change to the Logbook's
+shared block.
+
+### Not decided by the criteria (my recommendations, applied)
+
+1. **Which workout an unlock belongs to.** The one the earner had open
+   when the server recorded it (anything from its sets, rests, Cheers,
+   presets, High-fives, or its Finish). An unlock recorded with no
+   workout open (Ji-woo's Done gives Mia the Squad cap while Mia's room is
+   closed; one worked out on opening the editor) attaches to the **next**
+   workout she finishes, which is how AV-6.13's "the next summary tells
+   her" reads. AV-5.17 back-fills attach to none. Stored with the unlock,
+   so revisits never change.
+2. **Ties in "the order earned"** (two unlocks in one step, e.g. the
+   bronze medal and a Squad cap on the same Done): AV-6.4's order, long-
+   haul first, then the criteria's table order, so the banner and the
+   summary agree.
+3. **Lower-case names after "New:"** ("New: bronze medal"), as AV-6.6 and
+   AV-6.1 write them; the bust and the editor carry the capitalised name.
+4. **The reason under each name** reuses the editor's reasons (avatar
+   spec A.4) with a capital ("First PB", "A minute slacking"), so the
+   summary and the editor say the same thing.
+5. **The card's title** is `Unlocked` and its one line `Nice one. New kit
+   to wear 🔥` in every state, including revisits (still true, still
+   warm). No count ("7 new") and nothing about what's still locked.
+6. **The Nightcap's row** says `Put it on in Edit avatar` (a link), not a
+   disabled button: a greyed-out Wear it would read as "not allowed",
+   which is the telling-off AV-6.17 rules out. Once worn (from the editor)
+   it reads `Wearing it` like any other.
+7. **The success bubble** `Wearing the {name} now {emoji}`, `role=status`,
+   gives AV-6.2's "Wearing the shades" announcement on the summary. The
+   emoji is the one the room's unlock banner uses for that accessory (the
+   Gym design's list; "New: shades 😎"), or 🔥 if it has none.
+8. **After Wear it the page returns to the card** (`#unlocked`), keeping
+   `done=1` if it was there, so the ute bubble stays and the person sees
+   both the confirmation and their trophy avatar's new look one scroll up.
+9. **Wear it on a long-haul accessory** is offered like any other; it
+   swaps out whatever was in the slot (the silver medal replaces the
+   bronze), as AV-6.2 says. No "are you sure": the editor undoes it.

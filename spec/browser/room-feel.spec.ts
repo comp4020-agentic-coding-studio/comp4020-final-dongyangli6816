@@ -218,7 +218,10 @@ test("Mia hits a PB on bench: Tom sees her flex and the room banner, cheers from
   await expect(stampSet).toHaveAttribute("data-records", /\bheaviest\b/);
   await expect(stampSet).toHaveAttribute("data-records", /\be1rm\b/);
   await expect(miaPage.locator(".stamp")).toContainText(/record/i);
-  await expect(miaPage.locator(BANNER)).toHaveCount(0);
+  // no banner of the PB's for her; the PB unlocks Shades, which tells only
+  // her with its own (accessories.md AV-6.1)
+  await expect(miaPage.locator(`${BANNER}.room`)).toHaveCount(0);
+  await expect(miaPage.locator(`${BANNER} .banner-line`)).toContainText("New: shades");
   await expect(logLines(tom).first()).toContainText("Mia hit a PB on bench press");
   await expect(logLines(miaPage).first()).toContainText("You hit a PB on bench press");
 

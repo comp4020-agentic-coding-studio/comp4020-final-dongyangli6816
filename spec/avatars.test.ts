@@ -40,7 +40,9 @@ describe("avatars", () => {
     const stream = await openEvents(b, path);
     const e = await stream.next();
     stream.close();
-    expect(e.members[0].look).toEqual({ skin: "6", hair: "curls", hairColour: "blue", shirt: "grey" });
+    // the four choices as saved; the look also carries what's worn (the
+    // contract at the top of spec/accessories.test.ts), checked there
+    expect(e.members[0].look).toMatchObject({ skin: "6", hair: "curls", hairColour: "blue", shirt: "grey" });
   });
 
   it("refuse a choice that isn't in the palette, and keep the saved look", async () => {

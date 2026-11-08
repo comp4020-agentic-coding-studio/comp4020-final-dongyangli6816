@@ -34,7 +34,7 @@ import {
   type Refusal,
   type Reply,
 } from "./moves.ts";
-import { interactions, messages, personalBests, roomMembers, users } from "./schema.ts";
+import { interactions, messages, personalBests, roomMembers, users, userUnlocks } from "./schema.ts";
 import { stateAt } from "./squad.ts";
 
 type Target = Person & { state: State };
@@ -465,7 +465,15 @@ export function roomLog(roomId: number, limit = LOG_SIZE, now = Date.now()): Log
     .orderBy(desc(messages.createdAt), desc(messages.id))
     .limit(limit)
     .all();
-  const ids = [...new Set([...hits, ...said, ...fives].flatMap((r) => [r.from, r.to]).concat(pbs.map((p) => p.from)))].filter((id) => id !== DONY_ID);
+  // AV-6.9: long-haul unlocks made in this room, never quick or quiet ones
+  const trophies = db
+    .select({ from: userUnlocks.userId, acc: userUnlocks.acc, at: userUnlocks.earnedAt })
+    .from(userUnlocks)
+    .where(and(eq(userUnlocks.roomId, roomId), eq(userUnlocks.quiet, false), inArray(userUnlocks.acc, ["silver-medal", "gold-medal", "gold-chain", "crown"])))
+    .orderBy(desc(userUnlocks.earnedAt))
+    .limit(limit)
+    .all();
+  const ids = [...new Set([...hits, ...said, ...fives].flatMap((r) => [r.from, r.to]).concat(pbs.map((p) => p.from), trophies.map((t) => t.from)))].filter((id) => id !== DONY_ID);
   const names = new Map<number, string>([[DONY_ID, "Dony"]]);
   if (ids.length) for (const u of db.select({ id: users.id, name: users.displayName }).from(users).where(inArray(users.id, ids)).all()) names.set(u.id, u.name);
   const person = (id: number): Person => ({ id, name: names.get(id) ?? "Someone" });
@@ -476,8 +484,10 @@ export function roomLog(roomId: number, limit = LOG_SIZE, now = Date.now()): Log
     ...fives.map((r) => ({ kind: "highfive", from: person(r.from), to: person(r.to), at: r.at! }) as LogEntry),
     ...pbs.map((r) => ({ kind: "pb", from: person(r.from), exercise: exerciseById(r.exerciseId)?.name ?? "", at: r.at }) as LogEntry),
     ...said.map((r) => ({ kind: "say", from: person(r.from), to: person(r.to), text: PRESETS[r.preset as PresetKey] ?? "", at: r.at }) as LogEntry),
+    ...trophies.map((r) => ({ kind: "trophy", from: person(r.from), acc: r.acc, at: r.at }) as LogEntry),
   ];
-  return rows.sort((a, b) => b.at - a.at).slice(0, limit);
+  // a PB and the unlock it made share a time: the unlock above it (room spec X.10.7)
+  return rows.sort((a, b) => b.at - a.at || Number(b.kind === "trophy") - Number(a.kind === "trophy")).slice(0, limit);
 }
 
 // When this person last joined the room: the log's "You walked in" line (D14)

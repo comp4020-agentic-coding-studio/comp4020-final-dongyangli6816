@@ -1,15 +1,20 @@
 ---
-// The avatar editor (AV-1, AV-3; docs/design/avatar/). Every choice is a real
-// radio, the preview follows them with CSS alone, and Randomise works without
-// JavaScript by posting for an unsaved roll.
+// The avatar editor (AV-1, AV-3, AV-4; docs/design/avatar/). Every choice is a
+// real radio, the preview follows them with CSS alone, and Randomise works
+// without JavaScript by posting for an unsaved roll. Accessories (AV-4): three
+// slots, starters and what you've earned to pick from, the rest locked with
+// their goal (docs/product/criteria/accessories.md).
 import Avatar from "../components/Avatar.astro";
 import Sprite from "../components/Sprite.astro";
 import Layout from "../layouts/Layout.astro";
 import { safeNext } from "../lib/auth.ts";
-import { lookOf, saveLook } from "../lib/avatars.ts";
+import { lookOf, saveLook, saveWear, wearOf } from "../lib/avatars.ts";
 import { log, who } from "../lib/log.ts";
 import { asLook, CHOICES, editorCss, lookVars, randomLook, type Look } from "../sprites/avatar.ts";
-import { dieIcon, tickIcon } from "../sprites/icons.ts";
+import { ACC_REASON, ACCESSORIES, accessoriesCss, isStarter, SLOTS, type Accessory, type Slot, type Wear } from "../sprites/accessories.ts";
+import { dieIcon, lockIcon, tickIcon } from "../sprites/icons.ts";
+import { accessoryStates, readWear, isLongHaul } from "../lib/unlocks.ts";
+import { broadcastRoomsOf } from "../lib/realtime.ts";
 import { dumbbell, kettlebell } from "../sprites/props.ts";
 
 const user = Astro.locals.user;
@@ -19,6 +24,8 @@ const param = (name: string) => Astro.url.searchParams.get(name);
 let next = param("next") ?? "";
 const saved = lookOf(user.id);
 let look: Look = saved;
+const savedWear = wearOf(user.id);
+let wear: Wear = savedWear;
 let unsaved = false;
 let error = false;
 
@@ -26,27 +33,82 @@ if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
   next = String(form.get("next") ?? next);
   if (form.get("intent") === "randomise") {
-    // nothing stored: the roll is shown checked, ready to save
+    // nothing stored: the roll is shown checked, ready to save; what's worn
+    // stays as it was (AV-4.6)
     look = randomLook();
     unsaved = true;
   } else {
     const posted = asLook(Object.fromEntries(CHOICES.map((c) => [c.key, form.get(c.field)])));
-    if (posted) {
+    // AV-4.8: a locked, unknown or misplaced accessory refuses the whole save
+    const kit = readWear(user.id, form);
+    if (posted && "wear" in kit) {
       saveLook(user.id, posted);
-      log("avatar.save", who(user));
+      saveWear(user.id, kit.wear);
+      log("avatar.save", { ...who(user), head: kit.wear.head ?? "none", face: kit.wear.face ?? "none", neck: kit.wear.neck ?? "none" });
+      // AV-7.7: every room they're in redraws them
+      broadcastRoomsOf(user.id);
       return Astro.redirect(safeNext(next, "/avatar?saved=1"), 303);
     }
+    if ("reason" in kit) log("avatar.refused", { ...who(user), reason: kit.reason });
+    // a refused save keeps what was picked checked (AV-4.5), as far as it
+    // names real accessories of the right slot
+    if (posted) look = posted;
+    wear = Object.fromEntries(
+      SLOTS.map((sl) => {
+        const v = String(form.get(sl) ?? "");
+        const a = ACCESSORIES.find((x) => x.id === v && x.slot === sl);
+        return [sl, a ? a.id : null];
+      }),
+    ) as Wear;
     error = true;
     Astro.response.status = 400;
   }
 }
 next = safeNext(next, "");
 const isNew = param("new") === "1" && !!next;
+
+// AV-4.2 to AV-4.4: each accessory's state for this person, worked out now
+// (AV-5.15)
+const states = accessoryStates(user.id);
+const thisYear = new Date().getFullYear();
+const earnedDate = (ms: number) => {
+  const d = new Date(ms);
+  const day = d.toLocaleDateString("en-AU", { day: "numeric", month: "short" });
+  return d.getFullYear() === thisYear ? day : `${day} ${d.getFullYear()}`;
+};
+// avatar spec A.4: the goal while locked (the reason once earned is
+// ACC_REASON, shared with the summary)
+const GOAL: Record<string, string> = {
+  sweatband: "Log a working set",
+  shades: "Hit your first PB",
+  "bronze-medal": "Finish a workout",
+  "hype-band": "Send 5 Cheers",
+  "star-shades": "Send 3 hype messages",
+  "heart-shades": "Land a high-five",
+  "mirror-shades": "End 3 rests on time",
+  bandana: "Try 3 machines",
+  "squad-cap": "Train with someone in the room",
+  nightcap: "Slack for a full minute",
+  "silver-medal": "Train on 10 different days",
+  "gold-medal": "Train on 30 different days",
+  "gold-chain": "Train together on 5 days",
+  crown: "Train 4 weeks in a row",
+};
+const unit = (a: Accessory) => (a.id === "nightcap" ? " s" : "");
+// per slot: what you can wear (starters, then earned, in the table's order),
+// then the locked ones
+const kitOf = (slot: Slot) => {
+  const all = ACCESSORIES.filter((a) => a.slot === slot);
+  const wearable = all.filter((a) => states.get(a.id)?.state !== "locked");
+  const locked = all.filter((a) => states.get(a.id)?.state === "locked");
+  return { wearable: [...wearable.filter((a) => isStarter(a.id)), ...wearable.filter((a) => !isStarter(a.id))], locked };
+};
+const LEGEND: Record<Slot, string> = { head: "Head", face: "Face", neck: "Neck" };
 ---
 
 <Layout title="Your avatar">
   {/* the live preview's palette rules, generated from the palettes */}
-  <Fragment set:html={`<style>${editorCss()}</style>`} />
+  <Fragment set:html={`<style>${editorCss()}\n${accessoriesCss()}</style>`} />
   {isNew && <p class="bubble">We rolled you a random look. Keep it, or make it yours 🎲</p>}
   {param("saved") === "1" && (
     <p class="bubble" role="status">
@@ -56,20 +118,22 @@ const isNew = param("new") === "1" && !!next;
   <div class="card" style={lookVars(saved)}>
     <h1>Your avatar</h1>
     <p class="lead">This is you in the gym.</p>
-    <form method="post" action="/avatar" class="editor" data-saved={JSON.stringify(saved)}>
+    <form method="post" action="/avatar" class="editor" data-saved={JSON.stringify({ ...saved, ...savedWear })}>
       {next && <input type="hidden" name="next" value={next} />}
-      <div class="floor preview" aria-hidden="true">
-        <Sprite sprite={kettlebell} class="floor-prop kettlebell" />
-        <div class="stand">
-          <span class="nametag">{user.displayName}</span>
-          <Avatar look={look} allHair vars={false} />
+      <div class="stage">
+        <div class="floor preview" aria-hidden="true">
+          <Sprite sprite={kettlebell} class="floor-prop kettlebell" />
+          <div class="stand">
+            <span class="nametag">{user.displayName}</span>
+            <Avatar look={look} allHair vars={false} wear={wear} allAcc />
+          </div>
+          <Sprite sprite={dumbbell} class="floor-prop dumbbell" />
         </div>
-        <Sprite sprite={dumbbell} class="floor-prop dumbbell" />
+        <button type="submit" form="avatar-shuffle" class="button secondary shuffle">
+          <Sprite sprite={dieIcon} scale={2} />
+          Randomise
+        </button>
       </div>
-      <button type="submit" form="avatar-shuffle" class="button secondary shuffle">
-        <Sprite sprite={dieIcon} scale={2} />
-        Randomise
-      </button>
       <div class="choices">
         {
           CHOICES.map((c) => (
@@ -81,7 +145,7 @@ const isNew = param("new") === "1" && !!next;
                     <label class="pick style">
                       <input type="radio" name={c.field} value={o.id} checked={look[c.key] === o.id} />
                       <span class="face">
-                        <Avatar look={{ ...look, hair: o.id }} head vars={false} />
+                        <Avatar look={{ ...look, hair: o.id, wear: undefined }} head vars={false} />
                         {o.name}
                       </span>
                       <Sprite sprite={tickIcon} class="tick" />
@@ -104,6 +168,75 @@ const isNew = param("new") === "1" && !!next;
           ))
         }
       </div>
+      <section class="kit" aria-labelledby="kit-h">
+        <h2 id="kit-h">Accessories</h2>
+        <p class="hint kit-hint">Three slots, one thing in each. Earn the rest by training 🏋️</p>
+        {
+          SLOTS.map((slot) => {
+            const { wearable, locked } = kitOf(slot);
+            return (
+              <fieldset class="pick-group acc-group" data-slot={slot}>
+                <legend>{LEGEND[slot]}</legend>
+                <div class="acc-grid">
+                  <label class="pick acc none">
+                    <input type="radio" name={slot} value="none" checked={!wear[slot]} />
+                    <span class="face">
+                      <span class="acc-frame">
+                        <Avatar look={look} bust bald vars={false} class="bust" />
+                      </span>
+                      <span class="acc-name">None</span>
+                    </span>
+                    <Sprite sprite={tickIcon} class="tick" />
+                  </label>
+                  {wearable.map((a) => {
+                    const st = states.get(a.id)!;
+                    return (
+                      <label class:list={["pick acc", { won: st.state === "earned", trophy: isLongHaul(a.id) }]} data-acc={a.id} data-state={st.state}>
+                        <input type="radio" name={slot} value={a.id} checked={wear[slot] === a.id} />
+                        <span class="face">
+                          <span class="acc-frame">
+                            <Avatar look={look} bust bald vars={false} wear={{ head: null, face: null, neck: null, [slot]: a.id }} class="bust" />
+                          </span>
+                          <span class="acc-name">{a.name}</span>
+                          {st.state === "earned" && (
+                            <span class="acc-cond earned">
+                              Earned {earnedDate(st.earnedAt)}: {ACC_REASON[a.id]}
+                            </span>
+                          )}
+                        </span>
+                        <Sprite sprite={tickIcon} class="tick" />
+                      </label>
+                    );
+                  })}
+                  {locked.map((a) => {
+                    const st = states.get(a.id)!;
+                    const prog = st.state === "locked" ? st.progress : undefined;
+                    const goal = GOAL[a.id] ?? "";
+                    const count = prog ? `${prog.n} of ${prog.goal}${unit(a)}` : "";
+                    return (
+                      <div class:list={["acc locked", { trophy: isLongHaul(a.id) }]} data-acc={a.id} data-state="locked">
+                        <span class="face" aria-hidden="true">
+                          <span class="acc-frame">
+                            <Avatar look={look} bust bald vars={false} wear={{ head: null, face: null, neck: null, [slot]: a.id }} class="bust ghost" />
+                            <Sprite sprite={lockIcon} class="lock" />
+                          </span>
+                          <span class="acc-name">{a.name}</span>
+                          <span class="lock-word">Locked</span>
+                          <span class="acc-cond">{goal}</span>
+                          {count && <span class="acc-prog">{count}</span>}
+                        </span>
+                        <span class="sr-only">
+                          {a.name}, locked: {goal.charAt(0).toLowerCase() + goal.slice(1)}.{count && ` ${count}`}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            );
+          })
+        }
+      </section>
       {
         error && (
           <p class="error" id="save-error">
@@ -146,7 +279,10 @@ const isNew = param("new") === "1" && !!next;
     const saved = JSON.parse(form.dataset.saved!) as Record<string, string>;
     // "Not saved yet." whenever the choices differ from what's stored
     const sayIfChanged = () => {
-      const changed = CHOICES.some((c) => new FormData(form).get(c.field) !== saved[c.key]);
+      const data = new FormData(form);
+      const changed =
+        CHOICES.some((c) => data.get(c.field) !== saved[c.key]) ||
+        ["head", "face", "neck"].some((sl) => (data.get(sl) === "none" ? null : data.get(sl)) !== (saved[sl] ?? null));
       status.textContent = changed ? "Not saved yet." : "";
     };
     form.addEventListener("change", sayIfChanged);
@@ -283,22 +419,178 @@ const isNew = param("new") === "1" && !!next;
     }
     .preview {
       --s: 4px; /* 128 px; 5x would push the props off the floor */
-      grid-area: preview;
       position: relative;
-    }
-    .shuffle {
-      grid-area: shuffle;
     }
     .choices {
       grid-area: choices;
     }
-    .editor > .actions,
-    .editor > .error {
+    .editor > .actions {
       grid-area: actions;
     }
     .choices .pick-group:first-child {
       margin-top: 0;
     }
+  }
+
+
+  /* ACCESSORIES (AV-4; avatar spec "Accessories, Nov 8"). The preview and
+     Randomise travel together; from 900 px they stay in view (sticky) while
+     you scroll the choices and the kit. */
+  .stage {
+    display: contents;
+  }
+  @media (min-width: 900px) {
+    .stage {
+      grid-area: preview;
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 1rem;
+      align-self: start;
+    }
+    .editor {
+      grid-template-rows: auto auto auto auto;
+      grid-template-areas:
+        "preview choices"
+        "preview kit"
+        "error error"
+        "actions actions";
+    }
+    /* the save error gets its own row: in the old grid it shared Save's
+       area and was drawn under the button */
+    .editor > .error {
+      grid-area: error;
+    }
+    .kit {
+      grid-area: kit;
+    }
+  }
+  /* the section: an h2 under a dashed rule, one line, then a fieldset per slot */
+  .kit {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: var(--px) dashed var(--ink);
+  }
+  .kit h2 {
+    margin: 0;
+  }
+  .kit-hint {
+    margin: 0.25rem 0 0;
+  }
+  .kit .pick-group {
+    margin-top: 1.5rem;
+  }
+  /* a slot's tiles: what you can wear, then the silhouettes of what you can
+     earn. 3 a row at every width (the laptop's right column is as narrow as
+     a phone). */
+  .acc-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem 0.5rem;
+  }
+  /* one accessory: your own bust wearing it, on a square of gym floor, and
+     its name. The radio covers the tile, as on the hair tiles. */
+  .acc .face {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    height: 100%;
+    padding: 0.5rem 2px;
+    text-align: center;
+    line-height: 1.05;
+    background: var(--paper);
+    border: var(--px) solid var(--ink);
+  }
+  .acc-frame {
+    position: relative;
+    display: block;
+    padding: 0;
+    background-color: var(--paper);
+    background-image: conic-gradient(var(--tile) 25%, transparent 0 50%, var(--tile) 0 75%, transparent 0);
+    background-size: 16px 16px;
+    border: 2px solid var(--ink);
+  }
+  .acc-frame :global(.bust) {
+    display: block;
+    width: 84px; /* the bust, columns 2-29 and rows 0-22, at 3x */
+    height: 69px;
+  }
+  .acc input:checked ~ .face {
+    background: var(--leaf);
+    box-shadow: none;
+  }
+  /* earned (AV-4.4): what earned it and when, under the name */
+  .acc-cond {
+    font-size: 20px;
+    line-height: 1;
+  }
+  .acc-cond.earned {
+    color: var(--muted);
+  }
+  .acc input:checked ~ .face .acc-cond.earned {
+    color: var(--ink);
+  }
+  /* a long-haul trophy: a gold rule under its frame, earned or not */
+  .acc.trophy .acc-frame {
+    border-bottom: var(--px) solid var(--finished);
+    box-shadow: 0 2px 0 var(--ink);
+  }
+  /* locked (AV-4.3): the drawing as a grey silhouette on your ghost, the
+     word Locked, the goal, and the count where it only goes up (D8). Not a
+     control: one sentence for screen readers. */
+  .acc.locked .face {
+    background: transparent;
+    border-style: dashed;
+    border-color: var(--muted);
+  }
+  .acc.locked .acc-frame {
+    border-color: var(--muted);
+  }
+  .acc-frame :global(.bust.ghost) {
+    --av-skin: var(--card);
+    --av-skin-2: var(--card);
+    --av-shirt: var(--card);
+    --av-shirt-2: var(--card);
+    --ink: var(--muted);
+    --dim: var(--card);
+    --paper: var(--card);
+  }
+  /* the accessory's own palette is inline on it, so the grey goes on the
+     pixels: one muted shape you can still recognise */
+  .acc-frame :global(.bust.ghost .acc path) {
+    fill: var(--muted);
+  }
+  .acc-frame :global(.lock) {
+    position: absolute;
+    right: -10px;
+    bottom: -10px;
+    width: 24px;
+    height: 24px;
+    padding: 2px;
+    color: var(--paper);
+    background: var(--muted);
+    border: 2px solid var(--ink);
+  }
+  .acc.locked .acc-name {
+    color: var(--muted);
+  }
+  .lock-word {
+    font: 8px/1.4 var(--display);
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .acc.locked .acc-cond {
+    color: var(--ink);
+  }
+  /* progress: a count in words, never a bar or a percentage */
+  .acc-prog {
+    margin-top: 2px;
+    font-size: 20px;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    background: var(--leaf);
   }
 
   /* one radio group per choice (AV-1); real radios, so arrows, Tab and no-JS

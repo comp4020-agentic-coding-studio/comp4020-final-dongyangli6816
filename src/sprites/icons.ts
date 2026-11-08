@@ -42,3 +42,7 @@ export const soundIcon = icon("...c....", "..cc..c.", "cccc...c", "cccc.c.c", "c
 export const bellIcon = icon("...cc...", "..cccc..", ".cccccc.", ".cccccc.", ".cccccc.", "cccccccc", "........", "...cc...");
 export const pbIcon = icon("c.....c.", "cc...cc.", ".cc.cc..", "..ccc...", ".ccccc..", ".cc.cc..", ".ccccc..", "..ccc...");
 export const soundOffIcon = icon("...c....", "..cc....", "cccc.c.c", "cccc..c.", "cccc.c.c", "cccc....", "..cc....", "...c....");
+// AV-4.3: a locked accessory (docs/design/avatar/spec.md, A.9)
+export const lockIcon = icon("..cccc..", ".c....c.", ".c....c.", "cccccccc", "ccc..ccc", "ccc..ccc", "cccccccc", "........");
+// AV-6: Wear it, the room's unlock tab and log line (room spec, "Accessories, Nov 9")
+export const wearIcon = icon("........", "....ccc.", "...ccccc", "...ccccc", "...ccccc", "cccccccc", "........", "........");

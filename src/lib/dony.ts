@@ -358,7 +358,8 @@ export type DonyMember = {
   dony: true;
 };
 // a stand-in for the type: his sprite and colours are his own (src/sprites/dony.ts)
-const LOOK: Look = { skin: "2", hair: "crop", hairColour: "black", shirt: "purple" };
+// AV-4.11: he wears nothing, ever
+const LOOK: Look = { skin: "2", hair: "crop", hairColour: "black", shirt: "purple", wear: { head: null, face: null, neck: null } };
 
 type Floor = { slot: number; equipment: Equipment | null; userId: number | null }[];
 
