@@ -105,7 +105,10 @@ delivery plan below.
 | AV-1 | P0 | An avatar is a small set of choices: skin tone, hair style (4), hair colour and shirt colour, stored as JSON on the user, never as an image. |
 | AV-2 | P0 | Avatars are pixel-art sprites drawn from code (see Art direction). Colours are palette swaps, so every choice works with every animation without extra drawing. |
 | AV-3 | P0 | A new account gets a random avatar it can edit straight away, with a live preview playing the idle animation. |
-| AV-4 | P1 | Accessories (cap, headband, sweatband) as one more overlay layer. |
+| AV-4 | P1 | Accessories in three slots, head, face and neck, at most one in each and all three worn together. Drawn in code at the head anchor so one drawing follows every pose, in their own fixed colours, and stored as ids on the user with the look. Seven plain ones (cap, beanie, pink beanie, bucket hat, headphones, glasses, towel) can be chosen from the first visit; the rest are earned (AV-5). Dony wears none (changed 8 Nov, `criteria/accessories.md`; wristbands dropped, too small to read at 1×). |
+| AV-5 | P1 | Fourteen accessories are earned, worked out on the server from what is stored. Ten in a first session: first working set, first finished workout, first PB, five Cheers sent, three hype presets sent, first High-five, three rests ended on time, three machines tried, first day training alongside someone in the same room, and (the joke) a minute spent Slacking. Four over weeks: 10 and 30 days trained, 5 days training alongside someone, a 4-week streak. Warm-ups never count. Once earned, an accessory is never lost. Cheers, presets and High-fives with Dony count; Dony himself earns nothing. |
+| AV-6 | P1 | An unlock is never put on for you. The earner gets a banner in the room with Wear it, and the summary lists what a workout unlocked, each with Wear it; the editor shows locked accessories as grey silhouettes with what earns them. Only the four long-haul unlocks are told to the room: a banner with Cheer, a room-log line and the fanfare. The Nightcap is told to nobody else, ever. |
+| AV-7 | P1 | Accessories are worn wherever the avatar is drawn: the map in every pose, the squad list, home, the logbook's art and the editor. Putting one on or taking it off shows on every open screen in the room within about a second. |
 
 ### Rooms (group workouts)
 
