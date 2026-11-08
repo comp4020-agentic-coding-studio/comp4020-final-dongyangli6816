@@ -6380,3 +6380,289 @@ them.
    since you chose to go off-plan.
 8. **"Save failed"** (LB-0.7) is described, not drawn as its own state: the
    copy stands where the note's hint is, or under the plan's buttons.
+
+## Accessories, Nov 9
+
+Criteria: `docs/product/criteria/accessories.md` (agreed 8 Nov, D1 to
+D12), AV-6.1, 6.2, 6.4, 6.5, 6.7 to 6.13, 6.15 and AV-7.1, 7.2, 7.4, 7.7 to
+7.9, 7.13, 7.14. The art and how it's drawn are the avatar spec's
+("Accessories, Nov 8", A.6 to A.9), not redesigned here. States in
+`mockup.html`, between `accessories (9 Nov) start` and `end`, each
+`<!-- state: acc: … -->`.
+
+### X.1 Plan
+
+- **Who and when.** The earner is mid-session, usually just after a Done,
+  with one thumb free; a first-session showcase visitor gets up to ten of
+  these in fifteen minutes. Everyone else is mid-set or resting and sees
+  a long-haul unlock maybe once a month. Nothing here relies on knowing
+  the earner: a stranger's crown would read the same, and a stranger's
+  room is where AV-6.7's "keep it to herself" setting would matter
+  (Departures).
+- **The one job.** The earner puts the new thing on in one tap, or
+  ignores it at no cost; the room notices the rare big one and can cheer.
+- **Hierarchy.** On the banner: the head wearing it (the picture says
+  what it is before the words do), then "New: shades", then ▶ Wear it. On
+  the map: people are told apart by their kit and their state by the tag,
+  never by the kit. No numbers anywhere ("unlocked the crown", never
+  "4 weeks").
+- **Reuse.** F.2's banner with one button, as it is. F.8's room banner
+  (gold ring, tab, Cheer). F.10's room log line, with the PB's gold-icon
+  treatment. F.9's confirmation line and error. F.13's fanfare. The squad
+  row's head crop. Avatar spec A.6 to A.8 for the layers. **New**: one
+  8 × 8 icon (`i-wear`, a cap), one CSS rule (`.room-log li.unlock`).
+- **Template check.** The template version is an "Achievement unlocked!"
+  toast with a trophy icon and a rarity colour. What makes it Spotter's:
+  **the banner's head is you already wearing it** (your skin, hair and the
+  rest of your kit, plus the new thing), so the banner is a mirror, not
+  a badge; **the verb is Wear it**, the summary's word; and the room
+  finds out about quick unlocks by **looking at you on the map**, the way
+  you'd notice a mate's new shades in the gym. Would I screenshot it? The
+  map in X.6, everyone in different kit, yes; that's the group chat shot.
+
+### X.2 The earner's banner (AV-6.1, 6.2, 6.4, 6.5, 6.13)
+
+```html
+<div class="banner-slot">
+  <div class="banner has-act">
+    <svg class="av">…the earner's own head, wearing what they wear with the new item swapped into its slot…</svg>
+    <span class="banner-line" role="status">New: shades 😎</span>
+    <button type="button" class="banner-act"><span class="cur" aria-hidden="true">▶</span><svg>i-wear</svg>Wear it<span class="vh">: shades</span></button>
+  </div>
+</div>
+```
+
+- F.2 exactly: 6 s, the button dead for its first 500 ms (▶ appears when
+  it's live), never focused by itself, Tab reaches it, the line announced
+  once, never covers or moves the dock, replaced by the newest banner of
+  any kind (D9), nothing queues.
+- **The head is a try-on**: the earner's own head crop, with the first
+  named accessory in its slot over whatever was there (shades replace the
+  glasses on the banner; the towel stays). It is the only place in the
+  room an accessory shows before it's worn. A neck item barely shows in
+  the crop (AV-7.4 accepts that); the words carry it.
+- **Copy**: `New: {name in lower case} {emoji}`. Several at once:
+  `New: {a} and {b} 🎉`, three or more `New: {a}, {b} and {c} 🎉`, in
+  AV-6.4's order (long-haul first, then the table's order). Wear it puts
+  on the first named.
+- **Emoji per accessory** (one, at the end, system 3): shades and mirror
+  shades 😎, star shades 🤩, heart shades 😍, bronze 🥉, silver 🥈, gold
+  medal 🥇, crown 👑, everything else 🔥. Several: 🎉.
+- **The button**: `i-wear` (a small cap, 8 × 8) and "Wear it"; its
+  accessible name "Wear it: shades".
+- **Pending**: the layout's disabled look (held down, label kept).
+  **Accepted**: the banner goes; every screen redraws the earner within a
+  second (X.4); `#sheet-news` says "Wearing the shades" once. **Failed**
+  (offline): F.9's red error `That didn't save. Try again.` where
+  refusals go (beside your avatar on a laptop, above the dock on a phone),
+  4 s; nothing changes anywhere, and the banner is not brought back (the
+  summary and the editor still offer it).
+- **Confirmation when out of view** (phone, scrolled to the numbers): F.9's
+  leaf line with the tick, 2 s, `Wearing the shades now 😎`, the summary's
+  words. Not shown when the avatar is in view (the redraw is the
+  confirmation), as F.9.
+- **Your own PB and an unlock from one Done**: the stamp still says New PB
+  in gold (GYM-17.9, unchanged); the unlock's banner comes at the top. Both
+  show; they're in different places.
+- **A long-haul unlock on the earner's own screen** is this same banner,
+  "New: crown 👑", not the room's gold one (AV-6.7), with the fanfare.
+- **Never**: on reload or reconnect (AV-6.12); for the Nightcap (AV-6.15);
+  for AV-5.17's back-filled ones; for a Squad cap or Gold chain earned
+  while you were Away or out (AV-6.11).
+
+States: [acc: unlock banners (each kind)], [acc: phone, new shades on your
+own pb (the earner's screen)], [acc: phone, wear it done with your avatar
+out of view].
+
+### X.3 The room's long-haul banner (AV-6.7, 6.8, 6.10)
+
+```html
+<div class="banner-slot">
+  <div class="banner has-act room">
+    <span class="banner-tab" aria-hidden="true"><svg>i-wear</svg>Unlocked</span>
+    <svg class="av">…the earner's head, trying it on…</svg>
+    <span class="banner-line" role="status" aria-label="Mia unlocked the crown">Mia unlocked the crown 👑</span>
+    <button type="button" class="banner-act"><span class="cur" aria-hidden="true">▶</span><svg>i-cheer</svg>Cheer<span class="vh"> Mia</span></button>
+  </div>
+</div>
+```
+
+- F.8's banner, the same gold ring and tab; **the tab says "Unlocked"
+  with `i-wear`**, not "PB". Everyone but the earner; every screen reader
+  hears it once (system 12's exception extends to it, X.9). Placement by
+  F.2's `.low` rule.
+- **PB and long-haul in one Done** (D9): one banner, `Mia hit a PB on back
+  squat and unlocked the crown 👑`, the tab carrying both marks
+  (`i-pb` PB, then `i-wear` Unlocked), `aria-label` "Mia hit a personal
+  best on back squat and unlocked the crown", one Cheer, one fanfare. On a
+  laptop the line wraps to two lines inside the box; on a phone too.
+- **Sound** (F.13): the earner's "about you" sound is the Cheer-to-you
+  sound (660 then 990 Hz); a long-haul unlock plays the PB fanfare on
+  every screen, once, even with a PB.
+- **The map does not change** for an unlock: she flexes only for the PB.
+  The crown appears on the map when she taps Wear it.
+
+States: [acc: crown, room banner with cheer (tom's screen)], [acc: phone,
+crown room banner (tom mid-set)], [acc: pb and crown in one done
+(everyone else)].
+
+### X.4 On the map and in the squad list (AV-7.1, 7.2, 7.4, 7.7 to 7.9, 7.13, 7.14)
+
+- **Layers, per avatar**: machine back (the station tile), body with
+  hair, head item, face item, neck item, machine front. Each accessory is
+  one `<use href="#acc-{drawing}" y="{hairRow}">` with the palette on it
+  as `--acc-a … --acc-d` (avatar spec A.7). In the build it's whatever
+  `accMarkup` draws; the mockup clips as below.
+- **Props in front**: where the pose has props over the head (raised arms
+  in reach, cheer, startle, the flex; the cable machine's handles; the
+  pull-up bar), the accessory is drawn under them, as the hair is. The
+  mockup does this with a clip that removes the props' pixels from the
+  accessory layer (`acc-np-{pose}`); drawing the props after the
+  accessories gives the same picture and is simpler.
+- **Neck items** only on the tee (A.8): clipped to `teeMask` per drawing.
+  So they hide in the squat's low frame and on the mat, and show as a
+  strip on the bench (the art sheet state shows every pose).
+- **Away**: faded with the body (the whole `svg.av` at 0.5), no special
+  case. **Reduced motion**: still with the body. Nothing of an accessory's
+  own moves (AV-7.9).
+- **Squad list and banners**: the head crop (`viewBox="2 0 28 22"`) with
+  the head and face items layered at `y = 0` (the standing pose's
+  hairRow). A neck item is cropped there, accepted (AV-7.4). Row text
+  unchanged.
+- **Names**: no accessory in any accessible name, tag or row (D10).
+- **Dony** wears nothing, anywhere (AV-7.13).
+- **Live** (AV-7.7): a wear change redraws that person on every open
+  screen within a second, with no banner, no log line and no sound for
+  anyone but the wearer.
+
+States: [acc: wear it done (every screen in the room)], [acc: busy room,
+everyone in their kit] (1× on a phone, 2× on a laptop, with the squad
+list), [acc: every pose wearing kit (art sheet, reference)].
+
+### X.5 The room log (AV-6.9)
+
+One new line kind, F.10's panel unchanged:
+
+| Event | Line, everyone else | Line, the earner | Icon |
+| --- | --- | --- | --- |
+| Long-haul unlock | `Mia unlocked the crown` | `You unlocked the crown` | `i-wear` in `--finished` (`li.unlock`) |
+
+- No numbers, no emoji. The earner's line is `li.you.unlock` (leaf edge,
+  gold icon).
+- A PB and an unlock from one Done are **two lines with the same time**,
+  the unlock above the PB (newest first; the unlock is worked out after
+  the set).
+- Never in it: quick unlocks, the Nightcap, back-fills, Wear it, editor
+  saves.
+
+States: [acc: room log, long-haul lines (tom's side)], [acc: room log,
+long-haul lines (mia's side)].
+
+### X.6 States
+
+| State | Trigger | What it shows |
+| --- | --- | --- |
+| acc: unlock banners (each kind) | reference | one, two, long-haul own, long-haul and quick, Wear it pending, room's long-haul, PB and long-haul |
+| acc: phone, new shades on your own pb | Priya's first PB | stamp New PB, flex, "New: shades 😎" at the top |
+| acc: wear it done (every screen in the room) | Wear it accepted | Priya in shades at the cooler; squad heads in kit |
+| acc: phone, wear it done with your avatar out of view | Wear it, scrolled down | "Wearing the shades now 😎" leaf line above the dock |
+| acc: crown, room banner with cheer (tom's screen) | Mia's 4-week streak | gold banner at the top of the map, Mia unchanged on the map |
+| acc: phone, crown room banner (tom mid-set) | same, Tom lifting | banner at the top, Done at the bottom |
+| acc: pb and crown in one done (everyone else) | PB that's also the crown | one combined banner, `.low`, Mia flexing |
+| acc: room log, long-haul lines (tom's / mia's side) | after the above | the new line kind |
+| acc: busy room, everyone in their kit | reference | lifting on six machines, slacking, walking, resting, Away faded, Dony bare |
+| acc: every pose wearing kit | reference | all 35 drawings, two kits |
+
+### X.7 Changes to the build
+
+The main agent's build (`.shots/room/live-pair.png`, 9 Nov) is close to
+this. Differences:
+
+1. **The banner's head** should be the earner trying the new thing on
+   (their own kit with the first named item swapped in), not their current
+   look alone. That's what makes the banner say what it is without
+   reading.
+2. **Button icon**: `i-wear` (new, the cap below), not `i-tick`. The tick
+   means "done" elsewhere (the stamp, the confirmation line); this button
+   hasn't done anything yet.
+3. **Room banner tab**: "Unlocked" with `i-wear`, not "PB" with the medal.
+   Combined PB + long-haul: both, `i-pb` "PB" then `i-wear` "Unlocked".
+4. **Room log**: the icon is `i-wear` in gold (`li.unlock`), not the PB
+   medal, so a PB and an unlock read apart in the log; keep the gold.
+5. **Emoji**: as built, except the gold chain and squad cap use 🔥 (⛓️
+   reads as "chains, restraint", and 🧢 draws as a blue cap on most
+   phones, which isn't the green squad cap). Several at once: 🎉 (as
+   built).
+6. **Squad list heads** need head and face items (AV-7.4), if not
+   already drawn there.
+7. **Failure**: "That didn't save. Try again." where refusals go; the
+   banner isn't brought back.
+
+`i-wear`, for `src/sprites/icons.ts`:
+
+```ts
+// AV-6: Wear it, the room's unlock tab and log line (room spec, "Accessories, Nov 9")
+export const wearIcon = icon("........", "....ccc.", "...ccccc", "...ccccc", "...ccccc", "cccccccc", "........", "........");
+```
+
+CSS, for the page (the only new rule):
+
+```css
+.room-log li.unlock > svg { color: var(--finished); }
+```
+
+### X.8 Requirements covered
+
+| Requirement | Element |
+| --- | --- |
+| AV-6.1 "New: shades 😎" with Wear it, 6 s, F.2's rules | X.2 banner, `.banner.has-act` + `.banner-act` |
+| AV-6.2 Wear it puts it on, everyone redraws, "Wearing the shades", offline error | X.2 accepted, failed; X.4 live |
+| AV-6.4 one banner naming all, Wear it the first | X.2 copy and order |
+| AV-6.5 newest replaces, nothing queues | F.2 / D9, unchanged |
+| AV-6.7 room banner with Cheer for long-haul only | X.3 |
+| AV-6.8 one combined banner | X.3 |
+| AV-6.9 room log line, both sides | X.5 |
+| AV-6.10 sounds | X.3 sound |
+| AV-6.11, 6.12, 6.13, 6.15 | X.2 "Never"; 6.13 the open room screens get the banner as any other |
+| AV-7.1, 7.2 every pose, neck on the tee | X.4, art sheet state |
+| AV-7.4 heads in the squad list | X.4 |
+| AV-7.7 live change | X.4 |
+| AV-7.8 names unchanged | X.4 |
+| AV-7.9 no animation | X.4 |
+| AV-7.13 Dony bare | X.4 |
+| AV-7.14 twelve plus Dony in kit | busy room state: up to three `<use>` per avatar, no new animation |
+| Scope: the earner's banner slot gets busier | X.10 item 1 |
+
+### X.9 Departures and system proposals
+
+- **System 12's live-region exception extends** to the long-haul room
+  banner (the criteria name it). *Proposed* in `system.md`.
+- **Copy bank rows** *(proposed)*: `New: shades 😎` · `New: silver medal
+  and shades 🎉` · `Mia unlocked the crown 👑` · `Mia hit a PB on back
+  squat and unlocked the crown 👑` · `Mia unlocked the crown` / `You
+  unlocked the crown` · `Wearing the shades now 😎`.
+- **One new icon**, `i-wear`.
+- **Strangers**: telling a public room "Mia unlocked the gold medal" says
+  she's trained 30 days. Fine among friends; a stranger room would want a
+  per-person "keep my unlocks to myself" setting (criteria, AV-6.7).
+
+### X.10 Not decided by the criteria (my recommendations, drawn)
+
+1. **A busy first session** (up to ten unlock banners): drawn as they
+   come, each replacing the last, per D9. Recommended: no batching. Most
+   unlocks come from Done, and a Done that earns several already makes one
+   banner (AV-6.4). Watch it at the rehearsal as the criteria say; if it
+   grates, the fix is to hold an unlock banner while a reply or High-five
+   banner with a live button is up (let that one finish first), not to
+   queue.
+2. **The banner's head tries the item on** before it's worn (X.2). The
+   criteria don't say what head the earner's banner shows.
+3. **The room's banner shows the crown on Mia's head** as a try-on too,
+   even if she never wears it. Recommended: it's the clearest picture of
+   "crown"; the map stays true to what she wears.
+4. **Wear it failed** doesn't bring the banner back.
+5. **"Wearing the shades now 😎"** as the out-of-view confirmation, the
+   summary's wording, so the two pages say the same thing.
+6. **Emoji per accessory** (X.2), including 🔥 for the chain and squad
+   cap.
+7. **Log order** for a PB and an unlock at once: unlock above the PB.
