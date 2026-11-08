@@ -60,7 +60,9 @@ export type RoomEvent = {
   members: {
     id: number;
     name: string;
-    look: { skin: string; hair: string; hairColour: string; shirt: string };
+    // wear: what they have on, one accessory id or null per slot (the
+    // contract at the top of spec/accessories.test.ts)
+    look: { skin: string; hair: string; hairColour: string; shirt: string; wear?: Wear };
     host: boolean;
     state: string;
     away: boolean;
@@ -165,7 +167,14 @@ export type EmoteEvent = { emoji: string; from: Who; at: number };
 type State = "idle" | "lifting" | "resting" | "slacking" | "finished";
 export type HighFiveEvent = { id: number; from: Who; to: Who; at: number; until?: number; done?: number; fromState?: State; toState?: State };
 // A personal best (GYM-17, GYM-18): who and on what, never the numbers.
-export type PbEvent = { from: Who; exercise: { id: number; name: string }; at: number };
+// `unlocked`: the long-haul accessories the same Done unlocked (AV-6.8).
+export type PbEvent = { from: Who; exercise: { id: number; name: string }; at: number; unlocked?: string[] };
+// Accessories (the contract at the top of spec/accessories.test.ts): what a
+// person wears; an unlock, to the earner's own streams only; a long-haul
+// unlock, to the whole room.
+export type Wear = { head: string | null; face: string | null; neck: string | null };
+export type UnlockEvent = { accs: string[]; at: number };
+export type TrophyEvent = { from: Who; acc: string; at: number };
 export type StreamEvents = {
   room: RoomEvent;
   interaction: InteractionEvent;
@@ -173,6 +182,8 @@ export type StreamEvents = {
   emote: EmoteEvent;
   highfive: HighFiveEvent;
   pb: PbEvent;
+  unlock: UnlockEvent;
+  trophy: TrophyEvent;
 };
 type Arrived = { [K in keyof StreamEvents]: { name: K; data: StreamEvents[K]; t: number } }[keyof StreamEvents];
 

@@ -690,7 +690,10 @@ test("the target gets a banner in each wording on every tab of theirs, and every
   // and each of hers was one at a time: the newest replaced the last
   // the recorder reads the whole banner; its line is what comes before the button's ▶
   const banners = (await seenOn(jiwoo1)).filter((s) => s.what === "banner").map((s) => s.text.split("▶")[0].trim());
-  expect(banners).toEqual(cases.map((c) => c[3]).concat("Sam poked you. Rest's over? 👉"));
+  // her first working set also unlocks the Sweatband, which tells her with its
+  // own banner (accessories.md AV-6.1), between the slap and Sam's poke
+  expect(banners.filter((b) => !b.startsWith("New: "))).toEqual(cases.map((c) => c[3]).concat("Sam poked you. Rest's over? 👉"));
+  expect(banners.filter((b) => b.startsWith("New: ")), "her one unlock").toEqual([expect.stringMatching(/^New: sweatband\b/)]);
 });
 
 // INT-3.5 (a new banner restarts the 4 s), INT-3.15 (phone: fixed at the top,
