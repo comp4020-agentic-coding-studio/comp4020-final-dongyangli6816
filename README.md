@@ -1,78 +1,93 @@
 # Spotter
 
-Spotter is a shared cartoon gym for a few friends who used to train together
-and now live apart. Everyone logs their own sets, and everyone can see who is
-lifting, who is resting, and who has been resting far too long.
+<img src="docs/readme/busy-gym.png" width="480" alt="A busy Spotter gym: Priya runs on the treadmill and Mia benches, Tom and Kai rest between sets, Sam stands idle, and Ji-woo has been slacking on the lifting platform, so Mia and Kai send speech bubbles at them: Bro is scrolling, and Put the phone down">
+
+Spotter is a pixel-art gym where everyone logs their own sets, and everyone else
+can see who is lifting, who is resting, and who has been resting way too long.
 
 ## Who it's for
 
-A squad of two to eight friends. Usually one of them is the disciplined one,
-and the rest of us trained because that person was there. When I moved to
-Australia I stopped going to the gym entirely; the gym hadn't changed, but
-nobody was watching anymore.
-
-So Spotter is not for strangers, and it is not trying to grow. It is built for
-two situations: friends at different gyms, each with a phone in one hand
-between sets; and the showcase, a room of people on laptops with nobody lifting
-at all.
+A squad of friends who used to train together and now live apart. In most squads
+there is one disciplined person, and the rest of us only went because that
+person was going. When I moved to Australia I stopped going to the gym
+completely.
 
 ## What good means here
 
-1. **Your friends can see you, and only your friends.** A room is opened with a
-   passcode and holds at most twelve people. There are no public rooms.
-2. **Being seen does the work.** The app's job is to make it obvious when
-   someone is slacking, and easy for a friend to do something about it,
-   playfully rather than as a punishment.
-3. **Logging never slows you down.** If logging a set is slower than in the app
-   the disciplined friend already uses, that friend leaves, and so does the
-   reason everyone else came. Weight and reps pre-fill from last time.
-4. **Nothing you log is lost.** A set logged today is in your history next week,
-   whatever happened to the server in between.
-
-## What I read and looked at
-
-Clay Shirky's [Situated Software](http://shirky.com/essays/situated-software/)
-(2004) argues for software built "for a specific social group, rather than for
-a generic set of users", and that "the N-squared problem is only a problem if N
-is large". Robin Sloan's
-[An app can be a home-cooked meal](https://www.robinsloan.com/notes/home-cooked-app/)
-(2020) is a messaging app for his family that "no one else will ever use".
-Together they gave me permission to cut everything that only matters at scale.
-
-[Feltz, Kerr and Irwin (2011)](https://doi.org/10.1123/jsep.33.4.506) found the
-Köhler effect with a partner who was only virtually present: the weaker partner
-works harder when their effort is visible to a stronger one. That is exactly my
-roommate and me. [Eagle et al. (2024)](https://dl.acm.org/doi/full/10.1145/3689648)
-on body doubling found the same thing in people's own words (companionship,
-accountability, guilt), but also that being watched by a stranger can make
-people anxious. That is a second reason the rooms are for friends.
-
-[Tong et al. (2021)](https://doi.org/10.1145/3474711) studied *Animal Crossing:
-New Horizons*, where visiting needs an access code and a gathering is capped at
-eight. Players described it as semi-private, and friendlier than public worlds.
-Spotter's passcode rooms copy that shape. Ben Hoyt's
-[The small web is beautiful](https://benhoyt.com/writings/the-small-web-is-beautiful/)
-backs the build: one small server, mostly plain HTML.
+1. **The room is small, and you pick who is in it.** Clay Shirky's
+   [Situated Software](http://shirky.com/essays/situated-software/) argues for
+   software built "for a specific social group, rather than for a generic set of
+   users", and [Tong et al. (2021)](https://doi.org/10.1145/3474711) found that
+   *Animal Crossing* islands you need a code to enter felt friendlier than
+   public worlds. So a room needs a passcode and holds twelve people at most.
+   Right now you send the code to your friends, but you could just as easily
+   drop it in a Reddit thread.
+2. **It only works if people can see you.**
+   [Feltz, Kerr and Irwin (2011)](https://doi.org/10.1123/jsep.33.4.506) found
+   that the weaker partner works harder when a stronger partner can see their
+   effort, even over a screen. That is exactly my roommate and me. So the first
+   thing you see is who is lifting, who is resting and who is slacking, and your
+   friends can poke you about it. It should feel like the group chat, not like
+   being told off.
+3. **Logging has to be fast.**
+   [Li, Dey and Forlizzi (2010)](https://doi.org/10.1145/1753326.1753409)
+   found that the most common reasons people struggle to keep a personal log
+   are not having the tool at hand, forgetting, and not having the time, and
+   that the burden gets worse the more often you have to record. A gym log is
+   recorded every set, one-handed, in a short rest. If logging is slower than
+   whatever app the disciplined friend already uses, that friend leaves, and
+   then nobody else has a reason to stay. So a set is two taps, with the
+   weight and reps filled in from last time. If this ever gets in the way of something fun, the
+   fast version wins.
+4. **The boring parts need a Gen Z twist.** A gym log is mostly a rest timer, a
+   number and a list of sets. I want each of those to be something you would
+   screenshot for the group chat. Rest too long and the screen tells you
+   `Your squad can see you 👀`. A friend can slap you back to work, or tell you
+   `Bro is scrolling 💀`. Training earns accessories for your avatar. The jokes are about
+   what you did, not about your body or your weight, and none of them get in the
+   way of logging a set. What I left out is the usual fix, points and
+   leaderboards. [Mekler et al. (2017)](https://doi.org/10.1016/j.chb.2015.08.048)
+   found they "did not significantly affect competence or intrinsic
+   motivation", and only made people do more. An accessory is something you
+   wear, not a score.
 
 ## What I chose not to build
 
-No public rooms or matchmaking, and so no reporting, blocking or age checks.
-There are no email verification or password resets, since there is no email
-service, and no push notifications or offline mode. The exercise list is short,
-and weights are in kilograms only.
+I want Spotter to end up as a place where people who train meet each other, like
+the shy person who would rather wave at you on Spotter than say hello in
+person. My first spec had all of that, with public rooms, matchmaking and
+moderation. I cut it after reading Shirky's line that "the N-squared problem is
+only a problem if N is large", and Robin Sloan's
+[home-cooked app](https://www.robinsloan.com/notes/home-cooked-app/) convinced
+me the small room has to work on its own first.
+[Eagle et al. (2024)](https://dl.acm.org/doi/full/10.1145/3689648) found that
+being watched by a stranger can make people anxious. So the room is built to
+make a stranger easy to approach. You can high-five someone instead of having a
+conversation, and the nudges are banter rather than judgement.
 
 ## Enforced and judged
 
-Enforced by the checks in [`spec/`](spec/core-loop.test.ts):
-
-- a logged set is still in history after signing out and back in;
-- weight and reps pre-fill from your last set of that exercise;
-- a wrong passcode gets one generic error, and non-members can't see a room;
-- one account per email, and the password is never sent back.
-
-Judged, not tested: whether logging is fast enough between sets, whether the
-gym is fun to watch, and whether a nudge feels friendly. I will judge these by
-using it with friends and at the crit, and record what I find here.
-
-This is version 1, written for week 9. The live gym, avatars and nudges arrive
-in weeks 10 and 11, and this page will change with them.
+- **The room is small.** A thirteenth person cannot get into a full room
+  ([invites](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/blob/main/spec/invites.test.ts)),
+  ten wrong passcodes lock you out
+  ([access](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/blob/main/spec/access.test.ts)),
+  and nobody outside a room can watch it live
+  ([realtime](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/blob/main/spec/realtime.test.ts)).
+- **People can see you.** A set logged in one browser shows up on every other
+  screen within a second, and the server decides when you turn Slacking, not
+  your phone
+  ([realtime](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/blob/main/spec/realtime.test.ts)).
+  Cheers, pokes and slaps reach everyone in the room within a second too
+  ([interactions](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/blob/main/spec/interactions.test.ts)).
+- **Logging is fast.** Weight and reps come from your last set
+  ([core loop](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/blob/main/spec/core-loop.test.ts)),
+  and if you log a set while the gym worker is still carrying your equipment in,
+  it saves straight away
+  ([delivery](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/blob/main/spec/delivery.test.ts)).
+- **The jokes have limits.** The ten preset messages are fixed word for word,
+  and nobody can slap you mid-set
+  ([interactions](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/blob/main/spec/interactions.test.ts)).
+  A PB goes out to the room without any numbers in it
+  ([room feel](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/blob/main/spec/room-feel.test.ts)),
+  and you unlock accessories from training, cheers and high-fives
+  ([accessories](https://github.com/comp4020-agentic-coding-studio/comp4020-final-dongyangli6816/blob/main/spec/accessories.test.ts)).
