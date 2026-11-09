@@ -6,8 +6,12 @@ import Layout from "../layouts/Layout.astro";
 // README.md rendered in full on the server, so its headings are in the HTML
 // the server sends (spec/invariants.test.ts). It is read per request, so the
 // page never drifts from the file in the image. Relative links to docs/ are
-// served by src/pages/docs/[...path].ts.
-const html = await marked.parse(readFileSync("README.md", "utf8"));
+// served by src/pages/docs/[...path].ts. The page lives at /readme/, so a
+// relative "docs/..." would resolve to /readme/docs/...; root it instead.
+const html = (await marked.parse(readFileSync("README.md", "utf8"))).replace(
+  /(<img\b[^>]*\bsrc=")(?=docs\/)/g,
+  "$1/",
+);
 const user = Astro.locals.user;
 ---
 

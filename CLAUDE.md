@@ -42,6 +42,7 @@ docs/adr/                    NNNN-<slug>.md, one decision each
 docs/design/                 system.md (design rules); <page>/ holds that
                              page's mockup.html and spec.md; no images
 docs/evidence/               YYYY-MM-DD-<slug>/, one per episode PROCESS.md cites
+docs/readme/                 images README.md shows, cropped from scripts/shot.mjs shots
 .claude/                     agents/ (subagent definitions), settings.json (hooks);
                              worktrees/ (gitignored) holds parallel sessions' checkouts
 .shots/  data/  dist/        gitignored: working screenshots, local db, build
