@@ -71,6 +71,13 @@
       "when": 1793865363159,
       "tag": "0009_room_feel",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1794155136793,
+      "tag": "0010_accessories",
+      "breakpoints": true
     }
   ]
 }

@@ -14,7 +14,7 @@ import { tapPoster } from "../../lib/dony.ts";
 import { avatarLabel, everyone } from "../../lib/floor.ts";
 import { STATE_WORD, stateAt, whatParts } from "../../lib/squad.ts";
 import { log, who } from "../../lib/log.ts";
-import { announce, broadcast, donyEmotes } from "../../lib/realtime.ts";
+import { announce, broadcast, broadcastRoomsOf, donyEmotes } from "../../lib/realtime.ts";
 import { acceptHighFive, emote, interact, joinedAt, limitsFrom, offerHighFive, reply, roomLog, say } from "../../lib/interactions.ts";
 import { EMOJI } from "../../sprites/emoji.ts";
 import { ago, isEmoji, isKind, isPreset, logLine, PRESETS, slapRefusal, type LogEntry, type Refusal } from "../../lib/moves.ts";
@@ -49,6 +49,7 @@ import Avatar from "../../components/Avatar.astro";
 import GymMap from "../../components/GymMap.astro";
 import { lookOf } from "../../lib/avatars.ts";
 import { lookKey } from "../../sprites/avatar.ts";
+import { earned, wearOne } from "../../lib/unlocks.ts";
 import {
   dropIcon,
   dumbbellIcon,
@@ -75,6 +76,7 @@ import {
   soundIcon,
   bellIcon,
   soundOffIcon,
+  wearIcon,
 } from "../../sprites/icons.ts";
 
 const user = Astro.locals.user;
@@ -123,6 +125,9 @@ if (Astro.request.method === "POST") {
 
   // GYM-13: whatever this request changes, everyone watching the room sees it
   const changed = <T,>(result: T): T => (broadcast(roomId), result);
+  // AV-5.15: what this action may have unlocked, told to the earner (and to
+  // the room for a long-haul one, AV-6.7)
+  const me_ = { id: user.id, name: user.displayName };
   // OPS-1: one line per thing done in the room, saying who did it
   const did = (event: string, fields: Parameters<typeof log>[1] = {}) =>
     log(event, { ...who(user), room: roomId, ...fields });
@@ -151,6 +156,8 @@ if (Astro.request.method === "POST") {
     const workoutId = finishWorkout(user.id, roomId);
     setFinished(user.id, roomId);
     did("workout.finish", { workout: workoutId });
+    // AV-5.2: the bronze medal, listed on this workout's summary
+    if (workoutId) earned(me_, roomId, { workoutId });
     return changed(summary(workoutId, "/"));
   }
   if (action === "choose") {
@@ -191,6 +198,15 @@ if (Astro.request.method === "POST") {
     const sent = (event: "interaction" | "say" | "emote" | "highfive", data: { at: number }, fields: Parameters<typeof log>[1], extra: object = {}) => {
       did(`${action}.sent`, fields);
       announce(roomId, event, data);
+      // AV-5.4, AV-5.5, AV-5.7: Cheers, hype presets and High-fives count, for
+      // both people of a High-five
+      if (event !== "emote") {
+        earned(me_, roomId);
+        if (event === "highfive" && "done" in data && typeof data.done === "number") {
+          const e = data as unknown as { from: { id: number; name: string }; to: { id: number; name: string } };
+          for (const p of [e.from, e.to]) if (p.id !== user.id && p.id !== 0) earned(p, roomId);
+        }
+      }
       // a reply or a High-five changes the room's lists of what's open
       // (offers, answerable), so the room is re-sent with them
       if (wasAway || event === "highfive" || action === "reply" || event === "interaction") broadcast(roomId);
@@ -238,6 +254,21 @@ if (Astro.request.method === "POST") {
     const r = say(roomView(roomId), roomId, me, to, preset);
     return r.ok ? sent("say", r.event, { preset, to }) : refuse(STATUS[r.reason], r.reason, { preset, to });
   }
+  // AV-6.2: Wear it, from the earner's banner. JSON, as interactions are;
+  // everyone in every room they're in redraws them (AV-7.7).
+  if (action === "wear") {
+    const acc = String(form.get("acc") ?? "");
+    const r = wearOne(user.id, acc);
+    const json = (status: number, body: object) =>
+      new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+    if (!r.ok) {
+      did("acc.refused", { acc: acc.slice(0, 20), reason: r.reason });
+      return json(r.reason === "invalid" ? 400 : 409, { ok: false, reason: r.reason });
+    }
+    did("acc.wear", { acc });
+    broadcastRoomsOf(user.id);
+    return json(200, { ok: true });
+  }
   // BOT-1, BOT-4: a tap on Dony's poster. A tap that does nothing answers the
   // same, and the room's next update shows what really happened.
   if (action === "dony") {
@@ -250,6 +281,7 @@ if (Astro.request.method === "POST") {
   if (action === "leave") {
     const workoutId = leaveRoom(user.id, roomId);
     did("room.leave", { workout: workoutId });
+    if (workoutId) earned(me_, null, { workoutId });
     return summary(workoutId, `/?left=${room.passcode}`);
   }
   if (action === "end") {
@@ -259,6 +291,7 @@ if (Astro.request.method === "POST") {
       return new Response("Only the host can end the room", { status: 403 });
     }
     did("room.end", { workout: ended.workoutId });
+    if (ended.workoutId) earned(me_, null, { workoutId: ended.workoutId });
     return summary(ended.workoutId, "/");
   }
   if (action === "rest") {
@@ -266,6 +299,8 @@ if (Astro.request.method === "POST") {
     if (delta === "-15" || delta === "15" || delta === "skip") {
       adjustRest(user.id, roomId, delta);
       did("rest.adjust", { delta });
+      // AV-5.8, AV-5.6: a rest ended (on time, or after slacking)
+      if (delta === "skip") earned(me_, roomId);
     }
     return changed(Astro.redirect(here + Astro.url.search.replace(/[?&]rested=1/, ""), 303));
   }
@@ -313,6 +348,7 @@ if (Astro.request.method === "POST") {
     const ex = exerciseById(Number(form.get("exercise_id")));
     adjustRest(user.id, roomId, "skip");
     did("rest.adjust", { delta: "skip" });
+    earned(me_, roomId);
     if (ex) lift(ex);
     if (ex && form.has("note")) keepNote(ex);
     broadcast(roomId);
@@ -346,10 +382,31 @@ if (Astro.request.method === "POST") {
         // GYM-17, GYM-18: a set that sets a logbook record is the room's
         // moment: everyone sees the flex, everyone else the banner; the
         // lifter's stamp shows the Record badge (LB-4.10)
+        // AV-5: what this Done unlocked, for me and for whoever it made a day
+        // together with (AV-5.13); a long-haul one on a PB rides on the PB's
+        // event, one banner for the room (AV-6.8)
+        let alsoUnlocked: string[] = [];
+        let tellMeAfter: (() => void) | undefined;
+        earned(me_, roomId, {
+          together: true,
+          onPb: pb
+            ? (big, tellEarner) => {
+                alsoUnlocked = big;
+                tellMeAfter = tellEarner;
+              }
+            : undefined,
+        });
         if (pb) {
           did("set.pb", { exercise: ex.name, kind: ex.kind });
-          announce(roomId, "pb", { from: { id: user.id, name: user.displayName }, exercise: { id: ex.id, name: ex.name }, at: Date.now() });
+          announce(roomId, "pb", {
+            from: { id: user.id, name: user.displayName },
+            exercise: { id: ex.id, name: ex.name },
+            at: Date.now(),
+            ...(alsoUnlocked.length && { unlocked: alsoUnlocked }),
+          });
         }
+        // the earner's own unlock after the PB, so it tops their log (X.5)
+        tellMeAfter?.();
         // LB-2.21: a note never stops a set; a refused one is said after it,
         // on the page as it is after Done, with the text kept
         if (form.has("note") && !keepNote(ex)) {
@@ -448,6 +505,8 @@ const LOG_ICON: Record<LogEntry["kind"], typeof cheerIcon> = {
   "slap-back": slapIcon,
   highfive: highFiveIcon,
   pb: pbIcon,
+  // AV-6.9: a long-haul unlock (room spec X.7: the cap, in gold)
+  trophy: wearIcon,
 };
 const showWalkedIn = walkedIn !== undefined && log50.some((e) => e.at >= walkedIn) && log50.some((e) => e.at < walkedIn);
 type LogRow = { entry: LogEntry } | { walkedIn: number };
@@ -1116,6 +1175,8 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       <template data-part="log-high-five"><Sprite sprite={highFiveIcon} scale={2} /></template>
       <template data-part="log-pb"><Sprite sprite={pbIcon} scale={2} /></template>
       <template data-part="tick"><Sprite sprite={tickIcon} scale={2} /></template>
+      {/* AV-6: Wear it, the unlock tab and the unlock log line (room spec X.7) */}
+      <template data-part="log-wear"><Sprite sprite={wearIcon} scale={2} /></template>
       {/* INT-12: the sound setting's icons, by value (F.11) */}
       <template data-part="sound-all"><Sprite sprite={soundIcon} scale={2} /></template>
       <template data-part="sound-rest"><Sprite sprite={bellIcon} scale={2} /></template>
@@ -1139,7 +1200,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
             "walkedIn" in r ? (
               <li class="joined">You walked in · {timeOfDay(r.walkedIn)}</li>
             ) : (
-              <li class:list={{ you: isAboutMe(r.entry), pb: r.entry.kind === "pb" }} data-at={r.entry.at}>
+              <li class:list={{ you: isAboutMe(r.entry), pb: r.entry.kind === "pb", unlock: r.entry.kind === "trophy" }} data-at={r.entry.at}>
                 <Sprite sprite={LOG_ICON[r.entry.kind]} scale={2} />
                 {(() => {
                   const l = logLine(r.entry, user.id);
@@ -1164,7 +1225,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
             "walkedIn" in r ? (
               <li class="joined">You walked in · {timeOfDay(r.walkedIn)}</li>
             ) : (
-              <li class:list={{ you: isAboutMe(r.entry), pb: r.entry.kind === "pb" }} data-at={r.entry.at}>
+              <li class:list={{ you: isAboutMe(r.entry), pb: r.entry.kind === "pb", unlock: r.entry.kind === "trophy" }} data-at={r.entry.at}>
                 <Sprite sprite={LOG_ICON[r.entry.kind]} scale={2} />
                 {(() => {
                   const l = logLine(r.entry, user.id);
@@ -1334,8 +1395,9 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   import { avatarLabel, DOOR, everyone, floorLine, route, spots, UNDER_POSTER, type Tile } from "../../lib/floor.ts";
   import { lookFromKey, lookKey, lookVars, type Look } from "../../sprites/avatar.ts";
   import { STATIONS } from "../../sprites/gym.ts";
-  import { isMachine } from "../../sprites/poses.ts";
+  import { drawingsOf, isMachine, type Pose } from "../../sprites/poses.ts";
   import { TILE } from "../../sprites/sprite.ts";
+  import { accEmoji, accessoryById, accMarkup } from "../../sprites/accessories.ts";
   import {
     ago,
     LOG_ICON,
@@ -1784,6 +1846,8 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     source.addEventListener("interaction", (e) => onInteraction(JSON.parse((e as MessageEvent<string>).data)));
     source.addEventListener("highfive", (e) => onHighFive(JSON.parse((e as MessageEvent<string>).data)));
     source.addEventListener("pb", (e) => onPb(JSON.parse((e as MessageEvent<string>).data)));
+    source.addEventListener("unlock", (e) => onUnlock(JSON.parse((e as MessageEvent<string>).data)));
+    source.addEventListener("trophy", (e) => onTrophy(JSON.parse((e as MessageEvent<string>).data)));
     source.addEventListener("say", (e) => onSay(JSON.parse((e as MessageEvent<string>).data)));
     source.addEventListener("emote", (e) => onEmote(JSON.parse((e as MessageEvent<string>).data)));
     source.addEventListener("open", () => {
@@ -1882,6 +1946,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
           const svg = head.querySelector("svg")!;
           svg.setAttribute("style", lookVars(m.look));
           svg.dataset.hair = m.look.hair;
+          dress(svg, m.look, "stand");
         }
         row.querySelector(".av")?.remove();
         row.prepend(head);
@@ -2302,6 +2367,20 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     }
   }
 
+  // AV-7.1, AV-7.7: what someone wears, drawn into each frame of an avatar
+  // the script made from a template (the templates carry no accessories)
+  function dress(svg: SVGElement, look: Look | undefined, pose: string) {
+    svg.querySelectorAll(".acc").forEach((g) => g.remove());
+    if (!look?.wear) return;
+    const drawings = drawingsOf(pose as Pose);
+    const frames = drawings.length > 1 ? [...svg.querySelectorAll(":scope > g")] : [svg.querySelector(":scope > g")];
+    drawings.forEach((d, i) => {
+      const top = frames[i]?.querySelector(".av-top");
+      if (top) top.insertAdjacentHTML("beforeend", accMarkup(look.wear!, d));
+    });
+    svg.dataset.wear = [look.wear.head, look.wear.face, look.wear.neck].map((x) => x ?? "").join(",");
+  }
+
   // An avatar's sprite in a pose, with the machine's layers round it on a
   // machine. Same pose, same look: nothing redrawn, so the frames keep their
   // beat (GYM-10.20).
@@ -2318,6 +2397,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       if (m && !("dony" in m)) {
         svg.setAttribute("style", lookVars(m.look));
         svg.dataset.hair = m.look.hair;
+        dress(svg, m.look, pose);
       }
     }
     b.querySelectorAll(".av, .machine").forEach((el) => el.remove());
@@ -2682,6 +2762,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       const svg = h.querySelector("svg")!;
       svg.setAttribute("style", lookVars(m.look));
       svg.dataset.hair = m.look.hair;
+      dress(svg, m.look, "stand");
     }
     return h;
   }
@@ -2780,7 +2861,8 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     if (menuOn) drawMenu();
     // the banner's button goes early when its answer stops being possible (F.2)
     const act = document.querySelector<HTMLButtonElement>(".banner-act");
-    if (act?.dataset.from && !act.dataset.room) {
+    // (a room banner's Cheer and an unlock's Wear it don't run out this way)
+    if (act?.dataset.from && !act.dataset.room && !act.dataset.wear) {
       const a = answerFrom(Number(act.dataset.from));
       const still = act.dataset.offer ? a && "offer" in a && a.offer.id === Number(act.dataset.offer) : a && "reply" in a && a.reply.id === Number(act.dataset.answers);
       if (!still) act.closest(".banner")?.remove();
@@ -3095,6 +3177,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       bannerAct.closest(".banner")?.remove();
       lastAnswerTap = Date.now();
       if (bannerAct.dataset.room) return void act("cheer", undefined, to);
+      if (bannerAct.dataset.wear) return void wearIt(bannerAct.dataset.wear);
       const offer = !!bannerAct.dataset.offer;
       return void act(offer ? "highfive" : bannerAct.dataset.kind!, { id: Number(bannerAct.dataset.offer ?? bannerAct.dataset.answers), offer, to });
     }
@@ -3226,22 +3309,33 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
   // without, 4 s. The newest replaces the last (D9). A room banner (F.8)
   // has the gold ring and the PB tab. `low` when its person stands in the
   // top three rows, so it never covers them on a laptop.
-  type BannerAct = { word: string; icon: string; data: Record<string, string> };
+  // `vh`: what a screen reader hears after the word (the sender's name by
+  // default; "Wear it: shades" for an unlock, room spec X.2)
+  type BannerAct = { word: string; icon: string; data: Record<string, string>; vh?: string };
   let bannerTimer: ReturnType<typeof setTimeout> | undefined;
-  function banner(text: string, from: number, opts: { act?: BannerAct; room?: boolean; label?: string } = {}) {
+  function banner(
+    text: string,
+    from: number,
+    opts: { act?: BannerAct; room?: boolean; label?: string; tabs?: ("pb" | "unlock")[]; tryOn?: string } = {},
+  ) {
     const slot = document.querySelector<HTMLElement>(".map-panel .banner-slot");
     if (!slot) return;
     const box = document.createElement("div");
     box.className = ["banner", opts.act && "has-act", opts.room && "room"].filter(Boolean).join(" ");
     if (opts.room) {
+      // room spec X.7: a PB's mark, an unlock's, or both in one tab
       const tab = document.createElement("span");
       tab.className = "banner-tab";
       tab.setAttribute("aria-hidden", "true");
-      tab.append(tpl("log-pb"), "PB");
+      (opts.tabs ?? ["pb"]).forEach((kind, i) => {
+        tab.append(...(i ? [" "] : []), tpl(kind === "pb" ? "log-pb" : "log-wear"), kind === "pb" ? "PB" : "Unlocked");
+      });
       box.append(tab);
     }
     const sender = personIn(from);
-    if (sender) box.append(head(sender));
+    // room spec X.7, X.10.2: an unlock's banner shows them trying it on
+    const tried = opts.tryOn && sender && !sender.dony && sender.look ? accessoryById(opts.tryOn) : undefined;
+    if (sender) box.append(head(tried && sender.look ? { ...sender, look: { ...sender.look, wear: { ...(sender.look.wear ?? { head: null, face: null, neck: null }), [tried.slot]: tried.id } } } : sender));
     const words = document.createElement("span");
     words.className = "banner-line";
     words.setAttribute("role", "status");
@@ -3261,8 +3355,10 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
       cur.textContent = "▶";
       const vh = document.createElement("span");
       vh.className = "vh";
-      vh.textContent = ` ${sender?.name ?? ""}`;
+      vh.textContent = opts.act.vh ?? ` ${sender?.name ?? ""}`;
       b.append(cur, tpl(`log-${opts.act.icon}`), opts.act.word, vh);
+      // an exact name where the words matter ("Wear it: shades", X.2)
+      if (opts.act.vh) b.setAttribute("aria-label", opts.act.word + opts.act.vh);
       box.append(b);
     }
     const b = avatarOf(from);
@@ -3822,22 +3918,75 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
 
   // ---------- a personal best (GYM-17, GYM-18; F.5, F.8) ----------
   const flexing = new Map<number, number>(); // who is flexing, until when (local ms)
-  function onPb(e: { from: Who; exercise: { id: number; name: string }; at: number }) {
+  function onPb(e: { from: Who; exercise: { id: number; name: string }; at: number; unlocked?: string[] }) {
     const me = meId();
     pbs = [...pbs.filter((p) => p.userId !== e.from.id), { userId: e.from.id, exercise: e.exercise, until: e.at + PB_MS }];
     flex(e.from.id);
     fanfare();
+    // AV-6.8: a long-haul unlock on the same Done is one banner, one fanfare
+    const big = (e.unlocked ?? []).map((id) => accessoryById(id)).filter((a) => !!a);
     if (e.from.id !== me) {
       const lift = e.exercise.name.toLowerCase();
-      banner(`${e.from.name} hit a PB on ${lift} 🏆`, e.from.id, {
+      const also = big.length ? ` and unlocked the ${big.map((a) => a.name.toLowerCase()).join(" and the ")} ${accEmoji(big[0].id)}` : " 🏆";
+      banner(`${e.from.name} hit a PB on ${lift}${also}`, e.from.id, {
         room: true,
-        label: `${e.from.name} hit a personal best on ${lift}`,
+        tabs: big.length ? ["pb", "unlock"] : ["pb"],
+        tryOn: big[0]?.id,
+        label: `${e.from.name} hit a personal best on ${lift}${big.length ? ` and unlocked the ${big.map((a) => a.name.toLowerCase()).join(" and the ")}` : ""}`,
         act: { word: "Cheer", icon: "cheer", data: { room: "1" } },
       });
     }
     // never Dony's in the log (BOT-5)
     if (e.from.id !== 0) addLog({ kind: "pb", from: e.from, exercise: e.exercise.name, at: e.at });
+    // the earner's own screens have it from their `unlock` event (X.5)
+    if (e.from.id !== me) for (const a of big) addLog({ kind: "trophy", from: e.from, acc: a.id, at: e.at });
     redrawAnswers();
+  }
+
+  // ---------- accessories (AV-6; criteria/accessories.md) ----------
+  // AV-6.1, AV-6.4: what you just unlocked, to you alone, with Wear it for
+  // the first named (long-haul first: the server's order)
+  function onUnlock(e: { accs: string[]; at: number }) {
+    const accs = e.accs.map((id) => accessoryById(id)).filter((a) => !!a);
+    if (!accs.length) return;
+    const me = meId();
+    const names = accs.map((a) => a.name.toLowerCase());
+    const line = accs.length === 1 ? `New: ${names[0]} ${accEmoji(accs[0].id)}` : `New: ${names.slice(0, -1).join(", ")} and ${names.at(-1)} 🎉`;
+    banner(line, me, { act: { word: "Wear it", icon: "wear", data: { wear: accs[0].id }, vh: `: ${names[0]}` }, tryOn: accs[0].id });
+    // room spec X.3: your own long-haul unlock gets the fanfare, else the chime
+    if (accs.some((a) => LONG.includes(a.id))) fanfare();
+    else blip("thanks");
+    // AV-6.9: a long-haul one goes in your log as "You unlocked …"
+    const you = personIn(me);
+    for (const a of accs) if (LONG.includes(a.id) && you) addLog({ kind: "trophy", from: { id: me, name: you.name }, acc: a.id, at: e.at });
+  }
+  const LONG = ["silver-medal", "gold-medal", "gold-chain", "crown"];
+  // AV-6.7: someone else's long-haul unlock: the room's banner, with Cheer
+  function onTrophy(e: { from: Who; acc: string; at: number }) {
+    const a = accessoryById(e.acc);
+    if (!a || e.from.id === meId()) return;
+    fanfare();
+    const name = a.name.toLowerCase();
+    banner(`${e.from.name} unlocked the ${name} ${accEmoji(a.id)}`, e.from.id, {
+      room: true,
+      tabs: ["unlock"],
+      tryOn: a.id,
+      label: `${e.from.name} unlocked the ${name}`,
+      act: { word: "Cheer", icon: "cheer", data: { room: "1" } },
+    });
+    addLog({ kind: "trophy", from: e.from, acc: a.id, at: e.at });
+  }
+  // AV-6.2: Wear it, from your banner; the room's next update draws you in it
+  async function wearIt(id: string) {
+    const a = accessoryById(id);
+    const r = await send({ action: "wear", acc: id });
+    if (r.ok && a) {
+      // room spec X.3: said once; the leaf line only when you're out of view
+      say(`Wearing the ${a.name.toLowerCase()}`);
+      const rect = avatarOf(meId())?.getBoundingClientRect();
+      const inView = !!rect && rect.bottom > 0 && rect.top < innerHeight && rect.right > 0 && rect.left < innerWidth && rect.width > 0;
+      if (!inView) tell(`Wearing the ${a.name.toLowerCase()} now ${accEmoji(a.id)}`, false, undefined, "", true);
+    } else tell("That didn't save. Try again.", true, meId());
   }
 
   // F.5: on the aisle tile in front of their station, flex1 and flex2 in
@@ -4095,6 +4244,7 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     li.dataset.at = String(entry.at);
     li.classList.toggle("you", entry.from.id === me || ("to" in entry && entry.to.id === me));
     li.classList.toggle("pb", entry.kind === "pb");
+    li.classList.toggle("unlock", entry.kind === "trophy");
     li.append(tpl(`log-${LOG_ICON[entry.kind]}`));
     const l = logLine(entry, me);
     const line = document.createElement("span");
@@ -5287,8 +5437,9 @@ const unitSplit = (label: string) => label.split(/( kg| km)/);
     flex: none;
   }
 
-  /* the room log's PB line (F.10) */
-  .room-log :global(li.pb > svg) {
+  /* the room log's PB line (F.10), and a long-haul unlock's (room spec X.7) */
+  .room-log :global(li.pb > svg),
+  .room-log :global(li.unlock > svg) {
     color: var(--finished);
   }
 

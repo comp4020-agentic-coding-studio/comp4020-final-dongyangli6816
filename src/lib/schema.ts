@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { type AnySQLiteColumn, index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { type AnySQLiteColumn, index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // The data model in docs/product/spec-4-weeks.md, as far as it is built.
 // Interactions and messages arrived with INT (week 12).
@@ -14,6 +14,13 @@ export const users = sqliteTable("users", {
   // AV-1: the look, as JSON (src/sprites/avatar.ts); never an image. Null
   // for accounts from before avatars, which get one rolled on first read.
   avatar: text("avatar"),
+  // AV-4: what they wear, as JSON {head, face, neck} of accessory ids
+  // (src/sprites/accessories.ts). Null wears nothing (AV-4.9).
+  wear: text("wear"),
+  // AV-5.17: when their unlocks were first worked out. Set at sign up; null
+  // for an account from before accessories, whose first check records what
+  // it had already earned quietly, telling nobody.
+  unlocksCheckedAt: integer("unlocks_checked_at"),
   createdAt: integer("created_at").notNull(),
 });
 
@@ -241,4 +248,22 @@ export const planExercises = sqliteTable(
     sets: integer("sets").notNull(),
   },
   (t) => [uniqueIndex("plan_exercises_pk").on(t.planId, t.position)],
+);
+
+// AV-5: one row per accessory a person has unlocked, kept for good (AV-5.16):
+// worked out from what is stored, recorded the first time it's true. The
+// workout it belongs to puts it on that summary (AV-6.6); quiet is the
+// back-fill for an account that had already earned it (AV-5.17), never told.
+export const userUnlocks = sqliteTable(
+  "user_unlocks",
+  {
+    userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    acc: text("acc").notNull(),
+    earnedAt: integer("earned_at").notNull(),
+    workoutId: integer("workout_id").references(() => workouts.id, { onDelete: "set null" }),
+    // the room it happened in, for the room log's long-haul lines (AV-6.9)
+    roomId: integer("room_id").references(() => rooms.id),
+    quiet: integer("quiet", { mode: "boolean" }).notNull().default(false),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.acc] }), index("user_unlocks_workout").on(t.workoutId), index("user_unlocks_room").on(t.roomId, t.earnedAt)],
 );

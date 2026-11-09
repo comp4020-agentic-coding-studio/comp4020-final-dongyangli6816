@@ -14,7 +14,8 @@
 // bay-<slot> and claim; poster-<name>; i-<name> for the 8 x 8 icons in
 // currentColor; the sprites of props.ts and door.ts by their export names;
 // em-<key> for the eight emoji and fx-<kind>-<n> for reaction frames
-// (emoji.ts); wk-<frame> for the gym worker (worker.ts).
+// (emoji.ts); wk-<frame> for the gym worker (worker.ts); acc-<drawing> for
+// the accessories (accessories.ts), coloured by --acc-a to --acc-d.
 import type { Equipment } from "../src/lib/exercises.ts";
 import { BODY, FIGURES, HAIR_STYLES, type Drawing, type Figure, type HairStyle } from "../src/sprites/avatar.ts";
 import { DONY_HOP, DONY_VARS, POSTER, POSTER_PALETTE } from "../src/sprites/dony.ts";
@@ -26,6 +27,7 @@ import * as props from "../src/sprites/props.ts";
 import * as door from "../src/sprites/door.ts";
 import * as emoji from "../src/sprites/emoji.ts";
 import { WORKER_FRAMES, WORKER_VARS } from "../src/sprites/worker.ts";
+import { ACC_DRAWINGS } from "../src/sprites/accessories.ts";
 import { TILE, type Sprite } from "../src/sprites/sprite.ts";
 
 // the avatar's slots as Avatar.astro colours them
@@ -116,6 +118,13 @@ export function sheet(): string[] {
     const m = name.match(/^(\w+)Fx(\d)$/);
     if (m) out.push(sprite(`fx-${m[1]}-${m[2]}`, s as Sprite));
   }
+  // accessories (AV-4, AV-7): acc-<drawing>, 32 wide with row 0 at the
+  // pose's hairRow (place the <use> at y = hairRow), coloured by --acc-a..d
+  // on it; neck items here are unclipped, so a mockup clips them to the tee
+  const ACC: Record<string, string> = {
+    k: "var(--ink)", a: "var(--acc-a)", b: "var(--acc-b, var(--acc-a))", c: "var(--acc-c, var(--acc-a))", d: "var(--acc-d, var(--acc-a))",
+  };
+  for (const [name, grid] of Object.entries(ACC_DRAWINGS)) out.push(symbol(`acc-${name}`, TILE, TILE, paths(grid, (ch) => ACC[ch])));
   // the top bar's dumbbell, as Layout.astro draws it
   const logo = ["..ll........ll..", "..ll........ll..", "llll........llll", "llllwwwwwwwwllll"];
   out.push(sprite("logo", { grid: [...logo, ...logo.toReversed()], palette: { l: "#c8e66b", w: "#e8f0d8" } }));

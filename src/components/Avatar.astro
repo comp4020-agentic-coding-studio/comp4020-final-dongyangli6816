@@ -8,6 +8,7 @@
 // both, as g.frame-1 and g.frame-2, and CSS swaps them (GymMap.astro). On a
 // machine the machine's own layers are drawn by the station, around this.
 import { AVATAR_UPPER_ROWS, HAIR_STYLES, HEAD_CROP, lookVars, type HairStyle, type Look } from "../sprites/avatar.ts";
+import { ACCESSORIES, accVars, NOTHING, placed, SLOTS, teeMask, type Wear } from "../sprites/accessories.ts";
 import { DONY_VARS } from "../sprites/dony.ts";
 import { drawingsOf, headOf, isHeld, isMachine, type Pose } from "../sprites/poses.ts";
 import { paths, TILE } from "../sprites/sprite.ts";
@@ -21,14 +22,28 @@ interface Props {
   pose?: Pose;
   // the head and shoulders only, for lists
   head?: boolean;
+  // head to belt, for the editor's accessory tiles (avatar spec A.3)
+  bust?: boolean;
+  // the bald standing body (no hair), as the sheet's av-stand: the editor's
+  // accessory tiles show the item, not the hair (avatar spec A.3)
+  bald?: boolean;
   // every hair style, with the look's chosen by data-hair: for the editor's
   // live preview and for avatars a script redraws
   allHair?: boolean;
   // set the look's colours on the svg; off when a parent sets them
   vars?: boolean;
+  // AV-4, AV-7: what they wear; data-head, data-face and data-neck pick it
+  wear?: Wear;
+  // every accessory drawn, the worn ones shown by those attributes: for the
+  // editor's live preview and for avatars a script redraws (as allHair)
+  allAcc?: boolean;
   class?: string;
 }
-const { dony = false, look, pose = "stand", head = false, allHair = false, vars = !!look, class: className } = Astro.props;
+const { dony = false, look, pose = "stand", head = false, allHair = false, vars = !!look, wear: wearProp, allAcc = false, bust = false, bald = false, class: className } = Astro.props;
+// what's worn: given, else what the look carries (the room's view, lookOf)
+const wear = wearProp ?? look?.wear ?? NOTHING;
+// Dony wears nothing (AV-4.11); a list's head crop leaves the neck out
+const worn = dony || !look ? [] : ACCESSORIES.filter((a) => (allAcc || wear[a.slot] === a.id) && !(head && a.slot === "neck" && !allAcc));
 
 // one path per slot; m, w and r are the fixed colours, in the body as in the
 // props, and any body letter in the props (the fingers round the bottle)
@@ -37,7 +52,7 @@ const { dony = false, look, pose = "stand", head = false, allHair = false, vars 
 const FIXED: Record<string, string> = { m: "pm", w: "pw", r: "pr" };
 const slotted = (map: Map<string, string>, glow = false) =>
   [...map].map(([ch, d]) => ({ slot: (FIXED[ch] ?? ch) + (glow && ch === "w" ? " glow" : ""), d }));
-const styles: (HairStyle | "dony")[] = dony ? ["dony"] : !look ? [] : allHair ? HAIR_STYLES.map((s) => s.id) : [look.hair];
+const styles: (HairStyle | "dony")[] = dony ? ["dony"] : !look || bald ? [] : allHair ? HAIR_STYLES.map((s) => s.id) : [look.hair];
 // rows above the split bob, the rest stay planted; a machine's people, the
 // walk and the slacker don't bob, so their whole body goes under the hair
 const bobs = !isMachine(pose) && pose !== "sit" && pose !== "walk" && !isHeld(pose);
@@ -49,6 +64,12 @@ const drawings = drawingsOf(pose).map((d, i, all) => {
     bottom: slotted(paths(d.body, split)),
     hair: styles.map((style) => ({ style, parts: slotted(paths(headOf(style), 0, Infinity, d.hairRow)) })),
     propsTop: slotted(paths(d.props, 0, split), pose === "sit"),
+    // drawn after the props, before a machine's front (avatar spec A.6); a
+    // neck item only on the tee (A.8)
+    acc: worn.map((a) => {
+      const mask = a.slot === "neck" ? teeMask(d.body, d.hairRow, d.props) : undefined;
+      return { id: a.id, slot: a.slot, style: accVars(a), parts: [...paths(placed(a, d.hairRow, mask))].map(([ch, dd]) => ({ ch, d: dd })) };
+    }),
     propsBottom: slotted(paths(d.props, split), pose === "sit"),
   };
 });
@@ -56,10 +77,14 @@ const drawings = drawingsOf(pose).map((d, i, all) => {
 
 <svg
   class:list={["av", `pose-${pose}`, className]}
-  viewBox={head ? HEAD_CROP : `0 0 ${TILE} ${TILE}`}
+  viewBox={head ? HEAD_CROP : bust ? "2 0 28 23" : `0 0 ${TILE} ${TILE}`}
   shape-rendering="crispEdges"
   aria-hidden="true"
   data-hair={allHair && look && !dony ? look.hair : undefined}
+  data-wear={look && !dony ? SLOTS.map((sl) => wear[sl] ?? "").join(",") : undefined}
+  data-head={allAcc ? (wear.head ?? "") : undefined}
+  data-face={allAcc ? (wear.face ?? "") : undefined}
+  data-neck={allAcc ? (wear.neck ?? "") : undefined}
   style={dony ? DONY_VARS : vars && look ? lookVars(look) : undefined}
 >
   {
@@ -79,9 +104,16 @@ const drawings = drawingsOf(pose).map((d, i, all) => {
           {d.propsTop.map((p) => (
             <path class={p.slot} d={p.d} />
           ))}
+          {d.acc.map((a) => (
+            <g class={`acc acc-${a.slot} acc-${a.id}`} style={a.style}>
+              {a.parts.map((p) => (
+                <path class={`a${p.ch}`} d={p.d} />
+              ))}
+            </g>
+          ))}
         </g>
-        {!head && d.bottom.map((p) => <path class={p.slot} d={p.d} />)}
-        {!head && d.propsBottom.map((p) => <path class={p.slot} d={p.d} />)}
+        {!head && !bust && d.bottom.map((p) => <path class={p.slot} d={p.d} />)}
+        {!head && !bust && d.propsBottom.map((p) => <path class={p.slot} d={p.d} />)}
       </g>
     ))
   }
@@ -136,6 +168,54 @@ const drawings = drawingsOf(pose).map((d, i, all) => {
   .av[data-hair="ponytail"] .hair-ponytail {
     display: inline;
   }
+  /* accessories (avatar spec A.6, A.7): k ink, a main, b shade, c light,
+     d accent, from the accessory's palette */
+  .av .ak {
+    fill: var(--ink);
+  }
+  .av .aa {
+    fill: var(--acc-a);
+  }
+  .av .ab {
+    fill: var(--acc-b, var(--acc-a));
+  }
+  .av .ac {
+    fill: var(--acc-c, var(--acc-a));
+  }
+  .av .ad {
+    fill: var(--acc-d, var(--acc-a));
+  }
+  /* every accessory drawn, the worn ones shown (as every hair style is) */
+  .av[data-head] .acc,
+  .av[data-face] .acc,
+  .av[data-neck] .acc {
+    display: none;
+  }
+  /* one per accessory in src/sprites/accessories.ts (keep in step) */
+  .av[data-head="cap"] .acc-cap,
+  .av[data-head="beanie"] .acc-beanie,
+  .av[data-head="pink-beanie"] .acc-pink-beanie,
+  .av[data-head="bucket-hat"] .acc-bucket-hat,
+  .av[data-head="headphones"] .acc-headphones,
+  .av[data-face="glasses"] .acc-glasses,
+  .av[data-neck="towel"] .acc-towel,
+  .av[data-head="sweatband"] .acc-sweatband,
+  .av[data-face="shades"] .acc-shades,
+  .av[data-neck="bronze-medal"] .acc-bronze-medal,
+  .av[data-head="hype-band"] .acc-hype-band,
+  .av[data-face="star-shades"] .acc-star-shades,
+  .av[data-face="heart-shades"] .acc-heart-shades,
+  .av[data-face="mirror-shades"] .acc-mirror-shades,
+  .av[data-head="bandana"] .acc-bandana,
+  .av[data-head="squad-cap"] .acc-squad-cap,
+  .av[data-head="nightcap"] .acc-nightcap,
+  .av[data-neck="silver-medal"] .acc-silver-medal,
+  .av[data-neck="gold-medal"] .acc-gold-medal,
+  .av[data-neck="gold-chain"] .acc-gold-chain,
+  .av[data-head="crown"] .acc-crown {
+    display: inline;
+  }
+
   /* two drawings: the first shows until something swaps them (GymMap.astro) */
   .av .frame-2 {
     display: none;

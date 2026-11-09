@@ -41,6 +41,8 @@ if (Astro.request.method === "POST") {
         displayName,
         avatar: JSON.stringify(look),
         createdAt: Date.now(),
+        // AV-5.17: a new account has nothing to back-fill
+        unlocksCheckedAt: Date.now(),
       })
       .returning({ id: users.id })
       .get();
