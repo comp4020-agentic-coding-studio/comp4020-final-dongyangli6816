@@ -11,8 +11,11 @@ const SET: Record<string, Record<string, string>> = {
   "1": { distance_km: "2", minutes: "10", seconds: "0" },
   "3": { weight_kg: "82.5", reps: "8" },
   "5": { weight_kg: "100", reps: "5" },
+  "7": { weight_kg: "12", reps: "10" },
   "9": { weight_kg: "120", reps: "3" },
   "11": { reps: "8", weight_kg: "" },
+  "13": { weight_kg: "30", reps: "10" },
+  "15": { reps: "12", weight_kg: "" },
   "4": { weight_kg: "50", reps: "10" },
 };
 
@@ -154,6 +157,29 @@ test("Mia's history plays each exercise's art at the gym's rate, beside her name
         .map((e) => e.textContent),
     );
     expect(wraps, `${width}: no set's figures wrap`).toEqual([]);
+  }
+});
+
+test("summary exercise art keeps the person visible in both frames", async ({ browser }) => {
+  const { who, workout } = await mia(browser, ["1", "3", "5", "7", "9", "11", "13", "15"]);
+  const page = await open(who);
+  await page.goto(`/workouts/${workout}`);
+  for (const phase of [0, 0.5, 1]) {
+    const frames = await page.locator(".ex-art").evaluateAll((arts, phase) => arts.map((art) => {
+      for (const animation of art.getAnimations({ subtree: true })) {
+        animation.pause();
+        animation.currentTime = Number(animation.effect!.getTiming().duration) * phase;
+      }
+      const shown = [...art.querySelectorAll(".av > g")].map((frame) => {
+        const style = getComputedStyle(frame);
+        return style.display !== "none" && style.visibility === "visible";
+      });
+      return { pose: art.getAttribute("data-pose"), shown };
+    }), phase);
+    expect(frames).toHaveLength(8);
+    for (const frame of frames) {
+      expect(frame.shown, `${frame.pose}, cycle ${phase}`).toEqual(phase === 0.5 ? [false, true] : [true, false]);
+    }
   }
 });
 
