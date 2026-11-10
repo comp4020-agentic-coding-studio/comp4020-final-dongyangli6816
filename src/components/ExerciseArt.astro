@@ -59,7 +59,9 @@ const { e, look, size, class: className } = Astro.props;
     z-index: 2;
   }
   /* the two frames, person and machine together (the gym's own rule) */
-  .ex-art .frame-2 {
+  /* Outrank Avatar's default .av .frame-2 even when production bundles
+     place that rule later. Otherwise the person vanishes on frame 2. */
+  .ex-art > svg .frame-2 {
     display: inline;
     visibility: hidden;
   }
